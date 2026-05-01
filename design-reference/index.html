@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Seventeen Studios — Software · Creative · AI Engineering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+
+<style>
+:root {
+  --bg:     #09090b;
+  --fg:     #f0ede8;
+  --muted:  #4a4a52;
+  --border: #1e1e24;
+  --accent: #b8f53d;
+  --noise-opacity: 0.032;
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: auto; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body);
+  font-size: clamp(15px, 1.1vw, 17px);
+  line-height: 1.6; overflow-x: hidden; cursor: none;
+}
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+::selection { background: var(--accent); color: #000; }
+
+body::after {
+  content: ''; position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px; opacity: var(--noise-opacity);
+  pointer-events: none; z-index: 9998;
+}
+
+.cursor-dot, .cursor-ring {
+  position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; will-change: transform;
+}
+.cursor-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin: -3px 0 0 -3px; }
+.cursor-ring {
+  width: 36px; height: 36px; border: 1px solid rgba(240,237,232,0.35); border-radius: 50%;
+  margin: -18px 0 0 -18px;
+  transition: width 0.3s, height 0.3s, margin 0.3s, border-color 0.3s, background 0.3s;
+}
+.cursor-ring.hovered { width: 56px; height: 56px; margin: -28px 0 0 -28px; border-color: var(--accent); background: rgba(184,245,61,0.06); }
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 28px 48px;
+}
+nav::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(9,9,11,0.85) 0%, transparent 100%);
+  pointer-events: none;
+}
+.nav-logo { font-family: var(--font-display); font-weight: 800; font-size: 18px; letter-spacing: -0.03em; position: relative; }
+.nav-logo span { color: var(--accent); }
+.nav-links { display: flex; gap: 40px; list-style: none; position: relative; }
+.nav-links a { font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.45; transition: opacity 0.25s; }
+.nav-links a:hover, .nav-links a.active { opacity: 1; }
+.nav-cta {
+  position: relative; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid rgba(240,237,232,0.2); padding: 10px 22px; border-radius: 100px;
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
+}
+.nav-cta:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+
+/* HERO */
+#hero {
+  position: relative; height: 100vh;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 0 48px 72px; overflow: hidden;
+}
+#hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+.hero-bg-number {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(200px, 30vw, 480px); color: transparent;
+  -webkit-text-stroke: 1px rgba(240,237,232,0.03);
+  letter-spacing: -0.06em; user-select: none; z-index: 0; white-space: nowrap;
+}
+.hero-content { position: relative; z-index: 2; }
+.hero-title {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(56px, 9.5vw, 148px);
+  letter-spacing: -5.92px; line-height: 0.92;
+  text-transform: uppercase; text-align: left;
+}
+.hero-line { display: block; overflow: hidden; padding-bottom: 0.05em; }
+.hero-line + .hero-line { margin-top: 0.06em; }
+.hero-line .char { display: inline-block; }
+
+.hero-bottom {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-top: 44px; gap: 48px;
+}
+.hero-sub {
+  font-size: clamp(15px, 1.5vw, 19px); color: rgba(240,237,232,0.55);
+  max-width: 440px; line-height: 1.6; font-weight: 300;
+}
+.hero-sub strong { color: var(--accent); font-weight: 500; }
+.hero-badges { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.hero-badge {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  border: 1px solid rgba(240,237,232,0.12); padding: 8px 16px; border-radius: 100px;
+  color: rgba(240,237,232,0.4);
+}
+.hero-badge.accent { border-color: var(--accent); color: var(--accent); }
+.hero-scroll-hint {
+  position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.3; z-index: 2;
+}
+.scroll-line {
+  width: 1px; height: 48px;
+  background: linear-gradient(to bottom, var(--fg), transparent);
+  animation: scrollLine 2s ease-in-out infinite;
+}
+@keyframes scrollLine {
+  0%   { transform: scaleY(0); transform-origin: top; opacity: 1; }
+  50%  { transform: scaleY(1); transform-origin: top; opacity: 1; }
+  100% { transform: scaleY(1); transform-origin: bottom; opacity: 0; }
+}
+
+/* MARQUEE */
+.marquee-section { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 20px 0; overflow: hidden; }
+.marquee-track { display: flex; animation: marquee 22s linear infinite; white-space: nowrap; }
+.marquee-track:hover { animation-play-state: paused; }
+.marquee-item {
+  display: flex; align-items: center; gap: 32px; padding: 0 32px;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(13px, 1.2vw, 16px); letter-spacing: 0.12em; text-transform: uppercase;
+  color: rgba(240,237,232,0.25);
+}
+.marquee-item .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* SECTION SHARED */
+.section-label {
+  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 14px;
+}
+.section-label::before { content: ''; display: block; width: 32px; height: 1px; background: var(--accent); flex-shrink: 0; }
+
+/* MANIFESTO */
+#manifesto {
+  padding: 120px 48px; border-bottom: 1px solid var(--border);
+  display: grid; grid-template-columns: 1fr 2fr; gap: 80px; align-items: start;
+}
+.manifesto-label { padding-top: 8px; }
+.manifesto-text {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(28px, 3.5vw, 52px);
+  letter-spacing: -0.04em; line-height: 1.05;
+}
+.manifesto-text em { color: var(--accent); font-style: normal; }
+.manifesto-sub {
+  margin-top: 32px; font-size: 16px; line-height: 1.75;
+  color: rgba(240,237,232,0.5); font-weight: 300; max-width: 560px;
+}
+
+/* SERVICES */
+#services { padding: 140px 48px; border-bottom: 1px solid var(--border); }
+.services-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 80px; gap: 48px; }
+.services-title {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(36px, 5.5vw, 80px); letter-spacing: -0.04em;
+  line-height: 0.95; text-transform: uppercase; max-width: 640px;
+}
+.services-desc { max-width: 340px; font-size: 15px; color: rgba(240,237,232,0.45); line-height: 1.7; font-weight: 300; flex-shrink: 0; }
+.services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.service-card { background: var(--bg); padding: 52px 40px 80px; position: relative; overflow: hidden; cursor: none; }
+.service-card::before {
+  content: ''; position: absolute; inset: 0; background: var(--accent);
+  transform: scaleY(0); transform-origin: bottom;
+  transition: transform 0.55s cubic-bezier(0.77,0,0.18,1); z-index: 0;
+}
+.service-card:hover::before { transform: scaleY(1); }
+.service-card:hover { color: #000; }
+.service-card > * { position: relative; z-index: 1; }
+.svc-num { font-family: var(--font-display); font-weight: 900; font-size: 13px; opacity: 0.3; letter-spacing: 0.1em; margin-bottom: 40px; }
+.svc-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(22px, 2.5vw, 34px); letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 20px; }
+.svc-body { font-size: 14px; line-height: 1.75; opacity: 0.5; font-weight: 300; margin-bottom: 36px; }
+.service-card:hover .svc-body { opacity: 0.75; }
+.svc-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.svc-tag { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid rgba(240,237,232,0.2); padding: 5px 12px; border-radius: 100px; opacity: 0.5; }
+.service-card:hover .svc-tag { border-color: rgba(0,0,0,0.25); opacity: 0.7; }
+.svc-arrow {
+  position: absolute; bottom: 36px; right: 36px;
+  width: 48px; height: 48px; border: 1px solid rgba(240,237,232,0.15); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer;
+  transform: rotate(-45deg);
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s, background 0.3s;
+  z-index: 10;
+}
+.service-card:hover .svc-arrow { transform: rotate(0deg); border-color: rgba(0,0,0,0.3); background: rgba(0,0,0,0.08); }
+
+/* CAPABILITIES STRIP */
+#capabilities { padding: 100px 48px; border-bottom: 1px solid var(--border); }
+.capabilities-intro {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px; margin-bottom: 60px; align-items: end;
+}
+.capabilities-headline {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(28px, 3.5vw, 48px); letter-spacing: -0.04em; line-height: 1;
+  text-transform: uppercase;
+}
+.capabilities-desc { font-size: 15px; color: rgba(240,237,232,0.45); line-height: 1.7; font-weight: 300; }
+.capabilities-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+}
+.cap-item { background: var(--bg); padding: 36px 28px; transition: background 0.3s; }
+.cap-item:hover { background: rgba(255,255,255,0.025); }
+.cap-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: -0.01em; margin-bottom: 12px; }
+.cap-body { font-size: 13px; line-height: 1.65; opacity: 0.4; font-weight: 300; }
+
+/* WORK */
+.work-section { height: 100vh; overflow: hidden; border-bottom: 1px solid var(--border); position: relative; }
+.work-header {
+  position: absolute; top: 0; left: 0; right: 0; padding: 60px 48px 0; z-index: 10;
+  display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none;
+}
+.work-title-wrap { pointer-events: auto; }
+.work-title {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(36px, 5vw, 72px); letter-spacing: -0.04em; line-height: 1; text-transform: uppercase;
+}
+.work-count { font-size: 12px; letter-spacing: 0.1em; color: rgba(240,237,232,0.3); text-transform: uppercase; margin-top: 10px; pointer-events: auto; }
+.work-track { display: flex; align-items: center; height: 100%; padding: 0 48px; gap: 24px; will-change: transform; }
+.work-track-inner { display: flex; gap: 24px; height: 100%; align-items: center; padding-top: 160px; }
+.work-card {
+  flex-shrink: 0; width: clamp(360px, 28vw, 440px); height: clamp(460px, 58vh, 580px);
+  background: #111115; border-radius: 4px; overflow: hidden; position: relative;
+  transform-style: preserve-3d; cursor: pointer; transition: box-shadow 0.4s;
+}
+.work-card:hover { box-shadow: 0 32px 80px rgba(0,0,0,0.6); }
+.work-card-img {
+  width: 100%; height: 58%; position: relative; overflow: hidden;
+  background: #0d0d10; display: flex; align-items: center; justify-content: center;
+}
+.work-card-img .placeholder { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.18; text-align: center; font-family: monospace; padding: 20px; position: relative; z-index: 1; }
+.work-stripe {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(-45deg, transparent 0px, transparent 12px, rgba(255,255,255,0.012) 12px, rgba(255,255,255,0.012) 13px);
+}
+.work-card-accent { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 0.5s cubic-bezier(0.77,0,0.18,1); }
+.work-card:hover .work-card-accent { transform: scaleX(1); }
+.work-card-body { padding: 24px 24px 20px; }
+.work-card-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.work-card-tag { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); opacity: 0.8; }
+.work-card-year { font-size: 11px; opacity: 0.3; letter-spacing: 0.05em; }
+.work-card-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(20px, 1.8vw, 28px); letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 10px; }
+.work-card-desc { font-size: 13px; line-height: 1.65; opacity: 0.4; font-weight: 300; }
+.work-card-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); opacity: 0; transition: opacity 0.3s; }
+.work-card:hover .work-card-cta { opacity: 1; }
+
+/* APPROACH */
+#approach {
+  padding: 140px 48px; border-bottom: 1px solid var(--border);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 120px; align-items: start;
+}
+.approach-sticky { position: sticky; top: 120px; }
+.approach-headline {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(36px, 4.5vw, 64px); letter-spacing: -0.04em; line-height: 0.95;
+  text-transform: uppercase; margin-bottom: 32px;
+}
+.approach-headline em { color: var(--accent); font-style: normal; }
+.approach-body { font-size: 15px; line-height: 1.75; color: rgba(240,237,232,0.5); font-weight: 300; margin-bottom: 28px; }
+.approach-steps { display: flex; flex-direction: column; gap: 0; }
+.approach-step {
+  padding: 32px 0; border-bottom: 1px solid var(--border);
+  display: grid; grid-template-columns: 48px 1fr; gap: 24px; align-items: start;
+}
+.approach-step:first-child { border-top: 1px solid var(--border); }
+.step-num { font-family: var(--font-display); font-weight: 900; font-size: 13px; color: var(--accent); padding-top: 4px; }
+.step-title { font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: -0.02em; margin-bottom: 10px; }
+.step-body { font-size: 14px; line-height: 1.65; opacity: 0.4; font-weight: 300; }
+
+/* PHILOSOPHY */
+#philosophy { padding: 160px 48px; border-bottom: 1px solid var(--border); text-align: center; }
+.philosophy-quote {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(32px, 5.5vw, 84px); letter-spacing: -0.04em;
+  line-height: 1.05; text-transform: uppercase; max-width: 1100px; margin: 0 auto;
+}
+.philosophy-quote em { font-style: normal; color: var(--accent); }
+.philosophy-attr { margin-top: 48px; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.3; }
+
+/* CONTACT */
+#contact { padding: 160px 48px 80px; }
+.contact-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start;
+  border-bottom: 1px solid var(--border); padding-bottom: 100px; margin-bottom: 60px;
+}
+.contact-headline {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(40px, 6vw, 96px); letter-spacing: -0.05em; line-height: 0.92; text-transform: uppercase;
+}
+.contact-headline span { color: var(--accent); }
+.contact-cta-btn {
+  display: inline-flex; align-items: center; gap: 16px; margin-top: 48px;
+  background: var(--accent); color: #000; font-family: var(--font-display);
+  font-weight: 800; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 18px 36px; border-radius: 100px; transition: background 0.25s, gap 0.25s; cursor: none;
+}
+.contact-cta-btn:hover { background: #d4ff55; gap: 24px; }
+.contact-cta-btn .arrow { font-size: 20px; }
+.contact-right { padding-top: 12px; }
+.contact-info-item { padding: 24px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.contact-info-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.35; }
+.contact-info-value { font-family: var(--font-display); font-weight: 600; font-size: 15px; letter-spacing: -0.01em; transition: color 0.25s; }
+.contact-info-value:hover { color: var(--accent); }
+.footer-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+.footer-copy { font-size: 12px; opacity: 0.25; letter-spacing: 0.04em; }
+.footer-links { display: flex; gap: 28px; }
+.footer-links a { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.3; transition: opacity 0.25s; }
+.footer-links a:hover { opacity: 1; }
+.footer-tagline { font-family: var(--font-display); font-size: 12px; letter-spacing: 0.06em; opacity: 0.18; text-transform: uppercase; }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(9,9,11,0.92); backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-box {
+  background: #111115; border: 1px solid var(--border); border-radius: 8px;
+  width: min(860px, 92vw); max-height: 88vh; overflow-y: auto;
+  transform: translateY(32px) scale(0.97);
+  transition: transform 0.4s cubic-bezier(0.34,1.2,0.64,1);
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.modal-overlay.open .modal-box { transform: translateY(0) scale(1); }
+.modal-header {
+  position: sticky; top: 0; z-index: 10; background: #111115;
+  border-bottom: 1px solid var(--border); padding: 24px 32px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.modal-title { font-family: var(--font-display); font-weight: 800; font-size: 22px; letter-spacing: -0.03em; }
+.modal-tag { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.modal-close {
+  width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px; opacity: 0.6; transition: opacity 0.25s, border-color 0.25s; flex-shrink: 0;
+}
+.modal-close:hover { opacity: 1; border-color: var(--fg); }
+.modal-body { padding: 40px 32px 48px; }
+.modal-hero-img {
+  width: 100%; height: 260px; background: #0d0d10; border-radius: 4px;
+  margin-bottom: 40px; display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.modal-hero-img .work-stripe { position: absolute; inset: 0; }
+.modal-hero-img .placeholder { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.18; text-align: center; font-family: monospace; padding: 20px; position: relative; z-index: 1; }
+.modal-section { margin-bottom: 36px; }
+.modal-section-label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.modal-section-label::before { content: ''; width: 20px; height: 1px; background: var(--accent); }
+.modal-section p { font-size: 15px; line-height: 1.75; color: rgba(240,237,232,0.65); font-weight: 300; }
+.modal-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin: 32px 0; }
+.modal-metric { background: var(--bg); padding: 24px 20px; }
+.modal-metric-val { font-family: var(--font-display); font-weight: 800; font-size: 32px; letter-spacing: -0.04em; color: var(--accent); }
+.modal-metric-label { font-size: 12px; letter-spacing: 0.06em; opacity: 0.4; margin-top: 6px; }
+.modal-stack { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.modal-tag-item { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid var(--border); padding: 6px 14px; border-radius: 100px; opacity: 0.6; }
+
+/* TWEAKS */
+.tweaks-panel {
+  position: fixed; bottom: 24px; right: 24px; background: rgba(14,14,18,0.96);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px 22px;
+  z-index: 9990; width: 220px; display: none; backdrop-filter: blur(16px); font-size: 12px;
+}
+.tweaks-panel.open { display: block; }
+.tweaks-panel h4 { font-family: var(--font-display); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.5; margin-bottom: 16px; }
+.tweak-row { margin-bottom: 16px; }
+.tweak-row label { display: block; opacity: 0.4; margin-bottom: 8px; letter-spacing: 0.06em; }
+.tweak-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.tweak-accent { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s, transform 0.2s; }
+.tweak-accent:hover { transform: scale(1.15); border-color: rgba(255,255,255,0.3); }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="cursor-dot"></div>
+<div class="cursor-ring"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#hero" class="nav-logo">SEVENTEEN<span>.</span></a>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#work">Work</a></li>
+    <li><a href="#approach">Approach</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta magnetic" data-scramble>Start a project</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-bg-number">17</div>
+  <div class="hero-content">
+    <h1 class="hero-title" style="text-align:left;letter-spacing:-5.92px;">
+      <span class="hero-line" id="hero-line-1">Seventeen</span>
+      <span class="hero-line" id="hero-line-2">Studios</span>
+    </h1>
+    <div class="hero-bottom">
+      <p class="hero-sub">
+        A new kind of engineering studio. We build <strong>software</strong>, <strong>creative</strong>, and <strong>AI systems</strong> for companies with ambition that outpaces what ordinary agencies can deliver.
+      </p>
+      <div class="hero-badges">
+        <span class="hero-badge accent">● Open for projects</span>
+        <span class="hero-badge">Software Engineering</span>
+        <span class="hero-badge">Creative Engineering</span>
+        <span class="hero-badge">AI Engineering</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-scroll-hint">
+    <div class="scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-section">
+  <div class="marquee-track">
+    <div class="marquee-item"><span class="dot"></span>Software Engineering</div>
+    <div class="marquee-item"><span class="dot"></span>Creative Engineering</div>
+    <div class="marquee-item"><span class="dot"></span>AI Architecture</div>
+    <div class="marquee-item"><span class="dot"></span>Generative Systems</div>
+    <div class="marquee-item"><span class="dot"></span>Interactive Experiences</div>
+    <div class="marquee-item"><span class="dot"></span>WebGL &amp; Three.js</div>
+    <div class="marquee-item"><span class="dot"></span>ML Engineering</div>
+    <div class="marquee-item"><span class="dot"></span>Product Development</div>
+    <div class="marquee-item"><span class="dot"></span>Software Engineering</div>
+    <div class="marquee-item"><span class="dot"></span>Creative Engineering</div>
+    <div class="marquee-item"><span class="dot"></span>AI Architecture</div>
+    <div class="marquee-item"><span class="dot"></span>Generative Systems</div>
+    <div class="marquee-item"><span class="dot"></span>Interactive Experiences</div>
+    <div class="marquee-item"><span class="dot"></span>WebGL &amp; Three.js</div>
+    <div class="marquee-item"><span class="dot"></span>ML Engineering</div>
+    <div class="marquee-item"><span class="dot"></span>Product Development</div>
+  </div>
+</div>
+
+<!-- MANIFESTO -->
+<section id="manifesto">
+  <div class="manifesto-label section-label reveal-up">Who we are</div>
+  <div>
+    <p class="manifesto-text reveal-words">
+      We are engineers and makers who believe the best digital products sit at the intersection of <em>technical rigour</em> and genuine craft.
+    </p>
+    <p class="manifesto-sub reveal-up">
+      Seventeen Studios is a creative engineering studio founded to close the gap between what technology can do and what most agencies actually build. We are small by design, senior by default, and obsessive about the work.
+    </p>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="services-header">
+    <div>
+      <div class="section-label reveal-up">Our Disciplines</div>
+      <h2 class="services-title reveal-words">What we build for you</h2>
+    </div>
+    <p class="services-desc reveal-up">
+      Three integrated practices. One team. Outcomes that live at the edge of what is technically possible.
+    </p>
+  </div>
+  <div class="services-grid reveal-stagger">
+    <div class="service-card">
+      <div class="svc-num">01</div>
+      <div class="svc-title">Software Engineering</div>
+      <p class="svc-body">Scalable, production-grade systems built with rigour. From distributed backends to performant frontends, we architect for the long term.</p>
+      <div class="svc-tags">
+        <span class="svc-tag">Architecture</span><span class="svc-tag">Fullstack</span>
+        <span class="svc-tag">Cloud</span><span class="svc-tag">DevOps</span><span class="svc-tag">APIs</span>
+      </div>
+      <div class="svc-arrow magnetic" data-modal="svc-software">→</div>
+    </div>
+    <div class="service-card">
+      <div class="svc-num">02</div>
+      <div class="svc-title">Creative Engineering</div>
+      <p class="svc-body">We blur the line between code and craft. WebGL, generative art, real-time 3D, and interactive installations — technology as a medium for expression.</p>
+      <div class="svc-tags">
+        <span class="svc-tag">WebGL</span><span class="svc-tag">Three.js</span>
+        <span class="svc-tag">GSAP</span><span class="svc-tag">Shaders</span><span class="svc-tag">XR</span>
+      </div>
+      <div class="svc-arrow magnetic" data-modal="svc-creative">→</div>
+    </div>
+    <div class="service-card">
+      <div class="svc-num">03</div>
+      <div class="svc-title">AI Engineering</div>
+      <p class="svc-body">Custom LLM integrations, fine-tuning pipelines, multimodal systems, and AI-native product experiences that are genuinely intelligent.</p>
+      <div class="svc-tags">
+        <span class="svc-tag">LLMs</span><span class="svc-tag">Fine-tuning</span>
+        <span class="svc-tag">RAG</span><span class="svc-tag">Agents</span><span class="svc-tag">MLOps</span>
+      </div>
+      <div class="svc-arrow magnetic" data-modal="svc-ai">→</div>
+    </div>
+  </div>
+</section>
+
+<!-- CAPABILITIES -->
+<section id="capabilities">
+  <div class="capabilities-intro">
+    <div>
+      <div class="section-label reveal-up">Full Capabilities</div>
+      <h3 class="capabilities-headline reveal-words">The full stack of what we do</h3>
+    </div>
+    <p class="capabilities-desc reveal-up">From infrastructure to interface, from model to product — we cover every layer of the modern digital stack.</p>
+  </div>
+  <div class="capabilities-grid reveal-stagger">
+    <div class="cap-item">
+      <div class="cap-title">LLM Integration &amp; Fine-tuning</div>
+      <p class="cap-body">GPT-4, Claude, Llama, Mistral. Custom datasets, RLHF pipelines, domain-specific models.</p>
+    </div>
+    <div class="cap-item">
+      <div class="cap-title">WebGL &amp; Shader Programming</div>
+      <p class="cap-body">Three.js, GLSL, custom render pipelines, real-time 3D for web and native.</p>
+    </div>
+    <div class="cap-item">
+      <div class="cap-title">Distributed Systems</div>
+      <p class="cap-body">Kafka, Kubernetes, microservices. Designed for 99.99% uptime and billion-event scale.</p>
+    </div>
+    <div class="cap-item">
+      <div class="cap-title">Generative AI Products</div>
+      <p class="cap-body">Image, video, audio generation. Stable Diffusion fine-tuning, ControlNet, production ComfyUI pipelines.</p>
+    </div>
+    <div class="cap-item">
+      <div class="cap-title">Interactive Installations</div>
+      <p class="cap-body">Physical-digital experiences. TouchDesigner, sensor integration, projection mapping.</p>
+    </div>
+    <div class="cap-item">
+      <div class="cap-title">Mobile &amp; Native Apps</div>
+      <p class="cap-body">React Native, Swift, Kotlin. Production apps built to scale from day one.</p>
+    </div>
+    <div class="cap-item">
+      <div class="cap-title">AI Agents &amp; Orchestration</div>
+      <p class="cap-body">Multi-agent systems, tool-use, RAG pipelines, autonomous workflows at scale.</p>
+    </div>
+    <div class="cap-item">
+      <div class="cap-title">Motion &amp; Animation</div>
+      <p class="cap-body">GSAP, Framer Motion, Lottie, CSS. Interactions that feel alive and purposeful.</p>
+    </div>
+  </div>
+</section>
+
+<!-- WORK -->
+<section id="work" class="work-section">
+  <div class="work-header">
+    <div class="work-title-wrap">
+      <div class="section-label">Concept Work</div>
+      <h2 class="work-title">What we can build</h2>
+      <div class="work-count">Click any card to explore the brief →</div>
+    </div>
+  </div>
+  <div class="work-track">
+    <div class="work-track-inner">
+      <div style="width:24px;flex-shrink:0;"></div>
+
+      <div class="work-card" data-modal="cs-pulse">
+        <div class="work-card-img">
+          <div class="work-stripe"></div>
+          <div class="placeholder">Concept — Pulse AI<br/>real-time market intelligence platform</div>
+        </div>
+        <div class="work-card-accent"></div>
+        <div class="work-card-body">
+          <div class="work-card-meta">
+            <span class="work-card-tag">AI Engineering</span>
+            <span class="work-card-year">Concept</span>
+          </div>
+          <div class="work-card-title">Pulse</div>
+          <div class="work-card-desc">AI-native market intelligence platform with real-time signal processing.</div>
+          <div class="work-card-cta">Explore brief →</div>
+        </div>
+      </div>
+
+      <div class="work-card" data-modal="cs-forma">
+        <div class="work-card-img">
+          <div class="work-stripe"></div>
+          <div class="placeholder">Concept — Forma<br/>generative 3D brand experience</div>
+        </div>
+        <div class="work-card-accent"></div>
+        <div class="work-card-body">
+          <div class="work-card-meta">
+            <span class="work-card-tag">Creative Engineering</span>
+            <span class="work-card-year">Concept</span>
+          </div>
+          <div class="work-card-title">Forma</div>
+          <div class="work-card-desc">Generative WebGL brand experience built around real-time cloth simulation.</div>
+          <div class="work-card-cta">Explore brief →</div>
+        </div>
+      </div>
+
+      <div class="work-card" data-modal="cs-layer">
+        <div class="work-card-img">
+          <div class="work-stripe"></div>
+          <div class="placeholder">Concept — Layer<br/>distributed data infrastructure</div>
+        </div>
+        <div class="work-card-accent"></div>
+        <div class="work-card-body">
+          <div class="work-card-meta">
+            <span class="work-card-tag">Software Engineering</span>
+            <span class="work-card-year">Concept</span>
+          </div>
+          <div class="work-card-title">Layer</div>
+          <div class="work-card-desc">Distributed event streaming architecture for high-frequency data workloads.</div>
+          <div class="work-card-cta">Explore brief →</div>
+        </div>
+      </div>
+
+      <div class="work-card" data-modal="cs-echo">
+        <div class="work-card-img">
+          <div class="work-stripe"></div>
+          <div class="placeholder">Concept — Echo<br/>AI audio intelligence product</div>
+        </div>
+        <div class="work-card-accent"></div>
+        <div class="work-card-body">
+          <div class="work-card-meta">
+            <span class="work-card-tag">AI · Creative</span>
+            <span class="work-card-year">Concept</span>
+          </div>
+          <div class="work-card-title">Echo</div>
+          <div class="work-card-desc">Multimodal AI platform for music production and sound design workflows.</div>
+          <div class="work-card-cta">Explore brief →</div>
+        </div>
+      </div>
+
+      <div class="work-card" data-modal="cs-ark">
+        <div class="work-card-img">
+          <div class="work-stripe"></div>
+          <div class="placeholder">Concept — Ark<br/>AI-powered mobile companion app</div>
+        </div>
+        <div class="work-card-accent"></div>
+        <div class="work-card-body">
+          <div class="work-card-meta">
+            <span class="work-card-tag">Product · Software</span>
+            <span class="work-card-year">Concept</span>
+          </div>
+          <div class="work-card-title">Ark</div>
+          <div class="work-card-desc">Mobile-first AI companion for personal knowledge management and recall.</div>
+          <div class="work-card-cta">Explore brief →</div>
+        </div>
+      </div>
+
+      <div style="width:48px;flex-shrink:0;"></div>
+    </div>
+  </div>
+</section>
+
+<!-- APPROACH -->
+<section id="approach">
+  <div class="approach-sticky">
+    <div class="section-label reveal-up">How we work</div>
+    <h2 class="approach-headline reveal-words">Process built for <em>precision.</em></h2>
+    <p class="approach-body reveal-up">
+      We are a new studio — and that is our advantage. No legacy processes, no sprawling account teams, no communication overhead. Every engagement is led directly by the people building it.
+    </p>
+    <p class="approach-body reveal-up">
+      We take on a small number of projects at a time to ensure every client gets our full attention. If we are not the right fit, we will tell you before you sign anything.
+    </p>
+  </div>
+  <div class="approach-steps reveal-stagger">
+    <div class="approach-step">
+      <div class="step-num">01</div>
+      <div>
+        <div class="step-title">Discovery &amp; brief</div>
+        <p class="step-body">We spend time understanding your business, your users, and the specific outcome you need before touching a line of code or a single design file.</p>
+      </div>
+    </div>
+    <div class="approach-step">
+      <div class="step-num">02</div>
+      <div>
+        <div class="step-title">Architecture &amp; prototyping</div>
+        <p class="step-body">We define the technical and creative architecture upfront. Then we build a working prototype to validate direction before committing to the full build.</p>
+      </div>
+    </div>
+    <div class="approach-step">
+      <div class="step-num">03</div>
+      <div>
+        <div class="step-title">Iterative build</div>
+        <p class="step-body">Two-week sprints with a working demo at the end of every cycle. You see real progress, not status updates. Feedback loops stay tight.</p>
+      </div>
+    </div>
+    <div class="approach-step">
+      <div class="step-num">04</div>
+      <div>
+        <div class="step-title">Launch &amp; beyond</div>
+        <p class="step-body">We do not disappear after shipping. We monitor, iterate, and stay engaged — because the real work often starts on day one of production.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PHILOSOPHY -->
+<section id="philosophy">
+  <p class="philosophy-quote reveal-words">
+    We don't ship features. We ship <em>conviction.</em>
+  </p>
+  <div class="philosophy-attr reveal-up">— The Seventeen Doctrine</div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-grid">
+    <div>
+      <div class="section-label reveal-up">Get in touch</div>
+      <h2 class="contact-headline reveal-words">Let's build something <span>great.</span></h2>
+      <a href="mailto:hello@seventeenstudios.com" class="contact-cta-btn magnetic reveal-up">
+        <span data-scramble>Start a project</span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+    <div class="contact-right reveal-stagger">
+      <div class="contact-info-item">
+        <span class="contact-info-label">Email</span>
+        <a href="mailto:hello@seventeenstudios.com" class="contact-info-value">hello@seventeenstudios.com</a>
+      </div>
+      <div class="contact-info-item">
+        <span class="contact-info-label">New business</span>
+        <a href="mailto:projects@seventeenstudios.com" class="contact-info-value">projects@seventeenstudios.com</a>
+      </div>
+      <div class="contact-info-item">
+        <span class="contact-info-label">Location</span>
+        <span class="contact-info-value">Remote-first · Global</span>
+      </div>
+      <div class="contact-info-item">
+        <span class="contact-info-label">Response time</span>
+        <span class="contact-info-value">Within 24 hours</span>
+      </div>
+      <div class="contact-info-item">
+        <span class="contact-info-label">Availability</span>
+        <span class="contact-info-value" style="color:var(--accent);">● Open to new projects</span>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2026 Seventeen Studios. All rights reserved.</span>
+    <span class="footer-tagline">Engineering the impossible</span>
+    <div class="footer-links">
+      <a href="#" data-scramble>Twitter</a>
+      <a href="#" data-scramble>LinkedIn</a>
+      <a href="#" data-scramble>GitHub</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SERVICE MODALS ═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-svc-software">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div class="modal-tag">Service — 01</div><div class="modal-title">Software Engineering</div></div>
+      <div class="modal-close" data-close>✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Overview</div>
+        <p>We design and build software systems that are meant to last. Every engagement starts with understanding your business constraints, then working backwards to the right architecture — not the most fashionable one.</p>
+      </div>
+      <div class="modal-metrics">
+        <div class="modal-metric"><div class="modal-metric-val">99.99%</div><div class="modal-metric-label">Uptime SLA target</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">2 wks</div><div class="modal-metric-label">Sprint cadence</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">Senior</div><div class="modal-metric-label">Engineers only</div></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">What we deliver</div>
+        <p>Distributed backend systems, event-driven architectures, GraphQL and REST APIs, real-time data pipelines, cloud-native infrastructure on AWS, GCP or Azure, CI/CD pipelines, and full observability stacks. We embed into your team or lead the full build.</p>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">How we work</div>
+        <p>Two-week sprints. A working demo at the end of every sprint. Architecture decisions documented and explained. No black-box engineering. You always know exactly what is being built and why.</p>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Technology</div>
+        <div class="modal-stack">
+          <span class="modal-tag-item">TypeScript</span><span class="modal-tag-item">Go</span><span class="modal-tag-item">Rust</span>
+          <span class="modal-tag-item">Python</span><span class="modal-tag-item">Kubernetes</span><span class="modal-tag-item">Kafka</span>
+          <span class="modal-tag-item">PostgreSQL</span><span class="modal-tag-item">Redis</span><span class="modal-tag-item">Terraform</span>
+          <span class="modal-tag-item">AWS</span><span class="modal-tag-item">GCP</span><span class="modal-tag-item">Datadog</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-svc-creative">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div class="modal-tag">Service — 02</div><div class="modal-title">Creative Engineering</div></div>
+      <div class="modal-close" data-close>✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Overview</div>
+        <p>We build experiences that stop people in their tracks. Combining deep graphics programming knowledge with a strong aesthetic sensibility, we create digital worlds that feel genuinely alive — in the browser, in the gallery, or on the event stage.</p>
+      </div>
+      <div class="modal-metrics">
+        <div class="modal-metric"><div class="modal-metric-val">60fps</div><div class="modal-metric-label">Target render performance</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">WebGL</div><div class="modal-metric-label">Core rendering layer</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">Any</div><div class="modal-metric-label">Scale — web to installation</div></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">What we deliver</div>
+        <p>WebGL experiences, custom GLSL shaders, real-time 3D product configurators, immersive scroll-driven storytelling, generative art installations, extended reality (XR) prototypes, and motion-design systems integrated into production codebases.</p>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">How we work</div>
+        <p>Creative engineering starts with a concept sprint — two to three days of rapid prototyping to establish the visual and technical direction. From there we build iteratively, with performance budgets defined from day one so the final piece is as fast as it is beautiful.</p>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Technology</div>
+        <div class="modal-stack">
+          <span class="modal-tag-item">Three.js</span><span class="modal-tag-item">GLSL</span><span class="modal-tag-item">WebGPU</span>
+          <span class="modal-tag-item">GSAP</span><span class="modal-tag-item">Lenis</span><span class="modal-tag-item">React</span>
+          <span class="modal-tag-item">Next.js</span><span class="modal-tag-item">TouchDesigner</span><span class="modal-tag-item">Blender</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-svc-ai">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div class="modal-tag">Service — 03</div><div class="modal-title">AI Engineering</div></div>
+      <div class="modal-close" data-close>✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Overview</div>
+        <p>We build AI systems that actually work in production — not demos, not prototypes that collapse under real traffic. From custom model fine-tuning to multi-agent orchestration, we design AI infrastructure for reliability, cost-efficiency, and genuine business impact.</p>
+      </div>
+      <div class="modal-metrics">
+        <div class="modal-metric"><div class="modal-metric-val">Prod</div><div class="modal-metric-label">Ready from day one</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">Eval</div><div class="modal-metric-label">Driven development</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">Full</div><div class="modal-metric-label">Stack AI delivery</div></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">What we deliver</div>
+        <p>Custom LLM integrations, domain-specific fine-tuning, retrieval-augmented generation (RAG) pipelines, multi-agent systems with tool-use, multimodal AI features (vision, audio, video), and the MLOps infrastructure to monitor and improve models continuously in production.</p>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">How we work</div>
+        <p>We start with an AI audit — understanding your data, your user needs, and the performance bar required. We prototype and evaluate before committing to a full build. Every model decision is explainable, and every system ships with evals so you know it is working.</p>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Technology</div>
+        <div class="modal-stack">
+          <span class="modal-tag-item">OpenAI</span><span class="modal-tag-item">Anthropic</span><span class="modal-tag-item">Llama 3</span>
+          <span class="modal-tag-item">LangChain</span><span class="modal-tag-item">LlamaIndex</span><span class="modal-tag-item">Pinecone</span>
+          <span class="modal-tag-item">Hugging Face</span><span class="modal-tag-item">MLflow</span><span class="modal-tag-item">Modal</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONCEPT CASE STUDIES ════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-cs-pulse">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div class="modal-tag">Concept Brief · AI Engineering</div><div class="modal-title">Pulse — Real-time Market Intelligence</div></div>
+      <div class="modal-close" data-close>✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-hero-img"><div class="work-stripe"></div><div class="placeholder">Concept visual — Pulse AI platform<br/>real-time signal processing dashboard</div></div>
+      <div class="modal-section">
+        <div class="modal-section-label">The brief</div>
+        <p>A hypothetical fintech client: a hedge fund analyst team spending 60% of their day aggregating news, filings, and social signals manually across dozens of sources. The ask — compress that to a single intelligent interface that surfaces only what matters, ranked by relevance to their specific portfolio thesis.</p>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Our approach</div>
+        <p>Pulse would be built on a streaming ingestion layer consuming 200+ data sources in real time — news wires, SEC filings, earnings calls, social feeds. A fine-tuned LLM layer would classify and score each signal against configurable portfolio theses. A multi-agent reasoning system would synthesise signals into analyst-grade summaries with source citations. The interface: a minimal, keyboard-driven dashboard where nothing is shown that has not already been scored as relevant.</p>
+      </div>
+      <div class="modal-metrics">
+        <div class="modal-metric"><div class="modal-metric-val">200+</div><div class="modal-metric-label">Ingested data sources</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">&lt;2s</div><div class="modal-metric-label">Signal-to-surface latency</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">60%</div><div class="modal-metric-label">Analyst time recovered</div></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Technology plan</div>
+        <div class="modal-stack">
+          <span class="modal-tag-item">Kafka</span><span class="modal-tag-item">Flink</span><span class="modal-tag-item">Pinecone</span>
+          <span class="modal-tag-item">Claude 3.5</span><span class="modal-tag-item">LangGraph</span><span class="modal-tag-item">Next.js</span>
+          <span class="modal-tag-item">Go</span><span class="modal-tag-item">PostgreSQL</span><span class="modal-tag-item">D3.js</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-cs-forma">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div class="modal-tag">Concept Brief · Creative Engineering</div><div class="modal-title">Forma — Generative Brand Experience</div></div>
+      <div class="modal-close" data-close>✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-hero-img"><div class="work-stripe"></div><div class="placeholder">Concept visual — Forma WebGL environment<br/>cloth simulation and generative material system</div></div>
+      <div class="modal-section">
+        <div class="modal-section-label">The brief</div>
+        <p>A luxury fashion brand launching a digital-first collection. Their constraint: the online experience must match the tactile, sensory quality of a physical runway show. Standard e-commerce product photography is explicitly off the table. The deliverable is an experience, not a storefront.</p>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Our approach</div>
+        <p>Forma would be a full-browser WebGL environment where each garment exists as a real-time cloth simulation — Verlet integration running in GLSL compute shaders. Visitors navigate a custom 3D space with a cinematic camera controller we build from scratch. Fabric physics respond to mouse movement and spatial audio. The entire experience is headless-CMS driven so the brand team can update the collection without engineering support. Load target: under 2 seconds on a standard connection.</p>
+      </div>
+      <div class="modal-metrics">
+        <div class="modal-metric"><div class="modal-metric-val">60fps</div><div class="modal-metric-label">On mid-range hardware</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">&lt;2s</div><div class="modal-metric-label">Initial load target</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">Zero</div><div class="modal-metric-label">Game engine dependency</div></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Technology plan</div>
+        <div class="modal-stack">
+          <span class="modal-tag-item">Three.js</span><span class="modal-tag-item">GLSL</span><span class="modal-tag-item">WebGL 2</span>
+          <span class="modal-tag-item">GSAP</span><span class="modal-tag-item">Lenis</span><span class="modal-tag-item">Next.js</span>
+          <span class="modal-tag-item">Sanity CMS</span><span class="modal-tag-item">Tone.js</span><span class="modal-tag-item">Vercel</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-cs-layer">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div class="modal-tag">Concept Brief · Software Engineering</div><div class="modal-title">Layer — Event Streaming Infrastructure</div></div>
+      <div class="modal-close" data-close>✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-hero-img"><div class="work-stripe"></div><div class="placeholder">Concept visual — Layer infrastructure topology<br/>distributed event streaming architecture</div></div>
+      <div class="modal-section">
+        <div class="modal-section-label">The brief</div>
+        <p>A fast-scaling B2B SaaS company: 18 months from Series A to processing 500 million events per day, with a monolithic PostgreSQL setup that was never designed for this load. P99 latency at 3+ seconds, an engineering team afraid to deploy on Fridays, and a CEO who had just seen a competitor go viral for a real-time feature they could not build.</p>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Our approach</div>
+        <p>Layer is the architecture we would design: a strangler-fig migration to an event-driven system using Kafka at the core. Over 12 weeks we would incrementally move read and write paths — Kafka for streaming, ClickHouse for analytics, Redis for sub-millisecond caching, a new API gateway gradually shifting traffic from the monolith. Zero-downtime migration as a hard constraint. At the end, the team can build the real-time feature. And deploy on Fridays.</p>
+      </div>
+      <div class="modal-metrics">
+        <div class="modal-metric"><div class="modal-metric-val">500M+</div><div class="modal-metric-label">Daily events</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">&lt;20ms</div><div class="modal-metric-label">P99 latency target</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">0</div><div class="modal-metric-label">Downtime tolerance</div></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Technology plan</div>
+        <div class="modal-stack">
+          <span class="modal-tag-item">Kafka</span><span class="modal-tag-item">ClickHouse</span><span class="modal-tag-item">Redis Cluster</span>
+          <span class="modal-tag-item">Kubernetes</span><span class="modal-tag-item">Go</span><span class="modal-tag-item">GraphQL</span>
+          <span class="modal-tag-item">Terraform</span><span class="modal-tag-item">Datadog</span><span class="modal-tag-item">AWS</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-cs-echo">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div class="modal-tag">Concept Brief · AI · Creative</div><div class="modal-title">Echo — AI Audio Intelligence Platform</div></div>
+      <div class="modal-close" data-close>✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-hero-img"><div class="work-stripe"></div><div class="placeholder">Concept visual — Echo audio platform<br/>waveform analysis and AI composition interface</div></div>
+      <div class="modal-section">
+        <div class="modal-section-label">The brief</div>
+        <p>A music technology company wants to give independent artists the production capabilities of a major label studio — without the budget. The core problem: most AI music tools produce generic output. Artists want a collaborator that understands their specific sound, not a prompt-to-audio generator that sounds like everyone else.</p>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Our approach</div>
+        <p>Echo would be built on a personalisation-first architecture. An artist uploads their catalogue; Echo builds a latent-space model of their sonic identity — harmonic patterns, rhythmic tendencies, timbral fingerprints. From there, AI suggestions are always filtered through that identity model before being surfaced. The interface is a DAW-adjacent canvas, not a chat box. Real-time waveform visualisation is built on WebGL for performance, with GSAP-driven micro-interactions that make the tool feel as expressive as the music it produces.</p>
+      </div>
+      <div class="modal-metrics">
+        <div class="modal-metric"><div class="modal-metric-val">Artist</div><div class="modal-metric-label">Identity-aware AI</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">WebGL</div><div class="modal-metric-label">Real-time waveform render</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">Zero</div><div class="modal-metric-label">Generic output tolerance</div></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Technology plan</div>
+        <div class="modal-stack">
+          <span class="modal-tag-item">AudioCraft</span><span class="modal-tag-item">Stable Audio</span><span class="modal-tag-item">Hugging Face</span>
+          <span class="modal-tag-item">Three.js</span><span class="modal-tag-item">GSAP</span><span class="modal-tag-item">Web Audio API</span>
+          <span class="modal-tag-item">FastAPI</span><span class="modal-tag-item">PostgreSQL</span><span class="modal-tag-item">Modal</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-cs-ark">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div class="modal-tag">Concept Brief · Product · Software</div><div class="modal-title">Ark — Personal Knowledge AI</div></div>
+      <div class="modal-close" data-close>✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-hero-img"><div class="work-stripe"></div><div class="placeholder">Concept visual — Ark mobile interface<br/>knowledge graph and smart recall UI</div></div>
+      <div class="modal-section">
+        <div class="modal-section-label">The brief</div>
+        <p>A consumer productivity startup with a clear thesis: most note-taking apps help you store things, but none help you retrieve and connect them intelligently. They want to build the second brain that actually works — not a prettier Notion, but a genuinely intelligent memory system that surfaces what you need before you know you need it.</p>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Our approach</div>
+        <p>Ark would be built mobile-first, in React Native, with a continuous capture model — voice, text, links, images, documents all flow into a unified knowledge graph. A retrieval layer using pgvector surfaces semantically related memories as you work. The AI layer is proactive: before a meeting, Ark surfaces everything you know about the attendees and topics. After a conversation, it suggests what to capture. The UX borrows from messaging, not productivity software, keeping the interface frictionless enough for daily habit formation.</p>
+      </div>
+      <div class="modal-metrics">
+        <div class="modal-metric"><div class="modal-metric-val">Always</div><div class="modal-metric-label">On capture model</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">Proactive</div><div class="modal-metric-label">AI surface triggers</div></div>
+        <div class="modal-metric"><div class="modal-metric-val">iOS + Android</div><div class="modal-metric-label">Native performance</div></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Technology plan</div>
+        <div class="modal-stack">
+          <span class="modal-tag-item">React Native</span><span class="modal-tag-item">Expo</span><span class="modal-tag-item">GPT-4o</span>
+          <span class="modal-tag-item">pgvector</span><span class="modal-tag-item">Django</span><span class="modal-tag-item">PostgreSQL</span>
+          <span class="modal-tag-item">Redis</span><span class="modal-tag-item">Whisper</span><span class="modal-tag-item">Reanimated 3</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TWEAKS -->
+<div class="tweaks-panel">
+  <h4>Tweaks</h4>
+  <div class="tweak-row">
+    <label>Accent color</label>
+    <div class="tweak-swatches">
+      <div class="tweak-accent" data-color="#b8f53d" style="background:#b8f53d;" title="Lime"></div>
+      <div class="tweak-accent" data-color="#3df5c8" style="background:#3df5c8;" title="Cyan"></div>
+      <div class="tweak-accent" data-color="#f53d8a" style="background:#f53d8a;" title="Pink"></div>
+      <div class="tweak-accent" data-color="#f5a83d" style="background:#f5a83d;" title="Amber"></div>
+      <div class="tweak-accent" data-color="#a83df5" style="background:#a83df5;" title="Violet"></div>
+      <div class="tweak-accent" data-color="#f0ede8" style="background:#f0ede8;" title="White"></div>
+    </div>
+  </div>
+  <div class="tweak-row">
+    <label>Grain intensity</label>
+    <input type="range" id="tweak-density" min="0" max="8" value="3" step="1" />
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+<script>gsap.registerPlugin(ScrollTrigger);</script>
+<script src="three-scene.js?v=2"></script>
+<script src="site.js?v=4"></script>
+</body>
+</html>
