@@ -291,6 +291,13 @@ code {
 }
 
 /* Split-text machinery. */
+.char-word {
+  display: inline-block;
+  white-space: nowrap;
+  /* Propagates the container's perspective down to the glyphs for the
+     depth reveal. */
+  transform-style: preserve-3d;
+}
 .char {
   display: inline-block;
   will-change: transform;
@@ -1241,7 +1248,18 @@ code {
   display: flex;
   gap: clamp(18px, 2vw, 34px);
   padding: 0 var(--gutter);
+  /* A shared vanishing point for the whole row, so the velocity lean reads as
+     one rail turning rather than five independent cards. */
+  perspective: 1600px;
+  transform-style: preserve-3d;
   will-change: transform;
+}
+.work__viewport.is-dragging {
+  user-select: none;
+}
+.work__viewport.is-dragging .work-card__link {
+  /* Suppress hover states mid-throw. */
+  pointer-events: none;
 }
 .work__rail {
   position: absolute;
@@ -1280,6 +1298,7 @@ code {
   flex: none;
   width: clamp(300px, 27vw, 430px);
   perspective: 1100px;
+  will-change: transform;
 }
 .work-card__tilt {
   transform-style: preserve-3d;
@@ -1289,6 +1308,9 @@ code {
   position: relative;
   display: grid;
   grid-template-rows: auto 1fr;
+  /* Real Z separation: with the tilt applied to the parent, the artwork and
+     the copy sit on different planes and parallax against each other. */
+  transform-style: preserve-3d;
   height: clamp(440px, 62vh, 620px);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -1318,6 +1340,7 @@ code {
 .work-card__art {
   position: relative;
   height: clamp(200px, 26vh, 280px);
+  transform: translateZ(26px);
   border-bottom: 1px solid var(--line);
   overflow: hidden;
   background: radial-gradient(120% 100% at 50% 0%, #14141c 0%, #0a0a10 100%);
@@ -1342,6 +1365,7 @@ code {
 }
 .work-card__body {
   padding: clamp(18px, 1.8vw, 28px);
+  transform: translateZ(12px);
   display: grid;
   align-content: start;
   gap: 10px;

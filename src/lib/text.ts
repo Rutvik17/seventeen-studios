@@ -6,21 +6,42 @@
  * never arrives, and the split happens in an effect.
  */
 
-/** Wrap each character in an inline-block span. Returns the spans. */
+/**
+ * Wrap each character in an inline-block span. Returns the spans.
+ *
+ * Characters are grouped into non-breaking word units first: a bare run of
+ * inline-block glyphs lets the browser break a line *inside* a word, which
+ * turns "would" into "wou / ld" the moment a heading is one character too
+ * wide for its column.
+ */
 export function splitChars(el: HTMLElement): HTMLSpanElement[] {
   const text = el.textContent ?? '';
   el.setAttribute('aria-label', text);
   el.innerHTML = '';
 
   const chars: HTMLSpanElement[] = [];
-  for (const ch of Array.from(text)) {
-    const span = document.createElement('span');
-    span.className = 'char';
-    span.setAttribute('aria-hidden', 'true');
-    span.textContent = ch === ' ' ? ' ' : ch;
-    el.appendChild(span);
-    chars.push(span);
-  }
+  const words = text.split(' ');
+
+  words.forEach((word, index) => {
+    const unit = document.createElement('span');
+    unit.className = 'char-word';
+    unit.setAttribute('aria-hidden', 'true');
+
+    for (const ch of Array.from(word)) {
+      const span = document.createElement('span');
+      span.className = 'char';
+      span.textContent = ch;
+      unit.appendChild(span);
+      chars.push(span);
+    }
+
+    el.appendChild(unit);
+    // A real space between units, so lines break where words do.
+    if (index < words.length - 1) {
+      el.appendChild(document.createTextNode(' '));
+    }
+  });
+
   return chars;
 }
 

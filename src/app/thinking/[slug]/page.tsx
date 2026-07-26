@@ -58,7 +58,7 @@ export default function EssayPage({ params }: Params) {
           <span className="mono-label">{essay.topic}</span>
         </div>
 
-        <SplitText as="h1" className="essay__title" mode="words" stagger={0.035}>
+        <SplitText as="h1" className="essay__title" mode="words" stagger={0.035} depth>
           {essay.title}
         </SplitText>
 

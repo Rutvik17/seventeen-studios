@@ -23,7 +23,7 @@ export default function ThinkingIndexPage() {
     <div className="page">
       <header className="page-head">
         <span className="mono-label">Index — Writing</span>
-        <SplitText as="h1" className="page-head__title" stagger={0.03}>
+        <SplitText as="h1" className="page-head__title" stagger={0.03} depth>
           Thinking
         </SplitText>
         <Reveal className="page-head__lead">

@@ -23,7 +23,7 @@ export default function StudioPage() {
     <div className="page studio">
       <header className="page-head">
         <span className="mono-label">The studio</span>
-        <SplitText as="h1" className="page-head__title" stagger={0.03}>
+        <SplitText as="h1" className="page-head__title" stagger={0.03} depth>
           Small by design
         </SplitText>
         <Reveal className="page-head__lead">

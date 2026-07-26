@@ -15,7 +15,7 @@ export default function StartPage() {
     <div className="page start">
       <header className="page-head">
         <span className="mono-label">Contact</span>
-        <SplitText as="h1" className="page-head__title" stagger={0.03}>
+        <SplitText as="h1" className="page-head__title" stagger={0.03} depth>
           Start a brief
         </SplitText>
         <Reveal className="page-head__lead">

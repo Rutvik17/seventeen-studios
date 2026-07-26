@@ -80,12 +80,12 @@ export function Hero() {
 
         <h1 className="hero__title">
           <span className="hero__line">
-            <SplitText as="span" trigger="load" stagger={0.045} delay={0.1}>
+            <SplitText as="span" trigger="load" stagger={0.045} delay={0.1} depth>
               Seventeen
             </SplitText>
           </span>
           <span className="hero__line hero__line--indent">
-            <SplitText as="span" trigger="load" stagger={0.045} delay={0.28}>
+            <SplitText as="span" trigger="load" stagger={0.045} delay={0.28} depth>
               Studios
             </SplitText>
             <span className="hero__dot">.</span>

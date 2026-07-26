@@ -19,6 +19,11 @@ interface SplitTextProps {
   duration?: number;
   /** Scrub the reveal against scroll position rather than playing it once. */
   scrub?: boolean;
+  /**
+   * Rotate each part up from the page plane instead of sliding it. Reads as
+   * type physically hinging into place; used on display headings.
+   */
+  depth?: boolean;
 }
 
 /**
@@ -38,6 +43,7 @@ export function SplitText({
   stagger = 0.035,
   duration = 1.1,
   scrub = false,
+  depth = false,
 }: SplitTextProps) {
   const ref = useRef<HTMLElement>(null);
   const entered = useUi((state) => state.entered);
@@ -52,7 +58,20 @@ export function SplitText({
       const parts = mode === 'chars' ? splitChars(el) : splitWords(el);
       if (parts.length === 0) return;
 
-      gsap.set(parts, { yPercent: 115, opacity: 0 });
+      if (depth) {
+        // A shared perspective on the container makes the parts rotate as one
+        // plane rather than each having its own vanishing point.
+        el.style.perspective = '900px';
+        el.style.transformStyle = 'preserve-3d';
+        gsap.set(parts, {
+          yPercent: 120,
+          opacity: 0,
+          rotationX: -78,
+          transformOrigin: '50% 0% -0.35em',
+        });
+      } else {
+        gsap.set(parts, { yPercent: 115, opacity: 0 });
+      }
 
       const to: gsap.TweenVars = {
         yPercent: 0,
@@ -62,6 +81,8 @@ export function SplitText({
         stagger,
         delay,
       };
+
+      if (depth) to.rotationX = 0;
 
       if (scrub) {
         to.scrollTrigger = {
@@ -79,7 +100,7 @@ export function SplitText({
     }, el);
 
     return () => ctx.revert();
-  }, [gate, mode, trigger, delay, stagger, duration, scrub]);
+  }, [gate, mode, trigger, delay, stagger, duration, scrub, depth]);
 
   return (
     <Tag ref={ref as React.Ref<HTMLSpanElement>} className={className}>

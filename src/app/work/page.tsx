@@ -18,7 +18,7 @@ export default function WorkIndexPage() {
     <div className="page">
       <header className="page-head">
         <span className="mono-label">Index — Concept briefs</span>
-        <SplitText as="h1" className="page-head__title" stagger={0.03}>
+        <SplitText as="h1" className="page-head__title" stagger={0.03} depth>
           Work we would do
         </SplitText>
         <Reveal className="page-head__lead">

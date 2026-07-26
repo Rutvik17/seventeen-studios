@@ -52,7 +52,7 @@ export default function ConceptPage({ params }: Params) {
         </div>
 
         <span className="mono-label case__index">{concept.index}</span>
-        <SplitText as="h1" className="case__name" stagger={0.04}>
+        <SplitText as="h1" className="case__name" stagger={0.04} depth>
           {concept.name}
         </SplitText>
         <Reveal className="case__title">
