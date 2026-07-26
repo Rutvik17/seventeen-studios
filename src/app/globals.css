@@ -2834,6 +2834,12 @@ ol.prose__list li::before {
   .case__facts {
     grid-template-columns: minmax(0, 1fr);
   }
+  /* The status pill wraps to two lines on a phone; a pill radius on a
+     two-line box reads as a mistake, so square it off. */
+  .case__status {
+    border-radius: var(--radius-lg);
+    line-height: 1.6;
+  }
   .footer__grid {
     grid-template-columns: minmax(0, 1fr);
   }
