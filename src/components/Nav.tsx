@@ -1,115 +1,144 @@
 'use client';
 
 /**
- * Fixed navigation bar.
+ * Fixed header.
  *
- * - Renders the wordmark, section links, and the "Start a project" CTA.
- * - Active link is set by ScrollTrigger on each `<section>` id (see
- *   `useEffect` below).
- * - The CTA is both magnetic (follows the cursor on hover) and runs a
- *   letter-scramble on mouseenter.
- * - Entrance animation: the `useEffect` tweens the bar in from y:-30.
- *   We keep it here rather than the Hero so the nav animates independently.
+ * Hides on downward scroll and returns on upward scroll. Lenis scrolls the
+ * window itself, so a native scroll listener tracks the smooth position
+ * correctly and keeps working when smooth scrolling is disabled.
  */
 
-import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import ScrollTrigger from 'gsap/ScrollTrigger';
-import { useMagnet } from '@/hooks/useMagnet';
-import { scrambleText } from '@/lib/gsap-animations';
+import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
-import { useLoaderStore } from '@/lib/loader-store';
+import { nav, site } from '@/content/studio';
+import { useUi } from '@/lib/store';
+import { TransitionLink } from './Transition';
+import { Scramble } from './motion/Scramble';
+import { Magnetic } from './motion/Magnetic';
 
-const LINKS: Array<{ href: string; label: string }> = [
-  { href: '#services', label: 'Services' },
-  { href: '#work', label: 'Work' },
-  { href: '#approach', label: 'Approach' },
-  { href: '#contact', label: 'Contact' },
-];
+function LocalTime() {
+  const [time, setTime] = useState<string>('');
+
+  useEffect(() => {
+    const tick = () => {
+      setTime(
+        new Intl.DateTimeFormat('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: site.timezone,
+          hour12: false,
+        }).format(new Date()),
+      );
+    };
+    tick();
+    const id = window.setInterval(tick, 15000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // Rendered empty on the server: a timestamp would hydrate mismatched.
+  return (
+    <span className="nav__time mono-label" suppressHydrationWarning>
+      {time ? `${time} ${site.timezoneLabel}` : ''}
+    </span>
+  );
+}
 
 export function Nav() {
-  const navRef = useRef<HTMLElement | null>(null);
-  const ctaRef = useRef<HTMLAnchorElement | null>(null);
-  useMagnet(ctaRef);
+  const pathname = usePathname();
+  const entered = useUi((state) => state.entered);
+  const menuOpen = useUi((state) => state.menuOpen);
+  const toggleMenu = useUi((state) => state.toggleMenu);
+  const ref = useRef<HTMLElement>(null);
 
-  const ready = useLoaderStore((s) => s.ready);
-
-  // Hide the nav pre-paint so it doesn't flash over the loader curtains.
+  // Entrance, gated on the preloader handing over.
   useIsomorphicLayoutEffect(() => {
-    const nav = navRef.current;
-    if (!nav) return;
-    gsap.set(nav, { y: -30, opacity: 0 });
-  }, []);
-
-  // Entrance fires when the loader signals ready (mid-curtain-exit).
-  useEffect(() => {
-    if (!ready) return;
-    const nav = navRef.current;
-    if (!nav) return;
+    const el = ref.current;
+    if (!el || !entered) return;
+    if (prefersReducedMotion()) return;
     const ctx = gsap.context(() => {
-      gsap.to(nav, {
-        y: 0,
-        opacity: 1,
-        duration: 0.9,
-        ease: 'power3.out',
-      });
-    }, nav);
+      gsap.fromTo(
+        el,
+        { y: -34, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out' },
+      );
+    }, el);
     return () => ctx.revert();
-  }, [ready]);
+  }, [entered]);
 
-  // Active-section highlighting — independent of the loader.
+  // Direction-aware hide/show.
   useEffect(() => {
-    const nav = navRef.current;
-    if (!nav) return;
-    const triggers: ScrollTrigger[] = [];
-    document.querySelectorAll<HTMLElement>('section[id]').forEach((sec) => {
-      const st = ScrollTrigger.create({
-        trigger: sec,
-        start: 'top 50%',
-        end: 'bottom 50%',
-        onToggle: ({ isActive }) => {
-          const link = nav.querySelector<HTMLAnchorElement>(
-            `a[href="#${sec.id}"]`,
-          );
-          if (link) link.classList.toggle('active', isActive);
-        },
-      });
-      triggers.push(st);
-    });
-    return () => {
-      triggers.forEach((t) => t.kill());
-    };
-  }, []);
-
-  // Letter-scramble on the CTA (reset handled on mouseleave via listener).
-  useEffect(() => {
-    const el = ctaRef.current?.querySelector<HTMLSpanElement>(
-      '[data-scramble-target]',
-    );
+    const el = ref.current;
     if (!el) return;
-    const original = el.textContent ?? '';
-    const onEnter = () => scrambleText(el, original);
-    el.addEventListener('mouseenter', onEnter);
-    return () => {
-      el.removeEventListener('mouseenter', onEnter);
+
+    let lastScroll = 0;
+    let hidden = false;
+
+    const onScroll = () => {
+      const scroll = window.scrollY;
+      el.classList.toggle('is-scrolled', scroll > 40);
+      const goingDown = scroll > lastScroll;
+      const shouldHide = goingDown && scroll > 220 && !useUi.getState().menuOpen;
+      if (shouldHide !== hidden) {
+        hidden = shouldHide;
+        gsap.to(el, {
+          yPercent: hidden ? -140 : 0,
+          duration: 0.5,
+          ease: 'power3.out',
+        });
+      }
+      lastScroll = scroll;
     };
-  }, []);
+
+    // Lenis scrolls the window, so the native event covers both smooth and
+    // reduced-motion (native) scrolling without an ordering dependency.
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [pathname]);
 
   return (
-    <nav ref={navRef} className="nav">
-      <a href="#hero" className="nav-logo">
-        SEVENTEEN<span>.</span>
-      </a>
-      <ul className="nav-links">
-        {LINKS.map((l) => (
-          <li key={l.href}>
-            <a href={l.href}>{l.label}</a>
-          </li>
-        ))}
-      </ul>
-      <a ref={ctaRef} href="#contact" className="nav-cta magnetic">
-        <span data-scramble-target>Start a project</span>
-      </a>
-    </nav>
+    <header className="nav" ref={ref}>
+      <TransitionLink href="/" className="nav__mark" aria-label="Seventeen Studios — home">
+        <span className="nav__mark-text">{site.wordmark}</span>
+        <span className="nav__mark-dot">.</span>
+      </TransitionLink>
+
+      <nav className="nav__links" aria-label="Primary">
+        {nav.map((item) => {
+          const active = pathname.startsWith(item.href);
+          return (
+            <TransitionLink
+              key={item.href}
+              href={item.href}
+              className={`nav__link${active ? ' is-active' : ''}`}
+            >
+              <Scramble text={item.label} />
+            </TransitionLink>
+          );
+        })}
+      </nav>
+
+      <div className="nav__aside">
+        <LocalTime />
+        <Magnetic strength={0.2}>
+          <button
+            type="button"
+            className={`nav__index${menuOpen ? ' is-open' : ''}`}
+            onClick={toggleMenu}
+            aria-expanded={menuOpen}
+            aria-controls="site-index"
+            data-cursor={menuOpen ? 'Close' : 'Index'}
+          >
+            <span className="nav__index-label">{menuOpen ? 'Close' : 'Index'}</span>
+            <span className="nav__index-bars" aria-hidden="true">
+              <i />
+              <i />
+            </span>
+          </button>
+        </Magnetic>
+      </div>
+    </header>
   );
 }
