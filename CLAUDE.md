@@ -88,6 +88,15 @@ should not drift.
 
 ---
 
+## Workflow
+
+Every change ships as a pull request — push the branch and open the PR without
+waiting to be asked. If the branch's previous PR has already been merged,
+restart the branch from `main` and open a new one rather than pushing onto
+merged history.
+
+---
+
 ## Checks before committing
 
 ```bash
