@@ -1,5 +1,22 @@
 name: Deploy to GitHub Pages
 
+# ONE-TIME SETUP REQUIRED
+#
+# Before the first successful run, enable Pages by hand:
+#   Settings → Pages → Build and deployment → Source: "GitHub Actions"
+#
+# This cannot be automated from here. `actions/configure-pages` has an
+# `enablement: true` option that calls the Pages API to create the site, but
+# the workflow's automatic GITHUB_TOKEN is not permitted to do that — it fails
+# with "Resource not accessible by integration". Creating a Pages site needs
+# repository-administration rights that the automatic token deliberately does
+# not have. So the site is created once by a human, and every deploy after that
+# is automatic.
+#
+# Nothing below calls the Pages API for configuration: the base path is derived
+# from the repository name, so the build never depends on that API being
+# reachable or the token being privileged.
+
 on:
   push:
     branches: [main]
@@ -25,26 +42,33 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
-      # `enablement: true` turns GitHub Pages on for the repository via the
-      # Pages API if it is not already enabled, so no manual settings change
-      # is needed for the first deploy.
-      - name: Configure GitHub Pages
-        id: pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
+      - name: Resolve Pages URLs
+        id: paths
+        run: |
+          set -euo pipefail
+          repo='${{ github.event.repository.name }}'
+          owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
+
+          # A repository named <owner>.github.io is a user/organisation page and
+          # is served from the domain root. Everything else is a project page
+          # served from /<repo>, so assets and routes need that prefix.
+          if [ "$(echo "$repo" | tr '[:upper:]' '[:lower:]')" = "$owner.github.io" ]; then
+            echo "base_path=" >> "$GITHUB_OUTPUT"
+            echo "site_url=https://$owner.github.io" >> "$GITHUB_OUTPUT"
+          else
+            echo "base_path=/$repo" >> "$GITHUB_OUTPUT"
+            echo "site_url=https://$owner.github.io/$repo" >> "$GITHUB_OUTPUT"
+          fi
 
       - run: npm ci
 
       - name: Build static site
         env:
-          # Project pages are served from https://<user>.github.io/<repo>/,
-          # so every asset and route needs the repository name prefix.
-          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
-          NEXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.base_url }}
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.paths.outputs.base_path }}
+          NEXT_PUBLIC_SITE_URL: ${{ steps.paths.outputs.site_url }}
         run: npm run build
 
       # `_next/` starts with an underscore, which Jekyll would strip.
@@ -62,5 +86,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # If this step fails with a 404 or "not accessible", Pages has not been
+      # enabled yet — see the note at the top of this file.
       - id: deployment
         uses: actions/deploy-pages@v4
