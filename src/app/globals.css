@@ -655,6 +655,11 @@ code {
   grid-template-rows: 1fr auto;
   gap: clamp(28px, 4vw, 72px);
   overflow-y: auto;
+  /* The overlay is taller than a phone screen, so it has to scroll on its
+     own: keep the gesture inside it, and never chain to the locked page. */
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 .menu__caption {
   display: block;
@@ -675,7 +680,11 @@ code {
   font-family: var(--font-display), sans-serif;
   font-weight: 700;
   font-size: clamp(34px, 5.6vw, 82px);
-  line-height: 1.02;
+  /* The link is an overflow-hidden reveal mask, so the line box has to
+     contain the ink. Measured: Syne needs ~0.93em of the box for ascent plus
+     descent at this weight, so 1.12 keeps a few px of headroom under the
+     descender of "Thinking" while the stack stays tight. */
+  line-height: 1.12;
   letter-spacing: -0.045em;
   transition: color 0.35s, transform 0.5s var(--ease-out);
 }
@@ -2773,6 +2782,7 @@ ol.prose__list li::before {
   .menu__inner {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto auto;
+    padding-top: calc(var(--gutter) + 54px);
   }
   .menu__columns {
     grid-template-columns: minmax(0, 1fr);
@@ -2888,6 +2898,25 @@ ol.prose__list li::before {
   .thinking__preview,
   .hero__cue {
     display: none;
+  }
+  /* Tighten the index so the whole thing is a short scroll on a phone. */
+  .menu__primary-item {
+    font-size: clamp(30px, 8.6vw, 44px);
+  }
+  .menu__caption {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+  }
+  .menu__list-item a {
+    padding: 10px 0;
+    font-size: 14.5px;
+  }
+  .menu__foot {
+    gap: 14px;
+    padding-top: 18px;
+  }
+  .menu__email {
+    font-size: 20px;
   }
 }
 

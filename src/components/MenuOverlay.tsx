@@ -68,9 +68,13 @@ export function MenuOverlay() {
             { yPercent: -100, y: 0 },
             { yPercent: 0, duration: 0.62, ease: 'power4.inOut', stagger: 0.05 },
           )
+          // `y: 0` clears the -16px the close tween leaves behind. yPercent
+          // and y are separate transform channels, so animating yPercent back
+          // to 0 does not undo it — the items stayed shifted up and their
+          // ascenders were sliced off by the reveal mask.
           .fromTo(
             primary,
-            { yPercent: 110, opacity: 0 },
+            { yPercent: 130, y: 0, opacity: 0 },
             {
               yPercent: 0,
               opacity: 1,
@@ -120,7 +124,13 @@ export function MenuOverlay() {
         ))}
       </div>
 
-      <div className="menu__inner">
+      {/*
+        `data-lenis-prevent` is what makes this scrollable on touch: Lenis is
+        stopped while the overlay is open and swallows touchmove, so without
+        this the panel cannot be scrolled by finger even though the container
+        overflows.
+      */}
+      <div className="menu__inner" data-lenis-prevent>
         <div className="menu__primary">
           <span className="mono-label menu__caption">Navigate</span>
           <ul>

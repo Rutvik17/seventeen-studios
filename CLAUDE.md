@@ -62,10 +62,18 @@ should not drift.
 - Import `gsap` and `ScrollTrigger` from `@/lib/gsap` — never from the package
   directly; that module owns plugin registration.
 - Wrap every timeline in `gsap.context(fn, scopeEl)` and `revert()` on unmount.
-- **Watch for transform stacking.** If an element carries a CSS `transform`
-  (the curtain columns and menu panels do, so they stay hidden without JS),
-  GSAP resolves it into a pixel `x`/`y` that stacks under an `xPercent`/`yPercent`
-  tween. Pass an explicit `y: 0` in the `from` vars. This has bitten us once.
+- **Watch for transform stacking.** `x`/`y` and `xPercent`/`yPercent` are
+  separate channels: setting one never clears the other. Two ways this bites,
+  both of which have shipped bugs here —
+  1. a CSS `transform` on the element (the curtain columns and menu panels
+     carry one so they stay hidden without JS) is resolved by GSAP into a
+     pixel `y` that stacks under a `yPercent` tween;
+  2. an *earlier tween* left a pixel `y` behind (the index overlay's close
+     animation exits items to `y: -16`), and the open animation's `yPercent`
+     does not undo it — the items stayed shifted up and their ascenders were
+     sliced off by the reveal mask.
+
+  Always pass an explicit `y: 0` in the `from` vars of a percent-based tween.
 - Anything that changes page height (an accordion, a filter) must call
   `ScrollTrigger.refresh()` afterwards or pinned sections below will mis-measure.
 - Do not read `getLenis()` during a child's mount effect — child effects run
