@@ -1,20 +1,36 @@
 /**
- * Design tokens for Seventeen Studios.
- * Kept in sync with CSS custom properties defined in `src/app/globals.css`.
+ * Design tokens.
  *
- * Prefer the CSS variables in stylesheets; import this module only when a
- * JS/TS consumer (e.g. a Three.js material) needs the raw value.
+ * The CSS custom properties in `app/globals.css` are the source of truth for
+ * anything rendered by the DOM. This module exists for the consumers that
+ * cannot read CSS — the WebGL materials and the generative poster renderer.
  */
 
 export const tokens = {
-  bg: '#09090b',
-  fg: '#f0ede8',
-  muted: '#4a4a52',
-  border: '#1e1e24',
-  accent: '#b8f53d',
+  bg: '#07070a',
+  surface: '#0c0c11',
+  fg: '#f4f1ea',
+  muted: '#79798a',
+  line: '#1c1c24',
+  accent: '#d4ff3f',
+  accentDeep: '#8fd400',
 } as const;
 
-export type DesignToken = keyof typeof tokens;
+/** Accent as a Three.js-compatible numeric hex. */
+export const ACCENT_HEX = 0xd4ff3f;
+export const BG_HEX = 0x07070a;
 
-/** Accent color as a Three.js-compatible numeric hex (0xRRGGBB). */
-export const ACCENT_HEX_NUMERIC = 0xb8f53d;
+export const easing = {
+  /** Long, confident deceleration — the studio's default entrance. */
+  out: 'power4.out',
+  /** Shorter exits. */
+  in: 'power3.in',
+  /** Bidirectional, for scrubbed sequences. */
+  inOut: 'power2.inOut',
+} as const;
+
+export const duration = {
+  fast: 0.4,
+  base: 0.8,
+  slow: 1.2,
+} as const;

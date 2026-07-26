@@ -1,43 +1,28 @@
-/**
- * Homepage — composes every section in the order defined in CLAUDE.md.
- *
- * Order:
- *   Nav → Hero → Marquee → Manifesto → Services → Capabilities
- *       → Work (pinned horizontal) → Approach → Philosophy → Contact
- * The ServiceModals and CaseStudyModals are mounted at the bottom so the
- * store-backed overlays can render above every other section.
- */
-
-import { Nav } from '@/components/Nav';
-import { Hero } from '@/components/Hero';
+import { Hero } from '@/components/sections/Hero';
 import { Marquee } from '@/components/Marquee';
-import { Manifesto } from '@/components/Manifesto';
-import { Services } from '@/components/Services';
-import { Capabilities } from '@/components/Capabilities';
-import { Work } from '@/components/Work';
-import { Approach } from '@/components/Approach';
-import { Philosophy } from '@/components/Philosophy';
-import { Contact } from '@/components/Contact';
-import { ServiceModals } from '@/components/ServiceModal';
-import { CaseStudyModals } from '@/components/CaseStudyModal';
+import { Manifesto } from '@/components/sections/Manifesto';
+import { Services } from '@/components/sections/Services';
+import { Capabilities } from '@/components/sections/Capabilities';
+import { WorkGallery } from '@/components/sections/WorkGallery';
+import { Process } from '@/components/sections/Process';
+import { ThinkingPreview } from '@/components/sections/ThinkingPreview';
+import { Philosophy } from '@/components/sections/Philosophy';
+import { ContactCta } from '@/components/sections/ContactCta';
+import { marqueeItems } from '@/content/studio';
 
-export default function Page() {
+export default function HomePage() {
   return (
     <>
-      <Nav />
-      <main>
-        <Hero />
-        <Marquee />
-        <Manifesto />
-        <Services />
-        <Capabilities />
-        <Work />
-        <Approach />
-        <Philosophy />
-        <Contact />
-      </main>
-      <ServiceModals />
-      <CaseStudyModals />
+      <Hero />
+      <Marquee items={marqueeItems} />
+      <Manifesto />
+      <Services />
+      <Capabilities />
+      <WorkGallery />
+      <Process />
+      <ThinkingPreview />
+      <Philosophy />
+      <ContactCta />
     </>
   );
 }

@@ -1,104 +1,54 @@
 'use client';
 
+import type { Concept } from '@/content/types';
+import { useTilt } from '@/hooks/useTilt';
+import { Poster } from './Poster';
+import { TransitionLink } from './Transition';
+
 /**
- * Single concept-case card for the horizontal Work rail.
- *
- * - 58%-tall image placeholder (diagonal-stripe texture) on top
- * - Accent bar sweeps in on hover (pure CSS)
- * - Whole card tilts in 3D based on cursor position (GSAP)
- * - Click opens the corresponding case-study modal
+ * A single concept brief card. Used in the pinned horizontal gallery and, in
+ * a stacked variant, on the work index.
  */
-
-import { useRef } from 'react';
-import gsap from 'gsap';
-import { useModal } from '@/hooks/useModal';
-import type { ModalId } from '@/lib/modal-store';
-
-export interface WorkCardProps {
-  tag: string;
-  year?: string;
-  title: string;
-  description: string;
-  placeholder: string; // multi-line placeholder text (use `\n` for line breaks)
-  modalId: Extract<
-    ModalId,
-    'cs-pulse' | 'cs-forma' | 'cs-layer' | 'cs-echo' | 'cs-ark'
-  >;
-}
-
 export function WorkCard({
-  tag,
-  year = 'Concept',
-  title,
-  description,
-  placeholder,
-  modalId,
-}: WorkCardProps) {
-  const cardRef = useRef<HTMLDivElement | null>(null);
-  const { open } = useModal();
-
-  // 3D tilt on cursor move — snap back elastically on leave.
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = cardRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const dx = (e.clientX - r.left) / r.width - 0.5;
-    const dy = (e.clientY - r.top) / r.height - 0.5;
-    gsap.to(el, {
-      rotateY: dx * 10,
-      rotateX: -dy * 6,
-      duration: 0.4,
-      ease: 'power2.out',
-    });
-  };
-  const onLeave = () => {
-    const el = cardRef.current;
-    if (!el) return;
-    gsap.to(el, {
-      rotateY: 0,
-      rotateX: 0,
-      duration: 0.7,
-      ease: 'elastic.out(1,0.5)',
-    });
-  };
+  concept,
+  variant = 'gallery',
+}: {
+  concept: Concept;
+  variant?: 'gallery' | 'index';
+}) {
+  const ref = useTilt<HTMLDivElement>(7);
 
   return (
-    <div
-      ref={cardRef}
-      className="work-card"
-      role="button"
-      tabIndex={0}
-      onClick={() => open(modalId)}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          open(modalId);
-        }
-      }}
-    >
-      <div className="work-card-img">
-        <div className="work-stripe" />
-        <div className="placeholder">
-          {placeholder.split('\n').map((line, i, arr) => (
-            <span key={i}>
-              {line}
-              {i < arr.length - 1 && <br />}
+    <article className={`work-card work-card--${variant}`}>
+      <div className="work-card__tilt" ref={ref}>
+        <TransitionLink
+          href={`/work/${concept.slug}/`}
+          className="work-card__link"
+          data-cursor="Read brief"
+        >
+          <span className="work-card__bar" aria-hidden="true" />
+
+          <div className="work-card__art">
+            <Poster family={concept.poster} seed={concept.seed} />
+            <span className="work-card__index mono-label">{concept.index}</span>
+            <span className="work-card__status mono-label">Concept</span>
+          </div>
+
+          <div className="work-card__body">
+            <div className="work-card__meta">
+              <span className="mono-label">{concept.sector}</span>
+              <span className="mono-label">{concept.year}</span>
+            </div>
+            <h3 className="work-card__name">{concept.name}</h3>
+            <p className="work-card__title">{concept.title}</p>
+            <p className="work-card__excerpt">{concept.excerpt}</p>
+            <span className="work-card__cta">
+              Read the brief
+              <i aria-hidden="true">→</i>
             </span>
-          ))}
-        </div>
+          </div>
+        </TransitionLink>
       </div>
-      <div className="work-card-accent" />
-      <div className="work-card-body">
-        <div className="work-card-meta">
-          <span className="work-card-tag">{tag}</span>
-          <span className="work-card-year">{year}</span>
-        </div>
-        <div className="work-card-title">{title}</div>
-        <div className="work-card-desc">{description}</div>
-        <div className="work-card-cta">Explore brief →</div>
-      </div>
-    </div>
+    </article>
   );
 }

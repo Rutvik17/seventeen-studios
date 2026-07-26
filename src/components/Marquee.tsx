@@ -1,42 +1,98 @@
+'use client';
+
 /**
- * Infinite marquee strip of discipline names.
+ * Velocity-reactive marquee.
  *
- * The track is duplicated so the CSS `@keyframes marquee` can translate it
- * -50% — by the time the first copy has scrolled off, the second is in
- * position and the loop appears seamless.
+ * The strip loops continuously, but scroll velocity feeds its timeScale and
+ * flips its direction — so the band accelerates with the page and reverses
+ * when you scroll back up. It is the cheapest way to make a whole page feel
+ * physically connected to the input.
  */
 
-const ITEMS = [
-  'Software Engineering',
-  'Creative Engineering',
-  'AI Architecture',
-  'Generative Systems',
-  'Interactive Experiences',
-  'WebGL & Three.js',
-  'ML Engineering',
-  'Product Development',
-];
+import { useRef } from 'react';
+import { gsap, prefersReducedMotion } from '@/lib/gsap';
+import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
+import { onLenis } from '@/lib/lenis';
 
-function Item({ label }: { label: string }) {
-  return (
-    <div className="marquee-item">
-      <span className="dot" />
-      {label}
+export function Marquee({
+  items,
+  duration = 26,
+  className,
+}: {
+  items: readonly string[];
+  duration?: number;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useIsomorphicLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (prefersReducedMotion()) return;
+
+    const track = el.querySelector<HTMLElement>('.marquee__track');
+    if (!track) return;
+
+    let detach = () => {};
+
+    const ctx = gsap.context(() => {
+      // Two identical halves; translating one full half loops seamlessly.
+      const tween = gsap.to(track, {
+        xPercent: -50,
+        duration,
+        ease: 'none',
+        repeat: -1,
+      });
+
+      let direction = 1;
+      let velocity = 0;
+
+      const onScroll = () => {
+        const nextDirection = velocity < -0.1 ? -1 : velocity > 0.1 ? 1 : direction;
+        if (nextDirection !== direction) {
+          direction = nextDirection;
+        }
+        gsap.to(tween, {
+          timeScale: direction * (1 + Math.min(Math.abs(velocity) / 9, 3.4)),
+          duration: 0.5,
+          overwrite: true,
+        });
+      };
+
+      const unsubscribe = onLenis((lenis) => {
+        const handler = () => {
+          velocity = lenis.velocity;
+          onScroll();
+        };
+        lenis.on('scroll', handler);
+        detach = () => lenis.off('scroll', handler);
+      });
+
+      return () => {
+        unsubscribe();
+        detach();
+      };
+    }, el);
+
+    return () => ctx.revert();
+  }, [duration]);
+
+  const half = (key: string) => (
+    <div className="marquee__half" key={key} aria-hidden={key === 'b'}>
+      {items.map((item) => (
+        <span className="marquee__item" key={`${key}-${item}`}>
+          <i className="marquee__dot" aria-hidden="true" />
+          {item}
+        </span>
+      ))}
     </div>
   );
-}
 
-export function Marquee() {
-  // Render twice for the infinite-loop illusion.
   return (
-    <div className="marquee-section" aria-hidden="true">
-      <div className="marquee-track">
-        {ITEMS.map((label, i) => (
-          <Item key={`a-${i}`} label={label} />
-        ))}
-        {ITEMS.map((label, i) => (
-          <Item key={`b-${i}`} label={label} />
-        ))}
+    <div className={`marquee ${className ?? ''}`.trim()} ref={ref}>
+      <div className="marquee__track">
+        {half('a')}
+        {half('b')}
       </div>
     </div>
   );
