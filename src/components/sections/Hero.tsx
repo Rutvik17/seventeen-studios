@@ -21,32 +21,12 @@ export function Hero() {
 
   useIsomorphicLayoutEffect(() => {
     const el = ref.current;
-    if (!el || !entered) return;
+    if (!el) return;
     if (prefersReducedMotion()) return;
 
     const ctx = gsap.context(() => {
-      gsap
-        .timeline({ delay: 0.15 })
-        .from('.hero__eyebrow > *', {
-          y: 20,
-          opacity: 0,
-          duration: 0.8,
-          stagger: 0.08,
-          ease: 'power3.out',
-        })
-        .from(
-          '.hero__sub',
-          { y: 26, opacity: 0, duration: 0.9, ease: 'power3.out' },
-          0.65,
-        )
-        .from(
-          '.hero__badge',
-          { y: 18, opacity: 0, duration: 0.7, stagger: 0.07, ease: 'power3.out' },
-          0.75,
-        )
-        .from('.hero__cue', { opacity: 0, duration: 0.9 }, 1);
-
-      // Content parallaxes away faster than the field behind it.
+      // Content parallaxes away faster than the field behind it. Created
+      // regardless of the gate — it is scroll-driven, not entrance-driven.
       gsap.to('.hero__inner', {
         yPercent: -14,
         opacity: 0,
@@ -58,6 +38,35 @@ export function Hero() {
           scrub: 0.6,
         },
       });
+
+      // Start states go on immediately, so the un-animated hero never paints
+      // while the loader curtain is still clearing.
+      gsap.set(['.hero__eyebrow > *', '.hero__sub'], { y: 24, opacity: 0 });
+      gsap.set('.hero__badge', { y: 18, opacity: 0 });
+      gsap.set('.hero__cue', { opacity: 0 });
+
+      if (!entered) return;
+
+      gsap
+        .timeline({ delay: 0.15 })
+        .to('.hero__eyebrow > *', {
+          y: 0,
+          opacity: 1,
+          duration: 0.8,
+          stagger: 0.08,
+          ease: 'power3.out',
+        })
+        .to(
+          '.hero__sub',
+          { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out' },
+          0.65,
+        )
+        .to(
+          '.hero__badge',
+          { y: 0, opacity: 1, duration: 0.7, stagger: 0.07, ease: 'power3.out' },
+          0.75,
+        )
+        .to('.hero__cue', { opacity: 1, duration: 0.9 }, 1);
     }, el);
 
     return () => ctx.revert();

@@ -48,7 +48,6 @@ export function Preloader() {
       const timeline = gsap.timeline({
         onComplete: () => {
           markEnteredThisSession();
-          enter();
           unlockScroll();
           setActive(false);
         },
@@ -110,6 +109,10 @@ export function Preloader() {
           duration: 0.75,
           ease: 'power4.inOut',
           stagger: 0.06,
+          // Hand over as the curtain starts lifting, not after it has gone:
+          // the hero should already be building as the columns clear, which is
+          // what makes the two read as one continuous move.
+          onStart: enter,
         },
         '>-0.15',
       );

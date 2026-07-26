@@ -5,6 +5,7 @@ import { site, nav } from '@/content/studio';
 import { concepts } from '@/content/work';
 import { essays } from '@/content/thinking';
 import { TransitionLink } from './Transition';
+import { FitText } from './FitText';
 
 export function Footer() {
   const [year, setYear] = useState<number | null>(null);
@@ -68,10 +69,12 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="footer__wordmark" aria-hidden="true">
-        {site.wordmark}
-        <span className="accent">.</span>
-      </div>
+      <FitText className="footer__wordmark" maxPx={340}>
+        <span aria-hidden="true">
+          {site.wordmark}
+          <span className="accent">.</span>
+        </span>
+      </FitText>
 
       <div className="footer__base">
         <span className="mono-label" suppressHydrationWarning>
