@@ -27,22 +27,32 @@ npm run build && npx serve out
 
 ## Deployment — GitHub Pages
 
-Deployment is automatic. `.github/workflows/deploy.yml` builds and publishes on
-every push to `main`, and can also be run by hand from the **Actions** tab
-(*Deploy to GitHub Pages → Run workflow*).
+### One-time setup
 
-The workflow calls `actions/configure-pages@v5` with `enablement: true`, so the
-first run turns GitHub Pages on for the repository via the Pages API — no manual
-settings change is required. It then:
+**Settings → Pages → Build and deployment → Source: "GitHub Actions".**
 
-1. builds with `NEXT_PUBLIC_BASE_PATH` set to the repository path
-   (`/seventeen-studios`), because a project page is not served from the domain
-   root;
-2. writes `out/.nojekyll` so GitHub does not strip the `_next/` directory;
-3. uploads `out/` and deploys it.
+This step has to be done by a human, once. The workflow cannot do it: creating a
+Pages site through the API needs repository-administration rights that a
+workflow's automatic `GITHUB_TOKEN` deliberately does not have, so
+`actions/configure-pages` with `enablement: true` fails with *"Resource not
+accessible by integration"*. Once the source is set, every deploy after that is
+automatic.
 
-If the first run fails with a permissions error, open **Settings → Pages** and
-set *Source* to **GitHub Actions** once, then re-run the workflow.
+### After that
+
+`.github/workflows/deploy.yml` builds and publishes on every push to `main`, and
+can also be run by hand from the **Actions** tab (*Deploy to GitHub Pages → Run
+workflow*). It:
+
+1. derives the base path from the repository name — `/seventeen-studios` for a
+   project page, empty for an `<owner>.github.io` user page — so the build never
+   depends on the Pages API being reachable;
+2. builds with `NEXT_PUBLIC_BASE_PATH` and `NEXT_PUBLIC_SITE_URL` set from that;
+3. writes `out/.nojekyll` so GitHub does not strip the `_next/` directory;
+4. uploads `out/` and deploys it.
+
+If the deploy step fails with a 404 or a permissions error, Pages has not been
+enabled yet — do the one-time setup above and re-run.
 
 ### Custom domain
 

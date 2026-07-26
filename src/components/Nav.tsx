@@ -52,17 +52,17 @@ export function Nav() {
   const toggleMenu = useUi((state) => state.toggleMenu);
   const ref = useRef<HTMLElement>(null);
 
-  // Entrance, gated on the preloader handing over.
+  // Entrance, gated on the preloader handing over. The hidden state is set on
+  // mount rather than when the gate opens — otherwise the nav paints in place
+  // first and then jumps back up to animate in.
   useIsomorphicLayoutEffect(() => {
     const el = ref.current;
-    if (!el || !entered) return;
+    if (!el) return;
     if (prefersReducedMotion()) return;
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        el,
-        { y: -34, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out' },
-      );
+      gsap.set(el, { y: -34, opacity: 0 });
+      if (!entered) return;
+      gsap.to(el, { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out' });
     }, el);
     return () => ctx.revert();
   }, [entered]);

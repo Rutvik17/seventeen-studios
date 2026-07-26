@@ -51,9 +51,13 @@ export function SplitText({
 
   useIsomorphicLayoutEffect(() => {
     const el = ref.current;
-    if (!el || !gate) return;
+    if (!el) return;
     if (prefersReducedMotion()) return;
 
+    // The split and the hidden state are applied on mount, *before* the gate
+    // opens. Deferring them until the preloader finished meant the finished
+    // text painted for a few frames, then snapped back to hidden and animated
+    // in — the page appeared to land twice.
     const ctx = gsap.context(() => {
       const parts = mode === 'chars' ? splitChars(el) : splitWords(el);
       if (parts.length === 0) return;
@@ -83,6 +87,9 @@ export function SplitText({
       };
 
       if (depth) to.rotationX = 0;
+
+      // Held hidden until the preloader hands over.
+      if (!gate) return;
 
       if (scrub) {
         to.scrollTrigger = {

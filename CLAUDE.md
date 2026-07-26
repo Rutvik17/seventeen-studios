@@ -73,6 +73,10 @@ should not drift.
   `scroll` listener (Lenis scrolls the window).
 - Entrance animations gate on `useUi(state => state.entered)`, which the
   preloader sets. Without that gate they play behind the curtain.
+- **Never `setPointerCapture` on pointerdown** in a drag interaction. Capture
+  retargets the following `click` event to the capturing element, so every link
+  underneath silently stops working. Capture only once the pointer has moved
+  past a drag threshold. This has also bitten us once.
 
 ---
 

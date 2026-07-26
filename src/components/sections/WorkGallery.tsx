@@ -100,7 +100,11 @@ export function WorkGallery() {
         let startScroll = 0;
         let lastPointerX = 0;
         let pointerVelocity = 0;
+        let captured = false;
         let throwTween: gsap.core.Tween | null = null;
+
+        // Below this, the gesture is still a click.
+        const DRAG_THRESHOLD = 6;
 
         const scrollTo = (value: number) => {
           if (lenis) lenis.scrollTo(value, { immediate: true });
@@ -114,15 +118,25 @@ export function WorkGallery() {
           lastPointerX = event.clientX;
           pointerVelocity = 0;
           startScroll = window.scrollY;
+          captured = false;
           throwTween?.kill();
-          viewport.classList.add('is-dragging');
-          viewport.setPointerCapture(event.pointerId);
         };
 
         const onMove = (event: PointerEvent) => {
           if (!dragging) return;
           pointerVelocity = event.clientX - lastPointerX;
           lastPointerX = event.clientX;
+
+          // Capture only once the gesture has committed to being a drag.
+          // Capturing on pointerdown retargets the subsequent click event to
+          // the capturing element, which silently breaks every card link.
+          if (!captured && Math.abs(event.clientX - startX) > DRAG_THRESHOLD) {
+            captured = true;
+            viewport.classList.add('is-dragging');
+            viewport.setPointerCapture(event.pointerId);
+          }
+          if (!captured) return;
+
           // Dragging left should advance the track, so the scroll delta is
           // the inverse of the pointer delta.
           scrollTo(startScroll - (event.clientX - startX) * 1.25);
@@ -135,6 +149,8 @@ export function WorkGallery() {
           if (viewport.hasPointerCapture(event.pointerId)) {
             viewport.releasePointerCapture(event.pointerId);
           }
+          // A tap never became a drag: leave the click alone.
+          if (!captured) return;
 
           // A flick keeps going and decays, the way a physical rail would.
           const momentum = gsap.utils.clamp(-900, 900, -pointerVelocity * 26);
@@ -152,7 +168,7 @@ export function WorkGallery() {
         // A drag that travelled more than a few pixels must not also fire the
         // card's link on release.
         const onClickCapture = (event: MouseEvent) => {
-          if (Math.abs(lastPointerX - startX) > 6) {
+          if (Math.abs(lastPointerX - startX) > DRAG_THRESHOLD) {
             event.preventDefault();
             event.stopPropagation();
           }

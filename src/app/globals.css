@@ -1683,14 +1683,29 @@ code {
   color: var(--accent);
   padding-left: 6px;
 }
+/* Measured to the container width by FitText; the clamp is only the
+   pre-measurement value, kept conservative so it can never overflow if the
+   script has not run yet. */
+.fit-text {
+  width: 100%;
+}
+.fit-text__inner {
+  /* inline-block, not block: the element has to shrink-wrap the glyphs or
+     measuring it just returns the container width and the fit is a no-op. */
+  display: inline-block;
+  vertical-align: top;
+  white-space: nowrap;
+  font-size: clamp(40px, 11vw, 200px);
+}
 .footer__wordmark {
   margin: clamp(40px, 6vw, 90px) 0 clamp(20px, 2vw, 34px);
+}
+.footer__wordmark .fit-text__inner {
   font-family: var(--font-display), sans-serif;
   font-weight: 800;
-  font-size: clamp(52px, 15.5vw, 260px);
-  line-height: 0.8;
+  line-height: 0.82;
   letter-spacing: -0.055em;
-  color: rgba(244, 241, 234, 0.07);
+  color: rgba(244, 241, 234, 0.08);
   user-select: none;
 }
 .footer__base {
