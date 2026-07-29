@@ -27,6 +27,7 @@ import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { getLenis } from '@/lib/lenis';
 import { concepts } from '@/content/work';
+import { spell } from '@/lib/time';
 import { WorkCard } from '@/components/WorkCard';
 import { SectionHeader } from '@/components/SectionHeader';
 import { TransitionLink } from '@/components/Transition';
@@ -203,14 +204,14 @@ export function WorkGallery() {
         label="Concept briefs"
         title={
           <p className="section-header__lead">
-            Self-initiated engagements, worked end to end. Not delivered client
-            work — the studio is new, and these are how we show what we would
-            actually do.
+            Self-initiated engagements, worked end to end — the architecture,
+            the sequencing, the numbers. Concept briefs, so you can audit the
+            thinking before you commission any of it.
           </p>
         }
         action={
           <TransitionLink href="/work/" className="link-arrow" data-cursor="View all">
-            All five briefs <i aria-hidden="true">→</i>
+            All {spell(concepts.length)} briefs <i aria-hidden="true">→</i>
           </TransitionLink>
         }
       />

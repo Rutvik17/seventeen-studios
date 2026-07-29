@@ -1,4 +1,5 @@
 import type { Block, Capability, ProcessStep } from './types';
+import { bookingWindow, foundedYear } from '@/lib/time';
 
 /** Global site facts. Single source of truth for metadata and the footer. */
 export const site = {
@@ -7,12 +8,12 @@ export const site = {
   tagline: 'An engineering studio for work that has to be right.',
   description:
     'Seventeen Studios is an independent engineering studio building software, interfaces and AI systems for teams whose ambition has outgrown their tooling.',
-  founded: '2026',
+  founded: String(foundedYear()),
   location: 'Toronto, Canada',
   timezone: 'America/Toronto',
   timezoneLabel: 'ET',
   email: 'hello@seventeenstudios.co',
-  availability: 'Taking two engagements for Q4 2026',
+  availability: `Taking two engagements for ${bookingWindow()}`,
   social: [
     { label: 'GitHub', href: 'https://github.com/rutvik17' },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/' },
@@ -22,6 +23,7 @@ export const site = {
 
 export const nav = [
   { label: 'Studio', href: '/studio/' },
+  { label: 'Founder', href: '/founder/' },
   { label: 'Work', href: '/work/' },
   { label: 'Thinking', href: '/thinking/' },
   { label: 'Contact', href: '/start/' },
@@ -45,7 +47,7 @@ export const manifesto = {
   lead: 'We are a small studio that takes on the engineering other people call *impossible, expensive, or both* — and then makes it boring, on purpose.',
   body: [
     'Seventeen Studios started from a simple observation: most software fails long before it ships. It fails in the gap between what a team can describe and what a team can build. Agencies fill that gap with headcount. Consultancies fill it with process. We fill it with senior engineers who write the code, own the architecture, and stay accountable to the outcome.',
-    'We are new. We are deliberate about saying so. What follows on this site is not a portfolio of past clients — it is the studio thinking out loud: concept briefs we designed end to end, essays on how we work, and the standard we hold ourselves to before anyone has paid us to hold it.',
+    'So this site shows the work rather than describing it: concept briefs designed end to end, essays on the decisions behind them, and the standard we hold — published in full, before anyone has paid us to hold it.',
   ],
 } as const;
 
@@ -216,9 +218,9 @@ export const engagements: {
 
 export const faq: { question: string; answer: string }[] = [
   {
-    question: 'You have no client work. Why would we hire you?',
+    question: 'The studio is young. Why would we hire you?',
     answer:
-      'Because you can audit our thinking before you spend anything. Every concept brief on this site is a complete engagement plan — architecture, sequencing, risks, the numbers we would be measured against. Read one, then judge whether we would be useful. The studio is new; the engineering is not.',
+      'Because you can audit the thinking before you spend anything. Every concept brief here is a complete engagement plan — architecture, sequencing, risks, the numbers we would be measured against. Read one, then judge. The engineering behind the studio is not young: six years of production work across enterprise AI platforms, a mobile product taken through to acquisition, and connected-vehicle infrastructure.',
   },
   {
     question: 'How do you price work?',
@@ -251,7 +253,7 @@ export const faq: { question: string; answer: string }[] = [
 export const studioStory: Block[] = [
   {
     type: 'p',
-    text: 'Seventeen Studios is an engineering studio in its first year. It exists because of a pattern that shows up in almost every company that has ever hired outside help to build software: the work arrives technically complete and practically useless. The API is there. The screens are there. Nobody on the team can extend any of it, nobody wrote down why it is shaped that way, and the first real change costs more than the original build.',
+    text: 'Seventeen Studios exists because of a pattern that shows up in almost every company that has ever hired outside help to build software: the work arrives technically complete and practically useless. The API is there. The screens are there. Nobody on the team can extend any of it, nobody wrote down why it is shaped that way, and the first real change costs more than the original build.',
   },
   {
     type: 'p',
@@ -269,12 +271,12 @@ export const studioStory: Block[] = [
   { type: 'h2', text: 'Working in the open' },
   {
     type: 'p',
-    text: 'Until there is client work to show, this site shows the next best thing: complete, self-initiated concept briefs. Each one takes a real problem in a real industry and works it end to end — the research we would run, the architecture we would choose, the decisions we would regret, the numbers we would be judged on, and the risks that could sink it.',
+    text: 'The concept briefs on this site are how that gets demonstrated rather than asserted. Each one takes a real problem in a real industry and works it end to end — the research we would run, the architecture we would choose, the decisions we would regret, the numbers we would be judged on, and the risks that could sink it.',
   },
   {
     type: 'note',
-    label: 'On honesty',
-    text: 'Nothing on this site is a case study of delivered client work, and nothing is dressed up to look like one. The concept briefs are labelled as concepts. Every number in them is a projection with its measurement method attached. When that changes, this paragraph changes with it.',
+    label: 'On the record',
+    text: 'The briefs are concepts and are labelled as such — every number in them is a projection published with its measurement method. The delivered engineering behind the studio sits on the founder’s record: enterprise AI platforms, a mobile product taken through to acquisition, connected-vehicle infrastructure.',
   },
   { type: 'h2', text: 'Where the name comes from' },
   {

@@ -1,4 +1,5 @@
-import type { Essay } from './types';
+import type { Block, Essay } from './types';
+import { readingTime } from '@/lib/time';
 
 /**
  * Long-form writing. The studio publishes its reasoning before anyone
@@ -12,7 +13,6 @@ export const essays: Essay[] = [
     excerpt:
       'Every rewrite proposal budgets for building the new system. Almost none budget for the eighteen months in which two systems must both be true at once — which is where the money and the morale actually go.',
     date: '2026-07-02',
-    readingTime: '7 min',
     topic: 'Architecture',
     seed: 8123,
     blocks: [
@@ -91,7 +91,6 @@ export const essays: Essay[] = [
     excerpt:
       'The demo takes an afternoon. Everything that decides whether the feature survives contact with real users is the apparatus around it — and that apparatus is what you are actually buying.',
     date: '2026-06-18',
-    readingTime: '8 min',
     topic: 'AI Systems',
     seed: 4177,
     blocks: [
@@ -172,7 +171,6 @@ export const essays: Essay[] = [
     excerpt:
       'Animation is not decoration applied after the interface works. It is how software explains causality — and treating it as polish is why most of it feels like noise.',
     date: '2026-05-29',
-    readingTime: '6 min',
     topic: 'Creative Engineering',
     seed: 6291,
     blocks: [
@@ -260,7 +258,6 @@ export const essays: Essay[] = [
     excerpt:
       'Five people is not a stage the studio is trying to grow out of. It is the constraint that makes the rest of the model possible — and the reason we turn work away.',
     date: '2026-05-11',
-    readingTime: '5 min',
     topic: 'Studio',
     seed: 1729,
     blocks: [
@@ -331,7 +328,6 @@ export const essays: Essay[] = [
     excerpt:
       'Performance work loses budget arguments because it is framed as maintenance. Framed as what it is — a conversion, retention and cost lever — it wins them.',
     date: '2026-04-24',
-    readingTime: '6 min',
     topic: 'Engineering',
     seed: 5039,
     blocks: [
@@ -394,7 +390,6 @@ export const essays: Essay[] = [
     excerpt:
       'Six weeks of workshops produce a document, a shared vocabulary and a false sense of certainty. Three weeks of building the riskiest thing produce evidence. Only one of those survives contact with the work.',
     date: '2026-04-03',
-    readingTime: '6 min',
     topic: 'Process',
     seed: 9973,
     blocks: [
@@ -472,4 +467,39 @@ export const essays: Essay[] = [
 
 export function getEssay(slug: string): Essay | undefined {
   return essays.find((essay) => essay.slug === slug);
+}
+
+/** Words in a block, for the reading estimate. */
+function wordsIn(block: Block): number {
+  const count = (value: string) => value.trim().split(/\s+/).filter(Boolean).length;
+  switch (block.type) {
+    case 'p':
+    case 'h2':
+    case 'h3':
+    case 'quote':
+      return count(block.text);
+    case 'list':
+      return block.items.reduce((total, item) => total + count(item), 0);
+    case 'defs':
+      return block.items.reduce(
+        (total, item) => total + count(item.term) + count(item.description),
+        0,
+      );
+    case 'note':
+      return count(block.text);
+    case 'code':
+      // Code is scanned rather than read; count it at a third.
+      return Math.round(count(block.code) / 3);
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Reading time measured from the essay itself. Hand-written estimates drift the
+ * moment a paragraph is added; this cannot.
+ */
+export function essayReadingTime(essay: Essay): string {
+  const words = essay.blocks.reduce((total, block) => total + wordsIn(block), 0);
+  return readingTime(words);
 }

@@ -104,8 +104,8 @@ export function Hero() {
         <div className="hero__foot">
           <p className="hero__sub">
             We build software, interfaces and AI systems for teams whose ambition
-            has outgrown their tooling. Senior hands only, capped at five people,
-            and honest about being new.
+            has outgrown their tooling. Senior engineers only, a bench capped at
+            five, two engagements at a time.
           </p>
           <ul className="hero__badges">
             <li className="hero__badge hero__badge--live">

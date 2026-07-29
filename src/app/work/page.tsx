@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { concepts } from '@/content/work';
+import { spellCapitalised } from '@/lib/time';
 import { Poster } from '@/components/Poster';
 import { Reveal } from '@/components/motion/Reveal';
 import { SplitText } from '@/components/motion/SplitText';
@@ -23,19 +24,20 @@ export default function WorkIndexPage() {
         </SplitText>
         <Reveal className="page-head__lead">
           <p>
-            The studio is new and has no delivered client work to show. Rather
-            than dress up something that is not there, we published the next best
-            thing: five complete engagements, self-initiated, taken from problem
-            statement through architecture to the numbers we would accept being
-            measured against.
+            {spellCapitalised(concepts.length)} complete engagements, taken from
+            problem statement through architecture to the numbers we would
+            accept being measured against. Each one is a real industry problem
+            worked the way we would work yours — and published in full, before
+            anyone has paid for it.
           </p>
         </Reveal>
         <Reveal className="page-head__note">
           <span className="mono-label">On these briefs</span>
           <p>
-            Every one is labelled a concept. Every projected figure carries the
-            method by which it would be measured. Nothing here is a claim about
-            work already delivered.
+            These are concept briefs: engagements we designed rather than
+            delivered. Every projected figure carries the method by which it
+            would be measured, so the targets can be argued with on their
+            merits.
           </p>
         </Reveal>
       </header>

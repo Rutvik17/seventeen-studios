@@ -71,6 +71,7 @@ src/
     layout.tsx             fonts, metadata, global chrome
     page.tsx               home — section composition
     studio/                the studio: principles, engagements, FAQ
+    founder/               the founder: record, independent work, tools
     work/                  concept-brief index + [slug] detail
     thinking/              essay index + [slug] detail
     start/                 the brief builder
@@ -83,6 +84,7 @@ src/
     Nav.tsx, MenuOverlay   header and full-screen index
     Field.tsx              mounts the WebGL hero (dynamic import)
     Poster.tsx             generative SVG artwork
+    founder/               portrait shader, career timeline, counters
     Prose.tsx              renders authored content blocks
     motion/                Reveal, SplitText, Magnetic, Scramble
     sections/              the home-page sections
@@ -105,11 +107,44 @@ generated from it. The same is true of concept briefs (`work.ts`) and services.
 Inline emphasis inside content strings uses a three-token subset resolved by
 `lib/inline.tsx`: `*accent*`, `_italic_` and `` `mono` ``.
 
+### Anything that moves with the calendar
+
+`lib/time.ts` derives it from a fixed anchor rather than having it typed into
+the copy: years of experience, the quarter being booked, the copyright line, the
+counts in "five complete engagements", and each essay's reading time (measured
+from the essay's own word count). Nothing needs editing when a year turns over.
+
+Dates of things that *happened* stay literal — the founding year, employment
+start and end dates, essay publication dates — because those are facts, not
+durations.
+
+The values resolve at build time, so `deploy.yml` also runs on the 1st of each
+month to keep a long-untouched site from sitting on a stale figure.
+
+### The résumé
+
+`src/content/resume.ts` is the single source for three artefacts: the modal on
+/founder, the PDF download, and the .docx for applicant tracking systems. The
+files are regenerated with:
+
+```bash
+npm i -D playwright        # only needed for the PDF step
+CHROMIUM_PATH=/path/to/chrome \
+  node --experimental-strip-types scripts/build-resume.mjs
+```
+
+The .docx is deliberately plain — single column, no tables, contact details in
+the body rather than a header, conventional headings, MM/YYYY dates — because
+it has to parse cleanly. The script fails loudly if either file is missing or
+suspiciously small.
+
 ### Artwork
 
-There are no image assets. Every poster is generated from a seed by
-`lib/generative.ts` and rendered as SVG on the server, so the same brief always
-produces the same artwork, with no requests and no layout shift.
+Every poster is generated from a seed by `lib/generative.ts` and rendered as SVG
+on the server, so the same brief always produces the same artwork, with no
+requests and no layout shift. The only raster asset on the site is the founder
+portrait in `public/founder`, which is graded in a shader at runtime
+(`lib/webgl/portrait.ts`) with the plain `<img>` underneath as the fallback.
 
 ### Motion
 

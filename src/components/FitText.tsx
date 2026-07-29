@@ -45,8 +45,32 @@ export function FitText({
 
       // Measure at a known size, then scale linearly. Text advance is linear
       // in font-size, so one measurement is enough.
-      text.style.fontSize = `${REFERENCE_PX}px`;
-      const natural = text.getBoundingClientRect().width;
+      //
+      // The measurement happens on a throwaway clone, not on the live element.
+      // The reduced-motion block in globals.css sets `transition-duration` on
+      // `*`, and `transition-property` defaults to `all` — so font-size became
+      // a transitioned property, and setting the reference size then reading
+      // the width straight back returned a value part-way through the tween
+      // (suppressing `transition` inline does not cancel one already running).
+      // The fit converged on sqrt(available x natural), the geometric mean, and
+      // the wordmark overflowed its container by up to 257px for every
+      // reduced-motion visitor. A node that has just been inserted has no
+      // running transition, so the reference size applies immediately.
+      const probe = text.cloneNode(true) as HTMLElement;
+      probe.setAttribute('aria-hidden', 'true');
+      probe.style.setProperty('transition', 'none', 'important');
+      probe.style.position = 'absolute';
+      probe.style.visibility = 'hidden';
+      probe.style.pointerEvents = 'none';
+      probe.style.whiteSpace = 'nowrap';
+      probe.style.width = 'auto';
+      probe.style.maxWidth = 'none';
+      probe.style.fontSize = `${REFERENCE_PX}px`;
+      // Absolutely positioned, so it is out of flow and cannot resize `wrap`
+      // and re-trigger the observer below.
+      wrap.appendChild(probe);
+      const natural = probe.getBoundingClientRect().width;
+      wrap.removeChild(probe);
       if (!natural) return;
 
       const size = (REFERENCE_PX * available * fill) / natural;

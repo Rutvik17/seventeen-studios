@@ -20,6 +20,13 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  # Calendar-derived copy — years of experience, the quarter the studio is
+  # booking for, the copyright line — is computed at build time by
+  # `src/lib/time.ts`. A static export freezes those at the moment it was
+  # built, so rebuild on the 1st of every month to keep them true without a
+  # push. 06:00 UTC is the quiet hour for this repository.
+  schedule:
+    - cron: '0 6 1 * *'
   # Lets you publish a build by hand from the Actions tab.
   workflow_dispatch:
 
@@ -49,7 +56,11 @@ jobs:
         id: paths
         run: |
           set -euo pipefail
-          repo='${{ github.event.repository.name }}'
+          # From github.repository ("owner/repo"), which is present on every
+          # event type — unlike github.event.repository, which depends on the
+          # webhook payload and is not guaranteed on a schedule trigger.
+          repo='${{ github.repository }}'
+          repo=${repo#*/}
           owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
 
           # A repository named <owner>.github.io is a user/organisation page and
