@@ -82,7 +82,7 @@ export function Footer() {
         </span>
         <span className="mono-label">{site.location}</span>
         <span className="mono-label">
-          Built as a static site · Next.js, GSAP, Three.js
+          Typeset in Syne, DM Sans &amp; JetBrains Mono
         </span>
       </div>
     </footer>

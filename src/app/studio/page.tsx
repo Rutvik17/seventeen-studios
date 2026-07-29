@@ -7,6 +7,7 @@ import {
   site,
   capabilities,
 } from '@/content/studio';
+import { founder } from '@/content/founder';
 import { Prose } from '@/components/Prose';
 import { Reveal } from '@/components/motion/Reveal';
 import { SplitText } from '@/components/motion/SplitText';
@@ -15,7 +16,7 @@ import { TransitionLink } from '@/components/Transition';
 export const metadata: Metadata = {
   title: 'Studio',
   description:
-    'How Seventeen Studios is built: senior-only, capped at five, priced by outcome, and honest about being new.',
+    'How Seventeen Studios is built: senior-only, a bench capped at five, priced by outcome, and accountable from architecture to handover.',
 };
 
 export default function StudioPage() {
@@ -119,10 +120,33 @@ export default function StudioPage() {
         </Reveal>
       </section>
 
-      <section className="section studio__faq">
+      <section className="section studio__who">
         <Reveal className="section-header">
           <div className="section-header__top">
             <span className="mono-label section-header__index">04</span>
+            <span className="mono-label">Who runs it</span>
+          </div>
+        </Reveal>
+        <Reveal className="studio__who-card">
+          <div>
+            <h2>{founder.name}</h2>
+            <span className="mono-label">{founder.role}</span>
+            <p>{founder.summary}</p>
+          </div>
+          <TransitionLink
+            href="/founder/"
+            className="link-arrow"
+            data-cursor="Read"
+          >
+            The full record <i aria-hidden="true">→</i>
+          </TransitionLink>
+        </Reveal>
+      </section>
+
+      <section className="section studio__faq">
+        <Reveal className="section-header">
+          <div className="section-header__top">
+            <span className="mono-label section-header__index">05</span>
             <span className="mono-label">Questions we get asked</span>
           </div>
         </Reveal>

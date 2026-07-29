@@ -28,7 +28,12 @@ the set of rules to keep in mind when changing it.
 5. **Honesty in the copy.** The concept briefs are speculative and labelled as
    such; every projected number is published with its measurement method. Do not
    introduce language implying delivered client work, and do not invent clients,
-   testimonials or metrics.
+   testimonials or metrics. The founder page is the one place with delivered
+   work on it — that is a personal employment record, and the distinction
+   between it and the studio's own engagements must stay explicit.
+6. **Write like the studio is open for business.** No "side project" register,
+   no apologising for being young, and nothing about how the site is built —
+   visitors are prospective clients, not reviewers of the repository.
 
 ---
 

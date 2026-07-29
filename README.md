@@ -71,6 +71,7 @@ src/
     layout.tsx             fonts, metadata, global chrome
     page.tsx               home — section composition
     studio/                the studio: principles, engagements, FAQ
+    founder/               the founder: record, independent work, tools
     work/                  concept-brief index + [slug] detail
     thinking/              essay index + [slug] detail
     start/                 the brief builder
@@ -83,6 +84,7 @@ src/
     Nav.tsx, MenuOverlay   header and full-screen index
     Field.tsx              mounts the WebGL hero (dynamic import)
     Poster.tsx             generative SVG artwork
+    founder/               portrait shader, career timeline, counters
     Prose.tsx              renders authored content blocks
     motion/                Reveal, SplitText, Magnetic, Scramble
     sections/              the home-page sections
@@ -107,9 +109,11 @@ Inline emphasis inside content strings uses a three-token subset resolved by
 
 ### Artwork
 
-There are no image assets. Every poster is generated from a seed by
-`lib/generative.ts` and rendered as SVG on the server, so the same brief always
-produces the same artwork, with no requests and no layout shift.
+Every poster is generated from a seed by `lib/generative.ts` and rendered as SVG
+on the server, so the same brief always produces the same artwork, with no
+requests and no layout shift. The only raster asset on the site is the founder
+portrait in `public/founder`, which is graded in a shader at runtime
+(`lib/webgl/portrait.ts`) with the plain `<img>` underneath as the fallback.
 
 ### Motion
 

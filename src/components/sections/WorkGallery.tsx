@@ -203,9 +203,9 @@ export function WorkGallery() {
         label="Concept briefs"
         title={
           <p className="section-header__lead">
-            Self-initiated engagements, worked end to end. Not delivered client
-            work — the studio is new, and these are how we show what we would
-            actually do.
+            Self-initiated engagements, worked end to end — the architecture,
+            the sequencing, the numbers. Concept briefs, so you can audit the
+            thinking before you commission any of it.
           </p>
         }
         action={
