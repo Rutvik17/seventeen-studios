@@ -2977,7 +2977,7 @@ ol.prose__list li::before {
 
 .founder__side-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: clamp(16px, 2vw, 28px);
 }
 .side-card {
@@ -3052,6 +3052,274 @@ ol.prose__list li::before {
 .founder__stat-note {
   font-size: 13.5px;
   color: var(--fg-dim);
+}
+
+
+/* ---------- Résumé control + modal ---------------------------------------- */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.resume-control {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--line-strong);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.resume-control__label {
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  color: var(--fg);
+  border-right: 1px solid var(--line);
+}
+.resume-control__action {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  padding: 15px 0;
+  color: var(--fg-dim);
+  border-right: 1px solid var(--line);
+  transition: background-color 0.35s, color 0.35s;
+}
+.resume-control__action:last-child {
+  border-right: 0;
+}
+.resume-control__action svg {
+  width: 18px;
+  height: 18px;
+}
+.resume-control__action:hover {
+  background: var(--accent);
+  color: #05050a;
+}
+
+.resume-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 15000;
+  display: grid;
+  place-items: center;
+  padding: clamp(12px, 3vw, 48px);
+}
+.resume-modal__scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgba(4, 4, 7, 0.82);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+}
+.resume-modal__sheet {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(920px, 100%);
+  max-height: min(88vh, 1180px);
+  /* The one place the palette inverts: paper stock, so the document reads as
+     a document rather than another dark panel. */
+  background: #f4f1ea;
+  color: #14141a;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 60px 120px -40px rgba(0, 0, 0, 0.9);
+  overflow: hidden;
+}
+.resume-modal__scan {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: linear-gradient(to bottom, rgba(212, 255, 63, 0.35), transparent 22%);
+  transform-origin: 50% 0%;
+  pointer-events: none;
+}
+.resume-modal__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px clamp(16px, 2.4vw, 30px);
+  background: #14141a;
+  color: var(--fg);
+}
+.resume-modal__bar .mono-label {
+  color: rgba(244, 241, 234, 0.7);
+}
+.resume-modal__bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.resume-modal__pill {
+  padding: 7px 14px;
+  border: 1px solid rgba(244, 241, 234, 0.24);
+  border-radius: 100px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+.resume-modal__pill:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #05050a;
+}
+.resume-modal__close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(244, 241, 234, 0.24);
+  border-radius: 50%;
+  font-size: 13px;
+  transition: background-color 0.3s, color 0.3s, transform 0.4s var(--ease-out);
+}
+.resume-modal__close:hover {
+  background: var(--accent);
+  color: #05050a;
+  transform: rotate(90deg);
+}
+.resume-modal__scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The document itself ------------------------------------------------------ */
+
+.resume-doc {
+  padding: clamp(26px, 4vw, 58px) clamp(22px, 4vw, 62px) clamp(34px, 5vw, 68px);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.resume-doc__head {
+  text-align: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(20, 20, 26, 0.16);
+}
+.resume-doc__name {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: clamp(28px, 4vw, 44px);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.resume-doc__title {
+  margin-top: 8px;
+  font-size: 14.5px;
+  color: rgba(20, 20, 26, 0.66);
+}
+.resume-doc__contact {
+  margin-top: 6px;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(20, 20, 26, 0.62);
+  word-break: break-word;
+}
+.resume-doc__contact a {
+  border-bottom: 1px solid rgba(20, 20, 26, 0.3);
+}
+.resume-doc__section {
+  margin: clamp(22px, 3vw, 34px) 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(20, 20, 26, 0.16);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(20, 20, 26, 0.75);
+}
+.resume-doc__body {
+  color: rgba(20, 20, 26, 0.82);
+}
+.resume-doc__skills {
+  display: grid;
+  gap: 7px;
+}
+.resume-doc__skills > div {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  gap: 14px;
+}
+.resume-doc__skills dt {
+  font-weight: 500;
+  color: #14141a;
+}
+.resume-doc__skills dd {
+  color: rgba(20, 20, 26, 0.78);
+}
+.resume-doc__role {
+  margin-bottom: 20px;
+}
+.resume-doc__role-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 18px;
+}
+.resume-doc__company {
+  font-weight: 500;
+  color: #14141a;
+}
+.resume-doc__dates {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(20, 20, 26, 0.6);
+  white-space: nowrap;
+}
+.resume-doc__position {
+  font-style: italic;
+  color: rgba(20, 20, 26, 0.7);
+}
+.resume-doc__context {
+  margin-top: 4px;
+  color: rgba(20, 20, 26, 0.62);
+  font-size: 13.5px;
+}
+.resume-doc__bullets {
+  display: grid;
+  gap: 5px;
+  margin-top: 9px;
+}
+.resume-doc__bullets li {
+  position: relative;
+  padding-left: 18px;
+  color: rgba(20, 20, 26, 0.84);
+}
+.resume-doc__bullets li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 9px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-deep);
+}
+
+@media (max-width: 640px) {
+  .resume-doc__skills > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .resume-modal__sheet {
+    max-height: 92vh;
+  }
 }
 
 /* ---------- Not found -------------------------------------------------------- */

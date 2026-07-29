@@ -9,6 +9,7 @@ import {
 } from '@/content/founder';
 import { site } from '@/content/studio';
 import { Portrait } from '@/components/founder/Portrait';
+import { ResumeControl } from '@/components/founder/ResumeModal';
 import { Career } from '@/components/founder/Career';
 import { CountUp } from '@/components/founder/CountUp';
 import { Marquee } from '@/components/Marquee';
@@ -68,14 +69,7 @@ export default function FounderPage() {
                 Start a brief <i aria-hidden="true">→</i>
               </TransitionLink>
             </Magnetic>
-            <a
-              href={founder.cv}
-              className="button button--ghost"
-              download
-              data-cursor="Download"
-            >
-              Curriculum vitae <i aria-hidden="true">↓</i>
-            </a>
+            <ResumeControl />
           </Reveal>
         </div>
 
@@ -110,7 +104,7 @@ export default function FounderPage() {
           label="Professional record"
           title={
             <p className="section-header__lead">
-              Six years of production engineering, delivered inside the
+              Seven years of production engineering, delivered inside the
               organisations below. The studio&rsquo;s own engagements are
               published separately as concept briefs.
             </p>

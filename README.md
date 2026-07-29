@@ -107,6 +107,23 @@ generated from it. The same is true of concept briefs (`work.ts`) and services.
 Inline emphasis inside content strings uses a three-token subset resolved by
 `lib/inline.tsx`: `*accent*`, `_italic_` and `` `mono` ``.
 
+### The résumé
+
+`src/content/resume.ts` is the single source for three artefacts: the modal on
+/founder, the PDF download, and the .docx for applicant tracking systems. The
+files are regenerated with:
+
+```bash
+npm i -D playwright        # only needed for the PDF step
+CHROMIUM_PATH=/path/to/chrome \
+  node --experimental-strip-types scripts/build-resume.mjs
+```
+
+The .docx is deliberately plain — single column, no tables, contact details in
+the body rather than a header, conventional headings, MM/YYYY dates — because
+it has to parse cleanly. The script fails loudly if either file is missing or
+suspiciously small.
+
 ### Artwork
 
 Every poster is generated from a seed by `lib/generative.ts` and rendered as SVG

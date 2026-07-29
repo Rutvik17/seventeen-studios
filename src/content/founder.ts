@@ -15,12 +15,12 @@ export const founder = {
   location: 'Toronto, Canada',
   portrait: '/founder/rutvik-patel.jpg',
   portraitAlt: 'Rutvik Patel, founder and principal engineer at Seventeen Studios',
-  cv: '/founder/rutvik-patel-cv.pdf',
+  resume: '/founder/rutvik-patel-resume.pdf',
   email: 'hello@seventeenstudios.co',
   github: 'https://github.com/Rutvik17',
   /** One line, used for metadata and the studio-page cross-link. */
   summary:
-    'Principal engineer with six years building interfaces and platforms at enterprise scale — agentic AI at Ernst & Young, a mobile product taken from zero to acquisition, connected-vehicle infrastructure at Ford.',
+    'Principal engineer with seven years building interfaces and platforms at enterprise scale — agentic AI at Ernst & Young, a mobile product taken from zero to acquisition, connected-vehicle infrastructure at Ford.',
   /** Shown under the name in the hero. */
   standfirst:
     'I started Seventeen Studios because the best engineering I have done was always the work where one person stayed accountable from the architecture through to the last deploy. This is that, made deliberate.',
@@ -34,7 +34,7 @@ export const founderStatement: { lead: string; accent: string; tail: string }[] 
     tail: '— and invisible while you use them.',
   },
   {
-    lead: 'Six years shipping React, Next.js and React Native across',
+    lead: 'Seven years shipping React, Next.js and React Native across',
     accent: 'enterprise platforms and zero-to-one products',
     tail: ', most of it under real production load.',
   },
@@ -138,15 +138,6 @@ export const sideWork: {
   stack: string[];
 }[] = [
   {
-    title: 'LLM vs Market',
-    role: 'Operator · Architect · Frontend',
-    year: '2026 →',
-    description:
-      'A thirty-six month paper-trading experiment run in public: one analyst model, one blended benchmark, every position and every mistake published as it happens.',
-    href: null,
-    stack: ['Next.js', 'React', 'GSAP', 'Three.js', 'Supabase', 'GLSL'],
-  },
-  {
     title: 'Seventeen Studios',
     role: 'Founder · Principal Engineer',
     year: '2026 →',
@@ -165,7 +156,7 @@ export const founderStack: { group: string; items: string[] }[] = [
 ];
 
 export const founderStats: { label: string; value: string; suffix?: string; note: string }[] = [
-  { label: 'Years shipping', value: '6', suffix: '+', note: 'In production, under load' },
+  { label: 'Years shipping', value: '7', suffix: '+', note: 'In production, under load' },
   { label: 'Platforms', value: '3', note: 'Web · iOS · Android' },
   { label: 'Zero-to-one products', value: '2', note: 'One through to acquisition' },
   { label: 'Studio bench', value: '5', note: 'Hard cap, senior only' },
