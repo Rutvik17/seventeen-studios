@@ -14,27 +14,34 @@ the set of rules to keep in mind when changing it.
 1. **The export must stay static.** No server components that need a runtime, no
    route handlers, no `next/image` optimisation, no middleware. Every route is
    prerendered into `out/`. Dynamic routes need `generateStaticParams`.
-2. **Content is data, not markup.** All copy lives in `src/content/*.ts` typed by
+2. **Every path into `public/` goes through `asset()`** (`src/lib/asset.ts`).
+   Next applies `basePath` to `next/link`, `next/image` and its own `_next/`
+   output, but not to a literal `src`, `href` or `fetch` — those resolve against
+   the domain root and 404 on the project page, which is served from
+   `/seventeen-studios`. This shipped: the founder portrait and both résumé
+   downloads were dead in production while every stylesheet loaded. Route paths
+   do not need it; `TransitionLink` wraps `next/link`.
+3. **Content is data, not markup.** All copy lives in `src/content/*.ts` typed by
    `src/content/types.ts`. Pages compose; they do not author. Adding an essay or
    a brief is one object in one file — indexes, the footer, the site index and
    the sitemap all follow automatically.
-3. **Never let an animation be able to hide content permanently.** Hidden states
+4. **Never let an animation be able to hide content permanently.** Hidden states
    are applied by JavaScript, never by CSS, so content is visible if the bundle
    fails or never runs.
-4. **Reduced motion is an alternative expression, not an absence.** Check
+5. **Reduced motion is an alternative expression, not an absence.** Check
    `prefersReducedMotion()` before starting anything; give the same information
    through a different mechanism. Vestibular offenders (parallax, pinning,
    large-scale movement) are removed outright.
-5. **Honesty in the copy.** The concept briefs are speculative and labelled as
+6. **Honesty in the copy.** The concept briefs are speculative and labelled as
    such; every projected number is published with its measurement method. Do not
    introduce language implying delivered client work, and do not invent clients,
    testimonials or metrics. The founder page is the one place with delivered
    work on it — that is a personal employment record, and the distinction
    between it and the studio's own engagements must stay explicit.
-6. **Write like the studio is open for business.** No "side project" register,
+7. **Write like the studio is open for business.** No "side project" register,
    no apologising for being young, and nothing about how the site is built —
    visitors are prospective clients, not reviewers of the repository.
-7. **Never type a calendar-dependent value into the copy.** Durations, "now"
+8. **Never type a calendar-dependent value into the copy.** Durations, "now"
    years, the quarter being booked, counts of things in a collection and
    reading times all come from `src/lib/time.ts` or are derived from the data
    itself. Dates of events that happened stay literal. If you add a value that
@@ -109,6 +116,17 @@ should not drift.
   sub-1 `line-height` puts them outside the line box. Pair the mask with
   `padding-bottom` of ~0.2em and an equal negative `margin-bottom`. A line
   entering from a full line-height below is still clear of that padding.
+- **A scroll container inside a flex column needs `min-height: 0`.** A flex
+  item's `min-height` resolves to `auto` — its content height — so it can never
+  shrink below the content and `overflow-y` has nothing to act on. The résumé
+  sheet was unscrollable for this reason. It also needs `data-lenis-prevent`:
+  a stopped Lenis still swallows wheel and touch events.
+- **Removing a hovered element does not fire `pointerout`.** Closing a dialog
+  from its own close button left the custom cursor stuck reading "Close" over
+  the page behind it. `Cursor` re-derives its hover state from every
+  `pointermove` so it self-corrects, and `resetCursor()` (`@/lib/cursor`) clears
+  it immediately — call that whenever a labelled control unmounts under the
+  pointer.
 
 ---
 

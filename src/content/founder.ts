@@ -9,6 +9,7 @@
  */
 
 import { foundedYear, yearsOfExperience, spell, spellCapitalised } from '@/lib/time';
+import { asset } from '@/lib/asset';
 
 const years = yearsOfExperience();
 
@@ -17,9 +18,9 @@ export const founder = {
   initials: 'RP',
   role: 'Founder · Principal Engineer',
   location: 'Toronto, Canada',
-  portrait: '/founder/rutvik-patel.jpg',
+  portrait: asset('/founder/rutvik-patel.jpg'),
   portraitAlt: 'Rutvik Patel, founder and principal engineer at Seventeen Studios',
-  resume: '/founder/rutvik-patel-resume.pdf',
+  resume: asset('/founder/rutvik-patel-resume.pdf'),
   email: 'hello@seventeenstudios.co',
   github: 'https://github.com/Rutvik17',
   /** One line, used for metadata and the studio-page cross-link. */
