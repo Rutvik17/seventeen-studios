@@ -368,6 +368,21 @@ code {
   background: var(--accent);
   border-color: var(--accent);
 }
+/* The résumé sheet is the only light surface on the site, and both the accent
+   dot and the pale ring disappear against it. Invert them over the paper only —
+   scoped with :has() rather than a body class because the scrim around the
+   sheet is still dark, and a dark cursor would vanish there instead. Browsers
+   without :has() keep the existing cursor, which is the current behaviour. */
+body:has(.resume-modal__sheet:hover) .cursor-dot {
+  background: #14141a;
+}
+body:has(.resume-modal__sheet:hover) .cursor-ring:not(.is-labelled) {
+  border-color: rgba(20, 20, 26, 0.45);
+}
+body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
+  background: rgba(20, 20, 26, 0.07);
+}
+
 .cursor-ring__label {
   font-family: var(--font-mono), monospace;
   font-size: 9.5px;
@@ -3202,6 +3217,13 @@ ol.prose__list li::before {
   transform: rotate(90deg);
 }
 .resume-modal__scroll {
+  /* `min-height: 0` is what makes this scroll at all. It is a flex child of the
+     sheet, and a flex item's min-height resolves to `auto` — the full content
+     height — so the box could never shrink below the document and `overflow-y`
+     had nothing to act on. The sheet's own `overflow: hidden` then cut the
+     résumé off with no way to reach the rest of it. */
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;

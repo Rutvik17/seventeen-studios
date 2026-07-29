@@ -27,6 +27,8 @@ import { createPortal } from 'react-dom';
 import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { lockScroll, unlockScroll } from '@/lib/lenis';
+import { asset } from '@/lib/asset';
+import { resetCursor } from '@/lib/cursor';
 import {
   resumeHeader,
   resumeSummary,
@@ -36,8 +38,8 @@ import {
   resumeEducation,
 } from '@/content/resume';
 
-const PDF = '/founder/rutvik-patel-resume.pdf';
-const DOCX = '/founder/rutvik-patel-resume.docx';
+const PDF = asset('/founder/rutvik-patel-resume.pdf');
+const DOCX = asset('/founder/rutvik-patel-resume.docx');
 
 function EyeIcon() {
   return (
@@ -80,6 +82,10 @@ export function ResumeControl() {
 
   const close = useCallback(() => {
     setOpen(false);
+    // The close button is removed from the document by this very state change,
+    // so it never gets a `pointerout` — without this the ring stays stuck
+    // reading "Close" over the page behind the dialog.
+    resetCursor();
     // Send focus back where it came from, or the control is lost to keyboards.
     triggerRef.current?.focus();
   }, []);
@@ -251,7 +257,10 @@ function ResumeDialog({ onClose }: { onClose: () => void }) {
           </div>
         </header>
 
-        <div className="resume-modal__scroll">
+        {/* `data-lenis-prevent`, same as the index overlay: the dialog stops
+            Lenis while it is open, and a stopped Lenis still swallows the
+            wheel and touch events, so without this the sheet cannot scroll. */}
+        <div className="resume-modal__scroll" data-lenis-prevent>
           <article className="resume-doc">
             <header className="resume-doc__head resume-doc__stagger">
               <h2 className="resume-doc__name">{resumeHeader.name}</h2>
