@@ -18,6 +18,7 @@ import { SplitText } from '@/components/motion/SplitText';
 import { Magnetic } from '@/components/motion/Magnetic';
 import { TransitionLink } from '@/components/Transition';
 import { SectionHeader } from '@/components/SectionHeader';
+import { CAREER_START, spellCapitalised, yearsOfExperience } from '@/lib/time';
 
 export const metadata: Metadata = {
   title: `${founder.name} — Founder`,
@@ -55,7 +56,7 @@ export default function FounderPage() {
             </div>
             <div className="founder__fact">
               <span className="mono-label">Shipping since</span>
-              <span>2018</span>
+              <span>{CAREER_START.getUTCFullYear()}</span>
             </div>
           </Reveal>
 
@@ -104,9 +105,10 @@ export default function FounderPage() {
           label="Professional record"
           title={
             <p className="section-header__lead">
-              Seven years of production engineering, delivered inside the
-              organisations below. The studio&rsquo;s own engagements are
-              published separately as concept briefs.
+              {spellCapitalised(yearsOfExperience())} years of production
+              engineering, delivered inside the organisations below. The
+              studio&rsquo;s own engagements are published separately as concept
+              briefs.
             </p>
           }
         />

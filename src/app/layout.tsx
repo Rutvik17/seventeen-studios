@@ -9,6 +9,7 @@ import { Nav } from '@/components/Nav';
 import { MenuOverlay } from '@/components/MenuOverlay';
 import { Footer } from '@/components/Footer';
 import { site } from '@/content/studio';
+import { currentYear } from '@/lib/time';
 import './globals.css';
 
 /**
@@ -102,7 +103,7 @@ export default function RootLayout({
             <Nav />
             <MenuOverlay />
             <main id="main">{children}</main>
-            <Footer />
+            <Footer buildYear={currentYear()} />
           </TransitionProvider>
         </Providers>
       </body>

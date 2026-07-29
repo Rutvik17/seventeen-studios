@@ -7,8 +7,14 @@ import { essays } from '@/content/thinking';
 import { TransitionLink } from './Transition';
 import { FitText } from './FitText';
 
-export function Footer() {
-  const [year, setYear] = useState<number | null>(null);
+/**
+ * `buildYear` is the year the export was built, passed in from the server so
+ * the first paint is already correct. The effect then re-reads the clock on the
+ * client, which only matters for a visitor holding a cached page across New
+ * Year — the copyright line corrects itself rather than waiting for a deploy.
+ */
+export function Footer({ buildYear }: { buildYear: number }) {
+  const [year, setYear] = useState(buildYear);
   useEffect(() => setYear(new Date().getFullYear()), []);
 
   return (
@@ -78,7 +84,7 @@ export function Footer() {
 
       <div className="footer__base">
         <span className="mono-label" suppressHydrationWarning>
-          © {year ?? site.founded} {site.name}
+          © {year} {site.name}
         </span>
         <span className="mono-label">{site.location}</span>
         <span className="mono-label">

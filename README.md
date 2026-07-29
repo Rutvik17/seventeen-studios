@@ -107,6 +107,20 @@ generated from it. The same is true of concept briefs (`work.ts`) and services.
 Inline emphasis inside content strings uses a three-token subset resolved by
 `lib/inline.tsx`: `*accent*`, `_italic_` and `` `mono` ``.
 
+### Anything that moves with the calendar
+
+`lib/time.ts` derives it from a fixed anchor rather than having it typed into
+the copy: years of experience, the quarter being booked, the copyright line, the
+counts in "five complete engagements", and each essay's reading time (measured
+from the essay's own word count). Nothing needs editing when a year turns over.
+
+Dates of things that *happened* stay literal — the founding year, employment
+start and end dates, essay publication dates — because those are facts, not
+durations.
+
+The values resolve at build time, so `deploy.yml` also runs on the 1st of each
+month to keep a long-untouched site from sitting on a stale figure.
+
 ### The résumé
 
 `src/content/resume.ts` is the single source for three artefacts: the modal on

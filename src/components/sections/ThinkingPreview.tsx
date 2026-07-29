@@ -12,7 +12,7 @@
 import { useRef, useState } from 'react';
 import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
-import { essays } from '@/content/thinking';
+import { essays, essayReadingTime } from '@/content/thinking';
 import { SectionHeader } from '@/components/SectionHeader';
 import { Reveal } from '@/components/motion/Reveal';
 import { TransitionLink } from '@/components/Transition';
@@ -96,7 +96,7 @@ export function ThinkingPreview() {
             <span className="mono-label thinking__index">{essay.index}</span>
             <span className="thinking__title">{essay.title}</span>
             <span className="thinking__topic mono-label">{essay.topic}</span>
-            <span className="thinking__time mono-label">{essay.readingTime}</span>
+            <span className="thinking__time mono-label">{essayReadingTime(essay)}</span>
           </TransitionLink>
         ))}
       </Reveal>

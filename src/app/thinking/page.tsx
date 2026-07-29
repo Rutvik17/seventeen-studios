@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { essays } from '@/content/thinking';
+import { essays, essayReadingTime } from '@/content/thinking';
+import { spell } from '@/lib/time';
 import { Poster } from '@/components/Poster';
 import { Reveal } from '@/components/motion/Reveal';
 import { SplitText } from '@/components/motion/SplitText';
@@ -29,8 +30,8 @@ export default function ThinkingIndexPage() {
         <Reveal className="page-head__lead">
           <p>
             We publish the reasoning before anyone commissions it. If you are
-            deciding whether to brief this studio, these six pieces will tell you
-            more than any capabilities deck could.
+            deciding whether to brief this studio, these {spell(essays.length)}{' '}
+            pieces will tell you more than any capabilities deck could.
           </p>
         </Reveal>
       </header>
@@ -54,7 +55,7 @@ export default function ThinkingIndexPage() {
                   <span className="mono-label">
                     {formatter.format(new Date(essay.date))}
                   </span>
-                  <span className="mono-label">{essay.readingTime}</span>
+                  <span className="mono-label">{essayReadingTime(essay)}</span>
                 </div>
                 <h2 className="essay-row__title">{essay.title}</h2>
                 <p className="essay-row__excerpt">{essay.excerpt}</p>

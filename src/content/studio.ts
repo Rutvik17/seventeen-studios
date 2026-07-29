@@ -1,4 +1,5 @@
 import type { Block, Capability, ProcessStep } from './types';
+import { bookingWindow, foundedYear } from '@/lib/time';
 
 /** Global site facts. Single source of truth for metadata and the footer. */
 export const site = {
@@ -7,12 +8,12 @@ export const site = {
   tagline: 'An engineering studio for work that has to be right.',
   description:
     'Seventeen Studios is an independent engineering studio building software, interfaces and AI systems for teams whose ambition has outgrown their tooling.',
-  founded: '2026',
+  founded: String(foundedYear()),
   location: 'Toronto, Canada',
   timezone: 'America/Toronto',
   timezoneLabel: 'ET',
   email: 'hello@seventeenstudios.co',
-  availability: 'Taking two engagements for Q4 2026',
+  availability: `Taking two engagements for ${bookingWindow()}`,
   social: [
     { label: 'GitHub', href: 'https://github.com/rutvik17' },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/' },

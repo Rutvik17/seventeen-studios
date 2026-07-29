@@ -9,6 +9,11 @@
  * rounded up to sound better — an interview will test these.
  */
 
+// Relative, not the `@/` alias: `scripts/build-resume.mjs` imports this file
+// with bare Node to generate the .docx and PDF, and bare Node cannot resolve
+// tsconfig path aliases.
+import { foundedYear, yearsOfExperienceLabel } from '../lib/time.ts';
+
 export interface ResumeRole {
   company: string;
   location: string;
@@ -33,8 +38,7 @@ export const resumeHeader = {
   site: 'rutvik17.github.io/seventeen-studios/founder',
 } as const;
 
-export const resumeSummary =
-  'Senior frontend engineer with 7+ years building production interfaces for global enterprises and zero-to-one product teams. Architected a multi-tenant agentic AI platform at Ernst & Young, shipped a React Native product through to acquisition, and delivered connected-vehicle frontend architecture for Ford. Deep in React, Next.js and TypeScript, fluent across Node, Python and cloud infrastructure, with a record of measurable gains in performance, engagement and delivery speed.';
+export const resumeSummary = `Senior frontend engineer with ${yearsOfExperienceLabel()} years building production interfaces for global enterprises and zero-to-one product teams. Architected a multi-tenant agentic AI platform at Ernst & Young, shipped a React Native product through to acquisition, and delivered connected-vehicle frontend architecture for Ford. Deep in React, Next.js and TypeScript, fluent across Node, Python and cloud infrastructure, with a record of measurable gains in performance, engagement and delivery speed.`;
 
 export const resumeSkills: { group: string; items: string[] }[] = [
   {
@@ -171,7 +175,7 @@ export const resumeProjects: {
   {
     name: 'Seventeen Studios',
     role: 'Founder & Principal Engineer',
-    period: '2026 – Present',
+    period: `${foundedYear()} – Present`,
     link: 'rutvik17.github.io/seventeen-studios',
     bullets: [
       'Founded an independent engineering studio for product, creative and applied-AI engineering. Built the platform end to end: static Next.js export, custom GLSL and Three.js rendering, GSAP choreography, automated GitHub Actions deployment.',

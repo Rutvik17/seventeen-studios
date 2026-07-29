@@ -101,7 +101,6 @@ export interface Essay {
   /** Deck / standfirst. */
   excerpt: string;
   date: string;
-  readingTime: string;
   topic: string;
   seed: number;
   blocks: Block[];

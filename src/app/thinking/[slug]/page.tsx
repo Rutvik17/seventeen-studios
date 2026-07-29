@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { essays, getEssay } from '@/content/thinking';
+import { essays, getEssay, essayReadingTime } from '@/content/thinking';
 import { Poster } from '@/components/Poster';
 import { Prose } from '@/components/Prose';
 import { Reveal } from '@/components/motion/Reveal';
@@ -69,7 +69,7 @@ export default function EssayPage({ params }: Params) {
         <Reveal className="essay__byline" stagger interval={0.06}>
           <span className="mono-label">{site.name}</span>
           <span className="mono-label">{formatter.format(new Date(essay.date))}</span>
-          <span className="mono-label">{essay.readingTime} read</span>
+          <span className="mono-label">{essayReadingTime(essay)} read</span>
         </Reveal>
       </header>
 

@@ -34,6 +34,11 @@ the set of rules to keep in mind when changing it.
 6. **Write like the studio is open for business.** No "side project" register,
    no apologising for being young, and nothing about how the site is built —
    visitors are prospective clients, not reviewers of the repository.
+7. **Never type a calendar-dependent value into the copy.** Durations, "now"
+   years, the quarter being booked, counts of things in a collection and
+   reading times all come from `src/lib/time.ts` or are derived from the data
+   itself. Dates of events that happened stay literal. If you add a value that
+   would be wrong next January, derive it.
 
 ---
 
@@ -90,6 +95,20 @@ should not drift.
   retargets the following `click` event to the capturing element, so every link
   underneath silently stops working. Capture only once the pointer has moved
   past a drag threshold. This has also bitten us once.
+- **Never measure an element you are about to restyle.** The reduced-motion
+  block sets `transition-duration` on `*`, and `transition-property` defaults to
+  `all` — so *every* property is transitioned, including `font-size`. Setting a
+  reference size and reading the width straight back returns a value part-way
+  through the tween, and setting `transition: none` inline does not cancel one
+  already running. `FitText` did this and converged on the geometric mean of the
+  container and the true width, overflowing the footer wordmark by up to 257px
+  for every reduced-motion visitor. Measure a freshly-inserted clone instead: a
+  new node has no transition in flight.
+- **A mask with leading below 1 clips descenders.** `overflow: hidden` on a
+  heading (there to mask the line reveal) cuts the tails off g, y and p, because
+  sub-1 `line-height` puts them outside the line box. Pair the mask with
+  `padding-bottom` of ~0.2em and an equal negative `margin-bottom`. A line
+  entering from a full line-height below is still clear of that padding.
 
 ---
 

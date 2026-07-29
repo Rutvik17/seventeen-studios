@@ -8,6 +8,10 @@
  * `work.ts` and is labelled as concept briefs. Keep the two separate.
  */
 
+import { foundedYear, yearsOfExperience, spell, spellCapitalised } from '@/lib/time';
+
+const years = yearsOfExperience();
+
 export const founder = {
   name: 'Rutvik Patel',
   initials: 'RP',
@@ -19,8 +23,7 @@ export const founder = {
   email: 'hello@seventeenstudios.co',
   github: 'https://github.com/Rutvik17',
   /** One line, used for metadata and the studio-page cross-link. */
-  summary:
-    'Principal engineer with seven years building interfaces and platforms at enterprise scale — agentic AI at Ernst & Young, a mobile product taken from zero to acquisition, connected-vehicle infrastructure at Ford.',
+  summary: `Principal engineer with ${spell(years)} years building interfaces and platforms at enterprise scale — agentic AI at Ernst & Young, a mobile product taken from zero to acquisition, connected-vehicle infrastructure at Ford.`,
   /** Shown under the name in the hero. */
   standfirst:
     'I started Seventeen Studios because the best engineering I have done was always the work where one person stayed accountable from the architecture through to the last deploy. This is that, made deliberate.',
@@ -34,7 +37,7 @@ export const founderStatement: { lead: string; accent: string; tail: string }[] 
     tail: '— and invisible while you use them.',
   },
   {
-    lead: 'Seven years shipping React, Next.js and React Native across',
+    lead: `${spellCapitalised(years)} years shipping React, Next.js and React Native across`,
     accent: 'enterprise platforms and zero-to-one products',
     tail: ', most of it under real production load.',
   },
@@ -140,7 +143,7 @@ export const sideWork: {
   {
     title: 'Seventeen Studios',
     role: 'Founder · Principal Engineer',
-    year: '2026 →',
+    year: `${foundedYear()} →`,
     description:
       'This site. Custom GLSL hero, curtain page transitions, drag-driven galleries and generative artwork — the studio’s standard, applied to the studio.',
     href: 'https://github.com/Rutvik17/seventeen-studios',
@@ -156,7 +159,7 @@ export const founderStack: { group: string; items: string[] }[] = [
 ];
 
 export const founderStats: { label: string; value: string; suffix?: string; note: string }[] = [
-  { label: 'Years shipping', value: '7', suffix: '+', note: 'In production, under load' },
+  { label: 'Years shipping', value: String(years), suffix: '+', note: 'In production, under load' },
   { label: 'Platforms', value: '3', note: 'Web · iOS · Android' },
   { label: 'Zero-to-one products', value: '2', note: 'One through to acquisition' },
   { label: 'Studio bench', value: '5', note: 'Hard cap, senior only' },

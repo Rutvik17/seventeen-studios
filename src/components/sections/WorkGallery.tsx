@@ -27,6 +27,7 @@ import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { getLenis } from '@/lib/lenis';
 import { concepts } from '@/content/work';
+import { spell } from '@/lib/time';
 import { WorkCard } from '@/components/WorkCard';
 import { SectionHeader } from '@/components/SectionHeader';
 import { TransitionLink } from '@/components/Transition';
@@ -210,7 +211,7 @@ export function WorkGallery() {
         }
         action={
           <TransitionLink href="/work/" className="link-arrow" data-cursor="View all">
-            All five briefs <i aria-hidden="true">→</i>
+            All {spell(concepts.length)} briefs <i aria-hidden="true">→</i>
           </TransitionLink>
         }
       />

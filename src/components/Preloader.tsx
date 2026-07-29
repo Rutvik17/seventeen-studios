@@ -17,6 +17,7 @@ import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { lockScroll, unlockScroll } from '@/lib/lenis';
 import { hasEnteredThisSession, markEnteredThisSession, useUi } from '@/lib/store';
+import { site } from '@/content/studio';
 
 const WORDS = ['Software', 'Interfaces', 'AI systems', 'Conviction'];
 
@@ -137,7 +138,7 @@ export function Preloader() {
       <div className="preloader__inner">
         <div className="preloader__meta preloader__top">
           <span className="mono-label">Seventeen Studios</span>
-          <span className="mono-label">Est. 2026</span>
+          <span className="mono-label">Est. {site.founded}</span>
         </div>
 
         <div className="preloader__center preloader__meta">

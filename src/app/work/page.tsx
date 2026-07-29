@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { concepts } from '@/content/work';
+import { spellCapitalised } from '@/lib/time';
 import { Poster } from '@/components/Poster';
 import { Reveal } from '@/components/motion/Reveal';
 import { SplitText } from '@/components/motion/SplitText';
@@ -23,10 +24,11 @@ export default function WorkIndexPage() {
         </SplitText>
         <Reveal className="page-head__lead">
           <p>
-            Five complete engagements, taken from problem statement through
-            architecture to the numbers we would accept being measured against.
-            Each one is a real industry problem worked the way we would work
-            yours — and published in full, before anyone has paid for it.
+            {spellCapitalised(concepts.length)} complete engagements, taken from
+            problem statement through architecture to the numbers we would
+            accept being measured against. Each one is a real industry problem
+            worked the way we would work yours — and published in full, before
+            anyone has paid for it.
           </p>
         </Reveal>
         <Reveal className="page-head__note">

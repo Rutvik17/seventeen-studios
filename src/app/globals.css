@@ -1746,7 +1746,14 @@ code {
   font-size: clamp(42px, 8.6vw, 148px);
   line-height: 0.92;
   letter-spacing: -0.055em;
+  /* Masks the line reveal. Leading below 1 puts the descenders of g, y and p
+     outside the line box, so the mask needs room under the baseline or it
+     slices them off — "Small by design" lost the tails of both its y and its g.
+     The negative margin gives the space back to the layout, and a line entering
+     from a full line-height below is still well clear of it. */
   overflow: hidden;
+  padding-bottom: 0.2em;
+  margin-bottom: -0.2em;
 }
 .page-head__lead {
   max-width: 62ch;
@@ -2043,7 +2050,11 @@ ol.prose__list li::before {
   font-size: clamp(52px, 12vw, 190px);
   line-height: 0.86;
   letter-spacing: -0.06em;
+  /* Same descender clearance as .page-head__title, and more of it: the leading
+     here is tighter still. */
   overflow: hidden;
+  padding-bottom: 0.22em;
+  margin-bottom: -0.22em;
 }
 .case__title p {
   max-width: 30ch;
@@ -3547,6 +3558,21 @@ ol.prose__list li::before {
   }
   .menu__email {
     font-size: 20px;
+  }
+}
+
+/* Narrowest phones still in use — 320px logical width (iPhone SE 1st gen and
+   the small-Android floor). The header is the only thing that does not fit at
+   this size: wordmark 165 + gap 24 + index button 112 needs 301px of a 280px
+   content box. Buy the 21px back from the gap and the button's side padding
+   rather than dropping anything from the header. */
+@media (max-width: 360px) {
+  .nav {
+    gap: 12px;
+  }
+  .nav__index {
+    padding: 11px 13px;
+    gap: 9px;
   }
 }
 
