@@ -9,6 +9,11 @@
  * scheduled monthly rebuild in `.github/workflows/deploy.yml` keeps them fresh
  * between pushes, so the site cannot sit on a stale figure for long.
  *
+ * Availability is deliberately *not* here. A derived "booking for Q4 2026" is
+ * still a claim about inventory that only the studio knows the truth of — it
+ * would keep itself current and be wrong. The copy says "Accepting new
+ * engagements" instead, which is true until Rutvik decides otherwise.
+ *
  * What stays static, deliberately:
  *   - the studio's founding year, and each concept brief's year: those are
  *     facts about when something happened, not durations
@@ -52,17 +57,6 @@ export function currentYear(at: Date = now()): number {
 
 export function foundedYear(): number {
   return STUDIO_FOUNDED.getUTCFullYear();
-}
-
-/**
- * The quarter the studio is currently booking for. Availability is quoted one
- * quarter ahead: mid-Q2 you are selling Q3.
- */
-export function bookingWindow(at: Date = now()): string {
-  const quarter = Math.floor(at.getUTCMonth() / 3) + 1;
-  const next = quarter === 4 ? 1 : quarter + 1;
-  const year = quarter === 4 ? at.getUTCFullYear() + 1 : at.getUTCFullYear();
-  return `Q${next} ${year}`;
 }
 
 /**

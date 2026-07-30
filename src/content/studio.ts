@@ -1,5 +1,5 @@
 import type { Block, Capability, ProcessStep } from './types';
-import { bookingWindow, foundedYear } from '@/lib/time';
+import { foundedYear } from '@/lib/time';
 
 /** Global site facts. Single source of truth for metadata and the footer. */
 export const site = {
@@ -13,7 +13,15 @@ export const site = {
   timezone: 'America/Toronto',
   timezoneLabel: 'ET',
   email: 'hello@seventeenstudios.co',
-  availability: `Taking two engagements for ${bookingWindow()}`,
+  /**
+   * Evergreen on purpose. A quarter and a slot count ("Taking two engagements
+   * for Q4 2026") is a promise with an expiry date on it: it goes stale the
+   * moment the slots fill or the quarter turns, and a prospective client
+   * reading a stale one learns the site is not maintained. The concurrency
+   * limit is still stated — on the home page, on /start and in the writing —
+   * where it reads as the studio's shape rather than as live inventory.
+   */
+  availability: 'Accepting new engagements',
   social: [
     { label: 'GitHub', href: 'https://github.com/rutvik17' },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/' },

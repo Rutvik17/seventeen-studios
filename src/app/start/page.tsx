@@ -28,9 +28,9 @@ export default function StartPage() {
         <Reveal className="page-head__note">
           <span className="mono-label">Currently</span>
           <p>
-            {site.availability}. We run two engagements at a time; if the slots
-            are gone we will tell you when the next one opens rather than
-            stretching the team.
+            {site.availability}. We run two at a time — if both are underway
+            when you write, we will tell you when the next slot opens rather
+            than stretching the team to take yours now.
           </p>
         </Reveal>
       </header>
