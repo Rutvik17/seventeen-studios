@@ -53,6 +53,10 @@ export const resumeSkills: { group: string; items: string[] }[] = [
       'React Native',
       'Redux',
       'React Query',
+      'Angular',
+      'Nx',
+      'RxJS',
+      'Signals',
       'Tailwind CSS',
       'GSAP',
       'Three.js',
@@ -117,10 +121,12 @@ export const resumeExperience: ResumeRole[] = [
     context:
       'Lead frontend engineer on an enterprise agentic AI platform — a chat-based environment used by global enterprise clients for automated risk analysis, report generation and decision support.',
     bullets: [
-      'Architected the multi-tenant Next.js and React Query interface over Python microservices on Azure, improving data-retrieval performance by 40%.',
-      'Designed role-based access control across tenant hierarchies, isolating client data for enterprise customers across the EY ecosystem.',
-      'Integrated LLM-driven chat and tool-calling workflows into production, taking features from prototype to release with product, design and platform partners.',
-      'Set frontend architecture standards and led code review across the team.',
+      'Architected a multi-tenant Next.js and React Query interface over Python microservices on Azure, improving data-retrieval performance by 40%.',
+      `Built the frontend of an agentic AI platform for SAP ecosystem in Angular - standalone components, signals and zoneless change detection - within Nx monorepo, as the product's next generation stack.`,
+      'Developed an interactive, schema-driven graph canvas for authoring and validating complex enterprise organizational structures, with automatic edge routing, live constraint validation, and inline create-edit-deploy workflows.',
+      'Took LLM-powered authoring features from prototype to production - streaming generation, tool calling, and accept/reject review of AI-suggested edits in a collaborative rich text editor - partnering with product, design and platform teams.',
+      'Implemented role-based access control across tenant hierarchies, isolating client data for enterprise customers across the EY ecosystem.',
+      'Drove a storybook-based design system with token theming and enforced WCAG 2.2 AA via automated accessibility gates and frontend architecture fitness functions (style/bundle budgets, dependency boundaries); set frontend architecture standards and led code review.',
     ],
   },
   {
