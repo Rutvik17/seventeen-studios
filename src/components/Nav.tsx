@@ -67,6 +67,27 @@ export function Nav() {
     return () => ctx.revert();
   }, [entered]);
 
+  /*
+    The nav is sumi ink, and the home page now opens on a dusk sky. Dark type on
+    a dark sky is invisible — so where a dark hero is the first thing on the
+    page, the nav inverts until it has scrolled clear of it.
+
+    Detected from the DOM rather than from the pathname: the nav should not have
+    to hold a list of which routes happen to start dark, and a `.world` element
+    is the actual condition. `useIsomorphicLayoutEffect` runs after mutation and
+    BEFORE paint, so the inverted state is applied in the same frame and there
+    is no flash of unreadable type.
+
+    `:has()` would express this in one CSS line and was the first attempt. It is
+    ~93% supported, and the 7% that lack it get dark-on-dark — a legibility
+    failure is the wrong thing to leave to progressive enhancement.
+  */
+  useIsomorphicLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.classList.toggle('nav--over-dark', !!document.querySelector('.world'));
+  }, [pathname]);
+
   // Direction-aware hide/show.
   useEffect(() => {
     const el = ref.current;

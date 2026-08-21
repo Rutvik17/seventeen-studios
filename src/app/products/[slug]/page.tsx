@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { products, productBySlug } from '@/content/products';
 import { Exploded } from '@/components/Exploded';
+import { DerivativeInstrument } from '@/components/instruments/DerivativeInstrument';
 import { Prose } from '@/components/Prose';
 import { Reveal } from '@/components/motion/Reveal';
 import { SplitText } from '@/components/motion/SplitText';
@@ -89,6 +90,33 @@ export default function ProductPage({ params }: Params) {
           </dl>
         </Reveal>
       </header>
+
+      {/*
+        The demonstration comes FIRST, above the drawing and above every word of
+        the argument. A product whose whole claim is "you will understand this
+        because you moved it" cannot open with three paragraphs asking to be
+        believed — that is the claim failing on its own front door. Drag the
+        point, then read why it worked.
+      */}
+      {product.demo === 'derivative' && (
+        <section className="product__demo">
+          <div className="product__demo-head">
+            <span className="mono-label">Try it — this is the whole idea</span>
+            <h2 className="product__demo-title">
+              Drag the point. Watch the slope become a curve.
+            </h2>
+            <p>
+              This is Grasp&rsquo;s first three lessons, condensed into one
+              control. Move the handle along the curve: the tangent turns, the
+              triangle redraws, and every slope you visit is dropped onto the
+              panel below until the collected slopes turn out to be a curve of
+              their own. That last step is the moment calculus opens up, and it
+              is very hard to have it by reading.
+            </p>
+          </div>
+          <DerivativeInstrument />
+        </section>
+      )}
 
       {/*
         The drawing does the positioning the copy would otherwise have to. It

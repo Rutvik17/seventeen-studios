@@ -47,6 +47,7 @@ import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { Pendulum, clamp } from '@/lib/physics';
 import {
   CHIMES,
+  CHIME_BAND_H,
   LANTERNS,
   RIDGES,
   SCENE_H,
@@ -110,7 +111,7 @@ export function WorldHero() {
       /* ---- chimes ----------------------------------------------------- */
       const bells = CHIMES.map((spec) => ({
         spec,
-        node: svg.querySelector<SVGGElement>(`[data-chime="${spec.id}"]`),
+        node: el.querySelector<SVGGElement>(`[data-chime="${spec.id}"]`),
         pendulum: new Pendulum(spec.phase, {
           length: spec.length,
           gravity: 9.81,
@@ -254,8 +255,24 @@ export function WorldHero() {
           </g>
         ))}
 
-        {/* The beam the chimes hang from, and the chimes. */}
-        <rect x="0" y="-14" width={SCENE_W} height="16" fill="var(--ridge-4)" />
+      </svg>
+
+      {/*
+        The chimes are a SEPARATE svg pinned to the top edge.
+
+        In the scene above they would be clipped away entirely: an `<svg>` clips
+        to its viewBox, and the scene is drawn with `slice`, so on any viewport
+        wider than 16:9 the top band is cropped as well. `xMidYMin` anchors this
+        strip to the top of what the visitor can actually see, whatever the
+        scene behind it is doing.
+      */}
+      <svg
+        className="world__chimes"
+        viewBox={`0 0 ${SCENE_W} ${CHIME_BAND_H}`}
+        preserveAspectRatio="xMidYMin slice"
+        aria-hidden="true"
+      >
+        <rect x="0" y="0" width={SCENE_W} height="16" fill="var(--ridge-4)" />
         {CHIMES.map((spec) => (
           <g data-chime={spec.id} key={spec.id}>
             <line

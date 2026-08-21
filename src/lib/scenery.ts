@@ -201,14 +201,30 @@ export type ChimeSpec = {
  * period goes as √L, so equal lengths would swing in lockstep and read as one
  * rigid object rotating; unequal ones drift in and out of phase forever, which
  * is what a row of real chimes does and why it never stops being interesting.
+ *
+ * ---
+ *
+ * THESE LIVE IN THEIR OWN VIEWBOX, AND THAT IS NOT TIDINESS
+ *
+ * They were first authored into the main scene at a negative `y`, hanging from
+ * a beam above the top edge — which does not work, twice over. An `<svg>` clips
+ * to its viewBox by default, so the beam was never drawn at all; and the scene
+ * uses `slice`, so on any viewport wider than 16:9 the top is cropped further
+ * and the cords went with it. On a normal laptop the chimes were simply absent.
+ *
+ * A separate strip pinned to the top of the hero with `xMidYMin` fixes both:
+ * the beam is always at the top edge of what the visitor can actually see,
+ * whatever the viewport does to the scene behind it.
  */
+export const CHIME_BAND_H = 220;
+
 export const CHIMES: ChimeSpec[] = [
-  { id: 'c1', x: 176, y: -6, r: 17, cord: 92, length: 0.3, phase: 0.16 },
-  { id: 'c2', x: 292, y: -6, r: 14, cord: 132, length: 0.44, phase: -0.1 },
-  { id: 'c3', x: 404, y: -6, r: 19, cord: 74, length: 0.25, phase: 0.24 },
-  { id: 'c4', x: 1204, y: -6, r: 15, cord: 116, length: 0.39, phase: -0.19 },
-  { id: 'c5', x: 1318, y: -6, r: 18, cord: 86, length: 0.28, phase: 0.12 },
-  { id: 'c6', x: 1428, y: -6, r: 13, cord: 142, length: 0.47, phase: -0.22 },
+  { id: 'c1', x: 176, y: 14, r: 17, cord: 92, length: 0.3, phase: 0.16 },
+  { id: 'c2', x: 292, y: 14, r: 14, cord: 132, length: 0.44, phase: -0.1 },
+  { id: 'c3', x: 404, y: 14, r: 19, cord: 74, length: 0.25, phase: 0.24 },
+  { id: 'c4', x: 1204, y: 14, r: 15, cord: 116, length: 0.39, phase: -0.19 },
+  { id: 'c5', x: 1318, y: 14, r: 18, cord: 86, length: 0.28, phase: 0.12 },
+  { id: 'c6', x: 1428, y: 14, r: 13, cord: 142, length: 0.47, phase: -0.22 },
 ];
 
 /* ------------------------------------------------------------------ *

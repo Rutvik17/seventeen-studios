@@ -56,35 +56,47 @@ export function RiskInstrument() {
   const [alpha, setAlpha] = useState(0.05);
   const [drift, setDrift] = useState(0.07);
 
-  // Deferred so dragging a slider keeps painting at full rate: React renders
-  // the control immediately and recomputes the 25k-path simulation on the next
-  // idle pass. Without it the drag stutters on a mid-range laptop.
-  const inputs = useDeferredValue({ volatility, horizonDays, alpha, drift });
+  /*
+    Deferred so dragging a slider keeps painting at full rate: React commits the
+    control immediately and recomputes the 25k-path simulation at lower
+    priority. Without it the drag stutters on a mid-range laptop.
+
+    Four separate primitives, NOT one deferred object — and that is not a style
+    preference. `useDeferredValue({ ... })` on an inline literal is an infinite
+    render loop: the object has a new identity on every render, so the deferred
+    render passes a value that differs from the one that scheduled it, which
+    schedules another, forever. React's own documentation is explicit that the
+    argument must be a primitive or something created outside of rendering.
+  */
+  const dVolatility = useDeferredValue(volatility);
+  const dHorizon = useDeferredValue(horizonDays);
+  const dAlpha = useDeferredValue(alpha);
+  const dDrift = useDeferredValue(drift);
 
   const result = useMemo(
     () =>
       simulateRisk({
         notional: NOTIONAL,
-        drift: inputs.drift,
-        volatility: inputs.volatility,
-        horizonDays: inputs.horizonDays,
-        alpha: inputs.alpha,
+        drift: dDrift,
+        volatility: dVolatility,
+        horizonDays: dHorizon,
+        alpha: dAlpha,
         paths: PATHS,
         seed: 20260821,
       }),
-    [inputs],
+    [dDrift, dVolatility, dHorizon, dAlpha],
   );
 
   const fan = useMemo(
     () =>
       simulateFan({
         notional: NOTIONAL,
-        drift: inputs.drift,
-        volatility: inputs.volatility,
-        horizonDays: inputs.horizonDays,
+        drift: dDrift,
+        volatility: dVolatility,
+        horizonDays: dHorizon,
         seed: 20260821,
       }),
-    [inputs],
+    [dDrift, dVolatility, dHorizon],
   );
 
   /* ---- fan chart geometry ------------------------------------------ */

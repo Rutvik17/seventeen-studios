@@ -4828,3 +4828,325 @@ html.no-js .exploded .exploded__svg {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==================================================================
+   THE DERIVATIVE INSTRUMENT — Grasp's product page
+   ================================================================== */
+
+.product__demo {
+  max-width: 1180px;
+  margin: clamp(56px, 9vh, 110px) auto 0;
+  padding: 0 var(--gutter);
+}
+
+.product__demo-head {
+  max-width: 62ch;
+  margin-bottom: clamp(24px, 4vh, 44px);
+}
+
+.product__demo-title {
+  font-family: var(--font-display), serif;
+  font-size: clamp(26px, 3.4vw, 46px);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  margin-top: 8px;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+.product__demo-head p {
+  margin-top: calc(var(--grid-unit) * 0.9);
+  color: var(--fg-dim);
+  font-size: clamp(16px, 1.05vw, 19px);
+}
+
+.deriv {
+  background: var(--bg-raise);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: clamp(16px, 2.4vw, 32px);
+}
+
+.deriv__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: calc(var(--grid-unit) * 0.9);
+}
+
+.deriv__tab {
+  padding: 6px 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 13px;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
+}
+
+.deriv__tab.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.deriv__stage {
+  display: grid;
+  gap: 10px;
+}
+
+.deriv__svg {
+  width: 100%;
+  height: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  /* The handle is dragged horizontally. Without this, a touch drag scrolls the
+     page instead of moving the point, which makes the control unusable on the
+     device most likely to be reading a page about a phone app. */
+  touch-action: pan-y;
+  cursor: ew-resize;
+}
+
+.deriv__svg--lower {
+  cursor: default;
+}
+
+.deriv__grid {
+  stroke: var(--grid-line-major);
+  stroke-width: 1;
+}
+
+.deriv__axis {
+  stroke: var(--line-strong);
+  stroke-width: 1.25;
+}
+
+.deriv__tick {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9px;
+  fill: var(--muted);
+}
+
+.deriv__curve {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+/* The triangle is the working made visible, so it is filled rather than
+   outlined — a reader should see an area, which is what rise-over-run is. */
+.deriv__triangle {
+  fill: var(--accent-2);
+  fill-opacity: 0.16;
+  stroke: var(--accent-2);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 3;
+}
+
+.deriv__tri-label {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  fill: var(--accent-2);
+}
+
+.deriv__tangent {
+  stroke: var(--fg);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.deriv__handle {
+  cursor: grab;
+}
+
+.deriv__handle:focus {
+  outline: none;
+}
+
+.deriv__halo {
+  fill: var(--accent);
+  opacity: 0.12;
+  transition: opacity 0.2s var(--ease-out);
+}
+
+/*
+  The focus ring is drawn on the halo rather than suppressed. A keyboard user
+  stepping this control with the arrow keys has no other way to know which
+  element is taking their input.
+*/
+.deriv__handle:focus-visible .deriv__halo {
+  opacity: 0.34;
+  stroke: var(--fg);
+  stroke-width: 2;
+}
+
+.deriv__handle:hover .deriv__halo {
+  opacity: 0.24;
+}
+
+.deriv__point {
+  fill: var(--accent);
+  stroke: var(--bg-raise);
+  stroke-width: 2;
+}
+
+/* The exact derivative, drawn faint — it is the answer the traced dots are
+   converging on, present so the reader can see they are landing on something
+   rather than scattering. */
+.deriv__ghost {
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 5;
+  opacity: 0.5;
+}
+
+.deriv__dot {
+  fill: var(--accent-2);
+}
+
+.deriv__plumb {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}
+
+.deriv__panel {
+  margin-top: calc(var(--grid-unit) * 1.1);
+  padding: calc(var(--grid-unit) * 0.9);
+  background: var(--bg-sunk);
+  border-radius: var(--radius);
+}
+
+.deriv__line {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: clamp(13px, 1.05vw, 15.5px);
+  margin-top: 7px;
+  /* Tabular figures: the numbers change under a drag and proportional digits
+     make the whole line shuffle sideways as they do. */
+  font-variant-numeric: tabular-nums;
+}
+
+.deriv__line--key {
+  font-size: clamp(15px, 1.35vw, 19px);
+  color: var(--fg);
+  padding: 8px 0;
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.deriv__line--key strong {
+  color: var(--accent);
+}
+
+.deriv__sym {
+  color: var(--accent);
+  margin-right: 10px;
+}
+
+.deriv__at {
+  color: var(--muted);
+}
+
+.deriv__hint {
+  color: var(--muted);
+  margin-left: 8px;
+  font-size: 0.86em;
+}
+
+.deriv__note {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--fg-dim);
+  max-width: 70ch;
+}
+
+.deriv__caveat {
+  margin-top: calc(var(--grid-unit) * 1.1);
+  font-size: 13.5px;
+  color: var(--fg-dim);
+  max-width: 76ch;
+  border-left: 2px solid var(--accent-2);
+  padding-left: calc(var(--grid-unit) * 0.7);
+}
+
+.deriv__caveat code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  background: var(--bg-sunk);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.92em;
+}
+
+/* ==================================================================
+   NAV OVER A DARK HERO
+   ==================================================================
+   Applied by `Nav.tsx` wherever the page opens on the world scene. It reverts
+   the moment the nav has scrolled clear of the hero, because from that point
+   down the page is paper again and light-on-paper would be the same bug in the
+   other direction.
+*/
+
+.nav--over-dark:not(.is-scrolled) {
+  color: #f6f1e6;
+}
+
+.nav--over-dark:not(.is-scrolled) .nav__link,
+.nav--over-dark:not(.is-scrolled) .nav__time,
+.nav--over-dark:not(.is-scrolled) .nav__index {
+  color: rgba(246, 241, 230, 0.82);
+}
+
+.nav--over-dark:not(.is-scrolled) .nav__link:hover,
+.nav--over-dark:not(.is-scrolled) .nav__link.is-active {
+  color: #fff;
+}
+
+.nav--over-dark:not(.is-scrolled) .nav__index-bars i {
+  background: #f6f1e6;
+}
+
+/* The scrim under the nav is a light wash meant for paper. Over the sky it has
+   to darken instead, or it puts a pale haze across the top of the scene. */
+.nav--over-dark:not(.is-scrolled)::before {
+  opacity: 1;
+  background: linear-gradient(
+    to bottom,
+    rgba(12, 18, 30, 0.55) 0%,
+    rgba(12, 18, 30, 0.22) 60%,
+    transparent 100%
+  );
+}
+
+/* The skip link lands on the same dark band and needs the same treatment. */
+.nav--over-dark:not(.is-scrolled) .nav__mark-dot {
+  color: var(--lantern);
+}
+
+/*
+  The chime strip. Its own layer above the scene and below the scrim, pinned to
+  the top edge — see the note in `lib/scenery.ts` for why it is not part of the
+  scene's viewBox.
+*/
+.world__chimes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: clamp(120px, 22vh, 220px);
+  width: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  /* On a phone the nav sits exactly here and the chimes read as clutter behind
+     it. The world keeps its ridges, gate and lanterns; it just loses the wind. */
+  .world__chimes {
+    display: none;
+  }
+}

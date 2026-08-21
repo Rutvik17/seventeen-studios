@@ -31,6 +31,15 @@ export interface Product {
   platform: string;
   /** Where it can be got, once it can be got. */
   links?: { label: string; href: string }[];
+  /**
+   * An interactive demonstration to mount on the page, by id.
+   *
+   * A slot rather than a boolean, and rendered through a lookup rather than a
+   * conditional on the slug: a second product will want its own instrument, and
+   * `slug === 'grasp'` in the renderer is how a data-driven page quietly becomes
+   * a bespoke one.
+   */
+  demo?: 'derivative';
   /** The scroll-driven exploded drawing. */
   layers: {
     id: string;
@@ -56,6 +65,7 @@ export const products: Product[] = [
       'An iOS app that teaches calculus by making every idea something you drag rather than something you memorise. Nine lessons, four surfaces each, and not one number on screen without the working that produced it.',
     status: 'In review',
     platform: 'iOS',
+    demo: 'derivative',
     layers: [
       {
         id: 'plane',
