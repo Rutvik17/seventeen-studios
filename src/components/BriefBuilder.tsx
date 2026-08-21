@@ -15,6 +15,8 @@ import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { site } from '@/content/studio';
 import { services } from '@/content/services';
 import { Magnetic } from './motion/Magnetic';
+import { CONTACT_LABEL, contactHref } from '@/lib/contact';
+import { ContactLink } from '@/components/ContactLink';
 
 const STAGES = [
   'An idea, nothing built yet',
@@ -118,7 +120,7 @@ export function BriefBuilder() {
     const subject = `New brief — ${brief.service || 'Engineering'}${
       brief.company ? ` · ${brief.company}` : ''
     }`;
-    return `mailto:${site.email}?subject=${encodeURIComponent(
+    return `${contactHref()}?subject=${encodeURIComponent(
       subject,
     )}&body=${encodeURIComponent(composed)}`;
   }, [brief.service, brief.company, composed]);
@@ -322,7 +324,8 @@ export function BriefBuilder() {
             <p className="builder__hint">
               This opens your email client with the brief filled in — nothing is
               submitted to a server, and nothing is stored by this site. Prefer
-              plain email? <a href={`mailto:${site.email}`}>{site.email}</a>.
+              plain email?{' '}
+              <ContactLink>{CONTACT_LABEL.toLowerCase()}</ContactLink>.
             </p>
           </div>
         ) : null}

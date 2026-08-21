@@ -26,6 +26,19 @@ export interface ResumeRole {
   bullets: string[];
 }
 
+/**
+ * `phone` and `email` here are real and unobfuscated ON PURPOSE, and they must
+ * stay that way: this object is the source for the PDF and the .docx, which are
+ * job-application documents that an ATS parses and a recruiter dials. Splitting
+ * the address for those would defeat the entire point of sending one.
+ *
+ * **They are therefore not rendered by the on-site modal.** A downloaded
+ * document is handed to a named person; a prerendered HTML page is handed to
+ * every crawler on the internet. `ResumeModal` prints the location and a
+ * contact link instead, and points at the download for the rest — see the note
+ * there. Adding `{resumeHeader.email}` back to that component would publish
+ * both of these into the static export.
+ */
 export const resumeHeader = {
   name: 'Rutvik Patel',
   /** Sits directly under the name: ATS keyword-matches the target job title. */

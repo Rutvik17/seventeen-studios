@@ -12,7 +12,16 @@ export const site = {
   location: 'Toronto, Canada',
   timezone: 'America/Toronto',
   timezoneLabel: 'ET',
-  email: 'hello@seventeenstudios.co',
+  /*
+    There is deliberately no `email` field on this object.
+    It held `hello@seventeenstudios.co`, an address that never existed — every
+    enquiry the site generated bounced silently. Assembling the real one here
+    instead was the next attempt and it was also wrong: this module is evaluated
+    during the static export, so anything rendered from it is baked into the
+    HTML as a literal. Contact goes through <ContactLink>, which attaches the
+    address on the client. See `lib/contact.ts`.
+  */
+
   /**
    * Evergreen on purpose. A quarter and a slot count ("Taking two engagements
    * for Q4 2026") is a promise with an expiry date on it: it goes stale the
@@ -25,13 +34,16 @@ export const site = {
   social: [
     { label: 'GitHub', href: 'https://github.com/rutvik17' },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/' },
-    { label: 'Email', href: 'mailto:hello@seventeenstudios.co' },
+    /* `contact` marks the row that must render through <ContactLink>: its
+       href is assembled on the client so the address stays out of the export. */
+    { label: 'Email', href: '/start/', contact: true },
   ],
 } as const;
 
 export const nav = [
   { label: 'Studio', href: '/studio/' },
   { label: 'Founder', href: '/founder/' },
+  { label: 'Products', href: '/products/' },
   { label: 'Work', href: '/work/' },
   { label: 'Thinking', href: '/thinking/' },
   { label: 'Contact', href: '/start/' },

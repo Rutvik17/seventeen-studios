@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { concepts } from '@/content/work';
+import { products } from '@/content/products';
+import { policies } from '@/content/policies';
 import { essays } from '@/content/thinking';
 
 /**
@@ -12,7 +14,15 @@ const base = (process.env.NEXT_PUBLIC_SITE_URL || 'https://seventeenstudios.co')
 );
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = ['', '/studio', '/work', '/thinking', '/start'].map((route) => ({
+  const staticRoutes = [
+    '',
+    '/studio',
+    '/founder',
+    '/products',
+    '/work',
+    '/thinking',
+    '/start',
+  ].map((route) => ({
     url: `${base}${route}/`,
     lastModified: new Date(),
     changeFrequency: 'monthly' as const,
@@ -33,5 +43,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...conceptRoutes, ...essayRoutes];
+  const productRoutes = products.map((product) => ({
+    url: `${base}/products/${product.slug}/`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.9,
+  }));
+
+  /*
+    Listed rather than hidden. The app's privacy policy is a URL submitted to
+    App Store review, and a page that search engines cannot reach is one more
+    thing that can look wrong during a review it has no reason to fail.
+  */
+  const policyRoutes = policies.map((policy) => ({
+    url: `${base}/legal/${policy.slug}/`,
+    lastModified: new Date(),
+    changeFrequency: 'yearly' as const,
+    priority: 0.3,
+  }));
+
+  return [
+    ...staticRoutes,
+    ...productRoutes,
+    ...conceptRoutes,
+    ...essayRoutes,
+    ...policyRoutes,
+  ];
 }

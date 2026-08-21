@@ -18,6 +18,7 @@ import { nav, site } from '@/content/studio';
 import { concepts } from '@/content/work';
 import { essays } from '@/content/thinking';
 import { TransitionLink } from './Transition';
+import { ContactLink } from '@/components/ContactLink';
 
 export function MenuOverlay() {
   const open = useUi((state) => state.menuOpen);
@@ -182,21 +183,25 @@ export function MenuOverlay() {
         </div>
 
         <div className="menu__foot">
-          <a href={`mailto:${site.email}`} className="menu__email">
-            {site.email}
-          </a>
+          <ContactLink className="menu__email" />
           <div className="menu__social">
-            {site.social.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                target={item.href.startsWith('http') ? '_blank' : undefined}
-                rel="noreferrer noopener"
-                className="mono-label"
-              >
-                {item.label}
-              </a>
-            ))}
+            {site.social.map((item) =>
+              'contact' in item ? (
+                <ContactLink key={item.label} className="mono-label">
+                  {item.label}
+                </ContactLink>
+              ) : (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target={item.href.startsWith('http') ? '_blank' : undefined}
+                  rel="noreferrer noopener"
+                  className="mono-label"
+                >
+                  {item.label}
+                </a>
+              ),
+            )}
           </div>
           <span className="mono-label">{site.availability}</span>
         </div>

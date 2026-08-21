@@ -5,17 +5,77 @@
 
 /* ---------- Tokens ---------------------------------------------- */
 
+/*
+  LIGHT, AND MATHEMATICAL.
+
+  The studio's ground is drafting paper, not a screen. Everything sits on a
+  measured plane: a faint grid at 24px, a heavier rule every fifth line, and ink
+  laid over it. The register to hold is an engineering drawing office — precise,
+  quiet, unfussy — and not a classroom.
+
+  The inversion from the previous dark palette is not a hue swap. In dark, a
+  raised surface is LIGHTER than its ground; in light it is whiter and casts.
+  So `--raise` is pure white against warm paper, and elevation is carried by
+  `--shadow` rather than by brightness alone — the one place a straight
+  find-and-replace of colours would have produced flat, illegible cards.
+*/
+
 :root {
-  --bg: #07070a;
-  --bg-raise: #0c0c11;
-  --fg: #f4f1ea;
-  --fg-dim: rgba(244, 241, 234, 0.62);
-  --muted: #79798a;
-  --line: rgba(244, 241, 234, 0.11);
-  --line-strong: rgba(244, 241, 234, 0.2);
-  --accent: #d4ff3f;
-  --accent-deep: #8fd400;
-  --accent-soft: rgba(212, 255, 63, 0.12);
+  /* Ground. Warm rather than pure, so long-form reading is not a glare. */
+  --bg: #faf9f5;
+  --bg-raise: #ffffff;
+  --bg-sunk: #f3f1eb;
+
+  /* Ink. Near-black with a trace of blue, which reads as graphite rather
+     than as a switched-off pixel. */
+  --fg: #101319;
+  --fg-dim: rgba(16, 19, 25, 0.66);
+  --muted: #7c7f88;
+
+  --line: rgba(16, 19, 25, 0.1);
+  --line-strong: rgba(16, 19, 25, 0.2);
+
+  /*
+    THE PLANE. A 24px grid with every fifth line heavier — the proportions of
+    real graph paper. Sized in one place so a section can opt into the plane by
+    setting `background-image: var(--plane)` and nothing else.
+  */
+  --grid-unit: 24px;
+  --grid-line: rgba(16, 19, 25, 0.045);
+  --grid-line-major: rgba(16, 19, 25, 0.085);
+  --plane:
+    linear-gradient(var(--grid-line-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-major) 1px, transparent 1px),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  --plane-size:
+    calc(var(--grid-unit) * 5) calc(var(--grid-unit) * 5),
+    calc(var(--grid-unit) * 5) calc(var(--grid-unit) * 5),
+    var(--grid-unit) var(--grid-unit),
+    var(--grid-unit) var(--grid-unit);
+
+  /*
+    Accent: plotter blue. A pen colour rather than a UI colour — it is what a
+    drafting machine would have drawn the curve in, and it survives on paper at
+    hairline weights where the old acid lime would have vanished.
+  */
+  --accent: #1b4fe0;
+  --accent-deep: #12379c;
+  --accent-soft: rgba(27, 79, 224, 0.09);
+
+  /*
+    Second pen, used only where a drawing needs to distinguish two readings of
+    the same curve — rising against falling. It is Grasp's copper, deliberately:
+    the product page and the studio that made it should look related rather than
+    like two brands sharing a domain.
+  */
+  --accent-2: #b4622a;
+  --accent-2-soft: rgba(180, 98, 42, 0.1);
+
+  /* Elevation. Light themes need this; dark ones mostly do not. */
+  --shadow-sm: 0 1px 2px rgba(16, 19, 25, 0.04), 0 2px 8px rgba(16, 19, 25, 0.03);
+  --shadow-md: 0 2px 6px rgba(16, 19, 25, 0.05), 0 12px 32px rgba(16, 19, 25, 0.06);
+  --shadow-lg: 0 4px 12px rgba(16, 19, 25, 0.06), 0 28px 64px rgba(16, 19, 25, 0.08);
 
   --gutter: clamp(20px, 4.4vw, 76px);
   --max: 1680px;
@@ -50,7 +110,24 @@ html.is-locked body {
 }
 
 body {
-  background: var(--bg);
+  /*
+    THE PLANE, and it is the whole idea.
+
+    Everything on this site sits on measured ground: a 24px grid with every
+    fifth line heavier, which are the proportions of real graph paper. It is
+    laid at very low contrast — you should register it as texture and only
+    notice it is a grid when you look for it. A visible grid would be a
+    decoration; an almost-invisible one is a claim about how the work is made.
+
+    `background-attachment: fixed` so the plane stays put while content moves
+    over it. That is what makes the page feel like ink being laid ON something
+    rather than a surface sliding around.
+  */
+  background-color: var(--bg);
+  background-image: var(--plane);
+  background-size: var(--plane-size);
+  background-position: center top;
+  background-attachment: fixed;
   color: var(--fg);
   font-family: var(--font-body), system-ui, sans-serif;
   font-size: clamp(15px, 0.42vw + 13.4px, 17px);
@@ -60,6 +137,18 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/*
+  On a phone the fixed plane is a repaint cost on every scroll frame for a
+  texture nobody can see at that size, and iOS Safari has never handled fixed
+  attachment well. It scrolls with the page there.
+*/
+@media (max-width: 700px) {
+  body {
+    background-attachment: scroll;
+    --grid-unit: 20px;
+  }
 }
 
 html.has-custom-cursor,
@@ -166,7 +255,7 @@ code {
   font-family: var(--font-mono), monospace;
   font-size: 0.88em;
   color: var(--accent);
-  background: rgba(212, 255, 63, 0.07);
+  background: rgba(27, 79, 224, 0.07);
   padding: 0.1em 0.36em;
   border-radius: 2px;
 }
@@ -349,7 +438,7 @@ code {
   width: 34px;
   height: 34px;
   margin: -17px 0 0 -17px;
-  border: 1px solid rgba(244, 241, 234, 0.3);
+  border: 1px solid rgba(16, 19, 25, 0.3);
   border-radius: 50%;
   transition: width 0.35s var(--ease-out), height 0.35s var(--ease-out),
     margin 0.35s var(--ease-out), border-color 0.35s, background-color 0.35s;
@@ -359,7 +448,7 @@ code {
   height: 58px;
   margin: -29px 0 0 -29px;
   border-color: var(--accent);
-  background: rgba(212, 255, 63, 0.07);
+  background: rgba(27, 79, 224, 0.07);
 }
 .cursor-ring.is-labelled {
   width: 78px;
@@ -406,7 +495,7 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   right: 0;
   height: 2px;
   z-index: 9997;
-  background: rgba(244, 241, 234, 0.06);
+  background: rgba(16, 19, 25, 0.06);
 }
 .reading-progress__bar {
   height: 100%;
@@ -431,7 +520,7 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
 }
 .preloader__col {
   background: var(--bg);
-  border-right: 1px solid rgba(244, 241, 234, 0.03);
+  border-right: 1px solid rgba(16, 19, 25, 0.03);
 }
 .preloader__inner {
   position: relative;
@@ -486,7 +575,7 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   right: 0;
   bottom: 0;
   height: 1px;
-  background: rgba(244, 241, 234, 0.1);
+  background: rgba(16, 19, 25, 0.1);
 }
 .preloader__bar {
   display: block;
@@ -545,8 +634,8 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(7, 7, 10, 0.88) 0%,
-    rgba(7, 7, 10, 0.6) 55%,
+    rgba(250, 249, 245, 0.88) 0%,
+    rgba(250, 249, 245, 0.6) 55%,
     transparent 100%
   );
   opacity: 0;
@@ -657,7 +746,7 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
 }
 .menu__panel {
   background: var(--bg-raise);
-  border-right: 1px solid rgba(244, 241, 234, 0.04);
+  border-right: 1px solid rgba(16, 19, 25, 0.04);
   transform: translateY(-100%);
 }
 .menu__inner {
@@ -829,10 +918,10 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   inset: 0;
   background: radial-gradient(
       110% 75% at 18% 92%,
-      rgba(7, 7, 10, 0.7) 0%,
-      rgba(7, 7, 10, 0) 62%
+      rgba(250, 249, 245, 0.7) 0%,
+      rgba(250, 249, 245, 0) 62%
     ),
-    linear-gradient(to bottom, rgba(7, 7, 10, 0.5), transparent 30%);
+    linear-gradient(to bottom, rgba(250, 249, 245, 0.5), transparent 30%);
   pointer-events: none;
   z-index: 1;
 }
@@ -847,7 +936,7 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   line-height: 0.75;
   letter-spacing: -0.06em;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(244, 241, 234, 0.07);
+  -webkit-text-stroke: 1px rgba(16, 19, 25, 0.07);
   pointer-events: none;
   z-index: 1;
 }
@@ -919,7 +1008,7 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   color: var(--fg-dim);
 }
 .hero__badge--live {
-  border-color: rgba(212, 255, 63, 0.35);
+  border-color: rgba(27, 79, 224, 0.35);
   color: var(--accent);
 }
 .hero__pulse {
@@ -933,11 +1022,11 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 0 0 rgba(212, 255, 63, 0.45);
+    box-shadow: 0 0 0 0 rgba(27, 79, 224, 0.45);
   }
   50% {
     opacity: 0.55;
-    box-shadow: 0 0 0 6px rgba(212, 255, 63, 0);
+    box-shadow: 0 0 0 6px rgba(27, 79, 224, 0);
   }
 }
 .hero__cue {
@@ -1000,7 +1089,7 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   font-size: clamp(15px, 1.7vw, 24px);
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: rgba(244, 241, 234, 0.3);
+  color: rgba(16, 19, 25, 0.3);
 }
 .marquee__dot {
   width: 6px;
@@ -1158,7 +1247,7 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   position: relative;
   font-size: 14.5px;
   color: var(--fg-dim);
-  border-bottom: 1px solid rgba(244, 241, 234, 0.05);
+  border-bottom: 1px solid rgba(16, 19, 25, 0.05);
 }
 .service__signals li::before,
 .service__deliverables li::before {
@@ -1177,7 +1266,7 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   justify-content: space-between;
   gap: 16px;
   padding: 9px 0;
-  border-bottom: 1px solid rgba(244, 241, 234, 0.05);
+  border-bottom: 1px solid rgba(16, 19, 25, 0.05);
   font-size: 14px;
 }
 .service__engagement dt {
@@ -1384,7 +1473,7 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   padding: 4px 10px;
   border: 1px solid var(--line);
   border-radius: 100px;
-  background: rgba(7, 7, 10, 0.7);
+  background: rgba(250, 249, 245, 0.7);
   font-size: 9.5px;
 }
 .work-card__body {
@@ -1448,10 +1537,10 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   transition: opacity 0.6s var(--ease-out);
 }
 .poster__ink--line {
-  color: rgba(244, 241, 234, 0.42);
+  color: rgba(16, 19, 25, 0.42);
 }
 .poster__ink--fg {
-  color: rgba(244, 241, 234, 0.78);
+  color: rgba(16, 19, 25, 0.78);
 }
 .poster__ink--accent {
   color: var(--accent);
@@ -1729,7 +1818,7 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   font-weight: 800;
   line-height: 0.82;
   letter-spacing: -0.055em;
-  color: rgba(244, 241, 234, 0.08);
+  color: rgba(16, 19, 25, 0.08);
   user-select: none;
 }
 .footer__base {
@@ -2029,7 +2118,7 @@ ol.prose__list li::before {
   display: block;
   background: none;
   padding: 0;
-  color: rgba(244, 241, 234, 0.82);
+  color: rgba(16, 19, 25, 0.82);
   font-size: 12.5px;
   line-height: 1.75;
   white-space: pre;
@@ -2052,7 +2141,7 @@ ol.prose__list li::before {
 }
 .case__status {
   padding: 7px 14px;
-  border: 1px solid rgba(212, 255, 63, 0.3);
+  border: 1px solid rgba(27, 79, 224, 0.3);
   border-radius: 100px;
   color: var(--accent);
 }
@@ -2618,7 +2707,7 @@ ol.prose__list li::before {
   left: 0;
   right: 0;
   height: 2px;
-  background: rgba(244, 241, 234, 0.06);
+  background: rgba(16, 19, 25, 0.06);
   overflow: hidden;
 }
 .builder__progress span {
@@ -2871,7 +2960,7 @@ ol.prose__list li::before {
 .portrait__frame {
   position: absolute;
   inset: 12px;
-  border: 1px solid rgba(244, 241, 234, 0.14);
+  border: 1px solid rgba(16, 19, 25, 0.14);
   pointer-events: none;
 }
 .portrait__tag {
@@ -2919,7 +3008,7 @@ ol.prose__list li::before {
   display: block;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom, var(--accent), rgba(212, 255, 63, 0.25));
+  background: linear-gradient(to bottom, var(--accent), rgba(27, 79, 224, 0.25));
   transform-origin: 50% 0%;
 }
 .career__list {
@@ -3154,19 +3243,22 @@ ol.prose__list li::before {
   flex-direction: column;
   width: min(920px, 100%);
   max-height: min(88vh, 1180px);
-  /* The one place the palette inverts: paper stock, so the document reads as
-     a document rather than another dark panel. */
-  background: #f4f1ea;
-  color: #14141a;
+  /* This block used to be the one place the palette INVERTED — paper stock in
+     a dark theme, so the document read as a document. The whole site is paper
+     now, so the inversion is gone and the sheet lifts off the page instead:
+     pure white against warm ground, carried by shadow rather than by contrast.
+     Following the token blindly here would have made the résumé near-black. */
+  background: var(--bg-raise);
+  color: var(--fg);
   border-radius: var(--radius-lg);
-  box-shadow: 0 60px 120px -40px rgba(0, 0, 0, 0.9);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
 .resume-modal__scan {
   position: absolute;
   inset: 0;
   z-index: 3;
-  background: linear-gradient(to bottom, rgba(212, 255, 63, 0.35), transparent 22%);
+  background: linear-gradient(to bottom, rgba(27, 79, 224, 0.35), transparent 22%);
   transform-origin: 50% 0%;
   pointer-events: none;
 }
@@ -3180,7 +3272,7 @@ ol.prose__list li::before {
   color: var(--fg);
 }
 .resume-modal__bar .mono-label {
-  color: rgba(244, 241, 234, 0.7);
+  color: rgba(16, 19, 25, 0.7);
 }
 .resume-modal__bar-actions {
   display: flex;
@@ -3189,7 +3281,7 @@ ol.prose__list li::before {
 }
 .resume-modal__pill {
   padding: 7px 14px;
-  border: 1px solid rgba(244, 241, 234, 0.24);
+  border: 1px solid rgba(16, 19, 25, 0.24);
   border-radius: 100px;
   font-family: var(--font-mono), monospace;
   font-size: 10.5px;
@@ -3206,7 +3298,7 @@ ol.prose__list li::before {
   place-items: center;
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(244, 241, 234, 0.24);
+  border: 1px solid rgba(16, 19, 25, 0.24);
   border-radius: 50%;
   font-size: 13px;
   transition: background-color 0.3s, color 0.3s, transform 0.4s var(--ease-out);
@@ -3640,4 +3732,426 @@ ol.prose__list li::before {
   .poster {
     transform: none !important;
   }
+}
+
+/* ---------- Exploded axonometric ------------------------------------------ */
+
+/*
+  The studio's signature drawing. Geometry in `lib/axonometric.ts`, choreography
+  in `components/Exploded.tsx`; this file only says what ink each part is in.
+*/
+
+.exploded {
+  position: relative;
+  width: 100%;
+}
+
+.exploded__caption {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--grid-unit);
+}
+
+.exploded__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* The layer's own surface. Barely there — it is a plane, not a card. */
+.exploded__plane {
+  fill: var(--bg-raise);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  /* Paper is opaque; a translucent plane would let the layer below show
+     through and the stack would read as one muddled surface rather than as
+     separate sheets. */
+  fill-opacity: 0.92;
+}
+
+.exploded__grid {
+  fill: none;
+  stroke: var(--grid-line-major);
+  stroke-width: 0.75;
+  vector-effect: non-scaling-stroke;
+}
+
+.exploded__curve {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.exploded__curve--alt {
+  stroke: var(--accent-2);
+}
+
+.exploded__leader {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.exploded__node {
+  fill: var(--accent);
+}
+
+.exploded__index,
+.exploded__label,
+.exploded__note {
+  /* Text in a scaled SVG: `non-scaling-stroke` does not apply, so sizes here
+     are in user units and scale with the viewBox. That is wanted — the callouts
+     should hold their proportion to the drawing at every width. */
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+.exploded__index {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  fill: var(--accent);
+}
+
+.exploded__label {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  fill: var(--fg);
+}
+
+.exploded__note {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  fill: var(--muted);
+}
+
+@media (max-width: 860px) {
+  /*
+    The callout column needs room the drawing does not have on a phone. Rather
+    than shrink the type below reading size, the notes are dropped and the
+    labels kept — the diagram still says what each layer IS, which is the part
+    that carries meaning.
+  */
+  .exploded__note {
+    display: none;
+  }
+  .exploded__label {
+    font-size: 17px;
+  }
+}
+
+/* ---------- Product page ---------------------------------------------------- */
+
+.product {
+  padding-top: clamp(120px, 16vh, 200px);
+}
+
+.product__head {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.product__head-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gutter);
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: calc(var(--grid-unit) * 1.5);
+  border-bottom: 1px solid var(--line);
+}
+
+.product__status {
+  color: var(--accent);
+}
+
+.product__index {
+  display: block;
+  color: var(--muted);
+  margin-top: calc(var(--grid-unit) * 2);
+}
+
+.product__name {
+  font-family: var(--font-display), serif;
+  font-size: clamp(52px, 11vw, 148px);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.03em;
+  /* A mask with sub-1 leading clips descenders — pair it with padding and an
+     equal negative margin. Same rule as every other masked heading here. */
+  padding-bottom: 0.2em;
+  margin-bottom: -0.2em;
+}
+
+.product__tagline p {
+  font-family: var(--font-display), serif;
+  font-size: clamp(20px, 2.4vw, 30px);
+  font-weight: 500;
+  color: var(--accent-2);
+  margin-top: calc(var(--grid-unit) * 0.75);
+}
+
+.product__summary p {
+  max-width: 62ch;
+  font-size: clamp(17px, 1.2vw, 20px);
+  color: var(--fg-dim);
+  margin-top: calc(var(--grid-unit) * 1.5);
+}
+
+.product__facts dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--grid-unit) * 2.5);
+  margin-top: calc(var(--grid-unit) * 2);
+  padding-top: calc(var(--grid-unit) * 1.5);
+  border-top: 1px solid var(--line);
+}
+
+.product__facts dt {
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.product__facts dd {
+  font-size: 17px;
+}
+
+.product__drawing {
+  max-width: 1180px;
+  margin: clamp(80px, 12vh, 150px) auto;
+  padding: 0 var(--gutter);
+}
+
+.product__section {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(56px, 8vh, 96px) var(--gutter);
+  display: grid;
+  grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+  gap: clamp(28px, 5vw, 90px);
+  align-items: start;
+  border-top: 1px solid var(--line);
+}
+
+.product__section-head {
+  position: sticky;
+  top: calc(var(--grid-unit) * 5);
+}
+
+.product__section-title {
+  font-family: var(--font-display), serif;
+  font-size: clamp(26px, 2.6vw, 38px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-top: var(--grid-unit);
+  padding-bottom: 0.2em;
+  margin-bottom: -0.2em;
+}
+
+.product__cta {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(72px, 12vh, 140px) var(--gutter);
+  border-top: 1px solid var(--line);
+}
+
+.product__cta h2 {
+  font-family: var(--font-display), serif;
+  font-size: clamp(28px, 4vw, 54px);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  max-width: 18ch;
+}
+
+.product__cta p {
+  max-width: 58ch;
+  color: var(--fg-dim);
+  margin-top: var(--grid-unit);
+}
+
+.product__cta-actions a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 2px;
+}
+
+@media (max-width: 900px) {
+  .product__section {
+    grid-template-columns: 1fr;
+  }
+  .product__section-head {
+    position: static;
+  }
+}
+
+/* ---------- Legal ----------------------------------------------------------- */
+
+/*
+  The plainest layout on the site, and that is the design. Someone here is
+  checking a specific claim or reviewing the app against its stated behaviour;
+  both want the text at once. Nothing arrives late and nothing is choreographed.
+*/
+
+.legal {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: clamp(120px, 16vh, 200px) var(--gutter) clamp(80px, 12vh, 140px);
+}
+
+.legal__title {
+  font-family: var(--font-display), serif;
+  font-size: clamp(34px, 5.2vw, 62px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  margin-top: calc(var(--grid-unit) * 2);
+  padding-bottom: 0.2em;
+  margin-bottom: -0.2em;
+}
+
+.legal__scope p {
+  font-size: clamp(17px, 1.2vw, 19px);
+  color: var(--fg-dim);
+  margin-top: var(--grid-unit);
+}
+
+.legal__updated {
+  color: var(--muted);
+  margin-top: calc(var(--grid-unit) * 1.5);
+  padding-bottom: calc(var(--grid-unit) * 1.5);
+  border-bottom: 1px solid var(--line);
+}
+
+.legal__body {
+  margin-top: calc(var(--grid-unit) * 2);
+}
+
+.legal__foot {
+  margin-top: calc(var(--grid-unit) * 3);
+  padding-top: calc(var(--grid-unit) * 1.5);
+  border-top: 1px solid var(--line);
+  color: var(--fg-dim);
+}
+
+.legal__foot a {
+  color: var(--accent);
+}
+
+.legal__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gutter);
+  margin-top: var(--grid-unit);
+}
+
+.legal__nav a {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.legal__nav a:hover {
+  color: var(--fg);
+}
+
+/* ---------- Products on the home page --------------------------------------- */
+
+.product-feature__body {
+  display: grid;
+  grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+  gap: clamp(32px, 5vw, 80px);
+  align-items: center;
+  margin-top: calc(var(--grid-unit) * 2);
+}
+
+.product-feature__intro {
+  align-self: center;
+}
+
+.product-feature__status {
+  color: var(--accent);
+}
+
+.product-feature__name {
+  font-family: var(--font-display), serif;
+  font-size: clamp(38px, 5.5vw, 68px);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  margin-top: var(--grid-unit);
+}
+
+.product-feature__tagline {
+  display: block;
+  font-size: clamp(17px, 1.6vw, 22px);
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: -0.01em;
+  color: var(--accent-2);
+  margin-top: 8px;
+}
+
+.product-feature__summary {
+  color: var(--fg-dim);
+  margin: calc(var(--grid-unit) * 1.25) 0;
+  max-width: 46ch;
+}
+
+/*
+  The drawing is wider than its column and that is intentional: the stack needs
+  horizontal room for the callouts, and letting it bleed past the text column is
+  what makes it read as a drawing on a page rather than an image in a slot.
+*/
+.product-feature__drawing {
+  min-width: 0;
+}
+
+@media (max-width: 1000px) {
+  .product-feature__body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Products index reuses .work-row, which expects a poster it will not get. */
+.product-row {
+  grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+}
+
+/* ---------- Footer legal row ------------------------------------------------ */
+
+.footer__legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--grid-unit) * 0.75) var(--gutter);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footer__legal a {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.3s var(--ease-out);
+}
+
+.footer__legal a:hover {
+  color: var(--fg);
 }

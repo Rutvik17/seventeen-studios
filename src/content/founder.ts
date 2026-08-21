@@ -21,7 +21,6 @@ export const founder = {
   portrait: asset('/founder/rutvik-patel.jpg'),
   portraitAlt: 'Rutvik Patel, founder and principal engineer at Seventeen Studios',
   resume: asset('/founder/rutvik-patel-resume.pdf'),
-  email: 'hello@seventeenstudios.co',
   github: 'https://github.com/Rutvik17',
   /** One line, used for metadata and the studio-page cross-link. */
   summary: `Principal engineer with ${spell(years)} years building interfaces and platforms at enterprise scale — agentic AI at Ernst & Young, a mobile product taken from zero to acquisition, connected-vehicle infrastructure at Ford.`,
