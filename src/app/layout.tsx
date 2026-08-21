@@ -76,9 +76,15 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+/*
+  Both of these were left over from the original dark palette and were wrong for
+  months: `colorScheme: 'dark'` tells the browser to render form controls and
+  scrollbars dark on a page that is paper, and the theme colour tinted the
+  mobile browser chrome near-black above a washi background.
+*/
 export const viewport: Viewport = {
-  themeColor: '#07070a',
-  colorScheme: 'dark',
+  themeColor: '#f2ede1',
+  colorScheme: 'light',
 };
 
 export default function RootLayout({

@@ -49,6 +49,63 @@ export const nav = [
   { label: 'Contact', href: '/start/' },
 ] as const;
 
+/**
+ * The hero, which is the studio's whole pitch in four fields.
+ *
+ * It opens on the PROBLEM rather than on the studio. Every agency site in the
+ * world opens by describing itself, so a visitor has read that paragraph a
+ * hundred times and skims it by reflex. Naming the failure they are living
+ * through buys the next ten seconds, and the next ten seconds are all any of
+ * this is competing for.
+ */
+export const hero = {
+  eyebrow: 'Independent engineering studio · Toronto',
+  title: 'Most software fails long before it ships.',
+  lead: 'It fails in the gap between what a team can describe and what a team can build. Agencies fill that gap with headcount. Consultancies fill it with process. We fill it with senior engineers who write the code, own the architecture, and stay accountable to the outcome.',
+  primaryAction: 'Start a brief',
+  secondaryAction: 'See what we build for ourselves',
+} as const;
+
+/**
+ * The workshop section — what the studio IS, told as a place.
+ *
+ * Deliberately concrete. "Boutique", "passionate" and "partner" are the three
+ * words every competitor uses and none of them survive contact with a
+ * procurement conversation; a headcount, a project count and a named person do.
+ */
+export const craft = {
+  label: 'The workshop',
+  lead: 'A small workshop, and everything that follows from being one.',
+  body: [
+    'Seventeen Studios is deliberately small. One engagement at a time, taken by the people who will do the work — no pyramid, no account layer, no handoff to a delivery team you have never spoken to.',
+    'That constraint is the product. A studio this size cannot survive a project it does not understand, so it declines the ones it does not, and it says so in week one rather than in month four. What you lose is the ability to throw bodies at a slipping date. What you gain is that the date stops slipping.',
+  ],
+  marks: [
+    { value: 'One', label: 'Engagement at a time' },
+    { value: 'Senior', label: 'Only, on the keyboard' },
+    { value: 'Week 1', label: 'Something real, running' },
+    { value: 'Open', label: 'Reasoning published first' },
+  ],
+} as const;
+
+/**
+ * The proof section's framing.
+ *
+ * The honest problem this site has: a new studio has no client logos, and every
+ * device for hiding that — stock photography, invented testimonials, "trusted
+ * by" rows of generic marks — is a lie a competent buyer detects instantly.
+ *
+ * So it does the opposite and says the quiet part first. What sits below this
+ * heading is not a case study, it is a working instrument: real quantitative
+ * methods, computed live in the visitor’s browser, with the inputs exposed.
+ * A prospect cannot verify a testimonial. They can verify a Monte Carlo.
+ */
+export const proof = {
+  label: 'Instruments',
+  lead: 'No client logos. Working instruments instead.',
+  body: 'Every figure below is computed in your browser as you read it — no recorded video, no screenshot, no number typed into a slide. Move an input and watch the distribution move. This is the level of rigour the studio brings to a client’s numbers, demonstrated on its own.',
+} as const;
+
 /** Marquee strip items. */
 export const marqueeItems = [
   'Product Engineering',

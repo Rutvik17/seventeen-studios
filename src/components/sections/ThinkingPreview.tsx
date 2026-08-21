@@ -62,7 +62,7 @@ export function ThinkingPreview() {
   return (
     <section className="section thinking" id="thinking" ref={ref}>
       <SectionHeader
-        index="07"
+        index="08"
         label="Thinking"
         title={
           <p className="section-header__lead">

@@ -3,15 +3,10 @@
 import { useRef } from 'react';
 import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
-import {
-  leaderAnchor,
-  planeCurve,
-  planeGrid,
-  planePath,
-} from '@/lib/axonometric';
+import { leaderAnchor, planeCurve, planeGrid, planePath } from '@/lib/axonometric';
 
 /**
- * An exploded axonometric that separates on scroll.
+ * An exploded axonometric that separates while it is held on screen.
  *
  * It begins as ONE drawing — every layer coincident, reading as a single
  * plotted plane — and comes apart as the section is scrolled, each layer
@@ -21,6 +16,34 @@ import {
  * parts"; a drawing that separates in front of you says "this is one thing, and
  * these are the layers it was made from" — which is a claim about how the work
  * is built, made by the interface rather than by the copy.
+ *
+ * ---
+ *
+ * WHY IT IS PINNED, WHICH IT WAS NOT AT FIRST
+ *
+ * The first version scrubbed against the section's own travel through the
+ * viewport, and the labels landed after the drawing had already left the
+ * screen — reported as "reveals labels after the scrolling has passed". The
+ * cause was structural rather than a matter of tuning the numbers: a range that
+ * ends when the element's BOTTOM reaches the upper viewport has, by definition,
+ * spent most of its scroll distance pushing the drawing out of view. Any
+ * timeline mapped onto it finishes late, because the range itself finishes late.
+ *
+ * Pinning removes the conflict instead of trading against it. The stage holds
+ * still at `top top` and the page scroll drives only the separation, so every
+ * label appears while the drawing is stationary and wholly visible. The outer
+ * element supplies the scroll distance through its own height, which is why
+ * `pinSpacing` is off — GSAP would otherwise insert a second copy of it.
+ *
+ * ---
+ *
+ * WHY THE SVG IS CAPPED IN HEIGHT
+ *
+ * Five layers at full separation is a tall drawing: the viewBox works out
+ * around 615 × 1008, so at any sensible column width it rendered past 1100px
+ * and could not be seen whole on a laptop. `preserveAspectRatio` plus a
+ * viewport-relative `max-height` lets it letterbox down to fit rather than
+ * overflow — the stack stays legible and the callouts keep their column.
  *
  * ---
  *
@@ -37,12 +60,12 @@ import {
  *
  * REDUCED MOTION
  *
- * The layers are drawn ALREADY separated, with the labels already showing, and
- * nothing scrubs. The information the animation carries — that these are
- * layers, how many, and what each one is — arrives complete; only the
- * separating is dropped. §5 of the studio rules: an alternative expression, not
- * an absence. Scrubbed lifting is exactly the vestibular offender that rule
- * names, so it is removed rather than shortened.
+ * The layers are drawn ALREADY separated, with the labels already showing,
+ * nothing scrubs, and nothing pins. The information the animation carries —
+ * that these are layers, how many, and what each one is — arrives complete;
+ * only the separating is dropped. §5 of the studio rules: an alternative
+ * expression, not an absence. Scrubbed lifting is exactly the vestibular
+ * offender that rule names, so it is removed rather than shortened.
  */
 
 export type ExplodedLayer = {
@@ -70,14 +93,17 @@ export type ExplodedProps = {
 };
 
 /** Half-width of the shared footprint, in user units. */
-const SIZE = 150;
+const SIZE = 160;
 /** How far apart the layers stand when fully separated. */
-const SEPARATION = 132;
+const SEPARATION = 118;
 /** Rulings across each plane. Matches the page grid's five-to-one feel. */
 const DIVISIONS = 10;
+/** Horizontal room reserved for the callout column. */
+const CALLOUT_COLUMN = 330;
 
 export function Exploded({ layers, caption, className }: ExplodedProps) {
   const root = useRef<HTMLDivElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
 
   /**
    * The viewBox has to hold the stack at FULL separation, not at rest.
@@ -88,19 +114,26 @@ export function Exploded({ layers, caption, className }: ExplodedProps) {
    * crop the fifth.
    */
   const spread = SEPARATION * (layers.length - 1);
-  const halfHeight = SIZE + spread * 0.5 + 90;
-  const viewBox = `${-SIZE * 1.05 - 40} ${-halfHeight} ${SIZE * 2.1 + 300} ${halfHeight * 2}`;
+  const halfHeight = SIZE + spread * 0.5 + 76;
+  const viewBox = [
+    -SIZE * 1.05 - 36,
+    -halfHeight,
+    SIZE * 2.1 + CALLOUT_COLUMN,
+    halfHeight * 2,
+  ].join(' ');
 
   useIsomorphicLayoutEffect(() => {
     const el = root.current;
-    if (!el) return;
+    const stageEl = stage.current;
+    if (!el || !stageEl) return;
 
     const ctx = gsap.context(() => {
       const planes = gsap.utils.toArray<SVGGElement>('[data-layer]');
       const callouts = gsap.utils.toArray<SVGGElement>('[data-callout]');
 
       if (prefersReducedMotion()) {
-        // Already apart, already labelled. Nothing to scrub.
+        // Already apart, already labelled. Nothing to scrub, nothing to pin.
+        el.dataset.static = 'true';
         planes.forEach((plane, i) => {
           gsap.set(plane, { y: -restingLift(i, layers.length) });
         });
@@ -116,104 +149,125 @@ export function Exploded({ layers, caption, className }: ExplodedProps) {
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: el,
-          start: 'top 78%',
-          end: 'bottom 42%',
-          scrub: 0.6,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 0.7,
+          pin: stageEl,
+          // The outer element already reserves the scroll distance with its own
+          // height. Letting GSAP add spacing too would double it and leave a
+          // viewport of dead space under the drawing.
+          pinSpacing: false,
+          anticipatePin: 1,
         },
       });
+
+      /*
+        Each layer gets its own slice of the timeline, and its callout lands at
+        roughly two thirds of that slice — while the layer is still visibly
+        moving, so the label reads as belonging to the thing that just arrived.
+
+        The last callout finishes near 0.80 of the scrub rather than at 1.0.
+        That tail is deliberate: it leaves the completed drawing held and
+        readable for a beat before the pin releases, which is the moment the
+        diagram is actually doing its job.
+      */
+      const slice = 0.5;
+      const step = 0.08;
 
       planes.forEach((plane, i) => {
         tl.to(
           plane,
-          { y: -restingLift(i, layers.length), ease: 'none' },
-          0
+          { y: -restingLift(i, layers.length), ease: 'power2.out', duration: slice },
+          i * step,
         );
       });
 
-      // Callouts arrive AFTER their layer has travelled, staggered up the
-      // stack, so the eye is led from the bottom rather than shown everything
-      // at once.
       callouts.forEach((callout, i) => {
-        tl.to(callout, { opacity: 1, ease: 'none', duration: 0.25 }, 0.35 + i * 0.1);
+        tl.to(
+          callout,
+          { opacity: 1, ease: 'none', duration: 0.14 },
+          i * step + slice * 0.68,
+        );
       });
     }, el);
 
-    // The section changes height on nothing, but pinned sections elsewhere on
-    // the page measure against it.
     ScrollTrigger.refresh();
     return () => ctx.revert();
   }, [layers.length]);
 
   return (
     <div className={`exploded${className ? ` ${className}` : ''}`} ref={root}>
-      {caption && <p className="exploded__caption">{caption}</p>}
+      <div className="exploded__stage" ref={stage}>
+        {caption && <p className="exploded__caption">{caption}</p>}
 
-      <svg
-        className="exploded__svg"
-        viewBox={viewBox}
-        role="img"
-        aria-label={`Exploded diagram: ${layers.map((l) => l.label).join(', ')}`}
-      >
-        {/*
-          Painted bottom-up so a higher layer overlaps the one beneath it.
-          SVG has no z-buffer — paint order IS depth — so reversing this list
-          would have the bottom layer drawn over the top one and the stack
-          would read inside out.
-        */}
-        {layers.map((layer, i) => {
-          const lift = 0;
-          const anchor = leaderAnchor(SIZE, lift);
-          return (
-            <g key={layer.id} data-layer className="exploded__layer">
-              <path className="exploded__plane" d={planePath(SIZE, lift)} />
-              <path
-                className="exploded__grid"
-                d={planeGrid(SIZE, lift, DIVISIONS)}
-              />
-              {layer.curve && (
+        <svg
+          className="exploded__svg"
+          viewBox={viewBox}
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-label={`Exploded diagram: ${layers.map((l) => l.label).join(', ')}`}
+        >
+          {/*
+            Painted bottom-up so a higher layer overlaps the one beneath it.
+            SVG has no z-buffer — paint order IS depth — so reversing this list
+            would have the bottom layer drawn over the top one and the stack
+            would read inside out.
+          */}
+          {layers.map((layer, i) => {
+            const lift = 0;
+            const anchor = leaderAnchor(SIZE, lift);
+            return (
+              <g key={layer.id} data-layer className="exploded__layer">
+                <path className="exploded__plane" d={planePath(SIZE, lift)} />
                 <path
-                  className={`exploded__curve${layer.alt ? ' exploded__curve--alt' : ''}`}
-                  d={planeCurve(SIZE, lift, layer.curve)}
+                  className="exploded__grid"
+                  d={planeGrid(SIZE, lift, DIVISIONS)}
                 />
-              )}
+                {layer.curve && (
+                  <path
+                    className={`exploded__curve${layer.alt ? ' exploded__curve--alt' : ''}`}
+                    d={planeCurve(SIZE, lift, layer.curve)}
+                  />
+                )}
 
-              <g data-callout className="exploded__callout">
-                <path
-                  className="exploded__leader"
-                  d={`M ${anchor.x} ${anchor.y} L ${anchor.x + 54} ${anchor.y - 26}`}
-                />
-                <circle
-                  className="exploded__node"
-                  cx={anchor.x}
-                  cy={anchor.y}
-                  r={3}
-                />
-                <text
-                  className="exploded__index"
-                  x={anchor.x + 62}
-                  y={anchor.y - 36}
-                >
-                  {String(i + 1).padStart(2, '0')}
-                </text>
-                <text
-                  className="exploded__label"
-                  x={anchor.x + 62}
-                  y={anchor.y - 18}
-                >
-                  {layer.label}
-                </text>
-                <text
-                  className="exploded__note"
-                  x={anchor.x + 62}
-                  y={anchor.y + 1}
-                >
-                  {layer.note}
-                </text>
+                <g data-callout className="exploded__callout">
+                  <path
+                    className="exploded__leader"
+                    d={`M ${anchor.x} ${anchor.y} L ${anchor.x + 48} ${anchor.y - 24} L ${anchor.x + 74} ${anchor.y - 24}`}
+                  />
+                  <circle
+                    className="exploded__node"
+                    cx={anchor.x}
+                    cy={anchor.y}
+                    r={3}
+                  />
+                  <text
+                    className="exploded__index"
+                    x={anchor.x + 82}
+                    y={anchor.y - 30}
+                  >
+                    {String(i + 1).padStart(2, '0')}
+                  </text>
+                  <text
+                    className="exploded__label"
+                    x={anchor.x + 82}
+                    y={anchor.y - 12}
+                  >
+                    {layer.label}
+                  </text>
+                  <text
+                    className="exploded__note"
+                    x={anchor.x + 82}
+                    y={anchor.y + 7}
+                  >
+                    {layer.note}
+                  </text>
+                </g>
               </g>
-            </g>
-          );
-        })}
-      </svg>
+            );
+          })}
+        </svg>
+      </div>
     </div>
   );
 }
