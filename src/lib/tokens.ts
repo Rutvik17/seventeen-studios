@@ -7,18 +7,30 @@
  */
 
 export const tokens = {
-  bg: '#07070a',
-  surface: '#0c0c11',
-  fg: '#f4f1ea',
-  muted: '#79798a',
-  line: '#1c1c24',
-  accent: '#d4ff3f',
-  accentDeep: '#8fd400',
+  bg: '#faf9f5',
+  surface: '#ffffff',
+  fg: '#101319',
+  muted: '#7c7f88',
+  line: '#e4e1d9',
+  accent: '#1b4fe0',
+  accentDeep: '#12379c',
+  /** The second pen. Grasp's copper, so the two look related. */
+  accent2: '#b4622a',
 } as const;
 
-/** Accent as a Three.js-compatible numeric hex. */
-export const ACCENT_HEX = 0xd4ff3f;
-export const BG_HEX = 0x07070a;
+/**
+ * Three.js-compatible numeric hexes.
+ *
+ * **These must be flipped WITH the CSS, and there is no mechanism that makes
+ * them.** The stylesheet is the source of truth for everything the DOM paints;
+ * WebGL cannot read a custom property, so this file is a hand-kept mirror. A
+ * palette change that updates one and not the other leaves the hero field
+ * painting the old theme over the new page — and it fails silently, because
+ * both halves are internally consistent.
+ */
+export const ACCENT_HEX = 0x1b4fe0;
+export const ACCENT_2_HEX = 0xb4622a;
+export const BG_HEX = 0xfaf9f5;
 
 export const easing = {
   /** Long, confident deceleration — the studio's default entrance. */

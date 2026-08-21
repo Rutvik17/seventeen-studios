@@ -3,6 +3,7 @@ import { Marquee } from '@/components/Marquee';
 import { Manifesto } from '@/components/sections/Manifesto';
 import { Services } from '@/components/sections/Services';
 import { Capabilities } from '@/components/sections/Capabilities';
+import { ProductFeature } from '@/components/sections/ProductFeature';
 import { WorkGallery } from '@/components/sections/WorkGallery';
 import { Process } from '@/components/sections/Process';
 import { ThinkingPreview } from '@/components/sections/ThinkingPreview';
@@ -18,6 +19,7 @@ export default function HomePage() {
       <Manifesto />
       <Services />
       <Capabilities />
+      <ProductFeature />
       <WorkGallery />
       <Process />
       <ThinkingPreview />

@@ -3,8 +3,11 @@
 import { useEffect, useState } from 'react';
 import { site, nav } from '@/content/studio';
 import { concepts } from '@/content/work';
+import { products } from '@/content/products';
+import { policies } from '@/content/policies';
 import { essays } from '@/content/thinking';
 import { TransitionLink } from './Transition';
+import { ContactLink } from './ContactLink';
 import { FitText } from './FitText';
 
 /**
@@ -26,6 +29,19 @@ export function Footer({ buildYear }: { buildYear: number }) {
             {nav.map((item) => (
               <li key={item.href}>
                 <TransitionLink href={item.href}>{item.label}</TransitionLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="footer__col">
+          <span className="mono-label">Products</span>
+          <ul>
+            {products.map((product) => (
+              <li key={product.slug}>
+                <TransitionLink href={`/products/${product.slug}/`}>
+                  {product.name}
+                </TransitionLink>
               </li>
             ))}
           </ul>
@@ -62,13 +78,17 @@ export function Footer({ buildYear }: { buildYear: number }) {
           <ul>
             {site.social.map((item) => (
               <li key={item.label}>
-                <a
-                  href={item.href}
-                  target={item.href.startsWith('http') ? '_blank' : undefined}
-                  rel="noreferrer noopener"
-                >
-                  {item.label}
-                </a>
+                {'contact' in item ? (
+                  <ContactLink>{item.label}</ContactLink>
+                ) : (
+                  <a
+                    href={item.href}
+                    target={item.href.startsWith('http') ? '_blank' : undefined}
+                    rel="noreferrer noopener"
+                  >
+                    {item.label}
+                  </a>
+                )}
               </li>
             ))}
           </ul>
@@ -87,9 +107,21 @@ export function Footer({ buildYear }: { buildYear: number }) {
           © {year} {site.name}
         </span>
         <span className="mono-label">{site.location}</span>
-        <span className="mono-label">
-          Typeset in Syne, DM Sans &amp; JetBrains Mono
-        </span>
+        {/*
+          The legal pages live down here rather than in the nav because that is
+          where every visitor already looks for them — and App Store review
+          follows the same habit when it goes checking that the privacy policy
+          for a submitted app is actually reachable from the site that hosts it.
+        */}
+        <ul className="footer__legal">
+          {policies.map((policy) => (
+            <li key={policy.slug}>
+              <TransitionLink href={`/legal/${policy.slug}/`}>
+                {policy.title}
+              </TransitionLink>
+            </li>
+          ))}
+        </ul>
       </div>
     </footer>
   );

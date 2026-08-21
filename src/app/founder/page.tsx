@@ -19,6 +19,7 @@ import { Magnetic } from '@/components/motion/Magnetic';
 import { TransitionLink } from '@/components/Transition';
 import { SectionHeader } from '@/components/SectionHeader';
 import { CAREER_START, spellCapitalised, yearsOfExperience } from '@/lib/time';
+import { ContactLink } from '@/components/ContactLink';
 
 export const metadata: Metadata = {
   title: `${founder.name} — Founder`,
@@ -197,9 +198,7 @@ export default function FounderPage() {
               Start a brief <i aria-hidden="true">→</i>
             </TransitionLink>
           </Magnetic>
-          <a href={`mailto:${founder.email}`} className="contact__email">
-            {founder.email}
-          </a>
+          <ContactLink className="contact__email" />
         </div>
       </Reveal>
     </div>

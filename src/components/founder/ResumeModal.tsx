@@ -29,6 +29,7 @@ import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { lockScroll, unlockScroll } from '@/lib/lenis';
 import { asset } from '@/lib/asset';
 import { resetCursor } from '@/lib/cursor';
+import { ContactLink } from '@/components/ContactLink';
 import {
   resumeHeader,
   resumeSummary,
@@ -265,9 +266,15 @@ function ResumeDialog({ onClose }: { onClose: () => void }) {
             <header className="resume-doc__head resume-doc__stagger">
               <h2 className="resume-doc__name">{resumeHeader.name}</h2>
               <p className="resume-doc__title">{resumeHeader.title}</p>
+              {/*
+                The phone number and email address that appear on the PDF are
+                deliberately absent here. This markup is prerendered into a
+                public static export, so printing them would put both on every
+                harvesting list that reads it — see the note on `resumeHeader`.
+                The downloaded document carries the full details.
+              */}
               <p className="resume-doc__contact">
-                {resumeHeader.location} · {resumeHeader.phone} ·{' '}
-                <a href={`mailto:${resumeHeader.email}`}>{resumeHeader.email}</a>
+                {resumeHeader.location} · <ContactLink>Email</ContactLink>
               </p>
               <p className="resume-doc__contact">
                 {resumeHeader.linkedin} · {resumeHeader.github} · {resumeHeader.site}

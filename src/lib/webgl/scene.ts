@@ -22,7 +22,7 @@
  */
 
 import {
-  AdditiveBlending,
+  NormalBlending,
   BufferAttribute,
   BufferGeometry,
   Color,
@@ -378,7 +378,19 @@ export function createScene(
     color: accent,
     transparent: true,
     opacity: reducedMotion ? 0.16 : 0,
-    blending: AdditiveBlending,
+    /*
+      NORMAL, not additive — the palette flip forces this.
+
+      Additive blending adds light to what is behind it, which is how a
+      particle field glows on black. On paper there is no headroom to add
+      into: every additive fragment drives an already-near-white pixel to pure
+      white, so the entire field renders as nothing at all. It fails silently
+      and it fails completely.
+
+      Normal blending with a dark ink colour draws ON the paper instead, which
+      is what ink does.
+    */
+    blending: NormalBlending,
     depthWrite: false,
   });
   const scaffold = new LineSegments(scaffoldGeometry, scaffoldMaterial);
@@ -417,7 +429,8 @@ export function createScene(
     fragmentShader: FIELD_FRAG,
     transparent: true,
     depthWrite: false,
-    blending: AdditiveBlending,
+    // Same reason as above: nothing can be added to white.
+    blending: NormalBlending,
     uniforms: {
       uTime: { value: 0 },
       uReveal: { value: reducedMotion ? 1 : 0 },

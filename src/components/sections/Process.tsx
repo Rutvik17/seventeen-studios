@@ -49,7 +49,7 @@ export function Process() {
   return (
     <section className="section process" id="process" ref={ref}>
       <SectionHeader
-        index="05"
+        index="06"
         label="How we work"
         title={
           <p className="section-header__lead">

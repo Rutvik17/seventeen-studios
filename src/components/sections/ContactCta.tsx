@@ -5,6 +5,7 @@ import { SplitText } from '@/components/motion/SplitText';
 import { Reveal } from '@/components/motion/Reveal';
 import { Magnetic } from '@/components/motion/Magnetic';
 import { TransitionLink } from '@/components/Transition';
+import { ContactLink } from '@/components/ContactLink';
 
 /**
  * Closing call to action. One decision, made obvious: start a brief.
@@ -42,9 +43,7 @@ export function ContactCta() {
                 <i aria-hidden="true">→</i>
               </TransitionLink>
             </Magnetic>
-            <a href={`mailto:${site.email}`} className="contact__email">
-              {site.email}
-            </a>
+            <ContactLink className="contact__email" />
           </div>
         </Reveal>
 
