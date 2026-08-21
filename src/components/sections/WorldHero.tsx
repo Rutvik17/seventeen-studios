@@ -219,7 +219,14 @@ export function WorldHero() {
           />
         </g>
 
-        {RIDGES.map((spec, i) => (
+        {/*
+          The far three only. The nearest ridge is drawn AFTER the gate, below,
+          so it crosses in front of the gate's feet — which is the one overlap
+          that puts the gate IN the valley rather than on top of a picture of
+          one. Mapping all four here and repeating the last was drawing a path
+          that nothing could ever see.
+        */}
+        {RIDGES.slice(0, -1).map((spec, i) => (
           <g data-ridge key={spec.seed}>
             <path d={ridgePath(spec)} fill={`var(--ridge-${i + 1})`} />
           </g>

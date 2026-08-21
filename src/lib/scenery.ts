@@ -136,14 +136,27 @@ export function torii(cx: number, baseY: number, height: number): ToriiParts {
   const leftTop = cx - half + batter;
   const rightTop = cx + half - batter;
 
+  /*
+    The lintel's ENDS sweep up and its middle sits low — a shallow smile, not an
+    arch. Getting this backwards is the single thing that stops a torii reading
+    as a torii, and the first version here did exactly that: it put the control
+    point above the endpoints, which domes the beam and produces something
+    closer to a Greek pi with a bulge.
+
+    For a quadratic, the curve's midpoint is (P0 + 2C + P2) / 4. Lifting both
+    ends by `lift` and dropping the control by the same `lift` puts that
+    midpoint back on `topY` exactly, so the beam sags to its nominal line in the
+    middle and rises from there to both tips.
+  */
+  const lift = height * 0.055;
+  const beam = height * 0.045;
+
   return {
-    // Curved lintel: a shallow arc, thicker at the middle, tipped up at both
-    // ends. Drawn as one closed path so it can carry a single fill.
     kasagi: [
-      `M ${round(cx - half - oversail)} ${round(topY + height * 0.03)}`,
-      `Q ${round(cx)} ${round(topY - height * 0.035)} ${round(cx + half + oversail)} ${round(topY + height * 0.03)}`,
-      `L ${round(cx + half + oversail)} ${round(topY + height * 0.075)}`,
-      `Q ${round(cx)} ${round(topY + height * 0.012)} ${round(cx - half - oversail)} ${round(topY + height * 0.075)}`,
+      `M ${round(cx - half - oversail)} ${round(topY - lift)}`,
+      `Q ${round(cx)} ${round(topY + lift)} ${round(cx + half + oversail)} ${round(topY - lift)}`,
+      `L ${round(cx + half + oversail)} ${round(topY - lift + beam)}`,
+      `Q ${round(cx)} ${round(topY + lift + beam)} ${round(cx - half - oversail)} ${round(topY - lift + beam)}`,
       'Z',
     ].join(' '),
     nuki: [
@@ -153,8 +166,17 @@ export function torii(cx: number, baseY: number, height: number): ToriiParts {
       `L ${round(cx - half - oversail * 0.34)} ${round(nukiY + height * 0.045)}`,
       'Z',
     ].join(' '),
-    pillarLeft: pillarPath(leftTop, cx - half, topY + height * 0.05, baseY, pillar),
-    pillarRight: pillarPath(rightTop, cx + half, topY + height * 0.05, baseY, pillar),
+    /*
+      The pillars run up to the lintel's HIGHEST point, not to its nominal line.
+
+      Its underside is a curve, so at the pillars' x the beam sits well above
+      where a flat top would be — stopping the pillars at the nominal line left
+      a ~19-unit gap and the lintel appeared to float. Running them to the swept
+      tips guarantees an overlap at every x, and the kasagi is painted last so
+      none of the excess shows.
+    */
+    pillarLeft: pillarPath(leftTop, cx - half, topY - lift, baseY, pillar),
+    pillarRight: pillarPath(rightTop, cx + half, topY - lift, baseY, pillar),
   };
 }
 
