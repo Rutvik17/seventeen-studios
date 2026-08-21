@@ -56,6 +56,11 @@ export function ProductFeature() {
         }
       />
 
+      {/*
+        The drawing is a pinned scroll track and cannot live in a grid column —
+        it needs the full width of the section and a viewport of its own to hold
+        still in. So the intro sits above it rather than beside it.
+      */}
       <div className="product-feature__body">
         <Reveal className="product-feature__intro">
           <span className="mono-label product-feature__status">

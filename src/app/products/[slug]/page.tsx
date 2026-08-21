@@ -46,7 +46,13 @@ export default function ProductPage({ params }: Params) {
   if (!product) notFound();
 
   return (
-    <article className="page product">
+    /*
+      `product-world` is what makes this page Grasp's rather than the studio's:
+      it carries the plotter-blue palette and the ruled plane, painted by a
+      fixed pseudo-element so the ground covers the viewport. Everything outside
+      this article — nav, footer — deliberately stays in the studio's washi.
+    */
+    <article className="page product product-world">
       <ReadingProgress />
 
       <header className="product__head">

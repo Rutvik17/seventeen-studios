@@ -6,43 +6,81 @@
 /* ---------- Tokens ---------------------------------------------- */
 
 /*
-  LIGHT, AND MATHEMATICAL.
+  TWO WORLDS, ONE DOMAIN.
 
-  The studio's ground is drafting paper, not a screen. Everything sits on a
-  measured plane: a faint grid at 24px, a heavier rule every fifth line, and ink
-  laid over it. The register to hold is an engineering drawing office — precise,
-  quiet, unfussy — and not a classroom.
+  Seventeen Studios is a workshop: washi paper, sumi ink, a vermilion that comes
+  off a torii gate, and old gold for the metal. The register is a Japanese
+  craft house rendered as a game world — layered ridges, lanterns, things that
+  swing when the wind changes — and NOT an engineering drawing office.
 
-  The inversion from the previous dark palette is not a hue swap. In dark, a
-  raised surface is LIGHTER than its ground; in light it is whiter and casts.
-  So `--raise` is pure white against warm paper, and elevation is carried by
-  `--shadow` rather than by brightness alone — the one place a straight
-  find-and-replace of colours would have produced flat, illegible cards.
+  Grasp is the drawing office. It keeps the plotter blue, the copper second pen,
+  and the ruled plane, scoped to `.product-world` so it applies on the product's
+  own pages and nowhere else. A maths app should look like graph paper; a studio
+  that builds things should not. Running one palette across both was the mistake
+  this block exists to correct — the grid made every page look like a worksheet.
+
+  The inversion from the original dark palette still holds: in dark a raised
+  surface is LIGHTER than its ground, in light it is whiter and CASTS. Elevation
+  lives in `--shadow`, not in brightness.
 */
 
 :root {
-  /* Ground. Warm rather than pure, so long-form reading is not a glare. */
-  --bg: #faf9f5;
-  --bg-raise: #ffffff;
-  --bg-sunk: #f3f1eb;
+  /* Washi — warm, fibrous, unbleached. Never pure white; paper is not a screen. */
+  --bg: #f2ede1;
+  --bg-raise: #fbf8f1;
+  --bg-sunk: #e7e0d0;
 
-  /* Ink. Near-black with a trace of blue, which reads as graphite rather
-     than as a switched-off pixel. */
-  --fg: #101319;
-  --fg-dim: rgba(16, 19, 25, 0.66);
-  --muted: #7c7f88;
+  /* Sumi. Ground charcoal in water, so it is warm-black, never blue-black. */
+  --fg: #1a1714;
+  --fg-dim: rgba(26, 23, 20, 0.68);
+  --muted: #7d7566;
 
-  --line: rgba(16, 19, 25, 0.1);
-  --line-strong: rgba(16, 19, 25, 0.2);
+  --line: rgba(26, 23, 20, 0.12);
+  --line-strong: rgba(26, 23, 20, 0.24);
 
   /*
-    THE PLANE. A 24px grid with every fifth line heavier — the proportions of
-    real graph paper. Sized in one place so a section can opt into the plane by
-    setting `background-image: var(--plane)` and nothing else.
+    Shu-iro — the vermilion a torii gate is painted in. It is a pigment colour
+    rather than a UI colour, which is why it sits slightly earthy instead of
+    reaching for saturation.
+  */
+  --accent: #c4402a;
+  --accent-deep: #9a2f1e;
+  --accent-soft: rgba(196, 64, 42, 0.1);
+
+  /* Kin — old gold. The chimes, the fittings, the second reading of a figure. */
+  --accent-2: #a8843c;
+  --accent-2-soft: rgba(168, 132, 60, 0.12);
+
+  /*
+    THE WORLD. Dusk over a valley, read top to bottom. These are only used by
+    the hero and the parallax scenery — the page below the fold is paper, and
+    mixing the two is what makes the fold feel like stepping indoors.
+  */
+  --sky-top: #16324f;
+  --sky-mid: #55658a;
+  --sky-low: #d4855c;
+  --sky-horizon: #f2c88e;
+
+  /* Ridges, far to near. Each step darker AND cooler, which is what atmospheric
+     perspective actually does — distance desaturates before it lightens. */
+  --ridge-1: #718399;
+  --ridge-2: #4e5f79;
+  --ridge-3: #313f55;
+  --ridge-4: #1c2637;
+
+  --lantern: #ffb865;
+  --lantern-glow: rgba(255, 184, 101, 0.42);
+  --moss: #56684a;
+  --indigo: #1b3a5c;
+
+  /*
+    THE PLANE — Grasp's ground, defined here and APPLIED nowhere.
+    A 24px grid with every fifth line heavier, which are the proportions of real
+    graph paper. `.product-world` opts in; nothing else does.
   */
   --grid-unit: 24px;
-  --grid-line: rgba(16, 19, 25, 0.045);
-  --grid-line-major: rgba(16, 19, 25, 0.085);
+  --grid-line: rgba(26, 23, 20, 0.05);
+  --grid-line-major: rgba(26, 23, 20, 0.09);
   --plane:
     linear-gradient(var(--grid-line-major) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line-major) 1px, transparent 1px),
@@ -54,28 +92,10 @@
     var(--grid-unit) var(--grid-unit),
     var(--grid-unit) var(--grid-unit);
 
-  /*
-    Accent: plotter blue. A pen colour rather than a UI colour — it is what a
-    drafting machine would have drawn the curve in, and it survives on paper at
-    hairline weights where the old acid lime would have vanished.
-  */
-  --accent: #1b4fe0;
-  --accent-deep: #12379c;
-  --accent-soft: rgba(27, 79, 224, 0.09);
-
-  /*
-    Second pen, used only where a drawing needs to distinguish two readings of
-    the same curve — rising against falling. It is Grasp's copper, deliberately:
-    the product page and the studio that made it should look related rather than
-    like two brands sharing a domain.
-  */
-  --accent-2: #b4622a;
-  --accent-2-soft: rgba(180, 98, 42, 0.1);
-
   /* Elevation. Light themes need this; dark ones mostly do not. */
-  --shadow-sm: 0 1px 2px rgba(16, 19, 25, 0.04), 0 2px 8px rgba(16, 19, 25, 0.03);
-  --shadow-md: 0 2px 6px rgba(16, 19, 25, 0.05), 0 12px 32px rgba(16, 19, 25, 0.06);
-  --shadow-lg: 0 4px 12px rgba(16, 19, 25, 0.06), 0 28px 64px rgba(16, 19, 25, 0.08);
+  --shadow-sm: 0 1px 2px rgba(26, 23, 20, 0.05), 0 2px 8px rgba(26, 23, 20, 0.04);
+  --shadow-md: 0 2px 6px rgba(26, 23, 20, 0.06), 0 12px 32px rgba(26, 23, 20, 0.07);
+  --shadow-lg: 0 4px 12px rgba(26, 23, 20, 0.07), 0 28px 64px rgba(26, 23, 20, 0.09);
 
   --gutter: clamp(20px, 4.4vw, 76px);
   --max: 1680px;
@@ -87,6 +107,67 @@
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/*
+  GRASP'S GROUND.
+
+  Scoped to the product's own pages. The plane is painted by a FIXED pseudo
+  element rather than on the element itself, so it covers the whole viewport
+  while the page is mounted instead of stopping at the article's box — which is
+  what makes the product feel like its own site rather than a page with a
+  patterned panel on it.
+*/
+.product-world {
+  --accent: #1b4fe0;
+  --accent-deep: #12379c;
+  --accent-soft: rgba(27, 79, 224, 0.09);
+  --accent-2: #b4622a;
+  --accent-2-soft: rgba(180, 98, 42, 0.1);
+  --bg: #faf9f5;
+  --bg-raise: #ffffff;
+  --bg-sunk: #f3f1eb;
+  --fg: #101319;
+  --fg-dim: rgba(16, 19, 25, 0.66);
+  --muted: #7c7f88;
+  --line: rgba(16, 19, 25, 0.1);
+  --line-strong: rgba(16, 19, 25, 0.2);
+  --grid-line: rgba(16, 19, 25, 0.045);
+  --grid-line-major: rgba(16, 19, 25, 0.085);
+  position: relative;
+  /*
+    `isolation` is load-bearing, not a tidy-up.
+
+    The ground below is a FIXED pseudo-element at `z-index: -1`. Without a
+    stacking context here it would join the root's negative layer, which paints
+    beneath the background of every in-flow box on the page — so this article's
+    own background would cover it and the plane would simply never appear. It is
+    the classic negative-z-index trap.
+
+    Isolating clamps that −1 to this subtree: behind the article's content,
+    still in front of the page. And the article deliberately paints NO
+    background of its own, because that would land on top of it again.
+  */
+  isolation: isolate;
+  color: var(--fg);
+}
+
+.product-world::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--bg);
+  background-image: var(--plane);
+  background-size: var(--plane-size);
+  background-position: center top;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .product-world {
+    --grid-unit: 20px;
+  }
 }
 
 /* ---------- Reset ------------------------------------------------ */
@@ -111,23 +192,12 @@ html.is-locked body {
 
 body {
   /*
-    THE PLANE, and it is the whole idea.
-
-    Everything on this site sits on measured ground: a 24px grid with every
-    fifth line heavier, which are the proportions of real graph paper. It is
-    laid at very low contrast — you should register it as texture and only
-    notice it is a grid when you look for it. A visible grid would be a
-    decoration; an almost-invisible one is a claim about how the work is made.
-
-    `background-attachment: fixed` so the plane stays put while content moves
-    over it. That is what makes the page feel like ink being laid ON something
-    rather than a surface sliding around.
+    Plain paper. The grid that used to live here has moved to `.product-world`
+    — see the note on the token block. A studio that builds software is not a
+    sheet of graph paper, and putting one behind every page made the writing,
+    the work and the résumé all read as the same worksheet.
   */
   background-color: var(--bg);
-  background-image: var(--plane);
-  background-size: var(--plane-size);
-  background-position: center top;
-  background-attachment: fixed;
   color: var(--fg);
   font-family: var(--font-body), system-ui, sans-serif;
   font-size: clamp(15px, 0.42vw + 13.4px, 17px);
@@ -137,18 +207,6 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
-
-/*
-  On a phone the fixed plane is a repaint cost on every scroll frame for a
-  texture nobody can see at that size, and iOS Safari has never handled fixed
-  attachment well. It scrolls with the page there.
-*/
-@media (max-width: 700px) {
-  body {
-    background-attachment: scroll;
-    --grid-unit: 20px;
-  }
 }
 
 html.has-custom-cursor,
@@ -3741,9 +3799,41 @@ ol.prose__list li::before {
   in `components/Exploded.tsx`; this file only says what ink each part is in.
 */
 
+/*
+  The outer element is the SCROLL TRACK, not the drawing. Its height is the
+  distance over which the stack comes apart; the stage inside it is what pins
+  and holds still. Splitting the two is what lets every label land while the
+  drawing is stationary and fully on screen — see the note in Exploded.tsx.
+*/
 .exploded {
   position: relative;
   width: 100%;
+  height: 260vh;
+}
+
+.exploded__stage {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--grid-unit) * 0.5);
+}
+
+/*
+  Reduced motion, and no-JS. Nothing pins, so the track must collapse to the
+  drawing's own height or the page carries two viewports of emptiness. The
+  attribute is set by the component; the `:not()` covers the case where the
+  bundle never runs at all.
+*/
+.exploded[data-static='true'],
+html.no-js .exploded {
+  height: auto;
+}
+
+.exploded[data-static='true'] .exploded__stage,
+html.no-js .exploded .exploded__stage {
+  height: auto;
 }
 
 .exploded__caption {
@@ -3755,11 +3845,24 @@ ol.prose__list li::before {
   margin-bottom: var(--grid-unit);
 }
 
+/*
+  Height-capped, not width-driven. Five layers at full separation is roughly a
+  615 × 1008 viewBox — at any sensible column width that renders past 1100px and
+  cannot be seen whole, which is half of why the diagram did not read. Letting
+  it letterbox down to the viewport keeps the whole stack in frame at the moment
+  the labels arrive.
+*/
 .exploded__svg {
   display: block;
   width: 100%;
-  height: auto;
+  max-height: min(76vh, 760px);
   overflow: visible;
+}
+
+.exploded[data-static='true'] .exploded__svg,
+html.no-js .exploded .exploded__svg {
+  max-height: none;
+  height: auto;
 }
 
 /* The layer's own surface. Barely there — it is a plane, not a card. */
@@ -4071,15 +4174,11 @@ ol.prose__list li::before {
 /* ---------- Products on the home page --------------------------------------- */
 
 .product-feature__body {
-  display: grid;
-  grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
-  gap: clamp(32px, 5vw, 80px);
-  align-items: center;
   margin-top: calc(var(--grid-unit) * 2);
 }
 
 .product-feature__intro {
-  align-self: center;
+  max-width: 52rem;
 }
 
 .product-feature__status {
@@ -4120,11 +4219,7 @@ ol.prose__list li::before {
   min-width: 0;
 }
 
-@media (max-width: 1000px) {
-  .product-feature__body {
-    grid-template-columns: 1fr;
-  }
-}
+
 
 /* Products index reuses .work-row, which expects a poster it will not get. */
 .product-row {
@@ -4154,4 +4249,582 @@ ol.prose__list li::before {
 
 .footer__legal a:hover {
   color: var(--fg);
+}
+
+/* ==================================================================
+   THE WORLD — hero scene
+   ================================================================== */
+
+.world {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  /* The sky is painted by the SVG, so the section needs its own dark ground
+     underneath it — otherwise the paper shows through for the frame before the
+     scene rasterises. */
+  background: var(--sky-top);
+  isolation: isolate;
+}
+
+.world__scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/*
+  The scrim is what makes the type legible without dimming the whole scene.
+  A flat overlay would grey out the sunset; a gradient weighted to the bottom
+  left darkens only the corner the words are in.
+*/
+.world__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(to top, rgba(12, 18, 30, 0.82) 0%, rgba(12, 18, 30, 0.34) 34%, transparent 62%),
+    linear-gradient(to right, rgba(12, 18, 30, 0.5) 0%, transparent 52%);
+}
+
+.world__content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--gutter) clamp(56px, 11vh, 128px);
+  color: #f6f1e6;
+}
+
+.world__eyebrow .mono-label {
+  color: rgba(246, 241, 230, 0.72);
+}
+
+.world__title {
+  font-family: var(--font-display), serif;
+  font-size: clamp(38px, 6.6vw, 108px);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  max-width: 16ch;
+  margin-top: calc(var(--grid-unit) * 0.75);
+  /* Masked headings with sub-1 leading clip descenders — pad, then pull back. */
+  padding-bottom: 0.16em;
+  margin-bottom: -0.16em;
+  text-shadow: 0 2px 30px rgba(10, 14, 24, 0.45);
+}
+
+.world__lead p {
+  max-width: 58ch;
+  margin-top: calc(var(--grid-unit) * 1.1);
+  font-size: clamp(16px, 1.1vw, 19px);
+  color: rgba(246, 241, 230, 0.86);
+}
+
+.world__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(16px, 2.4vw, 34px);
+  margin-top: calc(var(--grid-unit) * 1.6);
+}
+
+.world__actions .link-arrow {
+  color: rgba(246, 241, 230, 0.9);
+}
+
+.world__actions .button--solid {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* ==================================================================
+   THE COMPANION
+   ================================================================== */
+
+.companion {
+  position: fixed;
+  left: clamp(12px, 2vw, 28px);
+  bottom: clamp(12px, 2vw, 28px);
+  z-index: 60;
+  width: clamp(150px, 15vw, 210px);
+  pointer-events: none;
+}
+
+.companion__canvas {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: block;
+}
+
+.companion__bubble {
+  pointer-events: auto;
+  position: relative;
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  min-height: 2.4em;
+  background: var(--bg-raise);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--fg);
+  /* Wider than the canvas. The sentences are the content and the drawing is
+     the decoration; sizing the text to the picture would be backwards. */
+  width: max(100%, 260px);
+}
+
+.companion__bubble::after {
+  content: '';
+  position: absolute;
+  left: 26px;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  background: var(--bg-raise);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: rotate(45deg);
+}
+
+.companion__close {
+  pointer-events: auto;
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 12px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-sm);
+  opacity: 0;
+  transition: opacity 0.25s var(--ease-out);
+}
+
+/*
+  Revealed on hover and ALWAYS on keyboard focus. A control that appears only
+  on hover is invisible to a keyboard, which is how dismiss buttons end up
+  unreachable by the people most likely to want them.
+*/
+.companion:hover .companion__close,
+.companion__close:focus-visible {
+  opacity: 1;
+}
+
+.companion--static {
+  position: static;
+  width: auto;
+  max-width: 60ch;
+  margin: calc(var(--grid-unit) * 2) auto;
+  padding: 0 var(--gutter);
+}
+
+.companion--static .companion__close {
+  position: static;
+  width: auto;
+  height: auto;
+  border-radius: var(--radius);
+  padding: 6px 14px;
+  font-size: var(--step-label);
+  opacity: 1;
+  margin-top: 10px;
+}
+
+@media (max-width: 860px) {
+  /*
+    A fixed companion on a phone covers a real share of the viewport and sits
+    exactly where a thumb rests. Removed rather than shrunk — the tour is a
+    bonus, the page is the content.
+  */
+  .companion:not(.companion--static) {
+    display: none;
+  }
+}
+
+/* ==================================================================
+   CRAFT
+   ================================================================== */
+
+.craft__body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr));
+  gap: clamp(20px, 3vw, 56px);
+  margin-top: calc(var(--grid-unit) * 1.5);
+}
+
+.craft__para {
+  font-size: clamp(16px, 1.05vw, 19px);
+  color: var(--fg-dim);
+}
+
+.craft__marks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: clamp(18px, 2.4vw, 40px);
+  margin-top: clamp(40px, 6vh, 84px);
+}
+
+.craft__mark-rule {
+  display: block;
+  height: 2px;
+  background: var(--accent);
+  margin-bottom: calc(var(--grid-unit) * 0.75);
+}
+
+.craft__mark-value {
+  display: block;
+  font-family: var(--font-display), serif;
+  font-size: clamp(30px, 3.4vw, 50px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  padding-bottom: 0.12em;
+}
+
+.craft__mark-label {
+  display: block;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* ==================================================================
+   INSTRUMENTS
+   ================================================================== */
+
+.proof__intro p,
+.rig-section__intro p {
+  max-width: 68ch;
+  margin-top: var(--grid-unit);
+  color: var(--fg-dim);
+  font-size: clamp(16px, 1.05vw, 19px);
+}
+
+.instrument {
+  margin-top: clamp(32px, 5vh, 64px);
+  padding: clamp(20px, 3vw, 40px);
+  background: var(--bg-raise);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.instrument__tag {
+  color: var(--accent);
+}
+
+.instrument__title {
+  font-family: var(--font-display), serif;
+  font-size: clamp(22px, 2.2vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 6px;
+}
+
+.instrument__sub {
+  color: var(--muted);
+  margin-top: 4px;
+  font-size: 14.5px;
+}
+
+.instrument__controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: clamp(14px, 2vw, 28px);
+  margin: calc(var(--grid-unit) * 1.5) 0;
+  padding: calc(var(--grid-unit) * 0.9) 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.instrument__control {
+  display: grid;
+  gap: 6px;
+}
+
+.instrument__control input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: ew-resize;
+}
+
+.instrument__control output {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 15px;
+  color: var(--fg);
+}
+
+.instrument__figure {
+  margin-top: calc(var(--grid-unit) * 1.25);
+}
+
+.instrument__figure figcaption {
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.instrument__svg {
+  width: 100%;
+  height: auto;
+  background: var(--bg-sunk);
+  border-radius: var(--radius);
+}
+
+.instrument__band {
+  fill: var(--accent);
+}
+
+.instrument__median {
+  fill: none;
+  stroke: var(--accent-deep);
+  stroke-width: 2;
+}
+
+.instrument__walk {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 0.75;
+  opacity: 0.26;
+}
+
+.instrument__baseline {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.instrument__bar {
+  fill: var(--accent);
+  opacity: 0.5;
+}
+
+.instrument__bar--tail {
+  fill: var(--accent-deep);
+  opacity: 0.95;
+}
+
+.instrument__marker {
+  stroke: var(--fg);
+  stroke-width: 1.5;
+}
+
+.instrument__axis {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  fill: var(--muted);
+}
+
+.instrument__axis--accent {
+  fill: var(--fg);
+}
+
+.instrument__readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: clamp(14px, 2vw, 26px);
+  margin-top: calc(var(--grid-unit) * 1.5);
+  padding-top: calc(var(--grid-unit) * 1.2);
+  border-top: 1px solid var(--line);
+}
+
+.instrument__cell dt {
+  color: var(--muted);
+}
+
+.instrument__value {
+  display: block;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: clamp(17px, 1.5vw, 22px);
+  margin-top: 4px;
+  /* Tabular figures. Without them every digit change shifts the column width
+     and the whole readout jitters while a slider is being dragged. */
+  font-variant-numeric: tabular-nums;
+}
+
+.instrument__cell.is-strong .instrument__value {
+  color: var(--accent);
+}
+
+.instrument__note {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.instrument__caveat {
+  margin-top: calc(var(--grid-unit) * 1.5);
+  padding: calc(var(--grid-unit) * 0.9);
+  background: var(--bg-sunk);
+  border-left: 2px solid var(--accent-2);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 14px;
+  color: var(--fg-dim);
+  max-width: 78ch;
+}
+
+/* ==================================================================
+   THE RIG
+   ================================================================== */
+
+.rig {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+  gap: clamp(20px, 3vw, 48px);
+  margin-top: clamp(28px, 4vh, 56px);
+  align-items: start;
+}
+
+.rig__stage {
+  background: var(--bg-sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  min-height: 380px;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.rig__canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 340px;
+}
+
+.rig__reduced {
+  max-width: 44ch;
+  color: var(--fg-dim);
+  font-size: 15px;
+}
+
+.rig__panel {
+  display: grid;
+  gap: calc(var(--grid-unit) * 0.8);
+  padding: calc(var(--grid-unit) * 0.9);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raise);
+}
+
+.rig__slider {
+  display: grid;
+  gap: 5px;
+}
+
+.rig__slider-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 13px;
+}
+
+.rig__slider-head output {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.rig__slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.rig__slider small {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.rig__pose-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.rig__pose {
+  padding: 5px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 12.5px;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
+}
+
+.rig__pose.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.rig__telemetry {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-top: calc(var(--grid-unit) * 0.7);
+  border-top: 1px solid var(--line);
+}
+
+.rig__telemetry dt {
+  font-size: 9.5px;
+  color: var(--muted);
+}
+
+.rig__telemetry dd {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.rig__code {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: clamp(18px, 2.4vw, 40px);
+  margin-top: calc(var(--grid-unit) * 0.5);
+}
+
+.rig__code figcaption {
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.rig__code pre {
+  /* Code blocks are the one thing on this site allowed their own scrollbar.
+     Wrapping a line of source changes what it says. */
+  overflow-x: auto;
+  padding: calc(var(--grid-unit) * 0.75);
+  background: var(--fg);
+  color: #ede8dc;
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.rig__code code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  white-space: pre;
+}
+
+.rig__code p {
+  margin-top: 10px;
+  font-size: 14.5px;
+  color: var(--fg-dim);
+  max-width: 52ch;
+}
+
+@media (max-width: 900px) {
+  .rig {
+    grid-template-columns: 1fr;
+  }
 }

@@ -200,7 +200,7 @@ export function WorkGallery() {
   return (
     <section className="section work" id="work" ref={sectionRef}>
       <SectionHeader
-        index="05"
+        index="06"
         label="Concept briefs"
         title={
           <p className="section-header__lead">
