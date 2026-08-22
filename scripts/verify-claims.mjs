@@ -164,6 +164,122 @@ if (!model) {
   assert('model: no zero standard deviations', model.std.every((v) => v !== 0));
 }
 
+/* ---------- the lesson's own code, "Guessing well" ---------- */
+
+/*
+  A lesson that hands the reader code has to be checked BY RUNNING THAT CODE.
+  The figure quoted beside it was wrong on the first pass — $210,000 against an
+  actual $255,000 — which is exactly the kind of thing that survives proofreading
+  and destroys a reader's afternoon when their output does not match the page.
+
+  This is the lesson's listing, transcribed, run against the same inputs.
+*/
+function lessonNormals() {
+  let spare = null;
+  return function draw() {
+    if (spare !== null) { const v = spare; spare = null; return v; }
+    let u, v, s;
+    do {
+      u = Math.random() * 2 - 1;
+      v = Math.random() * 2 - 1;
+      s = u * u + v * v;
+    } while (s >= 1 || s === 0);
+    const f = Math.sqrt((-2 * Math.log(s)) / s);
+    spare = v * f;
+    return u * f;
+  };
+}
+
+/** Inverse standard normal — Acklam, enough for a default threshold. */
+function normalQuantileLocal(p) {
+  const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687,
+             138.357751867269, -30.66479806614716, 2.506628277459239];
+  const b = [-54.47609879822406, 161.5858368580409, -155.6989798598866,
+             66.80131188771972, -13.28068155288572];
+  const c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838,
+             -2.549732539343734, 4.374664141464968, 2.938163982698783];
+  const d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996,
+             3.754408661907416];
+  const pl = 0.02425;
+  if (p < pl) {
+    const q = Math.sqrt(-2 * Math.log(p));
+    return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+           ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  }
+  const q = p - 0.5;
+  const r = q * q;
+  return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5]) * q /
+         (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+}
+
+function lessonTerminal(start, drift, vol, years, z) {
+  return start * Math.exp((drift - (vol * vol) / 2) * years + vol * Math.sqrt(years) * z);
+}
+
+{
+  const paths = 200_000;
+  const draw = lessonNormals();
+  const out = new Float64Array(paths);
+  for (let i = 0; i < paths; i++) out[i] = lessonTerminal(1_000_000, 0.07, 0.36, 0.25, draw());
+  out.sort();
+  const simulated = 1_000_000 - out[Math.floor(0.05 * paths)];
+
+  // The closed form for the same quantile. -1.6449 is the 5% point of the
+  // standard normal.
+  const exact =
+    1_000_000 -
+    1_000_000 * Math.exp((0.07 - (0.36 * 0.36) / 2) * 0.25 + 0.36 * Math.sqrt(0.25) * -1.6449);
+
+  check('lesson code: VaR matches the quoted figure', simulated, 255_000, 8_000);
+  assert(
+    'lesson code: simulation agrees with the closed form',
+    Math.abs(simulated - exact) / exact < 0.02,
+    `${Math.round(simulated).toLocaleString()} vs ${Math.round(exact).toLocaleString()}`,
+  );
+}
+
+/* ---------- correlated defaults, "What a lender is afraid of" ---------- */
+
+/*
+  The lesson claims that at rho = 0 the worst year in a hundred is "barely above
+  the average", and at rho = 0.2 it is "several times" it. Both are checkable by
+  running the lesson's own listing, so both are.
+*/
+{
+  const draw = lessonNormals();
+  const threshold = normalQuantileLocal(0.03);
+
+  const book = (rho) => {
+    const losses = [];
+    for (let s = 0; s < 3000; s++) {
+      const economy = draw();
+      let defaults = 0;
+      for (let i = 0; i < 2000; i++) {
+        const z = Math.sqrt(rho) * economy + Math.sqrt(1 - rho) * draw();
+        if (z < threshold) defaults += 1;
+      }
+      losses.push(defaults * 4200 * 0.75);
+    }
+    losses.sort((a, b) => a - b);
+    const expected = losses.reduce((a, b) => a + b, 0) / losses.length;
+    return losses[Math.floor(0.99 * losses.length)] / expected;
+  };
+
+  const independent = book(0);
+  const correlated = book(0.2);
+
+  assert(
+    'credit: uncorrelated book is barely worse than average',
+    independent < 1.6,
+    `${independent.toFixed(2)}x`,
+  );
+  assert(
+    'credit: correlated book is several times worse',
+    correlated > 3,
+    `${correlated.toFixed(2)}x`,
+  );
+}
+
 /* ---------- steepness, "Steepness" ---------- */
 
 check('slope: 1.40 / 0.50', 1.4 / 0.5, 2.8, 1e-9);
