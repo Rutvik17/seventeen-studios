@@ -6909,3 +6909,162 @@ html.no-js .exploded .exploded__svg {
     grid-column: 1 / -1;
   }
 }
+
+/* ==================================================================
+   THE CAREER WALK
+   ================================================================== */
+
+/*
+  Track and stage, the same split the board story uses: the outer element
+  carries the scroll distance and the inner one pins. One viewport of travel per
+  role, so the pacing does not change as roles are added.
+*/
+.journey {
+  position: relative;
+  height: 420vh;
+}
+
+.journey__stage {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.journey__canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/*
+  The card is chrome over the walk rather than beside it — the canvas needs the
+  full width for the camera to have anywhere to travel, and a two-column layout
+  would leave the character shuffling inside a letterbox.
+*/
+.journey__card {
+  position: absolute;
+  left: var(--gutter);
+  bottom: clamp(24px, 5vh, 56px);
+  width: min(92vw, 26rem);
+  padding: calc(var(--grid-unit) * 0.95);
+  background: var(--bg-raise);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.journey__period {
+  color: var(--accent);
+}
+
+.journey__role {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(20px, 2.2vw, 30px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 6px 0 2px;
+}
+
+.journey__org {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.journey__summary {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--fg-dim);
+  margin-top: calc(var(--grid-unit) * 0.6);
+}
+
+.journey__highlights {
+  list-style: none;
+  display: grid;
+  gap: 5px;
+  margin-top: calc(var(--grid-unit) * 0.6);
+}
+
+.journey__highlights li {
+  position: relative;
+  padding-left: 14px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.journey__highlights li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 5px;
+  height: 1px;
+  background: var(--accent);
+}
+
+.journey__stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: calc(var(--grid-unit) * 0.7);
+  padding-top: calc(var(--grid-unit) * 0.6);
+  border-top: 1px solid var(--line);
+}
+
+.journey__stack em {
+  font-style: normal;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+
+.journey__hint {
+  position: absolute;
+  right: var(--gutter);
+  bottom: clamp(24px, 5vh, 56px);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* Reduced motion and no-JS: the record as a list, nothing pinned. */
+.journey--static {
+  height: auto;
+}
+
+.journey__list {
+  list-style: none;
+  display: grid;
+  gap: clamp(24px, 4vh, 44px);
+}
+
+.journey__list h3 {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(19px, 2vw, 26px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 6px 0;
+}
+
+.journey__list p {
+  color: var(--fg-dim);
+  max-width: 68ch;
+}
+
+@media (max-width: 700px) {
+  .journey {
+    height: 300vh;
+  }
+  .journey__card {
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+  /* No room for both, and the card is the content. */
+  .journey__hint {
+    display: none;
+  }
+}

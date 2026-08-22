@@ -69,4 +69,23 @@ export const PANEL = {
    * would be dishonest.
    */
   refreshSeconds: 30,
+  /**
+   * A LIVE CLOCK IS THE ONE THING THIS PART CANNOT DO.
+   *
+   * The panel on the landing page ticks every minute, because on a web page it
+   * is a picture and a picture can be redrawn. The real module could not: an
+   * ACeP refresh takes about thirty seconds, flashes through its whole palette
+   * while it works, and has no partial-refresh mode at all — so a per-minute
+   * clock would leave the display strobing for half of every minute.
+   *
+   * Wanting a clock is therefore a real constraint on the part, not a firmware
+   * detail. A two-colour panel HAS partial refresh, updates a small region in
+   * under a second, and would show a clock perfectly — at the cost of the red
+   * and green the market readout uses. That is a genuine trade and the device
+   * has to pick one.
+   *
+   * The drawing shows the clock because it is demonstrating the layout. The
+   * shipped firmware would show the capture time instead.
+   */
+  hasPartialRefresh: false,
 } as const;

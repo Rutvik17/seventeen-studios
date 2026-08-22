@@ -10,7 +10,7 @@ import {
 import { site } from '@/content/studio';
 import { Portrait } from '@/components/founder/Portrait';
 import { ResumeControl } from '@/components/founder/ResumeModal';
-import { Career } from '@/components/founder/Career';
+import { Journey } from '@/components/founder/Journey';
 import { CountUp } from '@/components/founder/CountUp';
 import { Marquee } from '@/components/Marquee';
 import { Reveal } from '@/components/motion/Reveal';
@@ -111,7 +111,7 @@ export default function FounderPage() {
             </p>
           }
         />
-        <Career />
+        <Journey />
       </section>
 
       <section className="section founder__side">

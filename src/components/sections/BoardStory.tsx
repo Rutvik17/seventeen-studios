@@ -477,6 +477,7 @@ export function BoardStory() {
                 sigmas={NVDA_SIGMAS}
                 percentile={NVDA_PERCENTILE}
                 asOf={NVDA?.asOf ?? ''}
+                stamp={market.fetchedAt}
               />
             </g>
           </svg>
