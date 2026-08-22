@@ -52,6 +52,51 @@ export type Asset = {
   changeYear: number | null;
   /** Downsampled closes for a sparkline. */
   spark: number[];
+  /** The model's current reading for this name. */
+  sentiment?: Sentiment | null;
+};
+
+/**
+ * The companion's sentiment model, fitted at build time.
+ *
+ * A logistic regression over four price-derived features, trained by gradient
+ * descent on all six names and evaluated on a chronological hold-out. The
+ * weights ship; the training set does not.
+ *
+ * `test.accuracy` is reported against `test.baseRate` — the score you get by
+ * always guessing the majority class — rather than against 50%. Markets drift
+ * upward, so the base rate is already above half, and any evaluation measured
+ * against 50% is flattering itself.
+ */
+export type SentimentModel = {
+  kind: string;
+  featureNames: string[];
+  weights: number[];
+  bias: number;
+  mean: number[];
+  std: number[];
+  train: Scores;
+  test: Scores;
+  /** Reliability on unseen data: does it mean what it says? */
+  calibration: { predicted: number; actual: number; n: number }[];
+  /** Quantiles of its own output, so a percentile can be taken. */
+  quantiles: number[];
+};
+
+export type Scores = {
+  accuracy: number;
+  logLoss: number;
+  baseRate: number;
+  upShare: number;
+  n: number;
+};
+
+/** One asset's current reading. */
+export type Sentiment = {
+  probability: number;
+  /** Where that sits in the model's own output range, 0 to 1. */
+  percentile: number;
+  features: number[];
 };
 
 export type MarketData = {
@@ -71,6 +116,7 @@ export type MarketData = {
   correlations: number[][];
   /** Sessions the matrix is measured over — set by the most recently listed name. */
   correlationSessions: number;
+  sentiment: SentimentModel | null;
   tradingDays: number;
   window: string;
   source: string;

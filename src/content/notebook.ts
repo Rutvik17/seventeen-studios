@@ -676,6 +676,156 @@ export const entries: Entry[] = [
       },
     ],
   },
+
+  /* ------------------------------------------------------------------ */
+  {
+    slug: 'a-face-that-guesses',
+    index: '06',
+    title: 'A face that guesses',
+    standfirst:
+      'Training a real model to predict tomorrow, finding out it barely works, and why that is the honest answer.',
+    topic: 'Machine learning',
+    date: '2026-08-22',
+    color: '#e8dff2',
+    ink: '#4a2c6b',
+    blocks: [
+      {
+        type: 'p',
+        text: 'The companion on the landing page pulls a face. I wanted that face to come from a model rather than from a rule I made up, so I trained one — and then had to decide what to do when it did not work.',
+      },
+      {
+        type: 'p',
+        text: 'This is that model, what it learned, and the more interesting question of how you tell whether a model has learned anything at all.',
+      },
+
+      { type: 'h2', text: 'What "a model" means here' },
+      {
+        type: 'p',
+        text: 'A model is a formula with numbers in it that nobody chose. You decide the SHAPE — what goes in, what comes out — and then a procedure adjusts the numbers until the formula fits data you already have. Those adjusted numbers are what "learned" means. There is nothing else in the box.',
+      },
+      {
+        type: 'term',
+        word: 'Logistic regression',
+        plain:
+          'The simplest useful model for a yes-or-no question. It multiplies each input by a weight, adds them up, and squashes the total into a number between 0 and 1 that you can read as a probability. Older than computers, and still the thing to try first — if it fails, that is usually the data telling you something rather than the model being too simple.',
+      },
+
+      { type: 'h2', text: 'What it is looking at' },
+      {
+        type: 'p',
+        text: 'Four numbers, all built from prices before the day being predicted. That last part matters more than anything else in this entry, and I will come back to it.',
+      },
+      {
+        type: 'defs',
+        items: [
+          { term: 'Yesterday\u2019s move', description: 'How far it moved, measured in units of how far it normally moves. A 3% day is ordinary for one company and an event for another, so raw percentages cannot be compared across names.' },
+          { term: 'Five-day momentum', description: 'The last week, added up and scaled the same way.' },
+          { term: 'Twenty-day momentum', description: 'The last month, likewise.' },
+          { term: 'Volatility regime', description: 'Whether the last two weeks have been calmer or wilder than the last three months. A market changing character is sometimes informative.' },
+        ],
+      },
+      {
+        type: 'note',
+        label: 'The mistake that fabricates a genius',
+        text: 'Every feature is built from data STRICTLY BEFORE the day being predicted. Slip today\u2019s return into the features for today\u2019s direction and accuracy jumps to 100% — because the answer is now inside the question. It is called lookahead leakage, it is silent, nothing errors, and it is the single most common reason a published trading model cannot be reproduced.',
+      },
+
+      { type: 'h2', text: 'How it learns' },
+      {
+        type: 'p',
+        text: 'Gradient descent. Start with every weight at zero, which means the model has no opinion. Make a prediction for every day in the training set, measure how wrong you were, and nudge each weight a little in the direction that would have made you less wrong. Repeat a few thousand times.',
+      },
+      {
+        type: 'equation',
+        words:
+          'For each input, the nudge is how wrong the prediction was, multiplied by the value of that input.',
+        symbols: '\u2202L\u2044\u2202w\u1d62 = ( p \u2212 y ) \u00d7 x\u1d62',
+        where: [
+          { symbol: '\u2202L\u2044\u2202w\u1d62', means: 'how much the error changes if you change weight i — the "gradient", which is just a slope' },
+          { symbol: 'p', means: 'the probability the model predicted, between 0 and 1' },
+          { symbol: 'y', means: 'what actually happened: 1 if the day was up, 0 if down' },
+          { symbol: 'x\u1d62', means: 'the value of input i on that day' },
+        ],
+        soWhat:
+          'If the model said 0.7 and the day was up, p \u2212 y is \u22120.3 and the weights on whatever was large that day get pushed up. Wrong in the other direction and they get pushed down. That is the whole algorithm.',
+      },
+      {
+        type: 'p',
+        text: 'It is worth noticing how simple that is. Nothing in it is specific to markets, and the same three lines train the models behind most of what gets called machine learning. The difficulty is almost never the learning; it is whether there was anything there to learn.',
+      },
+
+      { type: 'h2', text: 'What happened' },
+      {
+        type: 'p',
+        text: 'Trained on 1,843 days across six companies and tested on 791 later days it had never seen, the model got 52.7% of them right.',
+      },
+      {
+        type: 'p',
+        text: 'That sounds like a coin flip beaten. It is not, and seeing why is the whole point of this entry.',
+      },
+      {
+        type: 'term',
+        word: 'Base rate',
+        plain:
+          'The score you get from the laziest possible model — always guess the most common answer. Markets drift upward over time, so more days are up than down. On this test set, always guessing "up" scores 53.2%.',
+      },
+      {
+        type: 'p',
+        text: 'The model scores 52.7%. Guessing "up" every single day, with no inputs and no training, scores 53.2%. The model is not better. It is very slightly worse.',
+      },
+      {
+        type: 'note',
+        label: 'This is the expected answer',
+        text: 'If four numbers derived from past prices could predict tomorrow, someone with a hundred million dollars and a faster computer would already have traded that away. What is left after they are finished is close to noise, and a model that claimed otherwise on two years of daily data would be overfitted, leaking, or lying. Reporting it is not a failure — reporting something else would have been.',
+      },
+
+      { type: 'h2', text: 'The three ways this gets faked' },
+      {
+        type: 'list',
+        ordered: true,
+        items: [
+          'Quoting accuracy on the TRAINING data. A model can memorise; the number that matters is on days it never saw. This one scores 51.5% on what it was trained on and 52.7% on what it was not.',
+          'Comparing to 50% instead of to the base rate. Any number above half looks like skill until you notice that guessing "up" already gets 53.2%.',
+          'Splitting the data randomly instead of chronologically. Shuffle days and the model gets to see the future of its own test set through overlapping windows — a form of leakage that inflates the score and is invisible in the code.',
+        ],
+      },
+
+      { type: 'h2', text: 'A better question than "is it right"' },
+      {
+        type: 'p',
+        text: 'For a problem with this little signal, accuracy is close to useless — a model can score well by ignoring its inputs entirely. The more useful question is whether it means what it says.',
+      },
+      {
+        type: 'term',
+        word: 'Calibration',
+        plain:
+          'Whether a stated probability matches reality. If a forecaster says 30% on a hundred occasions and it happens about thirty times, they are well calibrated — even if they are never confident and never dramatic. A calibrated model with no edge is honest and useful. An overconfident one is dangerous however often it happens to be right.',
+      },
+      {
+        type: 'p',
+        text: 'Sorted into five groups from least to most confident, the model\u2019s predictions do line up in roughly the right order on data it never saw: its most confident fifth was right more often than its least confident fifth. The relationship is weak and not perfectly monotonic — but it is there, and it is a far more interesting result than the accuracy number.',
+      },
+
+      { type: 'h2', text: 'So what is the face doing?' },
+      {
+        type: 'p',
+        text: 'Showing the model\u2019s confidence, not a prediction you should act on.',
+      },
+      {
+        type: 'p',
+        text: 'The model\u2019s outputs span about 2.14 percentage points — from roughly 50.4% to 52.5%. Mapping that straight onto expressions would leave the companion permanently neutral, so the face shows where today sits inside the model\u2019s OWN range instead. "More bullish than four days in five" is a real statement. "51.3% chance of a rise" is technically true and communicates nothing.',
+      },
+      {
+        type: 'p',
+        text: 'The colour comes from somewhere else entirely: red for a fall, green for a rise, because that is what every reader of a market screen already expects. Mood from the model, sign from the market.',
+      },
+      {
+        type: 'note',
+        label: 'Do not trade on the companion',
+        text: 'It is a demonstration of method on a problem chosen because it is hard, not a signal. The most useful thing it does is show what an honest evaluation looks like when the answer is "barely" — which, in this field, is what the answer usually is.',
+      },
+    ],
+  },
 ];
 
 export const entryBySlug = (slug: string): Entry | undefined =>
