@@ -122,6 +122,54 @@ function statistics(series) {
   };
 }
 
+/** Daily log returns, keyed by session timestamp. */
+function logReturns(series) {
+  const out = new Map();
+  for (let i = 1; i < series.length; i++) {
+    out.set(series[i].t, Math.log(series[i].c / series[i - 1].c));
+  }
+  return out;
+}
+
+/**
+ * Pearson correlation between two aligned return series.
+ *
+ *     ρ = Σ(x − x̄)(y − ȳ) ÷ √( Σ(x − x̄)² × Σ(y − ȳ)² )
+ *
+ * Aligned on SHARED session timestamps, not by array index. Index alignment is
+ * the classic error here: Rocket Lab listed years after Alphabet, so position 0
+ * of one series is a different date from position 0 of the other, and lining
+ * them up by index correlates unrelated days. That produces a number near zero
+ * and makes two names look independent when they are not — the exact direction
+ * that understates portfolio risk.
+ */
+function correlation(a, b) {
+  const xs = [];
+  const ys = [];
+  for (const [t, x] of a) {
+    const y = b.get(t);
+    if (y !== undefined) {
+      xs.push(x);
+      ys.push(y);
+    }
+  }
+  const n = xs.length;
+  if (n < 30) return null;
+
+  const mx = xs.reduce((s, v) => s + v, 0) / n;
+  const my = ys.reduce((s, v) => s + v, 0) / n;
+  let num = 0, dx = 0, dy = 0;
+  for (let i = 0; i < n; i++) {
+    const a1 = xs[i] - mx;
+    const b1 = ys[i] - my;
+    num += a1 * b1;
+    dx += a1 * a1;
+    dy += b1 * b1;
+  }
+  const den = Math.sqrt(dx * dy);
+  return den === 0 ? null : { rho: round(num / den, 4), overlap: n };
+}
+
 /** Trailing return over the last `days` sessions, as a simple percentage. */
 function trailing(series, days) {
   if (series.length <= days) return null;
@@ -148,6 +196,11 @@ async function main() {
       assets.push({
         symbol,
         name,
+        // Kept only long enough to build the correlation matrix below; stripped
+        // before writing, because six 500-point return series is 24 KB of JSON
+        // nobody reads and the matrix is the only thing downstream needs.
+        _returns: logReturns(series),
+        _stamps: series.map((s) => s.t),
         price: round(last.c, 2),
         asOf: new Date(last.t * 1000).toISOString().slice(0, 10),
         ...stats,
@@ -181,8 +234,49 @@ async function main() {
     return;
   }
 
+  /*
+    The correlation matrix, from the real return series.
+
+    This is what makes the risk desk a PORTFOLIO rather than six separate bets.
+    Add two assets that move together and you get almost no risk reduction; add
+    two that do not and the combined swing is smaller than either alone. That
+    effect is diversification, it is entirely contained in these numbers, and
+    without them a multi-asset simulation is just a weighted average wearing a
+    costume.
+  */
+  const correlations = [];
+  for (let i = 0; i < assets.length; i++) {
+    const row = [];
+    for (let j = 0; j < assets.length; j++) {
+      if (i === j) {
+        row.push(1);
+        continue;
+      }
+      const c = correlation(assets[i]._returns, assets[j]._returns);
+      row.push(c ? c.rho : 0);
+    }
+    correlations.push(row);
+  }
+
+  // Smallest overlap across every pair — the window the matrix is really
+  // measured over, which is set by the most recently listed name.
+  let minOverlap = Infinity;
+  for (let i = 0; i < assets.length; i++) {
+    for (let j = i + 1; j < assets.length; j++) {
+      const c = correlation(assets[i]._returns, assets[j]._returns);
+      if (c) minOverlap = Math.min(minOverlap, c.overlap);
+    }
+  }
+
+  for (const a of assets) {
+    delete a._returns;
+    delete a._stamps;
+  }
+
   const payload = {
     fetchedAt: new Date().toISOString(),
+    correlations,
+    correlationSessions: Number.isFinite(minOverlap) ? minOverlap : 0,
     tradingDays: TRADING_DAYS,
     window: '2y daily',
     source: 'Yahoo Finance chart API, adjusted closes',

@@ -85,6 +85,40 @@ check(
   1e-6,
 );
 
+/* ---------- diversification, "Guessing well" ---------- */
+
+import { readFileSync } from 'node:fs';
+const market = JSON.parse(
+  readFileSync(new URL('../src/content/market.json', import.meta.url), 'utf8'),
+);
+
+const n = market.assets.length;
+const w = 1 / n;
+let variance = 0;
+for (let i = 0; i < n; i++) {
+  for (let j = 0; j < n; j++) {
+    variance +=
+      w * w * market.correlations[i][j] *
+      market.assets[i].volatility * market.assets[j].volatility;
+  }
+}
+const portfolioVol = Math.sqrt(variance);
+const averageVol = market.assets.reduce((s, a) => s + w * a.volatility, 0);
+
+check('portfolio: average of the parts (%)', averageVol * 100, 51, 2);
+check('portfolio: actual portfolio vol (%)', portfolioVol * 100, 36, 2);
+check('portfolio: diversification gain (pts)', (averageVol - portfolioVol) * 100, 15, 2);
+
+// The claim that matters is directional and must hold for ANY weights, not just
+// these — a portfolio can never be riskier than the average of its parts unless
+// a correlation exceeds 1, which is impossible.
+if (portfolioVol >= averageVol) {
+  console.log('  FAIL portfolio vol is not below the weighted average');
+  failures += 1;
+} else {
+  console.log('  ok   portfolio: vol is below the weighted average'.padEnd(56));
+}
+
 /* ---------- steepness, "Steepness" ---------- */
 
 check('slope: 1.40 / 0.50', 1.4 / 0.5, 2.8, 1e-9);

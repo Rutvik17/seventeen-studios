@@ -56,6 +56,21 @@ export type Asset = {
 
 export type MarketData = {
   fetchedAt: string;
+  /**
+   * Pairwise correlation of daily log returns, in `assets` order.
+   *
+   * This is what makes the risk desk a portfolio rather than six separate bets.
+   * Two assets that move together give almost no risk reduction when combined;
+   * two that do not give a combined swing smaller than either alone. All of that
+   * effect lives in this matrix.
+   *
+   * Aligned on shared session dates, not by array index — Rocket Lab listed
+   * years after Alphabet, so index 0 of one series is a different day from index
+   * 0 of the other, and lining them up by position correlates unrelated dates.
+   */
+  correlations: number[][];
+  /** Sessions the matrix is measured over — set by the most recently listed name. */
+  correlationSessions: number;
   tradingDays: number;
   window: string;
   source: string;

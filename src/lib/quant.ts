@@ -397,3 +397,164 @@ export const formatCurrency = (v: number): string =>
 
 export const formatPercent = (v: number, digits = 1): string =>
   `${(v * 100).toFixed(digits)}%`;
+
+/* ------------------------------------------------------------------ *
+ * Portfolios
+ * ------------------------------------------------------------------ */
+
+export type Holding = {
+  symbol: string;
+  name: string;
+  /** Share of the portfolio, 0–1. Weights across a portfolio sum to 1. */
+  weight: number;
+  /** Annualised, from real history. */
+  drift: number;
+  volatility: number;
+};
+
+/**
+ * The volatility of a portfolio, in closed form.
+ *
+ *     σ_p = √( wᵀ Σ w )   where Σ_ij = ρ_ij · σ_i · σ_j
+ *
+ * This is the single most important formula in portfolio theory and it is worth
+ * seeing why. If every pair moved in perfect lockstep — every ρ equal to 1 — the
+ * expression collapses to the weighted average of the individual volatilities,
+ * and combining assets would buy you nothing at all.
+ *
+ * Real correlations are below 1, every cross term shrinks, and the result comes
+ * out BELOW that weighted average. The gap is diversification. It is not a
+ * strategy or an opinion; it is arithmetic, and it is the only thing in finance
+ * that reliably gives something for nothing.
+ */
+export function portfolioVolatility(
+  holdings: Holding[],
+  correlations: number[][],
+): number {
+  let variance = 0;
+  for (let i = 0; i < holdings.length; i++) {
+    for (let j = 0; j < holdings.length; j++) {
+      variance +=
+        holdings[i].weight *
+        holdings[j].weight *
+        correlations[i][j] *
+        holdings[i].volatility *
+        holdings[j].volatility;
+    }
+  }
+  return Math.sqrt(Math.max(0, variance));
+}
+
+/** What the volatility would be if everything moved together — the no-free-lunch case. */
+export function undiversifiedVolatility(holdings: Holding[]): number {
+  return holdings.reduce((sum, h) => sum + h.weight * h.volatility, 0);
+}
+
+export type PortfolioResult = RiskResult & {
+  /** Annualised portfolio volatility, from the covariance matrix. */
+  volatility: number;
+  /** What it would be with every correlation at 1. */
+  undiversified: number;
+  /** Portfolio drift, the weighted average of the parts. */
+  drift: number;
+};
+
+/**
+ * Monte Carlo over a correlated portfolio.
+ *
+ * Each simulated future draws one independent normal per asset, multiplies the
+ * vector by the Cholesky factor of the correlation matrix, and uses the results
+ * as each asset's shock. That single matrix multiply is what makes the assets
+ * move together the way they actually do — draw them independently and the
+ * simulation quietly assumes perfect diversification, which understates the
+ * risk of every real portfolio ever assembled.
+ *
+ * Terminal values are drawn in one step rather than walked, because under GBM
+ * the terminal distribution is exactly lognormal — see the note at the top of
+ * this file.
+ */
+export function simulatePortfolio(
+  holdings: Holding[],
+  correlations: number[][],
+  options: { notional: number; horizonDays: number; alpha: number; paths: number; seed: number },
+): PortfolioResult | null {
+  const { notional, horizonDays, alpha, paths, seed } = options;
+  const n = holdings.length;
+
+  const covariance = correlations.map((row, i) =>
+    row.map((rho, j) => rho * holdings[i].volatility * holdings[j].volatility),
+  );
+
+  /*
+    Cholesky can fail, and the failure is meaningful rather than a bug: a
+    correlation matrix estimated from data of unequal lengths, or edited by
+    hand, can describe relationships that are mutually impossible. Returning
+    null lets the interface say so instead of rendering NaN.
+  */
+  const L = cholesky(covariance);
+  if (!L) return null;
+
+  const T = horizonDays / TRADING_DAYS;
+  const sqrtT = Math.sqrt(T);
+  const normal = normalStream(seededRandom(seed));
+  const terminal = new Float64Array(paths);
+
+  const z = new Float64Array(n);
+  const shock = new Float64Array(n);
+
+  for (let p = 0; p < paths; p++) {
+    for (let i = 0; i < n; i++) z[i] = normal();
+
+    // shock = L · z. L is lower triangular, so the inner loop stops at i.
+    for (let i = 0; i < n; i++) {
+      let acc = 0;
+      for (let k = 0; k <= i; k++) acc += L[i][k] * z[k];
+      shock[i] = acc;
+    }
+
+    let value = 0;
+    for (let i = 0; i < n; i++) {
+      const h = holdings[i];
+      // The Itô correction uses the asset's OWN variance; the correlation is
+      // already carried in `shock`, so it must not be applied twice.
+      const growth = (h.drift - (h.volatility * h.volatility) / 2) * T;
+      value += h.weight * notional * Math.exp(growth + shock[i] * sqrtT);
+    }
+    terminal[p] = value;
+  }
+
+  terminal.sort();
+
+  const index = Math.max(0, Math.min(paths - 1, Math.floor(alpha * paths)));
+  const varMonteCarlo = notional - terminal[index];
+
+  const sigma = portfolioVolatility(holdings, correlations);
+  const mu = holdings.reduce((s, h) => s + h.weight * h.drift, 0);
+  const growth = (mu - (sigma * sigma) / 2) * T;
+  const analyticQuantile = notional * Math.exp(growth + sigma * sqrtT * normalQuantile(alpha));
+  const varAnalytic = notional - analyticQuantile;
+
+  let tail = 0;
+  for (let i = 0; i <= index; i++) tail += terminal[i];
+
+  let below = 0;
+  for (let i = 0; i < paths; i++) {
+    if (terminal[i] < notional) below++;
+    else break;
+  }
+
+  return {
+    terminal,
+    varMonteCarlo,
+    varAnalytic,
+    relativeError:
+      varAnalytic === 0 ? 0 : Math.abs(varMonteCarlo - varAnalytic) / Math.abs(varAnalytic),
+    expectedShortfall: notional - tail / (index + 1),
+    probabilityOfLoss: below / paths,
+    median: terminal[Math.floor(paths / 2)],
+    histogram: bucket(terminal, 46),
+    volatility: sigma,
+    undiversified: undiversifiedVolatility(holdings),
+    drift: mu,
+  };
+}
