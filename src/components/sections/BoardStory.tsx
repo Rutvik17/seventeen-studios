@@ -65,7 +65,7 @@ import {
   toE12,
   traceWidthMm,
 } from '@/lib/board';
-import { PANEL, expressionFor, faceCells } from '@/lib/pixel';
+import { EinkPanel } from '@/components/sections/EinkPanel';
 import { boardActs, hero } from '@/content/studio';
 import { assetBySymbol, market, sigmasFor } from '@/content/market';
 
@@ -230,7 +230,13 @@ export function BoardStory() {
         // The panel starts arriving only once the cable has most of the way to
         // go, so it reads as being pulled up on the end of it.
         .to('[data-display]', { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, 4.35)
-        .from(q('[data-pixel]'), { opacity: 0, duration: 0.02, stagger: 0.004 }, 4.5);
+        /*
+          The panel fades rather than drawing pixel by pixel. A three-colour
+          e-ink refresh does not sweep — it flashes the whole area black and
+          white several times and then settles, which is not a thing worth
+          reproducing on a landing page. A clean fade is the honest abstraction.
+        */
+        .from('[data-display] image, [data-display] rect', { opacity: 0, duration: 0.3 }, 4.55);
 
       /*
         Current flow and the oscillator run on their own repeating tweens rather
@@ -400,33 +406,17 @@ export function BoardStory() {
             </g>
 
             <g data-display>
-              <rect
+              <EinkPanel
                 x={DISPLAY.x}
                 y={DISPLAY.y}
                 width={DISPLAY.w}
                 height={DISPLAY.h}
-                rx={1.2}
-                fill="var(--pcb-bezel)"
+                symbol={NVDA?.symbol ?? 'NVDA'}
+                price={NVDA?.price ?? 0}
+                changePercent={NVDA_CHANGE}
+                sigmas={NVDA_SIGMAS}
+                asOf={NVDA?.asOf ?? ''}
               />
-              <rect
-                x={DISPLAY.x + 3}
-                y={DISPLAY.y + 3}
-                width={PANEL.mmWidth}
-                height={PANEL.mmHeight}
-                fill="url(#epaper)"
-              />
-              <Face x={DISPLAY.x + 6} y={DISPLAY.y + 7} />
-              <text x={DISPLAY.x + 28} y={DISPLAY.y + 12} className="board-story__epd-big">
-                {NVDA?.symbol ?? 'NVDA'}
-              </text>
-              <text x={DISPLAY.x + 28} y={DISPLAY.y + 20} className="board-story__epd-accent">
-                {NVDA_CHANGE >= 0 ? '+' : ''}
-                {NVDA_CHANGE.toFixed(2)}%
-              </text>
-              <text x={DISPLAY.x + 28} y={DISPLAY.y + 26} className="board-story__epd-small">
-                ${NVDA?.price?.toFixed(2) ?? '—'} · {NVDA_SIGMAS >= 0 ? '+' : ''}
-                {NVDA_SIGMAS.toFixed(1)}σ
-              </text>
             </g>
           </svg>
         </div>
@@ -577,33 +567,6 @@ function Part({ c }: { c: (typeof COMPONENTS)[number] }) {
         {c.ohms !== undefined ? ` · ${formatOhms(c.ohms)}` : ''}
         {c.picofarads !== undefined ? ` · ${formatFarads(c.picofarads)}` : ''}
       </desc>
-    </g>
-  );
-}
-
-function Face({ x, y }: { x: number; y: number }) {
-  /*
-    The expression is driven by the REAL move, measured in units of NVDA's own
-    daily volatility rather than in raw percent. A fixed threshold cannot be
-    honest across assets — 3% is an ordinary day for a 90%-vol name and a
-    significant one for a 30%-vol name — so the companion would be permanently
-    alarmed about one and asleep through the other.
-  */
-  const cells = faceCells(expressionFor(NVDA_SIGMAS));
-  const px = 1.1;
-  return (
-    <g>
-      {cells.map((c) => (
-        <rect
-          key={`${c.x}-${c.y}`}
-          data-pixel
-          x={x + c.x * px}
-          y={y + c.y * px}
-          width={px}
-          height={px}
-          fill={c.ink === 'accent' ? 'var(--accent)' : '#161616'}
-        />
-      ))}
     </g>
   );
 }
