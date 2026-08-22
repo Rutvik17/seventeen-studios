@@ -71,6 +71,7 @@ export type EmbedId =
   | 'trace-width'
   | 'derivative'
   | 'risk'
+  | 'credit'
   | 'spring'
   | 'coin-flips';
 

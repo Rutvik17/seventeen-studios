@@ -2149,14 +2149,30 @@ ol.prose__list li::before {
 .prose__note p {
   font-size: 15px;
 }
+/*
+  Code blocks are inverted panels: light type on the ink colour.
+
+  They were unreadable — black on black. A leftover from the dark palette: the
+  block's background stayed dark (correct when the page was dark, where it read
+  as a slightly deeper well) while the text colour was updated to the new
+  near-black `--fg` when the theme flipped. Neither change was wrong on its own
+  and together they cancelled the block out entirely.
+
+  The background is a TOKEN now rather than a literal, so it cannot fall out of
+  step with the foreground again — and it matches `.rig__code`, which had it
+  right all along.
+*/
 .prose__code {
   display: grid;
   gap: 10px;
   padding: clamp(18px, 2vw, 26px);
-  border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #0a0a11;
+  background: var(--fg);
   overflow: hidden;
+}
+
+.prose__code .mono-label {
+  color: rgba(237, 232, 220, 0.55);
 }
 .prose__code pre {
   overflow-x: auto;
@@ -2166,7 +2182,7 @@ ol.prose__list li::before {
   display: block;
   background: none;
   padding: 0;
-  color: rgba(16, 19, 25, 0.82);
+  color: #ede8dc;
   font-size: 12.5px;
   line-height: 1.75;
   white-space: pre;
@@ -5361,7 +5377,13 @@ html.no-js .exploded .exploded__svg {
     resting height from it, and if the two disagree the clip lands somewhere
     other than where the padding put the type.
   */
-  padding: 0.34em var(--gutter);
+  /*
+    Top padding only. Air below and a tuck cannot coexist — the row's bottom
+    edge is the cut, so padding there simply stops the clipping. `AIR` in
+    `RevealRows.tsx` must match this value; the component computes the resting
+    height from it and the two disagreeing puts the cut in the wrong place.
+  */
+  padding: 0.3em var(--gutter) 0;
   text-decoration: none;
   color: inherit;
 }
@@ -6737,5 +6759,153 @@ html.no-js .exploded .exploded__svg {
   }
   .tagbar__pill {
     flex: none;
+  }
+}
+
+/* ==================================================================
+   CREDIT BOOK
+   ================================================================== */
+
+.credit__book {
+  margin: calc(var(--grid-unit) * 1.4) 0;
+  border-top: 1px solid var(--line);
+}
+
+.credit__head,
+.credit__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6rem 7rem 7rem minmax(0, 11rem);
+  gap: clamp(8px, 1.4vw, 20px);
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.credit__head {
+  color: var(--muted);
+  padding-bottom: 8px;
+}
+
+/* The three columns are figures and belong on a common right edge — that is
+   what lets the eye compare down a column instead of reading each cell. */
+.credit__head > :nth-child(2),
+.credit__head > :nth-child(3),
+.credit__head > :nth-child(4),
+.credit__fig {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.credit__band {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.credit__band strong {
+  font-size: 15px;
+}
+
+.credit__band em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.credit__fig {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 13.5px;
+}
+
+.credit__count {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3.5rem;
+  gap: 8px;
+  align-items: center;
+}
+
+.credit__count input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.credit__count output {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12.5px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  The correlation control is set apart from the book above it, because it is not
+  another property of the accounts — it is an assumption about the world they
+  live in, and it is the only control here that changes the answer by an order
+  of magnitude.
+*/
+.credit__control {
+  margin: calc(var(--grid-unit) * 1.4) 0;
+  padding: calc(var(--grid-unit) * 1.1);
+  background: var(--bg-sunk);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.credit__control label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4rem;
+  grid-template-areas: 'label label' 'slider value';
+  gap: 8px 14px;
+  align-items: center;
+}
+
+.credit__control .mono-label {
+  grid-area: label;
+  color: var(--muted);
+}
+
+.credit__control input[type='range'] {
+  grid-area: slider;
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.credit__control output {
+  grid-area: value;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: clamp(18px, 1.8vw, 24px);
+  color: var(--accent);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.credit__hint {
+  margin-top: 12px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--fg-dim);
+  max-width: 70ch;
+}
+
+.credit__hint strong {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  color: var(--fg);
+}
+
+@media (max-width: 860px) {
+  .credit__head {
+    display: none;
+  }
+  .credit__row {
+    grid-template-columns: minmax(0, 1fr) 4.5rem 4.5rem;
+    row-gap: 6px;
+  }
+  /* The recovery rate is the least comparative of the three and the first to
+     go when there is no room for all of them. */
+  .credit__row > .credit__fig:nth-of-type(3) {
+    display: none;
+  }
+  .credit__count {
+    grid-column: 1 / -1;
   }
 }

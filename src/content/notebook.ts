@@ -1148,6 +1148,11 @@ export const entries: Entry[] = [
         ].join('\n'),
       },
       {
+        type: 'embed',
+        component: 'credit',
+        caption: 'Drag the correlation — watch the average hold still and the tail explode',
+      },
+      {
         type: 'note',
         label: 'Run it twice and the whole subject lands',
         text: 'Set rho to 0 and the worst year in a hundred is barely above the average — with independent borrowers, the good and bad cancel out and a large book is almost risk-free. Set rho to 0.2, which is roughly what regulators assume for retail credit, and the same book’s worst year is several times its average. Nothing else changed. That gap is the entire reason banks hold capital, and it is invisible until you simulate it.',

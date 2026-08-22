@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { RiskInstrument } from '@/components/instruments/RiskInstrument';
+import { CreditInstrument } from '@/components/instruments/CreditInstrument';
 import { RigDemo } from '@/components/instruments/RigDemo';
 import { SplitText } from '@/components/motion/SplitText';
 import { Reveal } from '@/components/motion/Reveal';
@@ -39,9 +40,16 @@ export default function LabPage() {
         <RiskInstrument />
       </section>
 
+      <section className="lab__block" id="credit">
+        <h2 className="lab__title">
+          <span className="mono-label">02</span> What a lender has to survive
+        </h2>
+        <CreditInstrument />
+      </section>
+
       <section className="lab__block" id="companion">
         <h2 className="lab__title">
-          <span className="mono-label">02</span> Mochi, taken apart
+          <span className="mono-label">03</span> Mochi, taken apart
         </h2>
         <RigDemo />
       </section>

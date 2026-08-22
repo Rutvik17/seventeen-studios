@@ -61,6 +61,11 @@ const RiskInstrument = dynamic(
   { ssr: false, loading: () => <Placeholder label="Loading the simulation…" /> },
 );
 
+const CreditInstrument = dynamic(
+  () => import('@/components/instruments/CreditInstrument').then((m) => m.CreditInstrument),
+  { ssr: false, loading: () => <Placeholder label="Loading the book…" /> },
+);
+
 const RigDemo = dynamic(
   () => import('@/components/instruments/RigDemo').then((m) => m.RigDemo),
   { ssr: false, loading: () => <Placeholder label="Loading the rig…" /> },
@@ -76,6 +81,8 @@ export function Embed({ component }: { component: EmbedId }) {
       return <DerivativeInstrument />;
     case 'risk':
       return <RiskInstrument />;
+    case 'credit':
+      return <CreditInstrument />;
     case 'spring':
       return <RigDemo />;
     default:
