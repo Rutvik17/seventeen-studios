@@ -266,7 +266,7 @@ export function carPlacement(route: Route, car: RoadCar) {
  * ------------------------------------------------------------------ */
 
 export type Furniture = {
-  kind: 'lamp' | 'parked' | 'signal';
+  kind: 'lamp' | 'parked' | 'signal' | 'tree' | 'hydrant';
   s: number;
   lateral: number;
   /** For parked cars. */
@@ -298,10 +298,27 @@ export function furnitureAlong(from: number, to: number, oneWay: boolean): Furni
   const kerb = LANE * 2.35;
 
   // Lamps every 30 m, alternating sides, which is how a roadway is lit.
-  const first = Math.ceil(from / 30) * 30;
-  for (let s = first; s < to; s += 30) {
-    const h = hash(s, 1);
-    out.push({ kind: 'lamp', s, lateral: (Math.floor(s / 30) % 2 ? 1 : -1) * kerb, seed: Math.round(h * 1e6) });
+  for (let s = Math.ceil(from / 30) * 30; s < to; s += 30) {
+    out.push({ kind: 'lamp', s, lateral: (Math.floor(s / 30) % 2 ? 1 : -1) * kerb, seed: Math.round(hash(s, 1) * 1e6) });
+  }
+
+  /*
+    Street trees, at 7.6 m centres — which is what the city plants them at, and
+    close enough that a block reads as a row rather than as a few specimens.
+    Not every pit is filled: about one in six is empty, which is also true.
+  */
+  for (let s = Math.ceil(from / 7.6) * 7.6; s < to; s += 7.6) {
+    const h = hash(s, 21);
+    if (h < 0.17) continue;
+    // Between the kerb and the lamps, on the side the lamp is not.
+    const side = Math.floor(s / 30) % 2 ? -1 : 1;
+    out.push({ kind: 'tree', s, lateral: side * (kerb + 1.1), seed: Math.round(h * 1e6) });
+  }
+
+  // A hydrant every couple of hundred metres, at the kerb where it belongs.
+  for (let s = Math.ceil(from / 96) * 96; s < to; s += 96) {
+    const side = hash(s, 31) > 0.5 ? 1 : -1;
+    out.push({ kind: 'hydrant', s, lateral: side * (kerb + 0.55), seed: Math.round(hash(s, 32) * 1e6) });
   }
 
   // Kerbside parking, both sides.

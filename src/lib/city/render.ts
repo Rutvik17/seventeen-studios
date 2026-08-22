@@ -85,8 +85,8 @@ import {
   type Ring,
 } from './world';
 import { massing, type Mass } from './massing';
-import { VEHICLES, type VehicleKind } from './traffic';
-import { at, inCorridor, offsetFrom, type Corridor, type Route } from './route';
+import { VEHICLES, axles, outline, type VehicleKind } from './vehicles';
+import { at, inCorridor, offsetFrom, type Corridor, type Route, type RoutePoint } from './route';
 import {
   LANE,
   WINDOW,
@@ -325,6 +325,10 @@ function collectStreet(
       push(spot.x, spot.z, 4, () => {
         drawLamp(ctx, cam, spot.x, spot.z, point.y, point.heading, item.lateral > 0 ? -1 : 1, o);
       });
+    } else if (item.kind === 'tree') {
+      push(spot.x, spot.z, 3, () => drawTree(ctx, cam, spot.x, spot.z, point.y + 0.15, item.seed, o));
+    } else if (item.kind === 'hydrant') {
+      push(spot.x, spot.z, 0.4, () => drawHydrant(ctx, cam, spot.x, spot.z, point.y + 0.15, o));
     }
   }
 
@@ -344,10 +348,37 @@ function collectStreet(
 }
 
 /**
- * The roadway itself, as a ribbon following the route.
+ * The roadway, its markings, its kerbs and its pavements.
  *
- * Built as quads between consecutive samples rather than as one long polygon,
- * so it bends with the road and climbs the bridge without any special case.
+ * ==================================================================
+ * THE DIMENSIONS ARE THE STANDARDS
+ * ==================================================================
+ *
+ * Every width here is from the MUTCD or NYC DOT's street design geometry, and
+ * that is not pedantry — it is the only way a road reads as a road. A lane line
+ * drawn "a few pixels wide" is a different width at every distance; a 100 mm
+ * line is 100 mm, and it thins with distance and vanishes when it should.
+ *
+ *   travel lane        3.35 m
+ *   lane line          100 mm, 3 m of paint on a 9 m gap
+ *   centre line        two 125 mm lines with 125 mm between them
+ *   kerb reveal        150 mm
+ *   pavement           4.2 m, in 5 ft flags — 1.524 m
+ *   crosswalk bars     600 mm wide on 600 mm gaps, continental
+ *   stop line          500 mm, set 1.2 m back from the crossing
+ *
+ * The 3-to-9 dash ratio matters more than it sounds. Drawn 50/50 a dashed line
+ * reads as railway sleepers; it is the long gap that makes it read as a road at
+ * speed.
+ *
+ * ==================================================================
+ * THE ROAD IS CROWNED
+ * ==================================================================
+ *
+ * Two per cent from the centreline down to each kerb, so water runs to the
+ * gutter. Over a 13 m road that is 130 mm — invisible as a slope and quite
+ * visible in its absence, because the markings and the wheels then sit on a
+ * nominal flat plane while the kerbs are somewhere else.
  */
 function drawPavement(
   ctx: CanvasRenderingContext2D,
@@ -359,62 +390,157 @@ function drawPavement(
   oneWay: boolean,
 ): void {
   const { palette } = o;
-  const halfRoad = LANE * 2.35;
-  const step = 14;
+  const lanes = oneWay ? 4 : 4;
+  const halfRoad = (lanes * LANE) / 2;
+  const walk = 4.2;
+  const kerbUp = 0.15;
+  const step = 10;
 
-  const road = hazed(palette.asphalt, palette, 0.08);
-  const kerbTone = hazed(palette.ground, palette, 0.04);
-  const mark = palette.name === 'night' ? '#7d7f88' : '#f4f1e6';
+  const road = hazed(palette.asphalt, palette, 0.06);
+  const flag = hazed(palette.ground, palette, 0.02);
+  const white = palette.name === 'night' ? '#8e9099' : '#f6f3e8';
+  const yellow = palette.name === 'night' ? '#8a7328' : '#e0ac26';
 
-  for (let s = Math.max(0, from); s < Math.min(route.length, to); s += step) {
+  /** Camber: the surface height at a lateral offset. */
+  const crown = (lateral: number) => 0.02 * Math.max(0, halfRoad - Math.abs(lateral));
+
+  const strip = (a: RoutePoint, b: RoutePoint, l0: number, l1: number, lift: number) => {
+    const a0 = offsetFrom(a, l0);
+    const a1 = offsetFrom(a, l1);
+    const b0 = offsetFrom(b, l0);
+    const b1 = offsetFrom(b, l1);
+    return projectPolygon(cam, [
+      { x: a0.x, y: a.y + crown(l0) + lift, z: a0.z },
+      { x: b0.x, y: b.y + crown(l0) + lift, z: b0.z },
+      { x: b1.x, y: b.y + crown(l1) + lift, z: b1.z },
+      { x: a1.x, y: a.y + crown(l1) + lift, z: a1.z },
+    ]);
+  };
+
+  const start = Math.max(0, from);
+  const finish = Math.min(route.length, to);
+
+  for (let s = start; s < finish; s += step) {
     const a = at(route, s);
-    const b = at(route, Math.min(route.length, s + step));
+    const b = at(route, Math.min(finish, s + step));
     const depth = toCamera(cam, { x: a.x, y: a.y, z: a.z }).z;
-    if (depth <= cam.near || depth > WINDOW.front + 100) continue;
+    if (depth <= cam.near || depth > WINDOW.front + 80) continue;
+    const fade = hazeAt(depth) * 0.35;
 
-    const ribbon = (inner: number, outer: number, y: number) => {
-      const a0 = offsetFrom(a, inner);
-      const a1 = offsetFrom(a, outer);
-      const b0 = offsetFrom(b, inner);
-      const b1 = offsetFrom(b, outer);
-      return projectPolygon(cam, [
-        { x: a0.x, y: a.y + y, z: a0.z },
-        { x: b0.x, y: b.y + y, z: b0.z },
-        { x: b1.x, y: b.y + y, z: b1.z },
-        { x: a1.x, y: a.y + y, z: a1.z },
-      ]);
-    };
+    const surface = strip(a, b, -halfRoad, halfRoad, 0);
+    if (surface) flat(ctx, surface, hazed(road, palette, fade));
 
-    const surface = ribbon(-halfRoad, halfRoad, 0.02);
-    if (surface) flat(ctx, surface, road);
-
-    // Pavements, 4.2 m each side, standing 150 mm above the gutter.
     for (const side of [-1, 1] as const) {
-      const walk = ribbon(side * halfRoad, side * (halfRoad + 4.2), 0.15);
-      if (walk) flat(ctx, walk, kerbTone);
-      const face = ribbon(side * halfRoad, side * halfRoad, 0);
-      if (face) flat(ctx, face, shaded(kerbTone, 0.6));
+      // The kerb: 150 mm of stone standing above the gutter, with its face
+      // visible. A pavement drawn flush with the road is the thing that makes a
+      // street look like a car park.
+      const face = strip(a, b, side * halfRoad, side * halfRoad, kerbUp / 2);
+      if (face) flat(ctx, face, hazed(shaded(flag, 0.8), palette, fade));
+
+      const top = strip(a, b, side * halfRoad, side * (halfRoad + walk), kerbUp);
+      if (top) flat(ctx, top, hazed(flag, palette, fade));
     }
 
-    /*
-      Lane lines: 3 m of paint on a 9 m gap, which is the MUTCD urban standard.
-      The ratio is what makes a road read at speed — drawn 50/50 it looks like a
-      railway sleeper track.
-    */
-    const dash = Math.floor(s / 12) * 12;
-    if (s - dash < 3) {
-      const lanes = oneWay ? [-LANE, 0, LANE] : [-LANE, LANE];
-      for (const lateral of lanes) {
-        const line = ribbon(lateral - 0.07, lateral + 0.07, 0.04);
-        if (line) flat(ctx, line, mark);
+    /* ---- markings ---- */
+    // Only near enough to resolve: past a couple of hundred metres a 100 mm
+    // line is thinner than the ink and turns the road grey.
+    if (depth > 240) continue;
+
+    const dash = s - Math.floor(s / 12) * 12 < 3;
+    const line = (lateral: number, width: number, colour: string) => {
+      const q = strip(a, b, lateral - width / 2, lateral + width / 2, 0.012);
+      if (q) flat(ctx, q, hazed(colour, palette, fade));
+    };
+
+    if (oneWay) {
+      // All one way: dashed white between every lane, and nothing in the middle.
+      if (dash) for (let i = 1; i < lanes; i += 1) line(-halfRoad + i * LANE, 0.1, white);
+    } else {
+      // Two-way: a double yellow on the crown, dashed white within each side.
+      line(-0.125, 0.125, yellow);
+      line(0.125, 0.125, yellow);
+      if (dash) for (const l of [-LANE, LANE]) line(l, 0.1, white);
+    }
+    // The edge line, at the gutter.
+    for (const side of [-1, 1] as const) line(side * (halfRoad - 0.25), 0.1, white);
+  }
+
+  /* ---- crossings ---- */
+  drawCrossings(ctx, cam, o, route, start, finish, halfRoad, crown, white);
+}
+
+/**
+ * Crosswalks and stop lines, at the cross streets.
+ *
+ * Continental bars — 600 mm of paint on 600 mm gaps, running parallel to the
+ * direction of traffic and spanning kerb to kerb. The stop line sits 1.2 m back
+ * from the crossing, and only across the approaching side: one spanning both
+ * directions is a common and very visible mistake.
+ */
+function drawCrossings(
+  ctx: CanvasRenderingContext2D,
+  cam: Camera,
+  o: RenderOptions,
+  route: Route,
+  from: number,
+  to: number,
+  halfRoad: number,
+  crown: (lateral: number) => number,
+  white: string,
+): void {
+  const { palette } = o;
+  let last = Number.NaN;
+
+  for (let s = from; s < to; s += 8) {
+    const point = at(route, s);
+    // Crossings live on the numbered grid, and on the level.
+    if (point.z < blockZ(0) || point.y > 1.5) continue;
+    const street = Math.round(point.z / BLOCK + 42);
+    if (street === last) continue;
+    if (Math.abs(point.z - blockZ(street)) > 8) continue;
+    last = street;
+
+    const depth = toCamera(cam, { x: point.x, y: 0, z: point.z }).z;
+    if (depth <= cam.near || depth > 200) continue;
+    const fade = hazeAt(depth) * 0.35;
+
+    for (const sense of [-1, 1] as const) {
+      const near = s + sense * (BLOCK * 0.11);
+      const far = near + sense * 3;
+      const a = at(route, Math.max(0, Math.min(route.length, Math.min(near, far))));
+      const b = at(route, Math.max(0, Math.min(route.length, Math.max(near, far))));
+
+      for (let l = -halfRoad + 0.3; l + 0.6 < halfRoad; l += 1.2) {
+        const a0 = offsetFrom(a, l);
+        const a1 = offsetFrom(a, l + 0.6);
+        const b0 = offsetFrom(b, l);
+        const b1 = offsetFrom(b, l + 0.6);
+        const bar = projectPolygon(cam, [
+          { x: a0.x, y: a.y + crown(l) + 0.014, z: a0.z },
+          { x: b0.x, y: b.y + crown(l) + 0.014, z: b0.z },
+          { x: b1.x, y: b.y + crown(l + 0.6) + 0.014, z: b1.z },
+          { x: a1.x, y: a.y + crown(l + 0.6) + 0.014, z: a1.z },
+        ]);
+        if (bar) flat(ctx, bar, hazed(white, palette, fade));
       }
-      // A two-way road gets a double yellow down the middle instead.
-      if (!oneWay) {
-        for (const off of [-0.14, 0.14]) {
-          const line = ribbon(off - 0.06, off + 0.06, 0.04);
-          if (line) flat(ctx, line, palette.name === 'night' ? '#8a7328' : '#d9a92c');
-        }
-      }
+
+      // The stop line, 1.2 m back, across the approaching half only.
+      const stopAt = near - sense * 1.2;
+      const sa = at(route, Math.max(0, Math.min(route.length, stopAt)));
+      const sb = at(route, Math.max(0, Math.min(route.length, stopAt - sense * 0.5)));
+      const inner = sense > 0 ? 0.2 : -halfRoad;
+      const outer = sense > 0 ? halfRoad : -0.2;
+      const p0 = offsetFrom(sa, inner);
+      const p1 = offsetFrom(sa, outer);
+      const q0 = offsetFrom(sb, inner);
+      const q1 = offsetFrom(sb, outer);
+      const stop = projectPolygon(cam, [
+        { x: p0.x, y: sa.y + crown(inner) + 0.014, z: p0.z },
+        { x: q0.x, y: sb.y + crown(inner) + 0.014, z: q0.z },
+        { x: q1.x, y: sb.y + crown(outer) + 0.014, z: q1.z },
+        { x: p1.x, y: sa.y + crown(outer) + 0.014, z: p1.z },
+      ]);
+      if (stop) flat(ctx, stop, hazed(white, palette, fade));
     }
   }
 }
@@ -422,26 +548,31 @@ function drawPavement(
 /* ---- vehicles ---- */
 
 /**
- * A vehicle: a body and a cabin, oriented along the road.
+ * A vehicle: its side profile, swept across its width.
  *
- * Two boxes rather than a modelled silhouette, because at the size a car
- * occupies on this page — rarely more than eighty pixels — the difference
- * between a modelled roofline and a stepped one is invisible, and the
- * difference in cost is not.
+ * Two stacked boxes give a doorstop — no bonnet, no raked windscreen, and the
+ * wheels bolted to the outside because there is nowhere for them to go. A swept
+ * profile gives every one of those surfaces at once, correct from any angle,
+ * with the wheels sitting in arches cut into the body.
+ *
+ * Faces are culled by their own outward normal, constructed rather than
+ * inferred from winding. Winding depends on every face being listed in a
+ * consistent rotational order and has no answer for a face seen edge-on; one
+ * face listed wrong and the camera is inside the car.
  */
 function drawVehicle(
   ctx: CanvasRenderingContext2D,
   cam: Camera,
   x: number,
   z: number,
-  y: number,
+  ground: number,
   heading: number,
   kind: VehicleKind,
   seed: number,
   o: RenderOptions,
 ): void {
   const spec = VEHICLES[kind];
-  const c = toCamera(cam, { x, y: y + spec.height / 2, z });
+  const c = toCamera(cam, { x, y: ground + spec.height / 2, z });
   if (c.z <= cam.near) return;
   const s = scaleAt(cam, c.z);
   // Below a couple of pixels a car is a smudge, and drawing it makes the road
@@ -449,112 +580,125 @@ function drawVehicle(
   if (spec.length * s < 2.2) return;
 
   const { palette } = o;
+  const fade = hazeAt(c.z);
+  const ink = hazed(palette.ink, palette, fade * 0.75);
   const paint =
     kind === 'cab'
       ? palette.cab
       : kind === 'bus'
-        ? (palette.name === 'night' ? '#3f4a5c' : '#cfd6dc')
-        : ['#c9633f', '#8fb0c4', '#3c414a', '#e8e6df', '#7fa9a2', '#e8c46a'][Math.abs(seed) % 6];
+        ? (palette.name === 'night' ? '#3f4a5c' : '#cdd4da')
+        : ['#c9633f', '#8fb0c4', '#3c414a', '#e8e6df', '#7fa9a2', '#e8c46a', '#b9556a', '#5f7f9a'][
+            Math.abs(seed) % 8
+          ];
 
-  const fade = hazeAt(c.z);
-  const ink = hazed(palette.ink, palette, fade * 0.8);
-  // A car is a box swept along its own heading, so its corners come from the
-  // heading rather than from the world axes — which is the whole reason it can
-  // sit correctly on a road that turns.
+  // The car's own axes: along the road, and across it.
   const ux = Math.sin(heading);
   const uz = Math.cos(heading);
   const px = Math.cos(heading);
   const pz = -Math.sin(heading);
+  const half = spec.width / 2;
 
-  const corners = (along0: number, along1: number, halfW: number, y0: number, y1: number): Vec3[][] => {
-    const p = (a: number, w: number, h: number): Vec3 => ({
-      x: x + ux * a + px * w,
-      y: y + h,
-      z: z + uz * a + pz * w,
-    });
-    // Six faces, each wound so its normal points out of the box. The bottom is
-    // included and simply never passes the normal test from above the road,
-    // which is cheaper than special-casing it and correct if the camera ever
-    // gets under one.
-    return [
-      [p(along0, halfW, y0), p(along1, halfW, y0), p(along1, halfW, y1), p(along0, halfW, y1)],
-      [p(along1, -halfW, y0), p(along0, -halfW, y0), p(along0, -halfW, y1), p(along1, -halfW, y1)],
-      [p(along1, halfW, y0), p(along1, -halfW, y0), p(along1, -halfW, y1), p(along1, halfW, y1)],
-      [p(along0, -halfW, y0), p(along0, halfW, y0), p(along0, halfW, y1), p(along0, -halfW, y1)],
-      [p(along0, halfW, y1), p(along1, halfW, y1), p(along1, -halfW, y1), p(along0, -halfW, y1)],
-      [p(along0, -halfW, y0), p(along1, -halfW, y0), p(along1, halfW, y0), p(along0, halfW, y0)],
-    ];
+  /** A point in the car's frame: along from the rear bumper, across, up. */
+  const at3 = (along: number, across: number, up: number): Vec3 => {
+    const a = along - spec.length / 2;
+    return {
+      x: x + ux * a + px * across,
+      y: ground + up,
+      z: z + uz * a + pz * across,
+    };
   };
 
-  const half = spec.width / 2;
-  const bodyTop = spec.height * 0.6;
-  const [cabFrom, cabTo, roof] = spec.cabin;
+  const shell = outline(spec);
+  const detail = spec.length * s > 26;
 
   /*
-    Which faces of a box you can see.
+    Wheels.
 
-    By the face's own NORMAL against the direction to the camera, not by the
-    winding of its projected polygon. Winding is the usual trick and it is
-    fragile: it depends on every face being listed in a consistent rotational
-    order, it inverts under a mirrored transform, and it gives no answer at all
-    for a face seen exactly edge-on. Get one face's order wrong and you are
-    looking at the inside of the car — which is precisely what happened.
+    Drawn BEFORE the body, so what shows is the tyre through the arch cut into
+    the flank rather than a black disc sitting on top of it. Painted after, a
+    wheel covers the arch that is supposed to contain it and the car ends up on
+    tractor tyres.
 
-    A normal is unambiguous. If it points away from the camera, the face is at
-    the back and is not drawn.
+    Only the near pair: the far ones are behind the car.
   */
-  const paintFaces = (faces: Vec3[][], colour: string, salt: number) => {
-    for (let i = 0; i < faces.length; i += 1) {
-      const face = faces[i];
-      const e1 = { x: face[1].x - face[0].x, y: face[1].y - face[0].y, z: face[1].z - face[0].z };
-      const e2 = { x: face[2].x - face[1].x, y: face[2].y - face[1].y, z: face[2].z - face[1].z };
-      const n = {
-        x: e1.y * e2.z - e1.z * e2.y,
-        y: e1.z * e2.x - e1.x * e2.z,
-        z: e1.x * e2.y - e1.y * e2.x,
-      };
-      const toEye = { x: cam.x - face[0].x, y: cam.y - face[0].y, z: cam.z - face[0].z };
-      if (n.x * toEye.x + n.y * toEye.y + n.z * toEye.z <= 0) continue;
-
-      const pts = projectPolygon(cam, face);
-      if (!pts || pts.length < 3) continue;
-      // The roof catches the sun; a flank does not.
-      const lit = i === 4;
-      flat(ctx, pts, hazed(lit ? sunlit(colour, 0.7) : shaded(colour, 0.55), palette, fade));
-      if (spec.length * s > 10) {
-        stroke(ctx, pts, { seed: seed + salt + i, colour: ink, width: 1.4, wobble: 0.9, close: true });
+  if (spec.length * s > 11) {
+    const tyre = hazed(palette.name === 'night' ? '#0a0c12' : '#232630', palette, fade);
+    for (const along of axles(spec)) {
+      for (const side of [-1, 1] as const) {
+        const hub = at3(along, side * half * 0.94, spec.wheelR);
+        const toEye = { x: cam.x - hub.x, y: 0, z: cam.z - hub.z };
+        if (px * side * toEye.x + pz * side * toEye.z <= 0) continue;
+        const p = project(cam, hub);
+        if (!p) continue;
+        ctx.fillStyle = tyre;
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y, Math.max(0.6, spec.wheelR * s * 0.9), Math.max(0.6, spec.wheelR * s), 0, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
-  };
+  }
 
-  paintFaces(corners(-spec.length / 2, spec.length / 2, half, spec.wheelR * 0.5, bodyTop), paint, 0);
-  paintFaces(
-    corners(-spec.length / 2 + cabFrom, -spec.length / 2 + cabTo, half * 0.93, bodyTop, roof),
-    kind === 'cab' ? paint : paint,
-    97,
-  );
+  /*
+    The flanks.
 
-  // Glass, wrapped round the cabin. One dark band does the work of modelling
-  // every window, which at this size is what a window is.
-  if (spec.length * s > 18) {
-    const glassTop = bodyTop + (roof - bodyTop) * 0.78;
-    const glassLow = bodyTop + (roof - bodyTop) * 0.24;
-    for (const side of [-1, 1] as const) {
-      const band = projectPolygon(cam, [
-        { x: x + ux * (-spec.length / 2 + cabFrom + 0.2) + px * side * half * 0.95, y: y + glassLow, z: z + uz * (-spec.length / 2 + cabFrom + 0.2) + pz * side * half * 0.95 },
-        { x: x + ux * (-spec.length / 2 + cabTo - 0.2) + px * side * half * 0.95, y: y + glassLow, z: z + uz * (-spec.length / 2 + cabTo - 0.2) + pz * side * half * 0.95 },
-        { x: x + ux * (-spec.length / 2 + cabTo - 0.2) + px * side * half * 0.95, y: y + glassTop, z: z + uz * (-spec.length / 2 + cabTo - 0.2) + pz * side * half * 0.95 },
-        { x: x + ux * (-spec.length / 2 + cabFrom + 0.2) + px * side * half * 0.95, y: y + glassTop, z: z + uz * (-spec.length / 2 + cabFrom + 0.2) + pz * side * half * 0.95 },
-      ]);
-      if (!band) continue;
-      let area = 0;
-      for (let k = 0; k < band.length; k += 1) {
-        const p = band[k];
-        const q = band[(k + 1) % band.length];
-        area += p.x * q.y - q.x * p.y;
+    Their normals are the sweep direction, so which one you can see is a single
+    dot product and never a question of how the polygon happened to be listed.
+  */
+  for (const side of [-1, 1] as const) {
+    const centre = at3(spec.length / 2, side * half, spec.height / 2);
+    const toEye = { x: cam.x - centre.x, y: cam.y - centre.y, z: cam.z - centre.z };
+    if (px * side * toEye.x + pz * side * toEye.z <= 0) continue;
+
+    const face = projectPolygon(cam, shell.map(([a, h]) => at3(a, side * half, h)));
+    if (!face) continue;
+    flat(ctx, face, hazed(shaded(paint, 0.5), palette, fade));
+    if (spec.length * s > 9) {
+      stroke(ctx, face, { seed, colour: ink, width: 1.4, wobble: 0.8, close: true });
+    }
+
+    // Glass, on the flank you can see.
+    if (detail) {
+      for (const pane of spec.glass) {
+        const glass = projectPolygon(cam, pane.map(([a, h]) => at3(a, side * half * 1.001, h)));
+        if (glass) flat(ctx, glass, hazed(palette.name === 'night' ? '#16233c' : '#43536e', palette, fade));
       }
-      if (area <= 0) continue;
-      flat(ctx, band, hazed(palette.name === 'night' ? '#1a2740' : '#41506a', palette, fade));
+    }
+  }
+
+  /*
+    The shell: one quad per profile edge, swept across.
+
+    The outward normal of an edge running (da, dh) in the along-height plane is
+    (-dh, da), because the profile is listed anticlockwise around the solid. In
+    the world that is the heading direction scaled by -dh, plus straight up
+    scaled by da — no cross products, and no way to get the sign wrong.
+  */
+  for (let i = 0; i < shell.length; i += 1) {
+    const [a0, h0] = shell[i];
+    const [a1, h1] = shell[(i + 1) % shell.length];
+    const da = a1 - a0;
+    const dh = h1 - h0;
+    const len = Math.hypot(da, dh);
+    if (len < 1e-6) continue;
+
+    const nAlong = -dh / len;
+    const nUp = da / len;
+    const mid = at3((a0 + a1) / 2, 0, (h0 + h1) / 2);
+    const toEye = { x: cam.x - mid.x, y: cam.y - mid.y, z: cam.z - mid.z };
+    if ((ux * nAlong) * toEye.x + nUp * toEye.y + (uz * nAlong) * toEye.z <= 0) continue;
+
+    const quad = projectPolygon(cam, [
+      at3(a0, -half, h0),
+      at3(a1, -half, h1),
+      at3(a1, half, h1),
+      at3(a0, half, h0),
+    ]);
+    if (!quad) continue;
+    // A surface facing up catches the sun; one facing along the road does not.
+    const tone = nUp > 0.4 ? sunlit(paint, 0.8) : nUp < -0.4 ? shaded(paint, 1.1) : paint;
+    flat(ctx, quad, hazed(tone, palette, fade));
+    if (spec.length * s > 16) {
+      stroke(ctx, quad, { seed: seed + i, colour: ink, width: 1.1, wobble: 0.6, close: true });
     }
   }
 
@@ -562,43 +706,53 @@ function drawVehicle(
     Lamps.
 
     A headlight is 200 mm across and, in daylight, OFF — a dark glass lens, not
-    a white disc. Drawing them lit round the clock is what turned a row of
-    parked cars into a row of headlamps: at midday nothing on the street is
-    emitting anything.
+    a white disc. Drawing them lit round the clock turned a row of parked cars
+    into a row of headlamps; at midday nothing on the street is emitting
+    anything.
   */
-  if (spec.length * s > 16) {
+  if (detail) {
     const dark = palette.name === 'night' || palette.name === 'dusk';
     for (const [along, on, off] of [
-      [-spec.length / 2, '#ff5b3f', '#6d2a24'],
-      [spec.length / 2, '#fff3cf', '#3b4048'],
+      [0.04, '#ff5b3f', '#5f2620'],
+      [spec.length - 0.04, '#fff3cf', '#3a3f47'],
     ] as const) {
       for (const side of [-1, 1] as const) {
-        const p = project(cam, {
-          x: x + ux * (along as number) + px * side * half * 0.62,
-          y: y + spec.height * 0.42,
-          z: z + uz * (along as number) + pz * side * half * 0.62,
-        });
+        const lens = at3(along as number, side * half * 0.66, spec.sill + 0.34);
+        const p = project(cam, lens);
         if (!p) continue;
-        // 200 mm of lens, and no more, however close the car gets.
-        const r = Math.max(0.7, Math.min(0.2 * s, spec.width * 0.14 * s));
+        const r = Math.max(0.7, Math.min(0.2 * s, spec.width * 0.13 * s));
         ctx.fillStyle = hazed(dark ? (on as string) : (off as string), palette, fade);
         ctx.beginPath();
         ctx.ellipse(p.x, p.y, r, r * 0.72, 0, 0, Math.PI * 2);
         ctx.fill();
       }
     }
+
+    // A cab is a cab because of the roof light and the checker band.
+    if (kind === 'cab') {
+      const box = projectPolygon(cam, [
+        at3(2.1, -half * 0.3, spec.height),
+        at3(2.9, -half * 0.3, spec.height),
+        at3(2.9, half * 0.3, spec.height),
+        at3(2.1, half * 0.3, spec.height),
+      ]);
+      if (box) flat(ctx, box, hazed('#2b2e36', palette, fade));
+    }
   }
 }
 
-/* ---- lamps and signals ---- */
+/* ---- lamps, signals and street furniture ---- */
 
 /**
- * A cobra-head streetlight: NYC DOT's standard, 9.1 m to the lamp on a 2.4 m
- * mast arm reaching over the roadway.
+ * NYC DOT's standard cobra head: 9.1 m to the lamp, on a 2.4 m mast arm that
+ * reaches out over the roadway.
  *
- * The arm has to reach *over the road*, which means it has to know which side
- * of the road the pole is on — a mast arm pointing at the buildings is the sort
- * of thing that looks wrong without being nameable.
+ * The arm has to reach over the ROAD, which means it has to know which side the
+ * pole stands on. An arm pointing at the buildings behind it is the sort of
+ * thing that looks wrong immediately and is hard to name.
+ *
+ * The shaft tapers and the arm curves — a real one is a single bent tube, not a
+ * post with a bracket, and the curve is most of its silhouette.
  */
 function drawLamp(
   ctx: CanvasRenderingContext2D,
@@ -612,44 +766,91 @@ function drawLamp(
 ): void {
   const { palette } = o;
   const c = toCamera(cam, { x, y: ground + 5, z });
-  if (c.z <= cam.near || c.z > 320) return;
+  if (c.z <= cam.near || c.z > 300) return;
   const s = scaleAt(cam, c.z);
-  if (s * 9 < 6) return;
+  if (s * 9 < 5) return;
 
   const fade = hazeAt(c.z);
   const ink = hazed(palette.ink, palette, fade * 0.7);
   const px = Math.cos(heading) * inward;
   const pz = -Math.sin(heading) * inward;
 
+  const H = 9.1;
+  const REACH = 2.4;
+
+  // Shaft, then the arm sweeping out. Sampled so the bend is a curve rather
+  // than a corner.
+  const run: Point2[] = [];
   const base = project(cam, { x, y: ground, z });
-  const top = project(cam, { x, y: ground + 9.1, z });
-  const head = project(cam, { x: x + px * 2.4, y: ground + 9.1, z: z + pz * 2.4 });
-  if (!base || !top || !head) return;
+  if (base) run.push(base);
+  for (let i = 0; i <= 8; i += 1) {
+    const t = i / 8;
+    // A quarter-ellipse from the top of the shaft out to the head: rises the
+    // last 900 mm while reaching the full 2.4 m.
+    const up = H - 0.9 + 0.9 * Math.sin((t * Math.PI) / 2);
+    const out = REACH * (1 - Math.cos((t * Math.PI) / 2));
+    const p = project(cam, { x: x + px * out, y: ground + up, z: z + pz * out });
+    if (p) run.push(p);
+  }
+  if (run.length < 2) return;
 
   ctx.strokeStyle = ink;
-  ctx.lineWidth = Math.max(1.1, 0.34 * s);
+  ctx.lineWidth = Math.max(1, 0.24 * s);
   ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(base.x, base.y);
-  ctx.lineTo(top.x, top.y);
-  ctx.lineTo(head.x, head.y);
+  for (const piece of clipPolyline(cam, run)) {
+    ctx.moveTo(piece[0].x, piece[0].y);
+    for (let i = 1; i < piece.length; i += 1) ctx.lineTo(piece[i].x, piece[i].y);
+  }
   ctx.stroke();
 
-  // The lamp itself, and its glow after dark.
-  const r = Math.max(1.4, 0.6 * s);
-  ctx.fillStyle = palette.name === 'night' || palette.name === 'dusk' ? '#ffe6a8' : hazed(palette.ink, palette, fade);
-  ctx.beginPath();
-  ctx.ellipse(head.x, head.y + r * 0.4, r * 1.5, r * 0.7, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // The head: a flattened wedge, wider at the back than the front, which is
+  // what a cobra head is and why it is called that.
+  const hx = x + px * REACH;
+  const hz = z + pz * REACH;
+  const nx = Math.sin(heading);
+  const nz = Math.cos(heading);
+  const head = projectPolygon(cam, [
+    { x: hx - nx * 0.34 - px * 0.5, y: ground + H, z: hz - nz * 0.34 - pz * 0.5 },
+    { x: hx + nx * 0.34 - px * 0.5, y: ground + H, z: hz + nz * 0.34 - pz * 0.5 },
+    { x: hx + nx * 0.26 + px * 0.34, y: ground + H - 0.22, z: hz + nz * 0.26 + pz * 0.34 },
+    { x: hx - nx * 0.26 + px * 0.34, y: ground + H - 0.22, z: hz - nz * 0.26 + pz * 0.34 },
+  ]);
+  if (head) {
+    flat(ctx, head, hazed(palette.name === 'night' ? '#1a1d27' : '#3a3e48', palette, fade));
+  }
 
-  if (palette.name === 'night' || palette.name === 'dusk') {
-    ctx.save();
-    ctx.globalAlpha = 0.16;
-    ctx.fillStyle = '#ffd98a';
-    ctx.beginPath();
-    ctx.ellipse(head.x, head.y, r * 7, r * 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+  // The lamp, and after dark the pool it throws on the road.
+  const lit = palette.name === 'night' || palette.name === 'dusk';
+  if (lit) {
+    const lamp = project(cam, { x: hx, y: ground + H - 0.24, z: hz });
+    if (lamp) {
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = '#ffe6a8';
+      ctx.beginPath();
+      ctx.ellipse(lamp.x, lamp.y, Math.max(1, 0.5 * s), Math.max(0.6, 0.22 * s), 0, 0, Math.PI * 2);
+      ctx.fill();
+      // The pool is on the ground, so it is drawn on the ground — an ellipse in
+      // world space, projected, not a circle stuck on the screen.
+      const pool = projectPolygon(
+        cam,
+        Array.from({ length: 14 }, (_, i) => {
+          const a = (i / 14) * Math.PI * 2;
+          return {
+            x: hx + Math.cos(a) * 5.2 + px * 1.5,
+            y: ground + 0.02,
+            z: hz + Math.sin(a) * 5.2 + pz * 1.5,
+          };
+        }),
+      );
+      if (pool) {
+        ctx.globalAlpha = 0.14;
+        flat(ctx, pool, '#ffd98a');
+      }
+      ctx.restore();
+    }
   }
 }
 
@@ -666,8 +867,7 @@ function signalsAlong(route: Route, from: number, to: number, time: number): Sig
     if (point.z < blockZ(0) || Math.abs(point.y) > 1.5) continue;
     const street = Math.round(point.z / BLOCK + 42);
     if (street === lastStreet) continue;
-    const atStreet = Math.abs(point.z - blockZ(street));
-    if (atStreet > step) continue;
+    if (Math.abs(point.z - blockZ(street)) > step) continue;
     lastStreet = street;
     const spot = offsetFrom(point, LANE * 2.5);
     out.push({
@@ -682,59 +882,163 @@ function signalsAlong(route: Route, from: number, to: number, time: number): Sig
 }
 
 /**
- * A mast-arm signal: three 300 mm lenses, the housing 5.2 m over the roadway.
+ * A mast-arm signal: three 300 mm lenses in a housing, hung 5.2 m over the
+ * roadway.
  *
- * MUTCD's minimum clearance over a road is 4.6 m; 5.2 is what gets built.
+ * MUTCD's minimum clearance over a road is 4.6 m; 5.2 is what gets built, and
+ * the lenses are 300 mm because that is the standard — a 200 mm lens is a
+ * pedestrian signal and looks wrong over traffic.
  */
 function drawSignal(ctx: CanvasRenderingContext2D, cam: Camera, place: SignalPlace, o: RenderOptions): void {
   const { palette } = o;
   const c = toCamera(cam, { x: place.x, y: place.y + 5, z: place.z });
-  if (c.z <= cam.near || c.z > 320) return;
+  if (c.z <= cam.near || c.z > 300) return;
   const s = scaleAt(cam, c.z);
-  if (s * 6 < 5) return;
+  if (s * 6 < 4) return;
 
   const fade = hazeAt(c.z);
   const ink = hazed(palette.ink, palette, fade * 0.7);
   const px = -Math.cos(place.heading);
   const pz = Math.sin(place.heading);
+  const nx = Math.sin(place.heading);
+  const nz = Math.cos(place.heading);
 
   const base = project(cam, { x: place.x, y: place.y, z: place.z });
-  const top = project(cam, { x: place.x, y: place.y + 6.4, z: place.z });
-  const arm = project(cam, { x: place.x + px * 5.4, y: place.y + 6.4, z: place.z + pz * 5.4 });
+  const top = project(cam, { x: place.x, y: place.y + 6.5, z: place.z });
+  const arm = project(cam, { x: place.x + px * 5.4, y: place.y + 6.5, z: place.z + pz * 5.4 });
   if (!base || !top || !arm) return;
 
   ctx.strokeStyle = ink;
-  ctx.lineWidth = Math.max(1.2, 0.3 * s);
+  ctx.lineWidth = Math.max(1, 0.26 * s);
+  ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(base.x, base.y);
   ctx.lineTo(top.x, top.y);
   ctx.lineTo(arm.x, arm.y);
   ctx.stroke();
 
-  // The head, hanging under the arm.
+  // The housing, hanging under the arm and facing the traffic.
   const hx = place.x + px * 4.6;
   const hz = place.z + pz * 4.6;
   const housing = projectPolygon(cam, [
-    { x: hx - 0.24 * px, y: place.y + 5.2, z: hz - 0.24 * pz },
-    { x: hx + 0.24 * px, y: place.y + 5.2, z: hz + 0.24 * pz },
-    { x: hx + 0.24 * px, y: place.y + 6.35, z: hz + 0.24 * pz },
-    { x: hx - 0.24 * px, y: place.y + 6.35, z: hz - 0.24 * pz },
+    { x: hx - nx * 0.23, y: place.y + 5.2, z: hz - nz * 0.23 },
+    { x: hx + nx * 0.23, y: place.y + 5.2, z: hz + nz * 0.23 },
+    { x: hx + nx * 0.23, y: place.y + 6.42, z: hz + nz * 0.23 },
+    { x: hx - nx * 0.23, y: place.y + 6.42, z: hz - nz * 0.23 },
   ]);
   if (housing) {
-    flat(ctx, housing, palette.name === 'night' ? '#14161f' : '#2b2f38');
-    stroke(ctx, housing, { seed: 5511, colour: ink, width: 1, wobble: 0.6, close: true });
+    flat(ctx, housing, palette.name === 'night' ? '#101219' : '#252932');
+    stroke(ctx, housing, { seed: 5511, colour: ink, width: 1.1, wobble: 0.5, close: true });
   }
 
   const lit = { red: 0, amber: 1, green: 2 }[place.state];
-  const colours = ['#e5432f', '#f0a52a', '#3fb968'];
+  const colours = ['#ef4a33', '#f5ad2c', '#3fc46e'];
   for (let i = 0; i < 3; i += 1) {
-    const p = project(cam, { x: hx, y: place.y + 6.05 - i * 0.34, z: hz });
+    const p = project(cam, { x: hx, y: place.y + 6.12 - i * 0.37, z: hz });
     if (!p) continue;
-    const r = Math.max(0.9, 0.19 * s);
-    ctx.fillStyle = lit === i ? colours[i] : 'rgba(30,32,40,0.85)';
+    const r = Math.max(0.8, 0.15 * s);
+    const on = lit === i;
+    ctx.fillStyle = on ? colours[i] : 'rgba(24,26,34,0.9)';
     ctx.beginPath();
     ctx.ellipse(p.x, p.y, r, r, 0, 0, Math.PI * 2);
     ctx.fill();
+    if (on) {
+      ctx.save();
+      ctx.globalAlpha = 0.22;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, r * 2.6, r * 2.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+/**
+ * A street tree in its pit.
+ *
+ * Planted at 7.6 m centres, which is what the city plants them at, with 2.6 m
+ * of clear trunk so you can walk under one. The canopy is two overlapping
+ * blobs rather than one, because a single ellipse reads as a lollipop.
+ */
+function drawTree(
+  ctx: CanvasRenderingContext2D,
+  cam: Camera,
+  x: number,
+  z: number,
+  ground: number,
+  seed: number,
+  o: RenderOptions,
+): void {
+  const { palette } = o;
+  const h = 6.5 + (Math.abs(seed % 100) / 100) * 2.6;
+  const c = toCamera(cam, { x, y: ground + h * 0.6, z });
+  if (c.z <= cam.near || c.z > 260) return;
+  const s = scaleAt(cam, c.z);
+  if (h * s < 8) return;
+
+  const fade = hazeAt(c.z);
+  const ink = hazed(palette.ink, palette, fade * 0.8);
+
+  const pit = projectPolygon(cam, [
+    { x: x - 0.7, y: ground + 0.02, z: z - 0.7 },
+    { x: x + 0.7, y: ground + 0.02, z: z - 0.7 },
+    { x: x + 0.7, y: ground + 0.02, z: z + 0.7 },
+    { x: x - 0.7, y: ground + 0.02, z: z + 0.7 },
+  ]);
+  if (pit) flat(ctx, pit, hazed('#4a3a2c', palette, fade));
+
+  const foot = project(cam, { x, y: ground, z });
+  const fork = project(cam, { x, y: ground + 2.6, z });
+  if (foot && fork) {
+    ctx.strokeStyle = hazed('#6b543f', palette, fade);
+    ctx.lineWidth = Math.max(1, 0.24 * s);
+    ctx.beginPath();
+    ctx.moveTo(foot.x, foot.y);
+    ctx.lineTo(fork.x, fork.y);
+    ctx.stroke();
+  }
+
+  for (const [dx, dy, r] of [
+    [0, h * 0.72, h * 0.34],
+    [-0.9, h * 0.6, h * 0.26],
+    [1.0, h * 0.63, h * 0.24],
+  ] as const) {
+    const p = project(cam, { x: x + dx, y: ground + dy, z });
+    if (!p) continue;
+    ctx.fillStyle = hazed(dx === 0 ? palette.green : palette.greenDeep, palette, fade);
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y, r * s, r * s * 0.9, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/** 750 mm of cast iron. There are over one hundred thousand of them. */
+function drawHydrant(
+  ctx: CanvasRenderingContext2D,
+  cam: Camera,
+  x: number,
+  z: number,
+  ground: number,
+  o: RenderOptions,
+): void {
+  const { palette } = o;
+  const c = toCamera(cam, { x, y: ground + 0.4, z });
+  if (c.z <= cam.near || c.z > 120) return;
+  const s = scaleAt(cam, c.z);
+  if (s * 0.75 < 4) return;
+  const fade = hazeAt(c.z);
+
+  const body = projectPolygon(cam, [
+    { x: x - 0.16, y: ground, z },
+    { x: x + 0.16, y: ground, z },
+    { x: x + 0.16, y: ground + 0.58, z },
+    { x: x + 0.1, y: ground + 0.7, z },
+    { x: x - 0.1, y: ground + 0.7, z },
+    { x: x - 0.16, y: ground + 0.58, z },
+  ]);
+  if (body) {
+    flat(ctx, body, hazed('#d8452f', palette, fade));
+    stroke(ctx, body, { seed: 9001, colour: hazed(palette.ink, palette, fade), width: 1, wobble: 0.5, close: true });
   }
 }
 

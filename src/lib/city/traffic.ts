@@ -54,20 +54,4 @@ export function idmAcceleration(v: number, gap: number, closing: number, v0: num
   return a * (1 - Math.pow(v / v0, delta) - Math.pow(sStar / Math.max(gap, 0.05), 2));
 }
 
-export type VehicleKind = 'cab' | 'sedan' | 'suv' | 'van' | 'bus';
-
-/** Real vehicles at their published dimensions, in metres. */
-export const VEHICLES: Record<VehicleKind, {
-  length: number; width: number; height: number;
-  /** Roof height of the cabin, and where it sits along the body. */
-  cabin: [number, number, number];
-  wheelR: number;
-}> = {
-  // The New York fleet is mostly Toyota Sienna since the Crown Victoria went.
-  cab: { length: 5.17, width: 1.99, height: 1.78, cabin: [0.36, 3.35, 1.78], wheelR: 0.34 },
-  sedan: { length: 4.7, width: 1.82, height: 1.44, cabin: [1.62, 2.98, 1.44], wheelR: 0.32 },
-  suv: { length: 4.85, width: 1.93, height: 1.72, cabin: [0.3, 3.2, 1.72], wheelR: 0.36 },
-  van: { length: 5.9, width: 2.03, height: 2.55, cabin: [0, 4.2, 2.55], wheelR: 0.37 },
-  // An MTA 40-footer.
-  bus: { length: 12.2, width: 2.6, height: 3.2, cabin: [0.4, 11.4, 3.2], wheelR: 0.51 },
-};
+export { VEHICLES, type VehicleKind } from './vehicles';
