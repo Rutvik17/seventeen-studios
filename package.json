@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "market": "node scripts/fetch-market.mjs",
+    "prebuild": "node scripts/fetch-market.mjs"
   },
   "dependencies": {
     "gsap": "^3.12.5",
