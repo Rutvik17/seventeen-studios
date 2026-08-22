@@ -5637,13 +5637,38 @@ html.no-js .exploded .exploded__svg {
   Now both are: full-width element, gutter padding, children centred at the
   measure. Any new block inherits the alignment for free.
 */
+/*
+  THE ENTRY COLUMN, and the reason this took three attempts.
+
+  `.entry__body` and `.prose` are the SAME element, and `.prose` carries
+  `max-width: 68ch` with no auto margin. So the whole prose block was pinned to
+  the left of the padded area — and centring its children inside it, which is
+  what the previous fix did, moved nothing, because the box they were being
+  centred in was already hard against the left edge.
+
+  It is also why the board explorer was tiny: an embed cannot exceed a container
+  capped at 68ch, whatever max-width it declares for itself.
+
+  So the cap is released here and the measure moves onto the children, where a
+  wide block can opt out of it. `justify-items: center` does the centring —
+  `.prose` is a grid, and a grid item is centred by the container rather than by
+  its own auto margins, which is the mechanism the earlier attempt reached for
+  and the reason it silently did nothing.
+*/
 .entry__body {
+  max-width: none;
+  justify-items: center;
   padding: clamp(44px, 8vh, 90px) var(--gutter) clamp(60px, 10vh, 120px);
 }
 
 .entry__body > * {
-  max-width: var(--entry-measure);
-  margin-inline: auto;
+  width: min(100%, var(--entry-measure));
+}
+
+/* Wider than the reading measure, on the same centre line. Higher specificity
+   than the rule above, so it does not depend on source order. */
+.entry__body > .prose__embed {
+  width: min(100%, 1180px);
 }
 
 .entry__body > h2 {
@@ -5666,9 +5691,9 @@ html.no-js .exploded .exploded__svg {
 }
 
 .entry__foot > * {
-  max-width: var(--entry-measure);
-  margin-inline: auto;
   display: block;
+  width: min(100%, var(--entry-measure));
+  margin-inline: auto;
 }
 
 /* ---- a defined word ---- */
@@ -5793,7 +5818,6 @@ html.no-js .exploded .exploded__svg {
 */
 .prose__embed {
   margin: calc(var(--grid-unit) * 2) auto;
-  max-width: min(96vw, 1180px);
 }
 
 .prose__embed-caption {
