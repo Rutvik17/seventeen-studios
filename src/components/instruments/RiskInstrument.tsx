@@ -1,37 +1,36 @@
 'use client';
 
 /**
- * A working value-at-risk desk.
+ * A risk desk on six real companies.
  *
- * Move a control and every figure recomputes from a fresh Monte Carlo in the
- * visitor's own browser. Nothing here is recorded, pre-rendered or read from a
- * fixture — the maths is `lib/quant.ts` and the numbers below are whatever it
- * returned this frame.
- *
- * ---
- *
- * WHY THE ANALYTIC COLUMN IS ON SCREEN
- *
- * It is the part a knowledgeable reader will check first, and that is the
- * intent. Under geometric Brownian motion the terminal log-return is normal, so
- * VaR has a closed form; the panel runs the simulation and the closed form side
- * by side and prints the disagreement between them. A simulation that lands
- * within a fraction of a percent of theory is a verifiable claim about whether
- * the people who built this know what they are doing — which is the job this
- * section is doing on a site with no client list yet.
- *
- * It is also a live regression test. Drop the Itô correction from the drift and
- * the error column goes visibly wrong long before the chart looks odd.
+ * Every number that goes in is measured from two years of actual daily closes:
+ * each name's volatility, its drift, and the correlations between all fifteen
+ * pairs. Nothing here is a placeholder — earlier versions of this panel ran on
+ * a hardcoded 18% volatility over an abstract million dollars, which produced
+ * correct arithmetic about a portfolio that did not exist.
  *
  * ---
  *
- * THE MODEL'S LIMITS ARE PRINTED TOO
+ * WHY IT SHOWS THE NAMES
  *
- * GBM has thin tails and constant volatility, and real markets have neither.
- * Saying so on the panel costs nothing and is the difference between a
- * demonstration and a claim — anyone who would be impressed by this instrument
- * knows its assumptions, and pretending otherwise would lose exactly the reader
- * it is meant to reach.
+ * The first version showed "a $1,000,000 book" and nothing else, and it was
+ * unreadable to anyone who did not already know what value at risk was. There
+ * was nothing to hold on to: no companies, no weights, no sense of why six of
+ * anything is better than one.
+ *
+ * So the holdings are named, their weights are yours to move, and the panel
+ * states in words what the simulation is doing. The maths did not change. What
+ * changed is that you can now disagree with it.
+ *
+ * ---
+ *
+ * THE DIVERSIFICATION LINE IS THE POINT
+ *
+ * The single most useful fact in portfolio theory is that the risk of a
+ * portfolio is LESS than the average risk of the things in it, as long as they
+ * do not move in perfect lockstep. That is not an opinion or a strategy — it
+ * falls out of the covariance algebra — and it is invisible unless something
+ * shows you both numbers side by side. So the panel prints both.
  */
 
 import { useDeferredValue, useMemo, useState } from 'react';
@@ -39,186 +38,244 @@ import {
   formatCurrency,
   formatPercent,
   simulateFan,
-  simulateRisk,
+  simulatePortfolio,
+  type Holding,
 } from '@/lib/quant';
+import { market } from '@/content/market';
 import { Reveal } from '@/components/motion/Reveal';
 
 const NOTIONAL = 1_000_000;
 const PATHS = 25_000;
+const SEED = 20260822;
 
 const W = 760;
 const H = 260;
-const PAD = { top: 18, right: 16, bottom: 30, left: 68 };
+const PAD = { top: 18, right: 16, bottom: 30, left: 74 };
+
+/** Equal weights to begin with — the honest default when you have no view. */
+const INITIAL = market.assets.map(() => Math.round(100 / market.assets.length));
 
 export function RiskInstrument() {
-  const [volatility, setVolatility] = useState(0.18);
+  const [raw, setRaw] = useState<number[]>(INITIAL);
   const [horizonDays, setHorizonDays] = useState(63);
   const [alpha, setAlpha] = useState(0.05);
-  const [drift, setDrift] = useState(0.07);
 
   /*
-    Deferred so dragging a slider keeps painting at full rate: React commits the
-    control immediately and recomputes the 25k-path simulation at lower
-    priority. Without it the drag stutters on a mid-range laptop.
-
-    Four separate primitives, NOT one deferred object — and that is not a style
-    preference. `useDeferredValue({ ... })` on an inline literal is an infinite
-    render loop: the object has a new identity on every render, so the deferred
-    render passes a value that differs from the one that scheduled it, which
-    schedules another, forever. React's own documentation is explicit that the
-    argument must be a primitive or something created outside of rendering.
+    Deferred as four primitives, never as one object. `useDeferredValue` on an
+    inline object is an infinite render loop — a new identity every render means
+    the deferred pass always differs from the one that scheduled it. Weights are
+    joined to a string for the same reason: a stable primitive.
   */
-  const dVolatility = useDeferredValue(volatility);
+  const weightKey = useDeferredValue(raw.join(','));
   const dHorizon = useDeferredValue(horizonDays);
   const dAlpha = useDeferredValue(alpha);
-  const dDrift = useDeferredValue(drift);
+
+  const holdings: Holding[] = useMemo(() => {
+    const values = weightKey.split(',').map(Number);
+    const total = values.reduce((s, v) => s + v, 0) || 1;
+    return market.assets.map((asset, i) => ({
+      symbol: asset.symbol,
+      name: asset.name,
+      weight: values[i] / total,
+      drift: asset.drift,
+      volatility: asset.volatility,
+    }));
+  }, [weightKey]);
 
   const result = useMemo(
     () =>
-      simulateRisk({
+      simulatePortfolio(holdings, market.correlations, {
         notional: NOTIONAL,
-        drift: dDrift,
-        volatility: dVolatility,
         horizonDays: dHorizon,
         alpha: dAlpha,
         paths: PATHS,
-        seed: 20260821,
+        seed: SEED,
       }),
-    [dDrift, dVolatility, dHorizon, dAlpha],
+    [holdings, dHorizon, dAlpha],
   );
 
   const fan = useMemo(
     () =>
-      simulateFan({
-        notional: NOTIONAL,
-        drift: dDrift,
-        volatility: dVolatility,
-        horizonDays: dHorizon,
-        seed: 20260821,
-      }),
-    [dDrift, dVolatility, dHorizon],
+      result
+        ? simulateFan({
+            notional: NOTIONAL,
+            drift: result.drift,
+            volatility: result.volatility,
+            horizonDays: dHorizon,
+            seed: SEED,
+          })
+        : null,
+    [result, dHorizon],
   );
 
-  /* ---- fan chart geometry ------------------------------------------ */
   const fanGeom = useMemo(() => {
+    if (!fan) return null;
     const all = fan.bands.flatMap((b) => [...b.hi, ...b.lo]);
     const lo = Math.min(...all);
     const hi = Math.max(...all);
-    const x = (i: number) =>
-      PAD.left + (i / fan.steps) * (W - PAD.left - PAD.right);
+    const x = (i: number) => PAD.left + (i / fan.steps) * (W - PAD.left - PAD.right);
     const y = (v: number) =>
       PAD.top + (1 - (v - lo) / (hi - lo || 1)) * (H - PAD.top - PAD.bottom);
-
     const bandPath = (b: (typeof fan.bands)[number]) => {
       const up = b.hi.map((v, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(v).toFixed(1)}`);
-      const down = b.lo
-        .map((v, i) => ({ v, i }))
-        .reverse()
+      const down = b.lo.map((v, i) => ({ v, i })).reverse()
         .map(({ v, i }) => `L ${x(i).toFixed(1)} ${y(v).toFixed(1)}`);
       return `${up.join(' ')} ${down.join(' ')} Z`;
     };
-
     const line = (vals: number[]) =>
       vals.map((v, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
-
-    return { lo, hi, x, y, bandPath, line };
+    return { x, y, bandPath, line };
   }, [fan]);
 
-  /* ---- histogram geometry ------------------------------------------ */
   const histGeom = useMemo(() => {
+    if (!result) return null;
     const bins = result.histogram;
     const maxCount = Math.max(...bins.map((b) => b.count)) || 1;
     const lo = bins[0].x0;
     const hi = bins[bins.length - 1].x1;
-    const x = (v: number) =>
-      PAD.left + ((v - lo) / (hi - lo || 1)) * (W - PAD.left - PAD.right);
+    const x = (v: number) => PAD.left + ((v - lo) / (hi - lo || 1)) * (W - PAD.left - PAD.right);
     const h = (c: number) => (c / maxCount) * (H - PAD.top - PAD.bottom);
-    return { bins, lo, hi, x, h };
+    return { bins, x, h };
   }, [result]);
 
+  if (!result || !fan || !fanGeom || !histGeom) {
+    return (
+      <div className="instrument">
+        <p className="instrument__caveat">
+          These correlations describe relationships that cannot all hold at once,
+          so the simulation cannot run. Adjust the weights.
+        </p>
+      </div>
+    );
+  }
+
   const varValue = NOTIONAL - result.varMonteCarlo;
+  const saved = result.undiversified - result.volatility;
 
   return (
     <div className="instrument">
       <Reveal className="instrument__head">
         <div>
-          <span className="mono-label instrument__tag">Live · Monte Carlo</span>
-          <h3 className="instrument__title">Portfolio value at risk</h3>
+          <span className="mono-label instrument__tag">
+            Live data · closes to {market.assets[0]?.asOf}
+          </span>
+          <h3 className="instrument__title">What could this portfolio lose?</h3>
           <p className="instrument__sub">
-            {PATHS.toLocaleString('en-CA')} simulated outcomes on a{' '}
-            {formatCurrency(NOTIONAL)} book, redrawn on every change.
+            {formatCurrency(NOTIONAL)} spread across six real companies. Every
+            volatility and every correlation below is measured from two years of
+            their actual daily prices.
           </p>
         </div>
       </Reveal>
 
+      {/* ---- what you own ---- */}
+      <div className="holdings">
+        <div className="holdings__head mono-label">
+          <span>Company</span>
+          <span>Price</span>
+          <span>Swings by</span>
+          <span>Your weight</span>
+        </div>
+        {market.assets.map((asset, i) => (
+          <label className="holdings__row" key={asset.symbol}>
+            <span className="holdings__name">
+              <strong>{asset.symbol}</strong>
+              <em>{asset.name}</em>
+            </span>
+            <span className="holdings__price">${asset.price.toFixed(2)}</span>
+            <span className="holdings__vol">{formatPercent(asset.volatility, 0)}</span>
+            <span className="holdings__weight">
+              <input
+                type="range"
+                min={0}
+                max={40}
+                step={1}
+                value={raw[i]}
+                onChange={(e) => {
+                  const next = [...raw];
+                  next[i] = Number(e.target.value);
+                  setRaw(next);
+                }}
+                aria-label={`Weight in ${asset.name}`}
+                aria-valuetext={formatPercent(holdings[i].weight, 0)}
+              />
+              <output>{formatPercent(holdings[i].weight, 0)}</output>
+            </span>
+          </label>
+        ))}
+      </div>
+
+      {/* ---- the diversification line ---- */}
+      <div className="diversify">
+        <p className="diversify__lead">
+          These six do not move together. Over the last{' '}
+          {market.correlationSessions} trading days the most closely linked pair
+          moved in step about half the time, the least linked about a quarter.
+          That is worth something, and here is exactly how much:
+        </p>
+        <div className="diversify__bars">
+          <Bar
+            label="If they all moved as one"
+            value={result.undiversified}
+            max={result.undiversified}
+            tone="flat"
+          />
+          <Bar
+            label="What they actually do"
+            value={result.volatility}
+            max={result.undiversified}
+            tone="accent"
+          />
+        </div>
+        <p className="diversify__saved">
+          <strong>{formatPercent(saved, 1)}</strong> of annual swing removed for
+          free — no forecast, no timing, no skill. Just owning things that do not
+          all fall on the same day.
+        </p>
+      </div>
+
+      {/* ---- horizon and confidence ---- */}
       <div className="instrument__controls">
         <Control
-          label="Annualised volatility"
-          value={formatPercent(volatility)}
-          min={0.04}
-          max={0.6}
-          step={0.005}
-          current={volatility}
-          onChange={setVolatility}
-        />
-        <Control
-          label="Expected return"
-          value={formatPercent(drift)}
-          min={-0.1}
-          max={0.25}
-          step={0.005}
-          current={drift}
-          onChange={setDrift}
-        />
-        <Control
-          label="Horizon"
+          label="Looking ahead"
           value={`${horizonDays} trading days`}
           min={5}
           max={252}
           step={1}
           current={horizonDays}
           onChange={(v) => setHorizonDays(Math.round(v))}
+          hint="About 21 days to a month, 252 to a year."
         />
         <Control
-          label="Confidence"
-          value={formatPercent(1 - alpha, 0)}
+          label="How bad a day"
+          value={`worst ${formatPercent(alpha, 1)} of outcomes`}
           min={0.005}
           max={0.1}
           step={0.005}
           current={alpha}
           onChange={setAlpha}
-          invert
+          hint="1% asks about a rarer, worse day than 10% does."
         />
       </div>
 
-      {/* ---- fan chart ---- */}
       <figure className="instrument__figure">
         <figcaption className="mono-label">
-          Simulated paths — 5th to 95th percentile bands
+          25,000 possible futures — the shaded bands hold the middle 90%, 60% and 30%
         </figcaption>
         <svg viewBox={`0 0 ${W} ${H}`} className="instrument__svg" role="img"
-             aria-label="Fan chart of simulated portfolio paths over the horizon">
-          <line
-            x1={PAD.left} y1={fanGeom.y(NOTIONAL)}
-            x2={W - PAD.right} y2={fanGeom.y(NOTIONAL)}
-            className="instrument__baseline"
-          />
+             aria-label="Fan chart of simulated portfolio values over the horizon">
+          <line x1={PAD.left} y1={fanGeom.y(NOTIONAL)} x2={W - PAD.right}
+                y2={fanGeom.y(NOTIONAL)} className="instrument__baseline" />
           {fan.bands.map((b, i) => (
-            <path
-              key={b.upper}
-              d={fanGeom.bandPath(b)}
-              className="instrument__band"
-              /* Nested bands, so opacity compounds toward the middle and the
-                 densest region reads darkest — the same way a real fan chart
-                 shows where the mass is. */
-              opacity={0.14 + i * 0.06}
-            />
+            <path key={b.upper} d={fanGeom.bandPath(b)} className="instrument__band"
+                  opacity={0.14 + i * 0.06} />
           ))}
           {fan.samples.map((walk, i) => (
             <path key={i} d={fanGeom.line(walk)} className="instrument__walk" />
           ))}
           <path d={fanGeom.line(fan.median)} className="instrument__median" />
-          <text x={PAD.left - 10} y={fanGeom.y(NOTIONAL) + 4} className="instrument__axis" textAnchor="end">
+          <text x={PAD.left - 10} y={fanGeom.y(NOTIONAL) + 4}
+                className="instrument__axis" textAnchor="end">
             {formatCurrency(NOTIONAL)}
           </text>
           <text x={PAD.left} y={H - 8} className="instrument__axis">today</text>
@@ -228,92 +285,97 @@ export function RiskInstrument() {
         </svg>
       </figure>
 
-      {/* ---- terminal distribution ---- */}
       <figure className="instrument__figure">
         <figcaption className="mono-label">
-          Distribution of outcomes at the horizon — shaded region is the {formatPercent(alpha, 1)} tail
+          Where those futures end up — the dark tail is the worst {formatPercent(alpha, 1)}
         </figcaption>
         <svg viewBox={`0 0 ${W} ${H}`} className="instrument__svg" role="img"
-             aria-label="Histogram of simulated terminal portfolio values with the loss tail shaded">
+             aria-label="Histogram of simulated final portfolio values, with the loss tail shaded">
           {histGeom.bins.map((b, i) => {
             const inTail = b.x1 <= varValue;
             const bx = histGeom.x(b.x0);
             const bw = Math.max(1, histGeom.x(b.x1) - bx - 1);
             const bh = histGeom.h(b.count);
             return (
-              <rect
-                key={i}
-                x={bx}
-                y={H - PAD.bottom - bh}
-                width={bw}
-                height={bh}
-                className={inTail ? 'instrument__bar instrument__bar--tail' : 'instrument__bar'}
-              />
+              <rect key={i} x={bx} y={H - PAD.bottom - bh} width={bw} height={bh}
+                    className={inTail ? 'instrument__bar instrument__bar--tail' : 'instrument__bar'} />
             );
           })}
-          <line
-            x1={histGeom.x(varValue)} y1={PAD.top}
-            x2={histGeom.x(varValue)} y2={H - PAD.bottom}
-            className="instrument__marker"
-          />
-          <text
-            x={histGeom.x(varValue) + 6} y={PAD.top + 12}
-            className="instrument__axis instrument__axis--accent"
-          >
-            VaR
+          <line x1={histGeom.x(varValue)} y1={PAD.top} x2={histGeom.x(varValue)}
+                y2={H - PAD.bottom} className="instrument__marker" />
+          <text x={histGeom.x(varValue) + 6} y={PAD.top + 12}
+                className="instrument__axis instrument__axis--accent">
+            {formatCurrency(varValue)}
           </text>
-          <line
-            x1={histGeom.x(NOTIONAL)} y1={PAD.top}
-            x2={histGeom.x(NOTIONAL)} y2={H - PAD.bottom}
-            className="instrument__baseline"
-          />
+          <line x1={histGeom.x(NOTIONAL)} y1={PAD.top} x2={histGeom.x(NOTIONAL)}
+                y2={H - PAD.bottom} className="instrument__baseline" />
         </svg>
       </figure>
 
-      {/* ---- readouts ---- */}
+      {/* ---- the answer, in a sentence ---- */}
+      <p className="instrument__plain">
+        Over {horizonDays} trading days, this portfolio loses more than{' '}
+        <strong>{formatCurrency(result.varMonteCarlo)}</strong> about{' '}
+        {formatPercent(alpha, 1)} of the time — roughly one period in{' '}
+        {Math.round(1 / alpha)}. When it does go that badly, the average loss is{' '}
+        <strong>{formatCurrency(result.expectedShortfall)}</strong>.
+      </p>
+
       <dl className="instrument__readout">
-        <Readout
-          label={`VaR — simulated`}
-          value={formatCurrency(result.varMonteCarlo)}
-          note={`${formatPercent(1 - alpha, 0)} confidence, ${horizonDays}d`}
-          strong
-        />
-        <Readout
-          label="VaR — closed form"
-          value={formatCurrency(result.varAnalytic)}
-          note="Exact under this model"
-        />
-        <Readout
-          label="Disagreement"
-          value={formatPercent(result.relativeError, 3)}
-          note="Simulation against theory"
-        />
-        <Readout
-          label="Expected shortfall"
-          value={formatCurrency(result.expectedShortfall)}
-          note="Mean loss beyond VaR"
-        />
-        <Readout
-          label="Probability of loss"
-          value={formatPercent(result.probabilityOfLoss)}
-          note="Ends below today’s value"
-        />
-        <Readout
-          label="Median outcome"
-          value={formatCurrency(result.median)}
-          note="50th percentile"
-        />
+        <Readout label="Value at risk" value={formatCurrency(result.varMonteCarlo)}
+                 note={`${formatPercent(1 - alpha, 0)} confidence`} strong />
+        <Readout label="If it goes worse" value={formatCurrency(result.expectedShortfall)}
+                 note="Average loss beyond that point" />
+        <Readout label="Chance of any loss" value={formatPercent(result.probabilityOfLoss)}
+                 note="Ends below where it started" />
+        <Readout label="Middle outcome" value={formatCurrency(result.median)}
+                 note="Half do better, half worse" />
+        <Readout label="Portfolio swing" value={formatPercent(result.volatility)}
+                 note="Annualised, after diversification" />
+        <Readout label="Simulation vs formula" value={formatPercent(result.relativeError, 2)}
+                 note="How far the two disagree" />
       </dl>
 
       <p className="instrument__caveat">
-        <strong>What this model assumes.</strong> Geometric Brownian motion:
-        constant volatility and normally distributed log-returns. Real markets
-        have neither — returns are fat-tailed and volatility clusters, so a true
-        1-in-20 day is worse than this shows. The instrument is here to
-        demonstrate method, not to price a book. The correction is a
-        Student-<em>t</em> or a historical bootstrap in place of the normal
-        draw, which is a change to one function.
+        <strong>What this assumes, and where it is wrong.</strong> Prices are
+        modelled as drifting with steady randomness, and correlations are taken
+        as fixed. Real markets do neither: calm and violent periods clump
+        together, genuinely extreme days happen far more often than a bell curve
+        allows, and — the one that matters most — correlations rise toward 1
+        exactly when things are falling. The diversification above is real, and
+        it is at its weakest on the days you would most want it. Treat every
+        figure here as a demonstration of method, not as advice.
       </p>
+      <p className="instrument__caveat instrument__caveat--quiet">
+        The <em>simulation vs formula</em> line is not only sampling noise. The
+        closed form treats the whole portfolio as one lognormal asset, which is
+        an approximation — a weighted sum of lognormals is not itself lognormal.
+        The simulation adds them up properly. So that number measures the
+        approximation as well as the randomness, and it is shown rather than
+        hidden.
+      </p>
+    </div>
+  );
+}
+
+function Bar({
+  label,
+  value,
+  max,
+  tone,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  tone: 'flat' | 'accent';
+}) {
+  return (
+    <div className={`diversify__bar diversify__bar--${tone}`}>
+      <span className="mono-label">{label}</span>
+      <span className="diversify__track">
+        <span className="diversify__fill" style={{ width: `${(value / max) * 100}%` }} />
+      </span>
+      <output>{formatPercent(value, 1)}</output>
     </div>
   );
 }
@@ -326,7 +388,7 @@ function Control({
   step,
   current,
   onChange,
-  invert,
+  hint,
 }: {
   label: string;
   value: string;
@@ -335,25 +397,15 @@ function Control({
   step: number;
   current: number;
   onChange: (v: number) => void;
-  invert?: boolean;
+  hint: string;
 }) {
   return (
     <label className="instrument__control">
       <span className="mono-label">{label}</span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={current}
-        onChange={(e) => onChange(Number(e.target.value))}
-        /* The slider reports its own value to a screen reader as the formatted
-           string, not as the raw decimal — "95%" rather than "0.05", which is
-           the number nobody was looking at. */
-        aria-valuetext={value}
-        style={invert ? { direction: 'rtl' } : undefined}
-      />
+      <input type="range" min={min} max={max} step={step} value={current}
+             onChange={(e) => onChange(Number(e.target.value))} aria-valuetext={value} />
       <output>{value}</output>
+      <small>{hint}</small>
     </label>
   );
 }

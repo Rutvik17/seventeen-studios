@@ -97,8 +97,29 @@ const NVDA_SIGMAS = NVDA ? sigmasFor(NVDA, NVDA_CHANGE, market.tradingDays) : 0;
 /*
   The cable, built as a real flat-flex: a band with seven conductors running down
   it rather than one fat stroke, which read as a rope. See `ribbon()`.
+
+  BOTH CONTROL POINTS SIT DIRECTLY ABOVE THEIR ENDPOINTS, and that is what makes
+  the joins work. A ribbon of this construction is a band offset along the
+  curve's NORMAL, so the band is perpendicular to the tangent at every point —
+  including the two ends. The first version curved away sideways as it left the
+  connector and arrived at the display travelling mostly horizontally, so the
+  band met both edges side-on and appeared to slice into them instead of butting
+  against them.
+
+  Leaving each end vertically makes the band horizontal exactly where it meets a
+  horizontal edge, which is the only way the two line up.
+
+  The width matches J2's 5 mm body rather than exceeding it; at 7.2 mm the cable
+  visibly overhung the connector it was supposed to be plugged into.
 */
-const RIBBON = ribbon([74, 20.2], [78, 2], [66, -6], [58, -8], 7.2, 7);
+const RIBBON = ribbon(
+  [74, 20.2],   // J2's top edge, on its centreline
+  [74, 8],      // straight up out of the connector
+  [58, 4],      // then across
+  [58, -8],     // and vertically into the display's bottom edge
+  4.6,
+  7,
+);
 
 const AVERAGE_MA = averageCurrentMa();
 const PEAK_MA = peakCurrentMa();
@@ -136,19 +157,19 @@ export function BoardStory() {
       gsap.set(q('[data-flow]'), { opacity: 0 });
       gsap.set(q('[data-display]'), { opacity: 0, y: 26 });
       /*
-        The cable is revealed by sliding a CLIP rectangle, not by a dash offset.
+        The cable is revealed by a CLIP rectangle that grows UPWARD from the
+        connector, so the ribbon unrolls out of J2 toward the display.
 
-        The dash version produced a stray dot: with `stroke-dasharray: L` and
-        `stroke-dashoffset: L` the visible run is zero, but a round line cap on a
-        zero-length dash still paints its cap — so a dot sat at the connector
-        from first paint and vanished the moment the draw began. Round caps are
-        wanted everywhere else on this drawing, so the fix is to stop using
-        dashes here rather than to square the cap.
+        It previously grew downward from the display's edge — which meant the
+        cable appeared to extend from a panel that had not arrived yet, hanging
+        in space with nothing at its far end. Plugged in at the board and
+        reaching upward is the order the thing is actually assembled in.
 
-        A clip also suits the object better: a ribbon cable is a solid band with
-        conductors in it, and it should be uncovered rather than drawn.
+        Growing upward in SVG needs BOTH `y` and `height` animated together: a
+        rect's origin is its top edge, so raising the top while extending the
+        height is the only way to keep the bottom pinned at the connector.
       */
-      gsap.set('[data-ribbon-clip] rect', { attr: { y: -8, height: 0 } });
+      gsap.set('[data-ribbon-clip] rect', { attr: { y: 21, height: 0 } });
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -201,7 +222,9 @@ export function BoardStory() {
       /* 05 — the display wakes */
       tl.to(
         '[data-ribbon-clip] rect',
-        { attr: { height: 40 }, duration: 0.8, ease: 'power2.inOut' },
+        // Bottom stays at y = 21 (the connector); the top rises to −10, which
+        // clears the display's edge at −8.
+        { attr: { y: -10, height: 31 }, duration: 0.8, ease: 'power2.inOut' },
         3.85,
       )
         // The panel starts arriving only once the cable has most of the way to
@@ -363,9 +386,10 @@ export function BoardStory() {
             {/* ---------- 05 ribbon + display ---------- */}
             <g data-ribbon>
               <clipPath id="ribbon-clip" data-ribbon-clip>
-                {/* Grows downward from above the board, so the cable is
-                    uncovered from the display end toward the connector. */}
-                <rect x={40} y={-8} width={60} height={0} />
+                {/* Anchored at the connector and grown upward — see the note
+                    on the timeline. Wide enough to clear the cable's full
+                    horizontal travel from J2 across to the display. */}
+                <rect x={50} y={21} width={34} height={0} />
               </clipPath>
               <g clipPath="url(#ribbon-clip)">
                 <path d={RIBBON.outline} className="board-story__ribbon-body" />

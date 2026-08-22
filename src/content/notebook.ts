@@ -372,7 +372,51 @@ export const entries: Entry[] = [
       { type: 'embed', component: 'risk', caption: 'Live Monte Carlo — move the inputs' },
       {
         type: 'p',
-        text: 'The column labelled "disagreement" is the important one. For this particular model an exact answer does exist, so the panel computes both and shows the gap. A simulation that lands within a fraction of a percent of theory is a claim you can check rather than one you have to take.',
+        text: 'The column labelled "simulation vs formula" is the important one. An approximate closed-form answer exists, so the panel computes both and shows the gap. A simulation that lands within a fraction of a percent of the formula is a claim you can check rather than one you have to take.',
+      },
+
+      { type: 'h2', text: 'Six things instead of one' },
+      {
+        type: 'p',
+        text: 'That panel is not simulating one company. It is simulating six, together, and that changes the problem in a way worth understanding — because it is the only thing in investing that reliably gives you something for nothing.',
+      },
+      {
+        type: 'p',
+        text: 'Suppose you own two companies, each of which swings about 50% in a year. If they always rose and fell on the same days, owning both would be exactly as bumpy as owning either. You would have spread your money and gained nothing.',
+      },
+      {
+        type: 'p',
+        text: 'They do not. On a day one falls, the other sometimes rises, and the two partly cancel. The combined swing comes out smaller than either — without predicting anything, without timing anything, and without giving up any of the expected return.',
+      },
+      {
+        type: 'term',
+        word: 'Correlation',
+        plain:
+          'A number between −1 and +1 for how much two things move together. +1 means always in step. 0 means knowing one tells you nothing about the other. −1 means perfectly opposed. Measured from the real prices, Amazon and Alphabet sit at about 0.56 — the closest pair here — and Rocket Lab and Alphabet at about 0.24, the furthest apart.',
+      },
+      {
+        type: 'equation',
+        words:
+          'A portfolio’s swing is the square root of every pair of holdings multiplied together, weighted by how much of each you own and by how closely that pair moves.',
+        symbols: 'σ_p = √( Σᵢ Σⱼ  wᵢ wⱼ ρᵢⱼ σᵢ σⱼ )',
+        where: [
+          { symbol: 'σ_p', means: 'the portfolio’s volatility — how much the whole thing swings in a year' },
+          { symbol: 'wᵢ', means: 'the share of your money in holding i, so all the w add up to 1' },
+          { symbol: 'σᵢ', means: 'how much holding i swings on its own' },
+          { symbol: 'ρᵢⱼ', means: 'the correlation between holdings i and j — the Greek letter rho' },
+          { symbol: 'Σᵢ Σⱼ', means: 'add up over every pair, including each holding paired with itself' },
+        ],
+        soWhat:
+          'Set every ρ to 1 and this collapses to the plain weighted average of the individual swings. Every correlation below 1 shrinks a term, so the real answer always comes out lower. That gap is diversification, and it is arithmetic rather than opinion.',
+      },
+      {
+        type: 'p',
+        text: 'For the six names on the panel, held in equal amounts, the average of their individual swings is about 51%. The portfolio actually swings about 36%. Fifteen percentage points of turbulence removed, for free.',
+      },
+      {
+        type: 'note',
+        label: 'The catch, and it is a serious one',
+        text: 'Correlations are not constant. In a crash almost everything falls together and the numbers rush toward 1 — which means diversification is weakest exactly on the days you would most want it. Every model that treats correlation as fixed, including the one on this page, understates how bad a genuinely bad month can be. That is not a small caveat; it is most of what went wrong in 2008.',
       },
       {
         type: 'note',
