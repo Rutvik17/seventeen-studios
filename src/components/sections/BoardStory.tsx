@@ -79,9 +79,22 @@ import { assetBySymbol, market, sigmasFor } from '@/content/market';
   make room for it rather than the panel being trimmed to fit the drawing.
 */
 const DISPLAY = {
-  w: PANEL_MODULE.width,
-  h: PANEL_MODULE.height,
-  x: BOARD.width / 2 - PANEL_MODULE.width / 2,
+  /*
+    MILLIMETRES, not pixels — `moduleWidth`, never `width`.
+
+    `PANEL.width` is 640 and `PANEL.moduleWidth` is 91, and this drawing is in
+    millimetres. Reaching for the wrong one drew the display 640 mm across on an
+    88 mm board: a grey rectangle wider than the entire scene, which is exactly
+    what it looked like.
+
+    The two units live on the same object because the panel genuinely has both —
+    a pixel grid the firmware addresses and a physical size the enclosure has to
+    fit. Nothing about the names says which is which, so `mm` is the prefix on
+    every physical one.
+  */
+  w: PANEL_MODULE.moduleWidth,
+  h: PANEL_MODULE.moduleHeight,
+  x: BOARD.width / 2 - PANEL_MODULE.moduleWidth / 2,
   y: -76,
 };
 
@@ -237,7 +250,16 @@ export function BoardStory() {
         '[data-ribbon-clip] rect',
         // Bottom stays at y = 21 (the connector); the top rises to −10, which
         // clears the display's edge at −8.
-        { attr: { y: -10, height: 31 }, duration: 0.8, ease: 'power2.inOut' },
+        // Bottom stays at the connector; the top rises past the panel's lower
+        // edge. Derived from DISPLAY so it cannot fall out of step again.
+        {
+          attr: {
+            y: DISPLAY.y + DISPLAY.h - 3,
+            height: 21 - (DISPLAY.y + DISPLAY.h - 3),
+          },
+          duration: 0.8,
+          ease: 'power2.inOut',
+        },
         3.85,
       )
         /*
