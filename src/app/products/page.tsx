@@ -1,78 +1,57 @@
 import type { Metadata } from 'next';
 import { products } from '@/content/products';
+import { projects } from '@/content/projects';
 import { Reveal } from '@/components/motion/Reveal';
 import { SplitText } from '@/components/motion/SplitText';
 import { TransitionLink } from '@/components/Transition';
+import { ProductRows } from '@/components/sections/ProductRows';
 
 export const metadata: Metadata = {
   title: 'Products',
-  description:
-    'Software the studio built and ships on its own account, rather than for a client.',
+  description: 'Software built and shipped on my own account.',
 };
 
 /**
- * The index the nav points at.
+ * The products index.
  *
- * It exists even though there is one product on it, because `/products/grasp/`
- * implies a `/products/` and a URL that 404s in the middle of a path the visitor
- * can see is a broken site. It says "one" in words rather than dressing a single
- * item up as a catalogue — rule 6 cuts both ways, and implying a product line
- * that does not exist yet would be the same lie as implying a client list.
+ * It exists even with one product on it, because `/products/grasp/` implies a
+ * `/products/` and a URL that 404s in the middle of a path a visitor can see is
+ * a broken site.
  */
 export default function ProductsIndexPage() {
   return (
     <div className="page">
       <header className="page-head">
-        <span className="mono-label">Index — Products</span>
+        <span className="mono-label">Products</span>
         <SplitText as="h1" className="page-head__title" stagger={0.03} depth>
-          What we ship ourselves
+          Shipped
         </SplitText>
         <Reveal className="page-head__lead">
           <p>
-            One, so far. The studio&rsquo;s own software is where its arguments
-            get tested at full cost — nobody else&rsquo;s budget absorbs a
-            decision that turns out to be wrong, so the standard has to hold
-            without anyone enforcing it.
-          </p>
-        </Reveal>
-        <Reveal className="page-head__note">
-          <span className="mono-label">Built and shipped</span>
-          <p>
-            Everything here runs. The rest of the work — the instruments, the
-            rig, the hardware — is in the{' '}
+            One, so far. The rest of the work is in the{' '}
             <TransitionLink href="/lab/">lab</TransitionLink>.
           </p>
         </Reveal>
       </header>
 
-      <div className="work-index">
-        {products.map((product) => (
-          <Reveal key={product.slug} distance={60}>
-            <TransitionLink
-              href={`/products/${product.slug}/`}
-              className="work-row product-row"
-              data-cursor="Open"
-            >
-              <div className="work-row__meta">
-                <span className="mono-label work-row__index">{product.index}</span>
-                <span className="mono-label">{product.platform}</span>
-                <span className="mono-label">{product.status}</span>
-              </div>
-
-              <div className="work-row__main">
-                <h2 className="work-row__name">
-                  {product.name}
-                  <span className="work-row__title">{product.tagline}</span>
-                </h2>
-                <p className="work-row__excerpt">{product.summary}</p>
-                <span className="link-arrow">
-                  How it was built <i aria-hidden="true">→</i>
-                </span>
-              </div>
-            </TransitionLink>
-          </Reveal>
-        ))}
-      </div>
+      <ProductRows
+        rows={products.map((product) => {
+          // Products and projects overlap by slug, so a product's row picks up
+          // the same colour it carries on the home page rather than defining a
+          // second palette that would drift out of step.
+          const project = projects.find((p) => p.slug === product.slug);
+          return {
+            id: product.slug,
+            title: product.name,
+            tag: product.platform,
+            meta: product.tagline,
+            href: `/products/${product.slug}/`,
+            color: project?.color ?? '#dce5fc',
+            ink: project?.ink ?? '#12379c',
+            trail: product.status,
+          };
+        })}
+      />
     </div>
   );
 }

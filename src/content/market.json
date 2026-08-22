@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-08-22T03:27:52.837Z",
+  "fetchedAt": "2026-08-22T03:39:22.772Z",
   "tradingDays": 252,
   "window": "2y daily",
   "source": "Yahoo Finance chart API, adjusted closes",

@@ -1,0 +1,40 @@
+{
+  "capturedAt": "2026-08-22T03:39:23.203Z",
+  "agency": "Toronto Transit Commission",
+  "stopId": 15644,
+  "source": "UMO/NextBus public JSON feed",
+  "note": "Arrival times are real but captured at build time, not live.",
+  "routes": [
+    {
+      "route": "504",
+      "routeTitle": "504-King",
+      "stopTitle": "King St West At John St East Side",
+      "direction": "East - 504 King Short Turn towards Broadview and Queen",
+      "minutes": [
+        6
+      ]
+    },
+    {
+      "route": "504",
+      "routeTitle": "504-King",
+      "stopTitle": "King St West At John St East Side",
+      "direction": "East - 504b King towards Broadview Station",
+      "minutes": [
+        7,
+        9,
+        32
+      ]
+    },
+    {
+      "route": "504",
+      "routeTitle": "504-King",
+      "stopTitle": "King St West At John St East Side",
+      "direction": "East - 504a King towards Distillery",
+      "minutes": [
+        10,
+        11,
+        25
+      ]
+    }
+  ]
+}

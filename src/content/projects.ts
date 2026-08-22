@@ -30,8 +30,16 @@ export type Project = {
   status: ProjectStatus;
   stack: string[];
   href: string;
-  /** Renders the card's live preview, by id. */
-  preview: 'board' | 'derivative' | 'montecarlo' | 'credit' | 'companion';
+  /**
+   * The wash this row brings to the page on hover, and the ink that sits on it.
+   *
+   * Pairs, not single colours, because the ink has to pass contrast against its
+   * own wash — picking a background and hoping the site's default text colour
+   * survives is how these effects end up unreadable on two rows out of five.
+   * Every pair below clears 4.5:1.
+   */
+  color: string;
+  ink: string;
 };
 
 export const projects: Project[] = [
@@ -44,7 +52,8 @@ export const projects: Project[] = [
     status: 'Shipped',
     stack: ['React Native', 'Skia', 'Reanimated', 'TypeScript'],
     href: '/products/grasp/',
-    preview: 'derivative',
+    color: '#dce5fc',
+    ink: '#12379c',
   },
   {
     slug: 'monte-carlo',
@@ -55,7 +64,8 @@ export const projects: Project[] = [
     status: 'Live demo',
     stack: ['TypeScript', 'Quantitative finance', 'SVG'],
     href: '/lab/#risk',
-    preview: 'montecarlo',
+    color: '#f7e4c8',
+    ink: '#7a4410',
   },
   {
     slug: 'credit-risk',
@@ -66,7 +76,8 @@ export const projects: Project[] = [
     status: 'In progress',
     stack: ['TypeScript', 'Credit risk', 'Canvas'],
     href: '/lab/#credit',
-    preview: 'credit',
+    color: '#d9e9db',
+    ink: '#1d5632',
   },
   {
     slug: 'companion',
@@ -77,7 +88,8 @@ export const projects: Project[] = [
     status: 'Live demo',
     stack: ['Canvas', 'Physics', 'TypeScript'],
     href: '/lab/#companion',
-    preview: 'companion',
+    color: '#f8dde1',
+    ink: '#8f2338',
   },
   {
     slug: 'companion-device',
@@ -88,6 +100,7 @@ export const projects: Project[] = [
     status: 'Designing',
     stack: ['ESP32-C3', 'E-ink', 'KiCad', 'C++'],
     href: '/#top',
-    preview: 'board',
+    color: '#d3e3da',
+    ink: '#123f33',
   },
 ];
