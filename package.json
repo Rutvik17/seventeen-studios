@@ -9,7 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "market": "node scripts/fetch-market.mjs",
-    "prebuild": "node scripts/fetch-market.mjs"
+    "prebuild": "node scripts/fetch-market.mjs && node scripts/fetch-transit.mjs",
+    "transit": "node scripts/fetch-transit.mjs"
   },
   "dependencies": {
     "gsap": "^3.12.5",

@@ -5134,120 +5134,6 @@ html.no-js .exploded .exploded__svg {
 }
 
 /* ==================================================================
-   WORK INDEX
-   ================================================================== */
-
-.work-index {
-  max-width: var(--max);
-  margin: 0 auto;
-  padding: clamp(72px, 12vh, 150px) var(--gutter);
-}
-
-.work-index__head {
-  border-bottom: 1px solid var(--line-strong);
-  padding-bottom: 12px;
-}
-
-.work-index__list {
-  list-style: none;
-}
-
-.work-row {
-  border-bottom: 1px solid var(--line);
-}
-
-.work-row__link {
-  display: grid;
-  grid-template-columns: 3rem minmax(0, 14rem) minmax(0, 1fr) minmax(0, 16rem) 7rem;
-  gap: clamp(12px, 2vw, 32px);
-  align-items: baseline;
-  padding: clamp(18px, 2.4vw, 30px) 0;
-  transition: color 0.3s var(--ease-out), padding-left 0.4s var(--ease-out);
-}
-
-.work-row__link:hover {
-  color: var(--accent);
-  padding-left: 12px;
-}
-
-.work-row__index {
-  color: var(--muted);
-}
-
-.work-row__name {
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(20px, 2vw, 30px);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.work-row__line {
-  color: var(--fg-dim);
-  font-size: 15px;
-}
-
-.work-row__metric {
-  display: block;
-  font-style: normal;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 12px;
-  color: var(--accent);
-}
-
-.work-row__stack {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.work-row__stack i {
-  font-style: normal;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 2px 8px;
-}
-
-.work-row__status {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  justify-self: end;
-  white-space: nowrap;
-}
-
-.work-row__status--shipped {
-  color: #2f7d4f;
-}
-
-.work-row__status--live-demo {
-  color: var(--accent);
-}
-
-.work-row__status--in-progress,
-.work-row__status--designing {
-  color: var(--muted);
-}
-
-@media (max-width: 1100px) {
-  .work-row__link {
-    grid-template-columns: 2.5rem minmax(0, 1fr) 6rem;
-    row-gap: 8px;
-  }
-  .work-row__line {
-    grid-column: 2 / -1;
-  }
-  .work-row__meta {
-    grid-column: 2 / -1;
-  }
-}
-
-/* ==================================================================
    OUTRO + CONTACT
    ================================================================== */
 
@@ -5332,4 +5218,218 @@ html.no-js .exploded .exploded__svg {
 .lab__title .mono-label {
   color: var(--muted);
   margin-right: 10px;
+}
+
+/* ==================================================================
+   TUCKED ROWS — work index and notebook index
+   ================================================================== */
+
+/*
+  The wash. Fixed and behind everything so the colour reaches the viewport
+  edges rather than stopping at the list — a tint that ends at a container edge
+  reads as a highlighted box, not as the page changing.
+*/
+.rows__wash {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--bg);
+  pointer-events: none;
+}
+
+.section-rows {
+  position: relative;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: clamp(64px, 11vh, 140px) var(--gutter);
+}
+
+.section-rows__head {
+  color: var(--muted);
+  margin-bottom: clamp(18px, 3vh, 36px);
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+  Each row is a fixed-height window onto a full-size line of type. Height is
+  animated in `em`, so the open and closed sizes track the responsive font size
+  instead of being pinned to one viewport width.
+*/
+.rows__row {
+  position: relative;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(30px, 6.4vw, 96px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  height: 1.02em;
+  overflow: hidden;
+  /* Stops the row's own relayout escaping into the rest of the page — the one
+     thing that makes animating height affordable here. */
+  contain: layout paint;
+}
+
+.rows__row + .rows__row {
+  /* A single hairline between rows and none above the first or below the last.
+     The previous version had a rule under the section heading as well, which
+     left two lines belonging to nothing. */
+  border-top: 1px solid var(--line);
+}
+
+.rows__fill {
+  position: absolute;
+  inset: 0;
+  /* Bleeds past the gutter so the wash reaches the viewport edge, matching the
+     full-bleed bands in the reference rather than stopping at the text column. */
+  left: calc(var(--gutter) * -1);
+  right: calc(var(--gutter) * -1);
+  transform-origin: left center;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.rows__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1.6vw, 24px);
+  height: 1.02em;
+  text-decoration: none;
+  color: inherit;
+}
+
+.rows__title {
+  white-space: nowrap;
+  color: var(--fg);
+  will-change: transform, color;
+}
+
+.rows__tag {
+  flex: none;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 3px 10px;
+  opacity: 0.7;
+}
+
+.rows__meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: clamp(12px, 0.9vw, 15px);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rows__trail {
+  flex: none;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  /* The meta line has nowhere to go beside a title this size on a phone. The
+     tag and the trailing status carry enough. */
+  .rows__meta {
+    display: none;
+  }
+}
+
+/* ---- reduced motion: open, quiet, and colour-coded by a border ---- */
+
+.rows--static .rows__row {
+  height: auto;
+  padding: 0.1em 0 0.14em;
+  border-left: 4px solid var(--row-color, var(--accent));
+  padding-left: 0.24em;
+}
+
+.rows--static .rows__fill {
+  display: none;
+}
+
+.rows--static .rows__link {
+  height: auto;
+  flex-wrap: wrap;
+}
+
+.rows--static .rows__meta {
+  display: block;
+  white-space: normal;
+  opacity: 1;
+  visibility: visible;
+  flex-basis: 100%;
+}
+
+/* ==================================================================
+   SCROLL CUE
+   ================================================================== */
+
+/*
+  A pinned landing has one real usability failure: the page does not move on the
+  first wheel notch — the board changes instead — so a visitor can decide the
+  site is stuck. This is the fix, and it removes itself once the point is made.
+*/
+.board-cue {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(14px, 3vh, 34px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.board-cue__arrow {
+  width: 12px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 1000px) {
+  .board-cue {
+    /* The readout column moves under the board at this width and the cue would
+       land on top of it. */
+    display: none;
+  }
+}
+
+/* The fourth line on the e-ink panel — the stop name, at the size a real
+   296-pixel display would render it. */
+.board-story__epd-tiny {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 2.6px;
+  fill: #6a6a6a;
+}
+
+/* The products index already has a page header, so its row list should not
+   add another block of top padding under it. */
+.section-rows--flush {
+  padding-top: 0;
 }

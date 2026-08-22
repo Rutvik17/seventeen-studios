@@ -1,81 +1,40 @@
 'use client';
 
-/**
- * The work index.
- *
- * A table, not a gallery of cards. Cards force every project into the same
- * rectangle and then need an image to fill it — which for software means a
- * screenshot, and a screenshot of an interactive thing is the least persuasive
- * artefact there is. A dense row list reads faster, scans like a CV, and puts
- * the checkable fact next to the name where a reviewer is already looking.
- */
-
-import { useRef, useState } from 'react';
-import { gsap, prefersReducedMotion } from '@/lib/gsap';
-import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
+import { RevealRows, RowWash, type RevealRow } from '@/components/RevealRows';
 import { projects } from '@/content/projects';
-import { TransitionLink } from '@/components/Transition';
 
+/**
+ * The work.
+ *
+ * Tucked rows — clipped titles that open on hover and wash the page with that
+ * project's colour. Same component as the notebook index, deliberately: they
+ * are the same gesture and there should be one implementation of it.
+ *
+ * What this replaced was a five-column grid of name, line, metric, stack pills
+ * and status, separated by hairlines. It carried more information and read as
+ * less: at any width below a very wide desktop the columns collapsed into a
+ * jumble, and the rules between rows plus the rule under the heading gave the
+ * page two stray horizontal lines that belonged to nothing. The metric and the
+ * stack now arrive on hover, when there is room for them and a reason to read
+ * them.
+ */
 export function ProjectIndex() {
-  const ref = useRef<HTMLElement>(null);
-  const [active, setActive] = useState<string | null>(null);
-
-  useIsomorphicLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (prefersReducedMotion()) return;
-
-    const ctx = gsap.context(() => {
-      gsap.from('[data-row]', {
-        yPercent: 40,
-        opacity: 0,
-        duration: 0.7,
-        ease: 'power3.out',
-        stagger: 0.06,
-        scrollTrigger: { trigger: el, start: 'top 78%' },
-      });
-    }, el);
-    return () => ctx.revert();
-  }, []);
+  const rows: RevealRow[] = projects.map((p) => ({
+    id: p.slug,
+    title: p.name,
+    tag: p.stack[0],
+    meta: p.metric ? `${p.line} — ${p.metric}` : p.line,
+    href: p.href,
+    color: p.color,
+    ink: p.ink,
+    trail: p.status,
+  }));
 
   return (
-    <section className="work-index" id="work" ref={ref}>
-      <h2 className="work-index__head">
-        <span className="mono-label">Work</span>
-      </h2>
-
-      <ul className="work-index__list">
-        {projects.map((p) => (
-          <li
-            key={p.slug}
-            data-row
-            className={`work-row${active === p.slug ? ' is-active' : ''}`}
-            onPointerEnter={() => setActive(p.slug)}
-            onPointerLeave={() => setActive(null)}
-          >
-            <TransitionLink href={p.href} className="work-row__link" data-cursor="Open">
-              <span className="work-row__index mono-label">{p.index}</span>
-              <span className="work-row__name">{p.name}</span>
-              <span className="work-row__line">{p.line}</span>
-              <span className="work-row__meta">
-                {p.metric && <em className="work-row__metric">{p.metric}</em>}
-                <span className="work-row__stack">
-                  {p.stack.map((s) => (
-                    <i key={s}>{s}</i>
-                  ))}
-                </span>
-              </span>
-              <span
-                className={`work-row__status work-row__status--${p.status
-                  .toLowerCase()
-                  .replace(/\s+/g, '-')}`}
-              >
-                {p.status}
-              </span>
-            </TransitionLink>
-          </li>
-        ))}
-      </ul>
+    <section className="section-rows" id="work">
+      <RowWash />
+      <h2 className="section-rows__head mono-label">Work</h2>
+      <RevealRows rows={rows} />
     </section>
   );
 }
