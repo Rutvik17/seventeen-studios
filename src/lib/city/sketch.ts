@@ -289,11 +289,14 @@ export type Palette = {
   /** Ink, near and far. Distance desaturates and lightens — haze. */
   ink: string;
   inkFar: string;
-  /** Facades by district tone. */
-  warm: string;
-  cool: string;
-  brick: string;
-  pale: string;
+  /**
+   * Facade colours. A building picks one by hash, biased by its district.
+   *
+   * A set, not a tone. One colour per district makes a city of grey boxes; New
+   * York is terracotta beside limestone beside sage on the same block, because
+   * the blocks were built by different people out of whatever was going.
+   */
+  facades: string[];
   /** Parkland. */
   green: string;
   greenDeep: string;
@@ -311,105 +314,166 @@ export type Palette = {
   hazeColour: string;
 };
 
+/**
+ * THE PALETTES.
+ *
+ * ---
+ *
+ * WHY EVERY BUILDING GETS ITS OWN COLOUR
+ *
+ * A city painted in one tone per district reads as a rendering — grey boxes
+ * with a grey ground, lit by a grey sun. New York is not grey. It is terracotta
+ * and ochre and sage and dusty blue and the particular tired cream of a
+ * pre-war limestone facade, all of it side by side on one block, because the
+ * blocks were built by different people in different decades out of whatever
+ * was going.
+ *
+ * So each palette carries a **set** of facade colours rather than one, and a
+ * building picks from it by hash. Its district biases which end of the set it
+ * draws from — the Village to the brick end, Midtown to the pale end — but
+ * every district gets some of everything, which is what stops the boundaries
+ * showing as bands.
+ */
+
 const DAY: Palette = {
   name: 'day',
-  skyTop: '#bcd8ea',
-  skyBottom: '#eaf1f4',
-  water: '#8fb4cc',
+  skyTop: '#8fc0e0',
+  skyBottom: '#e8f0f2',
+  water: '#7fa9c6',
   waterHighlight: '#cfe2ec',
-  ink: '#2a2f3a',
-  inkFar: '#8792a4',
-  warm: '#f0e2cc',
-  cool: '#dfe6ee',
-  brick: '#cfa08e',
-  pale: '#eeeae2',
-  green: '#a9c68d',
-  greenDeep: '#7ba063',
-  ground: '#d5d2c8',
-  asphalt: '#b3b1ab',
-  window: '#8ba6bd',
-  windowLit: 0.06,
-  cab: '#f2b526',
-  haze: 0.62,
-  hazeColour: '#dce8f0',
+  ink: '#2f2a33',
+  inkFar: '#8b8496',
+  facades: [
+    '#f0dcc0', // limestone
+    '#d98f6a', // terracotta
+    '#c9633f', // brick red
+    '#e8c46a', // ochre
+    '#a8bda0', // sage
+    '#8fb0c4', // dusty blue
+    '#efe6d8', // cream
+    '#b98a9a', // faded rose
+    '#7fa9a2', // verdigris
+    '#c9b48f', // sandstone
+    '#e5e1d6', // pale
+    '#9a8fae', // slate violet
+  ],
+  green: '#8fb972',
+  greenDeep: '#5f8a4c',
+  ground: '#cdc7bb',
+  asphalt: '#a8a49d',
+  window: '#6f93b0',
+  windowLit: 0.07,
+  cab: '#f5b120',
+  haze: 0.6,
+  hazeColour: '#d3e4ee',
 };
 
 const GOLDEN: Palette = {
   name: 'golden',
-  skyTop: '#8fb6d6',
-  skyBottom: '#fbdcb0',
-  water: '#7d94ad',
+  skyTop: '#6f9fcc',
+  skyBottom: '#fcd9a0',
+  water: '#6b8ba8',
   waterHighlight: '#f4d9ab',
-  ink: '#37302f',
+  ink: '#3a2c2c',
   inkFar: '#a08b7e',
-  warm: '#f7dcae',
-  cool: '#e6d5cb',
-  brick: '#d2a184',
-  pale: '#f6e6cd',
-  green: '#b3bf78',
-  greenDeep: '#7f9553',
-  ground: '#ddceb8',
-  asphalt: '#b6a794',
-  window: '#e0aa5c',
-  windowLit: 0.22,
+  facades: [
+    '#f8dcae',
+    '#e59a63',
+    '#d4693e',
+    '#f2c05c',
+    '#bcc487',
+    '#95b0c0',
+    '#fbeed4',
+    '#cc8f8f',
+    '#8fb0a4',
+    '#dcb98a',
+    '#f3e6cf',
+    '#a892a8',
+  ],
+  green: '#a8be74',
+  greenDeep: '#75904f',
+  ground: '#d8c7ac',
+  asphalt: '#ad9d8a',
+  window: '#f0b45f',
+  windowLit: 0.24,
   cab: '#ffbe2b',
-  haze: 0.66,
+  haze: 0.62,
   hazeColour: '#f6dcb6',
 };
 
 const DUSK: Palette = {
   name: 'dusk',
-  skyTop: '#41537f',
-  skyBottom: '#e09679',
-  water: '#4a5776',
+  skyTop: '#33436f',
+  skyBottom: '#e0836a',
+  water: '#3f4c6b',
   waterHighlight: '#8f96b4',
-  ink: '#20222f',
+  ink: '#1d1f2c',
   inkFar: '#5c6483',
-  warm: '#8d8399',
-  cool: '#7a839f',
-  brick: '#8a6d79',
-  pale: '#9a99ab',
-  green: '#5f7566',
-  greenDeep: '#42553f',
-  ground: '#6a6d7e',
-  asphalt: '#4c4f5e',
+  facades: [
+    '#8a7f8e',
+    '#96695f',
+    '#8c4f43',
+    '#a08359',
+    '#75846f',
+    '#65788e',
+    '#9b93a0',
+    '#8a6674',
+    '#5f8079',
+    '#8b7a68',
+    '#a09aa6',
+    '#6e6480',
+  ],
+  green: '#4f6a55',
+  greenDeep: '#37492f',
+  ground: '#5f6274',
+  asphalt: '#454857',
   window: '#ffd88a',
-  windowLit: 0.44,
+  windowLit: 0.46,
   cab: '#ffc93c',
-  haze: 0.58,
+  haze: 0.55,
   hazeColour: '#5a6486',
 };
 
 const NIGHT: Palette = {
   name: 'night',
-  skyTop: '#101728',
-  skyBottom: '#2b3352',
-  water: '#151d33',
+  skyTop: '#0c1224',
+  skyBottom: '#28304e',
+  water: '#111a30',
   waterHighlight: '#38456b',
-  ink: '#0c1020',
-  inkFar: '#39415e',
-  warm: '#2f3348',
-  cool: '#282f47',
-  brick: '#33293a',
-  pale: '#343a52',
-  green: '#22301f',
-  greenDeep: '#18220f',
-  ground: '#252a3c',
-  asphalt: '#191d2b',
+  ink: '#080b18',
+  inkFar: '#333b58',
+  facades: [
+    '#2f3348',
+    '#3a2e39',
+    '#38252c',
+    '#3a3348',
+    '#2a3436',
+    '#26304a',
+    '#343a52',
+    '#332a3c',
+    '#243a3a',
+    '#33302e',
+    '#3a3c4e',
+    '#2c2a42',
+  ],
+  green: '#1d2b1c',
+  greenDeep: '#141d0e',
+  ground: '#1f2436',
+  asphalt: '#161a28',
   window: '#ffdf9c',
-  windowLit: 0.58,
+  windowLit: 0.6,
   cab: '#ffcc33',
-  haze: 0.5,
-  hazeColour: '#1d2540',
+  haze: 0.48,
+  hazeColour: '#1a2340',
 };
 
 /**
  * Which palette the city is in, from the viewer's own clock.
  *
  * Their local hour, not a server's — the point is that the drawing agrees with
- * the window next to it. Dusk gets the narrow bands either side of sunrise and
- * sunset because that is when it actually happens, and it is the best-looking
- * hour of the four, so it is worth not widening out of greed.
+ * the window next to it. Dusk gets only the narrow bands either side of sunrise
+ * and sunset because that is when it actually happens, and it is the best of
+ * the four, so it is worth not widening out of greed.
  */
 export function paletteForHour(hour: number): Palette {
   if (hour >= 21 || hour < 5) return NIGHT;
@@ -458,4 +522,126 @@ function parseHex(c: string): [number, number, number] | null {
  */
 export function hazeAt(depth: number, scale = 9000): number {
   return 1 - Math.exp(-Math.max(0, depth) / scale);
+}
+
+/**
+ * The facade colour for one building.
+ *
+ * The district shifts where in the set it lands rather than restricting it, so
+ * the Village leans brick and Midtown leans limestone without either being
+ * uniform — and, more importantly, without the boundary between them showing up
+ * as a line across the city. A hard district-to-colour mapping draws exactly
+ * that line, and from the air it looks like a political map.
+ */
+export function facadeFor(palette: Palette, seed: number, bias: number): string {
+  const n = palette.facades.length;
+  const i = (Math.abs(Math.round(seed)) + bias) % n;
+  return palette.facades[i];
+}
+
+/** Where in the facade set each district sits. */
+export const DISTRICT_BIAS: Record<string, number> = {
+  midtown: 6,
+  financial: 5,
+  billionaires: 10,
+  village: 1,
+  harlem: 2,
+  brooklyn: 1,
+  queens: 3,
+  bronx: 2,
+  statenIsland: 4,
+};
+
+/* ------------------------------------------------------------------ *
+ * Paper
+ * ------------------------------------------------------------------ */
+
+let paper: HTMLCanvasElement | null = null;
+let paperKey = '';
+
+/**
+ * A sheet of watercolour paper, generated once and multiplied over the frame.
+ *
+ * This is the single cheapest thing that separates "a drawing" from "a render".
+ * A flat digital fill is perfectly uniform, and nothing physical is: paper has
+ * tooth, pigment pools in the low spots and skips the high ones, and a crayon
+ * only touches the peaks. One noise layer at low opacity, composited with
+ * `multiply`, reproduces all of that in one draw call — and because it is
+ * multiplied it darkens the fills without touching the whites, which is exactly
+ * how paper behaves.
+ *
+ * Generated at a quarter scale and stretched, because grain does not need to
+ * resolve and a full-size noise field is four times the work for a texture
+ * nobody can see the pixels of.
+ */
+export function paperTexture(width: number, height: number): HTMLCanvasElement | null {
+  if (typeof document === 'undefined') return null;
+  const w = Math.max(2, Math.ceil(width / 4));
+  const h = Math.max(2, Math.ceil(height / 4));
+  const key = `${w}x${h}`;
+  if (paper && paperKey === key) return paper;
+
+  const el = document.createElement('canvas');
+  el.width = w;
+  el.height = h;
+  const ctx = el.getContext('2d');
+  if (!ctx) return null;
+
+  const image = ctx.createImageData(w, h);
+  for (let y = 0; y < h; y += 1) {
+    for (let x = 0; x < w; x += 1) {
+      // Two octaves: a fine tooth, and a slow mottle for where the wash pooled.
+      const fine = noise(x, y, 91);
+      const broad = noise(x >> 3, y >> 3, 92);
+      const v = 246 + fine * 9 + broad * 6;
+      const i = (y * w + x) * 4;
+      image.data[i] = v;
+      image.data[i + 1] = v - 1;
+      image.data[i + 2] = v - 3;
+      image.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(image, 0, 0);
+
+  paper = el;
+  paperKey = key;
+  return el;
+}
+
+/**
+ * Shift a colour toward the shadow.
+ *
+ * Not "the same colour, darker" — that is what a renderer does and it is why
+ * rendered images look plastic. A real shadow is lit by the sky rather than the
+ * sun, so it is **cooler and more saturated**, not merely dimmer. Every
+ * children's illustration in the world knows this: the shadow side of a red
+ * house is purple, not dark red.
+ */
+export function shaded(colour: string, amount = 1): string {
+  const rgb = toRgbTriple(colour);
+  if (!rgb) return colour;
+  const [r, g, b] = rgb;
+  // Toward a blue-violet, and down. The two together are what reads as shade.
+  const k = 1 - 0.22 * amount;
+  return `rgb(${Math.round(r * k)},${Math.round(g * k + 4 * amount)},${Math.round(Math.min(255, b * k + 22 * amount))})`;
+}
+
+/** Lift a colour toward the light, the same way in reverse. */
+export function sunlit(colour: string, amount = 1): string {
+  const rgb = toRgbTriple(colour);
+  if (!rgb) return colour;
+  const [r, g, b] = rgb;
+  return `rgb(${Math.round(Math.min(255, r + 16 * amount))},${Math.round(Math.min(255, g + 11 * amount))},${Math.round(Math.min(255, b + 2 * amount))})`;
+}
+
+function toRgbTriple(c: string): [number, number, number] | null {
+  if (c.startsWith('rgb')) {
+    const m = c.match(/\d+/g);
+    return m && m.length >= 3 ? [+m[0], +m[1], +m[2]] : null;
+  }
+  if (c[0] !== '#') return null;
+  let h = c.slice(1);
+  if (h.length === 3) h = h.split('').map((d) => d + d).join('');
+  const n = parseInt(h.slice(0, 6), 16);
+  return Number.isNaN(n) ? null : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }

@@ -85,9 +85,34 @@ import {
   type Ring,
 } from './world';
 import { massing, type Mass } from './massing';
+import { VEHICLES, type VehicleKind } from './traffic';
+import { at, inCorridor, offsetFrom, type Corridor, type Route } from './route';
 import {
+  LANE,
+  WINDOW,
+  carPlacement,
+  furnitureAlong,
+  signalPhase,
+  type Traffic,
+} from './street';
+import {
+  CLEARANCE,
+  LEG_OFFSET,
+  across,
+  PANEL_H,
+  panelCorners,
+  panelPoint,
+  signDots,
+  type Sign,
+} from './signs';
+import {
+  DISTRICT_BIAS,
+  facadeFor,
   flat,
   hatch,
+  paperTexture,
+  shaded,
+  sunlit,
   hazeAt,
   hazed,
   noise,
@@ -142,6 +167,23 @@ export type RenderOptions = {
   radius?: number;
   /** How far coarse massing carries the city out to. */
   massRadius?: number;
+  /** The road being driven, and how far along it the camera is. */
+  route?: Route;
+  distance?: number;
+  /**
+   * The ground the road occupies. Nothing is built on it.
+   *
+   * The generator only knows the 1811 grid; the drive uses roads older than it,
+   * so without this the camera drives through the inside of buildings standing
+   * in the middle of Wall Street.
+   */
+  corridor?: Corridor;
+  /** Live traffic state, stepped by the caller. */
+  traffic?: Traffic;
+  /** The gantry signs, already placed in the world. */
+  signs?: Sign[];
+  /** Draw signals at the cross streets. */
+  signals?: boolean;
 };
 
 export function renderCity(
@@ -160,10 +202,620 @@ export function renderCity(
   drawLand(ctx, cam, palette);
   drawGrid(ctx, cam, options);
   drawPark(ctx, cam, palette);
-  drawBridges(ctx, cam, palette);
-  drawBuildings(ctx, cam, options);
-  if (options.rain) drawRain(ctx, cam, options);
+  if (options.streets !== false) drawPavementPass(ctx, cam, options);
 
+  /*
+    ONE depth-sorted list, for everything that stands up off the ground.
+
+    This was three passes — bridges, then buildings, then the street — and each
+    pass painted entirely over the one before it. That is not the painter's
+    algorithm, it is three painter's algorithms in a trench coat, and it means
+    every car is drawn in front of every building whatever is actually between
+    them. Cars showed through walls; a bridge tower stood in front of the tower
+    it was behind.
+
+    The fix is not to reorder the passes. There is no order that works, because
+    the correct answer differs per object and per frame. It has to be one list,
+    sorted once, by depth.
+  */
+  const scene: Item[] = [];
+  collectMassing(scene, ctx, cam, options);
+  collectBuildings(scene, ctx, cam, options);
+  collectBridges(scene, ctx, cam, options);
+  if (options.streets !== false) collectStreet(scene, ctx, cam, options);
+
+  scene.sort((a, b) => b.depth - a.depth);
+  for (const item of scene) item.draw();
+  if (options.rain) drawRain(ctx, cam, options);
+  drawPaper(ctx, cam);
+
+  ctx.restore();
+}
+
+/**
+ * The tooth of the paper, multiplied over the finished frame.
+ *
+ * Last, and over everything, because paper is under the pigment in reality but
+ * multiplying is commutative and doing it once at the end costs one draw call
+ * instead of one per fill.
+ */
+function drawPaper(ctx: CanvasRenderingContext2D, cam: Camera): void {
+  const sheet = paperTexture(cam.width, cam.height);
+  if (!sheet) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.globalAlpha = 0.5;
+  ctx.drawImage(sheet, 0, 0, cam.width, cam.height);
+  ctx.restore();
+}
+
+/**
+ * One thing to draw, and how far away it is.
+ *
+ * A closure rather than a tagged union: the sort only cares about `depth`, and
+ * every producer already knows how to draw its own kind. A union would move
+ * that knowledge into a switch far away from the geometry it belongs with.
+ */
+type Item = { depth: number; draw: () => void };
+
+/* ------------------------------------------------------------------ *
+ * Street level
+ * ------------------------------------------------------------------ */
+
+/**
+ * The road under the camera: surface, markings, kerbs, lamps, signals, traffic,
+ * and the gantry signs the story is told on.
+ *
+ * Everything here is placed by distance along the route, so it works the same
+ * on an avenue, on a cross street, and on the deck of a bridge. Nothing needs
+ * to know which of those it is on.
+ */
+/** The road surface, drawn with the ground rather than with the scene. */
+function drawPavementPass(ctx: CanvasRenderingContext2D, cam: Camera, o: RenderOptions): void {
+  const { route, distance } = o;
+  if (!route || distance === undefined || route.points.length === 0) return;
+  const here = at(route, distance);
+  drawPavement(ctx, cam, o, route, distance - WINDOW.back, distance + WINDOW.front, here.oneWay);
+}
+
+/**
+ * Everything standing on the road, contributed to the one sorted list.
+ *
+ * Contributed, not drawn: a lamp post can be in front of the car beside it and
+ * behind the building behind it, and only one list sorted across all three can
+ * express that.
+ */
+function collectStreet(
+  scene: Item[],
+  ctx: CanvasRenderingContext2D,
+  cam: Camera,
+  o: RenderOptions,
+): void {
+  const { route, distance, traffic } = o;
+  if (!route || distance === undefined || route.points.length === 0) return;
+
+  const here = at(route, distance);
+  const from = distance - WINDOW.back;
+  const to = distance + WINDOW.front;
+
+  const push = (x: number, z: number, y: number, draw: () => void) => {
+    const c = toCamera(cam, { x, y, z });
+    if (c.z <= cam.near || c.z > WINDOW.front + 160) return;
+    scene.push({ depth: c.z, draw });
+  };
+
+  if (traffic) {
+    for (const car of traffic.cars) {
+      const place = carPlacement(route, car);
+      push(place.x, place.z, 1, () => {
+        drawVehicle(ctx, cam, place.x, place.z, place.y, place.heading, car.kind, car.seed, o);
+      });
+    }
+  }
+
+  for (const item of furnitureAlong(from, to, here.oneWay)) {
+    const point = at(route, item.s);
+    const spot = offsetFrom(point, item.lateral);
+    if (item.kind === 'parked' && item.vehicle) {
+      const heading = item.dir === 1 ? point.heading : point.heading + Math.PI;
+      push(spot.x, spot.z, 1, () => {
+        drawVehicle(ctx, cam, spot.x, spot.z, point.y, heading, item.vehicle!, item.seed, o);
+      });
+    } else if (item.kind === 'lamp') {
+      push(spot.x, spot.z, 4, () => {
+        drawLamp(ctx, cam, spot.x, spot.z, point.y, point.heading, item.lateral > 0 ? -1 : 1, o);
+      });
+    }
+  }
+
+  if (o.signals !== false) {
+    for (const signal of signalsAlong(route, from, to, o.time)) {
+      push(signal.x, signal.z, 5, () => drawSignal(ctx, cam, signal, o));
+    }
+  }
+
+  if (o.signs) {
+    for (const sign of o.signs) {
+      const c = toCamera(cam, { x: sign.x, y: CLEARANCE + PANEL_H / 2, z: sign.z });
+      if (c.z <= cam.near || c.z > 900) continue;
+      scene.push({ depth: c.z, draw: () => drawSign(ctx, cam, sign, c.z, o) });
+    }
+  }
+}
+
+/**
+ * The roadway itself, as a ribbon following the route.
+ *
+ * Built as quads between consecutive samples rather than as one long polygon,
+ * so it bends with the road and climbs the bridge without any special case.
+ */
+function drawPavement(
+  ctx: CanvasRenderingContext2D,
+  cam: Camera,
+  o: RenderOptions,
+  route: Route,
+  from: number,
+  to: number,
+  oneWay: boolean,
+): void {
+  const { palette } = o;
+  const halfRoad = LANE * 2.35;
+  const step = 14;
+
+  const road = hazed(palette.asphalt, palette, 0.08);
+  const kerbTone = hazed(palette.ground, palette, 0.04);
+  const mark = palette.name === 'night' ? '#7d7f88' : '#f4f1e6';
+
+  for (let s = Math.max(0, from); s < Math.min(route.length, to); s += step) {
+    const a = at(route, s);
+    const b = at(route, Math.min(route.length, s + step));
+    const depth = toCamera(cam, { x: a.x, y: a.y, z: a.z }).z;
+    if (depth <= cam.near || depth > WINDOW.front + 100) continue;
+
+    const ribbon = (inner: number, outer: number, y: number) => {
+      const a0 = offsetFrom(a, inner);
+      const a1 = offsetFrom(a, outer);
+      const b0 = offsetFrom(b, inner);
+      const b1 = offsetFrom(b, outer);
+      return projectPolygon(cam, [
+        { x: a0.x, y: a.y + y, z: a0.z },
+        { x: b0.x, y: b.y + y, z: b0.z },
+        { x: b1.x, y: b.y + y, z: b1.z },
+        { x: a1.x, y: a.y + y, z: a1.z },
+      ]);
+    };
+
+    const surface = ribbon(-halfRoad, halfRoad, 0.02);
+    if (surface) flat(ctx, surface, road);
+
+    // Pavements, 4.2 m each side, standing 150 mm above the gutter.
+    for (const side of [-1, 1] as const) {
+      const walk = ribbon(side * halfRoad, side * (halfRoad + 4.2), 0.15);
+      if (walk) flat(ctx, walk, kerbTone);
+      const face = ribbon(side * halfRoad, side * halfRoad, 0);
+      if (face) flat(ctx, face, shaded(kerbTone, 0.6));
+    }
+
+    /*
+      Lane lines: 3 m of paint on a 9 m gap, which is the MUTCD urban standard.
+      The ratio is what makes a road read at speed — drawn 50/50 it looks like a
+      railway sleeper track.
+    */
+    const dash = Math.floor(s / 12) * 12;
+    if (s - dash < 3) {
+      const lanes = oneWay ? [-LANE, 0, LANE] : [-LANE, LANE];
+      for (const lateral of lanes) {
+        const line = ribbon(lateral - 0.07, lateral + 0.07, 0.04);
+        if (line) flat(ctx, line, mark);
+      }
+      // A two-way road gets a double yellow down the middle instead.
+      if (!oneWay) {
+        for (const off of [-0.14, 0.14]) {
+          const line = ribbon(off - 0.06, off + 0.06, 0.04);
+          if (line) flat(ctx, line, palette.name === 'night' ? '#8a7328' : '#d9a92c');
+        }
+      }
+    }
+  }
+}
+
+/* ---- vehicles ---- */
+
+/**
+ * A vehicle: a body and a cabin, oriented along the road.
+ *
+ * Two boxes rather than a modelled silhouette, because at the size a car
+ * occupies on this page — rarely more than eighty pixels — the difference
+ * between a modelled roofline and a stepped one is invisible, and the
+ * difference in cost is not.
+ */
+function drawVehicle(
+  ctx: CanvasRenderingContext2D,
+  cam: Camera,
+  x: number,
+  z: number,
+  y: number,
+  heading: number,
+  kind: VehicleKind,
+  seed: number,
+  o: RenderOptions,
+): void {
+  const spec = VEHICLES[kind];
+  const c = toCamera(cam, { x, y: y + spec.height / 2, z });
+  if (c.z <= cam.near) return;
+  const s = scaleAt(cam, c.z);
+  // Below a couple of pixels a car is a smudge, and drawing it makes the road
+  // grainy rather than busy.
+  if (spec.length * s < 2.2) return;
+
+  const { palette } = o;
+  const paint =
+    kind === 'cab'
+      ? palette.cab
+      : kind === 'bus'
+        ? (palette.name === 'night' ? '#3f4a5c' : '#cfd6dc')
+        : ['#c9633f', '#8fb0c4', '#3c414a', '#e8e6df', '#7fa9a2', '#e8c46a'][Math.abs(seed) % 6];
+
+  const fade = hazeAt(c.z);
+  const ink = hazed(palette.ink, palette, fade * 0.8);
+  // A car is a box swept along its own heading, so its corners come from the
+  // heading rather than from the world axes — which is the whole reason it can
+  // sit correctly on a road that turns.
+  const ux = Math.sin(heading);
+  const uz = Math.cos(heading);
+  const px = Math.cos(heading);
+  const pz = -Math.sin(heading);
+
+  const corners = (along0: number, along1: number, halfW: number, y0: number, y1: number): Vec3[][] => {
+    const p = (a: number, w: number, h: number): Vec3 => ({
+      x: x + ux * a + px * w,
+      y: y + h,
+      z: z + uz * a + pz * w,
+    });
+    // Six faces, each wound so its normal points out of the box. The bottom is
+    // included and simply never passes the normal test from above the road,
+    // which is cheaper than special-casing it and correct if the camera ever
+    // gets under one.
+    return [
+      [p(along0, halfW, y0), p(along1, halfW, y0), p(along1, halfW, y1), p(along0, halfW, y1)],
+      [p(along1, -halfW, y0), p(along0, -halfW, y0), p(along0, -halfW, y1), p(along1, -halfW, y1)],
+      [p(along1, halfW, y0), p(along1, -halfW, y0), p(along1, -halfW, y1), p(along1, halfW, y1)],
+      [p(along0, -halfW, y0), p(along0, halfW, y0), p(along0, halfW, y1), p(along0, -halfW, y1)],
+      [p(along0, halfW, y1), p(along1, halfW, y1), p(along1, -halfW, y1), p(along0, -halfW, y1)],
+      [p(along0, -halfW, y0), p(along1, -halfW, y0), p(along1, halfW, y0), p(along0, halfW, y0)],
+    ];
+  };
+
+  const half = spec.width / 2;
+  const bodyTop = spec.height * 0.6;
+  const [cabFrom, cabTo, roof] = spec.cabin;
+
+  /*
+    Which faces of a box you can see.
+
+    By the face's own NORMAL against the direction to the camera, not by the
+    winding of its projected polygon. Winding is the usual trick and it is
+    fragile: it depends on every face being listed in a consistent rotational
+    order, it inverts under a mirrored transform, and it gives no answer at all
+    for a face seen exactly edge-on. Get one face's order wrong and you are
+    looking at the inside of the car — which is precisely what happened.
+
+    A normal is unambiguous. If it points away from the camera, the face is at
+    the back and is not drawn.
+  */
+  const paintFaces = (faces: Vec3[][], colour: string, salt: number) => {
+    for (let i = 0; i < faces.length; i += 1) {
+      const face = faces[i];
+      const e1 = { x: face[1].x - face[0].x, y: face[1].y - face[0].y, z: face[1].z - face[0].z };
+      const e2 = { x: face[2].x - face[1].x, y: face[2].y - face[1].y, z: face[2].z - face[1].z };
+      const n = {
+        x: e1.y * e2.z - e1.z * e2.y,
+        y: e1.z * e2.x - e1.x * e2.z,
+        z: e1.x * e2.y - e1.y * e2.x,
+      };
+      const toEye = { x: cam.x - face[0].x, y: cam.y - face[0].y, z: cam.z - face[0].z };
+      if (n.x * toEye.x + n.y * toEye.y + n.z * toEye.z <= 0) continue;
+
+      const pts = projectPolygon(cam, face);
+      if (!pts || pts.length < 3) continue;
+      // The roof catches the sun; a flank does not.
+      const lit = i === 4;
+      flat(ctx, pts, hazed(lit ? sunlit(colour, 0.7) : shaded(colour, 0.55), palette, fade));
+      if (spec.length * s > 10) {
+        stroke(ctx, pts, { seed: seed + salt + i, colour: ink, width: 1.4, wobble: 0.9, close: true });
+      }
+    }
+  };
+
+  paintFaces(corners(-spec.length / 2, spec.length / 2, half, spec.wheelR * 0.5, bodyTop), paint, 0);
+  paintFaces(
+    corners(-spec.length / 2 + cabFrom, -spec.length / 2 + cabTo, half * 0.93, bodyTop, roof),
+    kind === 'cab' ? paint : paint,
+    97,
+  );
+
+  // Glass, wrapped round the cabin. One dark band does the work of modelling
+  // every window, which at this size is what a window is.
+  if (spec.length * s > 18) {
+    const glassTop = bodyTop + (roof - bodyTop) * 0.78;
+    const glassLow = bodyTop + (roof - bodyTop) * 0.24;
+    for (const side of [-1, 1] as const) {
+      const band = projectPolygon(cam, [
+        { x: x + ux * (-spec.length / 2 + cabFrom + 0.2) + px * side * half * 0.95, y: y + glassLow, z: z + uz * (-spec.length / 2 + cabFrom + 0.2) + pz * side * half * 0.95 },
+        { x: x + ux * (-spec.length / 2 + cabTo - 0.2) + px * side * half * 0.95, y: y + glassLow, z: z + uz * (-spec.length / 2 + cabTo - 0.2) + pz * side * half * 0.95 },
+        { x: x + ux * (-spec.length / 2 + cabTo - 0.2) + px * side * half * 0.95, y: y + glassTop, z: z + uz * (-spec.length / 2 + cabTo - 0.2) + pz * side * half * 0.95 },
+        { x: x + ux * (-spec.length / 2 + cabFrom + 0.2) + px * side * half * 0.95, y: y + glassTop, z: z + uz * (-spec.length / 2 + cabFrom + 0.2) + pz * side * half * 0.95 },
+      ]);
+      if (!band) continue;
+      let area = 0;
+      for (let k = 0; k < band.length; k += 1) {
+        const p = band[k];
+        const q = band[(k + 1) % band.length];
+        area += p.x * q.y - q.x * p.y;
+      }
+      if (area <= 0) continue;
+      flat(ctx, band, hazed(palette.name === 'night' ? '#1a2740' : '#41506a', palette, fade));
+    }
+  }
+
+  /*
+    Lamps.
+
+    A headlight is 200 mm across and, in daylight, OFF — a dark glass lens, not
+    a white disc. Drawing them lit round the clock is what turned a row of
+    parked cars into a row of headlamps: at midday nothing on the street is
+    emitting anything.
+  */
+  if (spec.length * s > 16) {
+    const dark = palette.name === 'night' || palette.name === 'dusk';
+    for (const [along, on, off] of [
+      [-spec.length / 2, '#ff5b3f', '#6d2a24'],
+      [spec.length / 2, '#fff3cf', '#3b4048'],
+    ] as const) {
+      for (const side of [-1, 1] as const) {
+        const p = project(cam, {
+          x: x + ux * (along as number) + px * side * half * 0.62,
+          y: y + spec.height * 0.42,
+          z: z + uz * (along as number) + pz * side * half * 0.62,
+        });
+        if (!p) continue;
+        // 200 mm of lens, and no more, however close the car gets.
+        const r = Math.max(0.7, Math.min(0.2 * s, spec.width * 0.14 * s));
+        ctx.fillStyle = hazed(dark ? (on as string) : (off as string), palette, fade);
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y, r, r * 0.72, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+}
+
+/* ---- lamps and signals ---- */
+
+/**
+ * A cobra-head streetlight: NYC DOT's standard, 9.1 m to the lamp on a 2.4 m
+ * mast arm reaching over the roadway.
+ *
+ * The arm has to reach *over the road*, which means it has to know which side
+ * of the road the pole is on — a mast arm pointing at the buildings is the sort
+ * of thing that looks wrong without being nameable.
+ */
+function drawLamp(
+  ctx: CanvasRenderingContext2D,
+  cam: Camera,
+  x: number,
+  z: number,
+  ground: number,
+  heading: number,
+  inward: 1 | -1,
+  o: RenderOptions,
+): void {
+  const { palette } = o;
+  const c = toCamera(cam, { x, y: ground + 5, z });
+  if (c.z <= cam.near || c.z > 320) return;
+  const s = scaleAt(cam, c.z);
+  if (s * 9 < 6) return;
+
+  const fade = hazeAt(c.z);
+  const ink = hazed(palette.ink, palette, fade * 0.7);
+  const px = Math.cos(heading) * inward;
+  const pz = -Math.sin(heading) * inward;
+
+  const base = project(cam, { x, y: ground, z });
+  const top = project(cam, { x, y: ground + 9.1, z });
+  const head = project(cam, { x: x + px * 2.4, y: ground + 9.1, z: z + pz * 2.4 });
+  if (!base || !top || !head) return;
+
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = Math.max(1.1, 0.34 * s);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(base.x, base.y);
+  ctx.lineTo(top.x, top.y);
+  ctx.lineTo(head.x, head.y);
+  ctx.stroke();
+
+  // The lamp itself, and its glow after dark.
+  const r = Math.max(1.4, 0.6 * s);
+  ctx.fillStyle = palette.name === 'night' || palette.name === 'dusk' ? '#ffe6a8' : hazed(palette.ink, palette, fade);
+  ctx.beginPath();
+  ctx.ellipse(head.x, head.y + r * 0.4, r * 1.5, r * 0.7, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (palette.name === 'night' || palette.name === 'dusk') {
+    ctx.save();
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = '#ffd98a';
+    ctx.beginPath();
+    ctx.ellipse(head.x, head.y, r * 7, r * 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+type SignalPlace = { x: number; z: number; y: number; heading: number; state: 'green' | 'amber' | 'red' };
+
+/** Signals at the cross streets the route passes, on the numbered grid. */
+function signalsAlong(route: Route, from: number, to: number, time: number): SignalPlace[] {
+  const out: SignalPlace[] = [];
+  const step = 20;
+  let lastStreet = Number.NaN;
+
+  for (let s = Math.max(0, from); s < to; s += step) {
+    const point = at(route, s);
+    if (point.z < blockZ(0) || Math.abs(point.y) > 1.5) continue;
+    const street = Math.round(point.z / BLOCK + 42);
+    if (street === lastStreet) continue;
+    const atStreet = Math.abs(point.z - blockZ(street));
+    if (atStreet > step) continue;
+    lastStreet = street;
+    const spot = offsetFrom(point, LANE * 2.5);
+    out.push({
+      x: spot.x,
+      z: spot.z,
+      y: point.y,
+      heading: point.heading,
+      state: signalPhase(point.z, time),
+    });
+  }
+  return out;
+}
+
+/**
+ * A mast-arm signal: three 300 mm lenses, the housing 5.2 m over the roadway.
+ *
+ * MUTCD's minimum clearance over a road is 4.6 m; 5.2 is what gets built.
+ */
+function drawSignal(ctx: CanvasRenderingContext2D, cam: Camera, place: SignalPlace, o: RenderOptions): void {
+  const { palette } = o;
+  const c = toCamera(cam, { x: place.x, y: place.y + 5, z: place.z });
+  if (c.z <= cam.near || c.z > 320) return;
+  const s = scaleAt(cam, c.z);
+  if (s * 6 < 5) return;
+
+  const fade = hazeAt(c.z);
+  const ink = hazed(palette.ink, palette, fade * 0.7);
+  const px = -Math.cos(place.heading);
+  const pz = Math.sin(place.heading);
+
+  const base = project(cam, { x: place.x, y: place.y, z: place.z });
+  const top = project(cam, { x: place.x, y: place.y + 6.4, z: place.z });
+  const arm = project(cam, { x: place.x + px * 5.4, y: place.y + 6.4, z: place.z + pz * 5.4 });
+  if (!base || !top || !arm) return;
+
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = Math.max(1.2, 0.3 * s);
+  ctx.beginPath();
+  ctx.moveTo(base.x, base.y);
+  ctx.lineTo(top.x, top.y);
+  ctx.lineTo(arm.x, arm.y);
+  ctx.stroke();
+
+  // The head, hanging under the arm.
+  const hx = place.x + px * 4.6;
+  const hz = place.z + pz * 4.6;
+  const housing = projectPolygon(cam, [
+    { x: hx - 0.24 * px, y: place.y + 5.2, z: hz - 0.24 * pz },
+    { x: hx + 0.24 * px, y: place.y + 5.2, z: hz + 0.24 * pz },
+    { x: hx + 0.24 * px, y: place.y + 6.35, z: hz + 0.24 * pz },
+    { x: hx - 0.24 * px, y: place.y + 6.35, z: hz - 0.24 * pz },
+  ]);
+  if (housing) {
+    flat(ctx, housing, palette.name === 'night' ? '#14161f' : '#2b2f38');
+    stroke(ctx, housing, { seed: 5511, colour: ink, width: 1, wobble: 0.6, close: true });
+  }
+
+  const lit = { red: 0, amber: 1, green: 2 }[place.state];
+  const colours = ['#e5432f', '#f0a52a', '#3fb968'];
+  for (let i = 0; i < 3; i += 1) {
+    const p = project(cam, { x: hx, y: place.y + 6.05 - i * 0.34, z: hz });
+    if (!p) continue;
+    const r = Math.max(0.9, 0.19 * s);
+    ctx.fillStyle = lit === i ? colours[i] : 'rgba(30,32,40,0.85)';
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y, r, r, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/* ---- the gantry signs ---- */
+
+/**
+ * A variable-message sign on a full-span gantry.
+ *
+ * Every lit dot is its own quad on the panel's plane, so the text converges
+ * with the board as you approach and pass under it. Drawing the panel flat and
+ * stamping text on it is cheaper and falls apart the moment you are not
+ * square-on, which on a road you are driving down is almost always.
+ */
+function drawSign(
+  ctx: CanvasRenderingContext2D,
+  cam: Camera,
+  sign: Sign,
+  depth: number,
+  o: RenderOptions,
+): void {
+  const { palette } = o;
+  const s = scaleAt(cam, depth);
+  const fade = hazeAt(depth);
+  const ink = hazed(palette.ink, palette, fade * 0.6);
+
+  // The gantry: two legs and a truss over the road.
+  const legTop = CLEARANCE + PANEL_H + 0.9;
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = Math.max(1.2, 0.32 * s);
+  const n = across(sign);
+  const leg = sign.halfWidth + LEG_OFFSET;
+  ctx.beginPath();
+  for (const side of [-1, 1] as const) {
+    const fx = sign.x + n.x * side * leg;
+    const fz = sign.z + n.z * side * leg;
+    const foot = project(cam, { x: fx, y: 0, z: fz });
+    const shoulder = project(cam, { x: fx, y: legTop, z: fz });
+    if (foot && shoulder) {
+      ctx.moveTo(foot.x, foot.y);
+      ctx.lineTo(shoulder.x, shoulder.y);
+    }
+  }
+  const left = project(cam, { x: sign.x - n.x * leg, y: legTop, z: sign.z - n.z * leg });
+  const right = project(cam, { x: sign.x + n.x * leg, y: legTop, z: sign.z + n.z * leg });
+  if (left && right) {
+    ctx.moveTo(left.x, left.y);
+    ctx.lineTo(right.x, right.y);
+  }
+  ctx.stroke();
+
+  // The board.
+  const face = projectPolygon(cam, panelCorners(sign));
+  if (!face) return;
+  flat(ctx, face, palette.name === 'night' ? '#0a0c14' : '#16181f');
+  stroke(ctx, face, { seed: sign.id.length * 71, colour: ink, width: 1.6, wobble: 0.7, close: true });
+
+  // Below about this, the dots merge into a smear and the board reads better
+  // dark and empty — which is also what a sign looks like from too far away.
+  if (sign.halfWidth * 2 * s < 90) return;
+
+  const amber = '#ffb427';
+  ctx.fillStyle = amber;
+  ctx.beginPath();
+  for (const dot of signDots(sign)) {
+    const a = panelPoint(sign, dot.u, dot.v);
+    const b = panelPoint(sign, dot.u + dot.w, dot.v + dot.h);
+    const pa = project(cam, a);
+    const pb = project(cam, b);
+    if (!pa || !pb) continue;
+    const w = pb.x - pa.x;
+    const h = pb.y - pa.y;
+    if (Math.abs(w) < 0.35 || Math.abs(h) < 0.35) continue;
+    ctx.rect(pa.x, pa.y, w, h);
+  }
+  ctx.fill();
+
+  // The bloom a real LED board has against a dark face.
+  ctx.save();
+  ctx.globalAlpha = 0.2;
+  ctx.fillStyle = amber;
+  ctx.fill();
   ctx.restore();
 }
 
@@ -473,81 +1125,212 @@ function pointInRing(ring: Ring, x: number, z: number): boolean {
  * Sag is a tenth of the span, which is the usual design ratio and the reason
  * every suspension bridge looks like the same bridge at a different size.
  */
-function drawBridges(ctx: CanvasRenderingContext2D, cam: Camera, palette: Palette): void {
+function collectBridges(
+  scene: Item[],
+  ctx: CanvasRenderingContext2D,
+  cam: Camera,
+  o: RenderOptions,
+): void {
+  const { palette } = o;
+
   for (const b of BRIDGES) {
     const [x0, z0] = b.from;
     const [x1, z1] = b.to;
     const total = Math.hypot(x1 - x0, z1 - z0);
     const mid = { x: (x0 + x1) / 2, y: b.deck, z: (z0 + z1) / 2 };
     const c = toCamera(cam, mid);
-    if (c.z <= cam.near || c.z > 24000) continue;
+    if (c.z > 24000) continue;
 
-    const fade = hazeAt(c.z);
-    const ink = hazed(palette.ink, palette, fade);
-    const deckColour = hazed(palette.asphalt, palette, fade);
-
-    // The deck, as a ribbon that rises to the middle.
-    const N = 22;
-    const left: Vec3[] = [];
-    const right: Vec3[] = [];
     const ux = (x1 - x0) / total;
     const uz = (z1 - z0) / total;
     const half = b.width / 2;
-    for (let i = 0; i <= N; i += 1) {
-      const t = i / N;
-      const rise = Math.sin(t * Math.PI) * b.deck * 0.22;
-      const px = x0 + (x1 - x0) * t;
-      const pz = z0 + (z1 - z0) * t;
-      left.push({ x: px - uz * half, y: b.deck + rise, z: pz + ux * half });
-      right.push({ x: px + uz * half, y: b.deck + rise, z: pz - ux * half });
-    }
-    const deck = projectPolygon(cam, [...left, ...right.reverse()]);
-    if (deck) {
-      flat(ctx, deck, deckColour);
-      stroke(ctx, deck, { seed: b.name.length * 71, colour: ink, width: 1, wobble: 0.9, close: true });
+    const sag = b.span * 0.1;
+    const towerT = [0.5 - b.span / total / 2, 0.5 + b.span / total / 2];
+    const gothic = b.name.startsWith('Brooklyn');
+
+    /** Deck height at a fraction along, rising toward mid-span. */
+    const deckAt = (t: number) => b.deck + Math.sin(t * Math.PI) * b.deck * 0.22;
+    const point = (t: number, side: number, y: number): Vec3 => ({
+      x: x0 + (x1 - x0) * t - uz * half * side,
+      y,
+      z: z0 + (z1 - z0) * t + ux * half * side,
+    });
+
+    /*
+      The deck, in segments.
+
+      Segments rather than one long ribbon, and it matters twice: a single
+      polygon spanning a kilometre sorts as ONE object, so it is either wholly
+      in front of a tower or wholly behind it — and no bridge looks like that.
+      Segmenting also lets each piece take its own haze.
+
+      Skipped where the drive is on this bridge. The route lays its own roadway,
+      and drawing both put a second deck a metre above the first, which is the
+      extra road that appeared to hang over the bridge.
+    */
+    if (!b.carriesRoute) {
+      const N = 20;
+      for (let i = 0; i < N; i += 1) {
+        const t0 = i / N;
+        const t1 = (i + 1) / N;
+        const cd = toCamera(cam, point((t0 + t1) / 2, 0, deckAt(t0)));
+        if (cd.z <= cam.near) continue;
+        const quad = projectPolygon(cam, [
+          point(t0, -1, deckAt(t0)),
+          point(t1, -1, deckAt(t1)),
+          point(t1, 1, deckAt(t1)),
+          point(t0, 1, deckAt(t0)),
+        ]);
+        if (!quad) continue;
+        const tone = hazed(palette.asphalt, palette, hazeAt(cd.z));
+        scene.push({ depth: cd.z, draw: () => flat(ctx, quad, tone) });
+      }
     }
 
-    if (b.kind === 'suspension') {
-      const sag = b.span * 0.1;
-      const towerT = [0.5 - b.span / total / 2, 0.5 + b.span / total / 2];
+    if (b.kind !== 'suspension') continue;
 
-      // Towers.
-      for (const t of towerT) {
-        const px = x0 + (x1 - x0) * t;
-        const pz = z0 + (z1 - z0) * t;
-        for (const s of [-1, 1]) {
-          const seg = [
-            project(cam, { x: px - uz * half * s, y: 0, z: pz + ux * half * s }),
-            project(cam, { x: px - uz * half * s, y: b.tower, z: pz + ux * half * s }),
-          ];
-          if (seg[0] && seg[1]) {
-            for (const run of clipPolyline(cam, seg as Point2[])) {
-              stroke(ctx, run, { seed: 900 + t * 1000, colour: ink, width: Math.max(1.2, 5 * scaleAt(cam, c.z)), wobble: 0.7 });
+    /*
+      The main cables.
+
+      A cable carrying only itself is a catenary. One carrying a uniform load
+      along the HORIZONTAL — which is exactly what a suspended deck is — is a
+      parabola. So this is parabolic, and that is the correct curve rather than
+      an approximation of the "correct" catenary.
+    */
+    const cableY = (t: number) => {
+      if (t < towerT[0]) return b.deck + (b.tower - b.deck) * (t / towerT[0]);
+      if (t > towerT[1]) return b.deck + (b.tower - b.deck) * ((1 - t) / (1 - towerT[1]));
+      const u = (t - towerT[0]) / (towerT[1] - towerT[0]);
+      // 4u(1-u): zero at both towers, one in the middle.
+      return b.tower - sag * 4 * u * (1 - u);
+    };
+
+    for (const side of [-1, 1] as const) {
+      const cd = toCamera(cam, point(0.5, side, b.tower));
+      if (cd.z <= cam.near) continue;
+      const run: Point2[] = [];
+      for (let i = 0; i <= 40; i += 1) {
+        const p = project(cam, point(i / 40, side, cableY(i / 40)));
+        if (p) run.push(p);
+      }
+      const width = Math.max(0.9, 2.6 * scaleAt(cam, cd.z));
+      const ink = hazed(palette.ink, palette, hazeAt(cd.z));
+      scene.push({
+        depth: cd.z - 1,
+        draw: () => {
+          for (const piece of clipPolyline(cam, run)) {
+            stroke(ctx, piece, { seed: 611 + side, colour: ink, width, wobble: 0.5 });
+          }
+        },
+      });
+    }
+
+    /*
+      Suspenders, and the stays.
+
+      The Brooklyn Bridge is the one everybody can draw from memory, and this
+      web is why: Roebling hung vertical suspenders from the main cable AND ran
+      diagonal stays radiating down from each tower, so the two cross in a
+      lattice. No other bridge has it. Draw the verticals alone and you have
+      drawn a generic suspension bridge that happens to have the right span.
+    */
+    const cd = toCamera(cam, mid);
+    if (cd.z > cam.near && cd.z < 3200) {
+      const ink = hazed(palette.ink, palette, hazeAt(cd.z) * 0.9);
+      const hair = Math.max(0.5, 0.9 * scaleAt(cam, cd.z));
+      scene.push({
+        depth: cd.z + 2,
+        draw: () => {
+          ctx.strokeStyle = ink;
+          ctx.lineWidth = hair;
+          ctx.globalAlpha = 0.72;
+          ctx.beginPath();
+          for (const side of [-1, 1] as const) {
+            for (let i = 1; i < 34; i += 1) {
+              const t = towerT[0] + ((towerT[1] - towerT[0]) * i) / 34;
+              const top = project(cam, point(t, side, cableY(t)));
+              const foot = project(cam, point(t, side, deckAt(t)));
+              if (top && foot) {
+                ctx.moveTo(top.x, top.y);
+                ctx.lineTo(foot.x, foot.y);
+              }
+            }
+            if (!gothic) continue;
+            for (const anchor of towerT) {
+              const apex = project(cam, point(anchor, side, b.tower - 7));
+              if (!apex) continue;
+              for (let i = 1; i <= 9; i += 1) {
+                const reach = (i / 9) * (towerT[1] - towerT[0]) * 0.46;
+                for (const sense of [-1, 1] as const) {
+                  const t = anchor + sense * reach;
+                  if (t < 0.03 || t > 0.97) continue;
+                  const foot = project(cam, point(t, side, deckAt(t)));
+                  if (!foot) continue;
+                  ctx.moveTo(apex.x, apex.y);
+                  ctx.lineTo(foot.x, foot.y);
+                }
+              }
             }
           }
-        }
-      }
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        },
+      });
+    }
 
-      // The main cable: parabolic between the towers, straight to the anchors.
-      const cable: (Point2 | null)[] = [];
-      for (let i = 0; i <= 28; i += 1) {
-        const t = i / 28;
-        let y: number;
-        if (t < towerT[0]) y = b.deck + (b.tower - b.deck) * (t / towerT[0]);
-        else if (t > towerT[1]) y = b.deck + (b.tower - b.deck) * ((1 - t) / (1 - towerT[1]));
-        else {
-          const u = (t - towerT[0]) / (towerT[1] - towerT[0]);
-          // 4u(1−u) is the unit parabola: zero at both towers, one in the middle.
-          y = b.tower - sag * 4 * u * (1 - u);
-        }
-        cable.push(project(cam, { x: x0 + (x1 - x0) * t, y, z: z0 + (z1 - z0) * t }));
-      }
-      const pts = cable.filter(Boolean) as Point2[];
-      for (const run of clipPolyline(cam, pts)) {
-        if (run.length > 3) {
-          stroke(ctx, run, { seed: 611, colour: ink, width: Math.max(0.8, 2.4 * scaleAt(cam, c.z)), wobble: 0.5 });
-        }
-      }
+    /*
+      The towers.
+
+      Masonry with two pointed openings on the Brooklyn Bridge, which is why it
+      reads as a cathedral someone hung a road from — and why it looks nothing
+      like the steel lattice of the Manhattan Bridge two hundred metres away.
+    */
+    for (const t of towerT) {
+      const base = point(t, 0, 0);
+      const ct = toCamera(cam, { ...base, y: b.tower / 2 });
+      if (ct.z <= cam.near || ct.z > 8000) continue;
+      const fade = hazeAt(ct.z);
+      const stone = hazed(gothic ? '#c0aa93' : '#98a1ac', palette, fade);
+      const ink = hazed(palette.ink, palette, fade * 0.9);
+      const thick = gothic ? 10 : 5;
+      const wide = half + (gothic ? 5 : 2);
+
+      const face = projectPolygon(cam, [
+        { x: base.x - uz * wide - ux * thick, y: 0, z: base.z + ux * wide - uz * thick },
+        { x: base.x + uz * wide - ux * thick, y: 0, z: base.z - ux * wide - uz * thick },
+        { x: base.x + uz * wide - ux * thick, y: b.tower, z: base.z - ux * wide - uz * thick },
+        { x: base.x - uz * wide - ux * thick, y: b.tower, z: base.z + ux * wide - uz * thick },
+      ]);
+      if (!face) continue;
+
+      const openings: (Point2[] | null)[] = gothic
+        ? [-1, 1].map((sense) => {
+            const cx = base.x + uz * wide * 0.44 * sense - ux * thick;
+            const cz = base.z - ux * wide * 0.44 * sense - uz * thick;
+            const w = wide * 0.24;
+            return projectPolygon(cam, [
+              { x: cx - uz * w, y: b.deck + 2, z: cz + ux * w },
+              { x: cx + uz * w, y: b.deck + 2, z: cz - ux * w },
+              { x: cx + uz * w, y: b.deck + 22, z: cz - ux * w },
+              // The point of the arch, which is the whole character of it.
+              { x: cx, y: b.deck + 30, z: cz },
+              { x: cx - uz * w, y: b.deck + 22, z: cz + ux * w },
+            ]);
+          })
+        : [];
+
+      scene.push({
+        depth: ct.z,
+        draw: () => {
+          flat(ctx, face, stone);
+          stroke(ctx, face, { seed: 4400 + Math.round(t * 100), colour: ink, width: 1.7, wobble: 1.2, close: true });
+          for (const gap of openings) {
+            if (!gap) continue;
+            flat(ctx, gap, hazed(shaded(stone, 1.5), palette, fade));
+            stroke(ctx, gap, { seed: 4500, colour: ink, width: 1.1, wobble: 0.7, close: true });
+          }
+        },
+      });
     }
   }
 }
@@ -556,31 +1339,21 @@ function drawBridges(ctx: CanvasRenderingContext2D, cam: Camera, palette: Palett
  * Buildings
  * ------------------------------------------------------------------ */
 
-type Item = {
-  depth: number;
-  building: Building | null;
-  landmark: Landmark | null;
-};
-
-function drawBuildings(ctx: CanvasRenderingContext2D, cam: Camera, o: RenderOptions): void {
+function collectBuildings(
+  scene: Item[],
+  ctx: CanvasRenderingContext2D,
+  cam: Camera,
+  o: RenderOptions,
+): void {
   const radius = o.radius ?? 1500;
-  const items: Item[] = [];
-
-  /*
-    The far city first, as mass.
-
-    Drawn before anything detailed and never sorted against it: every one of
-    these is beyond the detail radius, so it is behind every individual
-    building by construction. Sorting them together would be several thousand
-    comparisons a frame to arrive at the order they are already in.
-  */
-  drawMassing(ctx, cam, o, radius);
+  const found: { depth: number; building: Building | null; landmark: Landmark | null }[] = [];
 
   for (const { bx, bz, distance } of blocksNear(cam.x, cam.z, radius)) {
     const list = blockAt(bx, bz);
     const budget = budgetFor(distance);
     for (let i = 0; i < Math.min(list.length, budget); i += 1) {
       const b = list[i];
+      if (o.corridor && inCorridor(o.corridor, b.x, b.z)) continue;
       const c = toCamera(cam, { x: b.x, y: b.height / 2, z: b.z });
       if (c.z <= cam.near) continue;
       if (
@@ -592,7 +1365,7 @@ function drawBuildings(ctx: CanvasRenderingContext2D, cam: Camera, o: RenderOpti
       ) {
         continue;
       }
-      items.push({ depth: c.z, building: b, landmark: null });
+      found.push({ depth: c.z, building: b, landmark: null });
     }
   }
 
@@ -608,25 +1381,28 @@ function drawBuildings(ctx: CanvasRenderingContext2D, cam: Camera, o: RenderOpti
     ) {
       continue;
     }
-    items.push({ depth: c.z, building: null, landmark: L });
+    found.push({ depth: c.z, building: null, landmark: L });
   }
 
   /*
     A hard ceiling on how much of the city one frame may contain.
 
-    Sorted NEAREST first to choose what survives, then reversed to draw. Those
-    are two different orders and both are needed: the things worth keeping are
-    the close ones, and the order they must be painted in is the opposite.
-    Taking the first N of a far-to-near list would keep the horizon and throw
-    away the street you are standing on.
+    Sorted NEAREST first to choose what survives — the things worth keeping are
+    the close ones. The order they are drawn in is the opposite, and that is the
+    outer sort's job, not this one's. Taking the first N of a far-to-near list
+    would keep the horizon and throw away the street you are standing on.
   */
-  items.sort((a, b) => a.depth - b.depth);
-  if (items.length > ITEM_BUDGET) items.length = ITEM_BUDGET;
-  items.reverse();
+  found.sort((a, b) => a.depth - b.depth);
+  if (found.length > ITEM_BUDGET) found.length = ITEM_BUDGET;
 
-  for (const item of items) {
-    if (item.landmark) drawLandmark(ctx, cam, item.landmark, item.depth, o);
-    else if (item.building) drawBuilding(ctx, cam, item.building, item.depth, o);
+  for (const item of found) {
+    if (item.landmark) {
+      const L = item.landmark;
+      scene.push({ depth: item.depth, draw: () => drawLandmark(ctx, cam, L, item.depth, o) });
+    } else if (item.building) {
+      const b = item.building;
+      scene.push({ depth: item.depth, draw: () => drawBuilding(ctx, cam, b, item.depth, o) });
+    }
   }
 }
 
@@ -636,40 +1412,40 @@ function drawBuildings(ctx: CanvasRenderingContext2D, cam: Camera, o: RenderOpti
  * Sorted far to near among themselves, which matters where a tower stands proud
  * of the mass around it.
  */
-function drawMassing(
+function collectMassing(
+  scene: Item[],
   ctx: CanvasRenderingContext2D,
   cam: Camera,
   o: RenderOptions,
-  from: number,
 ): void {
+  const from = o.radius ?? 1500;
   const to = o.massRadius ?? 26000;
   if (to <= from) return;
 
   const volumes = massing(cam.x, cam.z, from, to);
-  const withDepth: { m: Mass; depth: number }[] = [];
   for (const m of volumes) {
+    if (o.corridor && inCorridor(o.corridor, m.x, m.z)) continue;
     const c = toCamera(cam, { x: m.x, y: m.height / 2, z: m.z });
     if (c.z <= cam.near) continue;
     if (!boxVisible(cam, { x: m.x - m.width, y: 0, z: m.z - m.depth }, { x: m.x + m.width, y: m.height, z: m.z + m.depth })) continue;
-    withDepth.push({ m, depth: c.z });
-  }
-  withDepth.sort((a, b) => b.depth - a.depth);
-
-  for (const { m, depth } of withDepth) {
-    drawBox(
-      ctx, cam, m.x, m.z, m.width, m.depth, 0, m.height,
-      m.seed, o.palette[DISTRICTS[m.district].tone], depth, o, 'plain', 0,
-    );
+    const depth = c.z;
+    scene.push({
+      depth,
+      draw: () =>
+        drawBox(
+          ctx, cam, m.x, m.z, m.width, m.depth, 0, m.height,
+          m.seed, facadeFor(o.palette, m.seed, DISTRICT_BIAS[m.district] ?? 0), depth, o, 'plain', 0,
+        ),
+    });
   }
 }
 
 /** Face brightness. The sun is low in the southeast, so +z and +x faces are lit. */
 function faceTone(base: string, palette: Palette, lit: boolean, top: boolean): string {
-  const rgb = toRgb(base);
-  if (!rgb) return base;
-  const k = top ? 1.09 : lit ? 1.0 : 0.82;
-  const wash = palette.name === 'night' ? 0.55 : 1;
-  return `rgb(${clamp255(rgb[0] * k * wash)},${clamp255(rgb[1] * k * wash)},${clamp255(rgb[2] * k * wash)})`;
+  const night = palette.name === 'night';
+  if (top) return sunlit(base, night ? 0.4 : 1.1);
+  if (lit) return sunlit(base, night ? 0.2 : 0.45);
+  return shaded(base, night ? 0.5 : 1);
 }
 
 function clamp255(n: number): number {
@@ -809,9 +1585,12 @@ function drawBox(
       stroke(ctx, pts, {
         seed,
         colour: ink,
-        width: detail === 'full' ? 1.25 : 1,
-        wobble: detail === 'full' ? 1.3 : 0.7,
-        overshoot: detail === 'full' ? 2.2 : 0,
+        // Heavier and looser than an architectural line. A crayon has a blunt
+        // tip and a hand behind it, and a 1 px ruled outline is the fastest way
+        // to make a coloured drawing look like a render of one.
+        width: detail === 'full' ? 2.1 : detail === 'bands' ? 1.5 : 1.1,
+        wobble: detail === 'full' ? 2.2 : 1.2,
+        overshoot: detail === 'full' ? 3.4 : 1.2,
         passes: detail === 'full' ? 2 : 1,
         close: true,
       });
@@ -953,9 +1732,8 @@ function drawBuilding(
 ): void {
   const detail: 'full' | 'bands' | 'plain' =
     depth < NEAR ? 'full' : depth < MID ? 'bands' : 'plain';
-  const tone = DISTRICTS[b.district].tone;
-  const base = o.palette[tone];
   const seed = Math.round(b.seed * 100000);
+  const base = facadeFor(o.palette, seed, DISTRICT_BIAS[b.district] ?? 0);
 
   if (b.setbacks.length === 0) {
     drawBox(ctx, cam, b.x, b.z, b.width, b.depth, 0, b.height, seed, base, depth, o, detail, b.floors);
@@ -1018,7 +1796,7 @@ function drawWaterTower(
   const s = scaleAt(cam, depth);
   if (r * 2 * s < 1.5) return;
 
-  flat(ctx, barrel, hazed(palette.brick, palette, fade));
+  flat(ctx, barrel, hazed(palette.name === 'night' ? '#3a2e28' : '#9c6b4a', palette, fade));
   stroke(ctx, barrel, { seed: 5150, colour: ink, width: 0.9, wobble: 0.6, close: true });
 
   // The conical lid, and the legs beneath.
@@ -1056,8 +1834,8 @@ function drawLandmark(
   const { palette } = o;
   const detail: 'full' | 'bands' | 'plain' =
     depth < NEAR ? 'full' : depth < MID * 2 ? 'bands' : 'plain';
-  const base = palette[DISTRICTS[L.district].tone];
   const seed = L.id.length * 7919;
+  const base = facadeFor(palette, seed, DISTRICT_BIAS[L.district] ?? 0);
   const fade = hazeAt(depth);
   const ink = hazed(palette.ink, palette, fade * 0.9);
   const floors = (h: number) => Math.max(1, Math.round(h / STOREY));

@@ -380,6 +380,13 @@ export type Bridge = {
   span: number;
   /** Deck width. */
   width: number;
+  /**
+   * The drive runs over this bridge, so the route lays its own roadway on it.
+   *
+   * Without the flag both are drawn and the second deck floats a metre above
+   * the first, which reads as a mysterious extra road hanging over the bridge.
+   */
+  carriesRoute?: boolean;
 };
 
 /**
@@ -401,6 +408,7 @@ export const BRIDGES: Bridge[] = [
     tower: 84,
     span: 486,
     width: 26,
+    carriesRoute: true,
   },
   {
     name: 'Manhattan Bridge',
@@ -411,6 +419,7 @@ export const BRIDGES: Bridge[] = [
     tower: 102,
     span: 448,
     width: 36,
+    carriesRoute: true,
   },
   {
     name: 'Williamsburg Bridge',
@@ -466,6 +475,8 @@ export type LandmarkShape =
   | 'pencil'       // Billionaires' Row: absurdly thin
   | 'tapered'      // One WTC's rotating square
   | 'flatiron'     // a wedge
+  | 'spire'        // a church: a tower and a steeple
+  | 'temple'       // a classical portico, columns and a pediment
   | 'dome'
   | 'statue';
 
@@ -632,6 +643,31 @@ export const LANDMARKS: Landmark[] = [
     depth: 60,
     height: 241,
     shape: 'setback',
+    district: 'financial',
+  },
+  {
+    id: 'trinity',
+    name: 'Trinity Church',
+    x: -330,
+    z: downtownZ(1030),
+    width: 24,
+    depth: 52,
+    height: 40,
+    // 86 m of spire, and from 1846 to 1890 it was the tallest thing in New
+    // York. It is still the reason Wall Street has a church at the end of it.
+    tip: 86,
+    shape: 'spire',
+    district: 'financial',
+  },
+  {
+    id: 'nyse',
+    name: 'New York Stock Exchange',
+    x: -190,
+    z: downtownZ(1000),
+    width: 40,
+    depth: 55,
+    height: 34,
+    shape: 'temple',
     district: 'financial',
   },
   {
