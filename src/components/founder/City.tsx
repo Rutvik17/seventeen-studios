@@ -1,131 +1,140 @@
 'use client';
 
 /**
- * THE CITY — the whole page, and the only thing on it.
+ * THE DRIVE — the founder page, entire.
  *
  * ==================================================================
- * HOW IT WORKS
+ * SCROLL IS DISTANCE
  * ==================================================================
  *
- * One full-screen canvas, pinned. Scroll drives a camera along a route through
- * a three-dimensional New York; the renderer draws that city as a pen-and-wash
- * drawing every frame. Cards appear beside the buildings they are about, joined
- * to them by a line drawn to wherever that building actually lands on the page.
+ * One full-screen canvas, pinned. Scrolling moves the camera *along a road*
+ * through a three-dimensional New York — from Bowling Green up Wall Street, out
+ * over the Brooklyn Bridge, back across the Manhattan Bridge, up through the
+ * Bowery to Times Square and on past Central Park to Harlem.
+ *
+ * There are no cards and no callout lines. Everything the page has to say is on
+ * the overhead gantry signs, which is a better place for it: a sign is in the
+ * city rather than over it, lit by the same clock, hazed by the same air, and
+ * it arrives the way road signs arrive.
  *
  * ==================================================================
- * THE CAMERA IS SCROLL, THE CLOCK IS TIME
+ * THE CAMERA NEVER LEAVES THE ROAD
  * ==================================================================
  *
- * Two separate things move, and keeping them separate is what stops the scene
- * feeling either dead or seasick:
- *
- *   scroll  →  where the camera is
- *   time    →  what moves on its own — clouds, traffic, rain, the rocket
- *
- * So the city keeps living while you sit still, and stops nothing when you
- * scroll. Tying the animation to scroll would freeze the traffic whenever you
- * stopped reading, which is instantly wrong; tying the camera to time would take
- * the story away from you.
+ * Position comes from the route; **heading is derived from it**, never
+ * authored. The view looks along the road because the camera is on the road, so
+ * it cannot disagree with the direction of travel — which is the thing that
+ * makes scripted camera paths feel like a ride rather than a drive.
  *
  * ==================================================================
- * WHY IT REDRAWS EVERY FRAME
+ * TWO CLOCKS
  * ==================================================================
  *
- * There is no scene graph and nothing is cached between frames. The whole city
- * is regenerated from its rules and repainted, sixty times a second.
+ *   scroll  →  where you are on the road
+ *   time    →  what moves on its own: traffic, signals, clouds, rain
  *
- * That sounds wasteful and is not: the generation is a hash lookup per block,
- * the renderer draws about a thousand volumes, and everything is bounded by the
- * budgets in `render.ts` rather than by how big the city is. It also means
- * there is no state to get stale — scrub the scroll backwards and you get the
- * identical frame, because a frame is a pure function of (camera, clock).
+ * Keeping them separate is what stops the scene feeling either dead or
+ * seasick. The traffic keeps flowing while you sit and read a sign, and it does
+ * not lurch when you scroll.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
-import { makeCamera, mixCamera, project, type Camera } from '@/lib/city/camera';
+import { makeCamera, type Camera } from '@/lib/city/camera';
 import { renderCity } from '@/lib/city/render';
 import { paletteForHour, type Palette } from '@/lib/city/sketch';
-import { BEATS } from '@/content/city-story';
+import { at, buildCorridor, buildRoute, offsetFrom } from '@/lib/city/route';
+import { LANE, makeTraffic, stepTraffic } from '@/lib/city/street';
+import type { Sign } from '@/lib/city/signs';
+import { DRIVE, MESSAGES } from '@/content/city-drive';
 import { founder } from '@/content/founder';
 
-/** How many viewport-heights of scroll each beat gets. */
-const BEAT_SCROLL = 1.35;
+/** The road, built once. It is a pure function of the waypoints. */
+const ROUTE = buildRoute(DRIVE);
+
+/**
+ * The ground the road takes. Nothing is built on it.
+ *
+ * Half the roadway plus both pavements plus a metre of slack, so the facades
+ * line the street rather than standing in it.
+ */
+const CORRIDOR = buildCorridor(ROUTE, LANE * 2.35 + 4.2 + 1);
+
+/**
+ * The gantries, placed along whatever road there now is.
+ *
+ * Positions are fractions of the route rather than distances in metres, so
+ * changing the drive redistributes the signs instead of stranding them.
+ */
+const SIGNS: Sign[] = MESSAGES.map((message) => {
+  const point = at(ROUTE, message.at * ROUTE.length);
+  return {
+    ...message,
+    x: point.x,
+    z: point.z,
+    heading: point.heading,
+    halfWidth: LANE * 2.1,
+  };
+});
+
+/**
+ * How much scroll a kilometre of road costs.
+ *
+ * Tuned by what it feels like rather than by what it measures: too little and
+ * the city rushes past unread, too much and the page becomes a chore before the
+ * first bridge. Roughly six hundred metres to a screen of scroll is a brisk
+ * drive with time to read a sign as it comes up.
+ */
+const METRES_PER_SCREEN = 620;
+
+/** Where the camera sits: driver's eye height, in the right-hand lane. */
+const EYE = 1.55;
 
 export function City() {
   const root = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const card = useRef<HTMLElement>(null);
 
-  /* Mutable per-frame state, deliberately outside React: touching state here
-     would re-render the tree sixty times a second for no benefit. */
-  const progress = useRef(0);
-  const camera = useRef<Camera>(makeCamera());
-  const anchors = useRef<{ x: number; y: number }[]>([]);
+  /* Per-frame state, deliberately outside React. Touching state here would
+     re-render the tree sixty times a second for no benefit. */
+  const distance = useRef(0);
+  const traffic = useRef(makeTraffic());
   const frame = useRef(0);
 
   const [reduced, setReduced] = useState(false);
-  const [active, setActive] = useState(0);
   const [palette, setPalette] = useState<Palette>(() => paletteForHour(12));
-  const [lines, setLines] = useState<{ x: number; y: number } | null>(null);
-  const [hook, setHook] = useState<{ x: number; y: number } | null>(null);
+  const [place, setPlace] = useState('');
 
-  /* ---------------------------------------------------------------
-     The camera for a given scroll position.
-     --------------------------------------------------------------- */
-  const cameraAt = useCallback((t: number, width: number, height: number): Camera => {
-    const span = Math.max(1, BEATS.length - 1);
-    const at = Math.max(0, Math.min(span, t * span));
-    const i = Math.min(BEATS.length - 2, Math.floor(at));
-    const local = at - i;
-
-    const base = { width, height };
-    const a = makeCamera({ ...base, ...BEATS[i].camera });
-    const b = makeCamera({ ...base, ...BEATS[i + 1].camera });
-    // Eased per segment so each beat settles before the next pull, rather than
-    // the camera sliding at a constant rate through the whole route.
-    const e = local < 0.5 ? 2 * local * local : 1 - Math.pow(-2 * local + 2, 2) / 2;
-    return mixCamera(a, b, e);
-  }, []);
-
-  /*
-    Where the tether meets the card.
-
-    Measured from the card's own box rather than assumed, because the card's
-    height depends on how much this beat has to say. A fixed offset is right for
-    one beat and wrong for the next.
-  */
-  useEffect(() => {
-    const measure = () => {
-      const el = card.current;
-      const stageEl = stage.current;
-      if (!el || !stageEl) return;
-      const r = el.getBoundingClientRect();
-      const s = stageEl.getBoundingClientRect();
-      const current = BEATS[Math.min(active, BEATS.length - 1)];
-      setHook({
-        x: (current.side === 'left' ? r.right : r.left) - s.left,
-        y: r.top - s.top + 34,
-      });
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [active]);
-
-  /* ---------------------------------------------------------------
-     The clock. The viewer's own, so the drawing agrees with their window.
-     --------------------------------------------------------------- */
+  /* The viewer's own clock, so the drawing agrees with the window beside it. */
   useEffect(() => {
     const now = new Date();
     setPalette(paletteForHour(now.getHours() + now.getMinutes() / 60));
   }, []);
 
-  /* ---------------------------------------------------------------
-     Scroll.
-     --------------------------------------------------------------- */
+  const cameraFor = useCallback((d: number, width: number, height: number): Camera => {
+    const point = at(ROUTE, d);
+    // In a lane, not on the centreline — you drive on the right.
+    const lane = offsetFrom(point, LANE * 0.55);
+    return makeCamera({
+      width,
+      height,
+      x: lane.x,
+      z: lane.z,
+      y: point.y + EYE,
+      yaw: point.heading,
+      pitch: 0,
+      /*
+        A rising front rather than a tilt, so the towers stay plumb. A tenth of
+        the frame puts the horizon at sixty per cent of the height: enough road
+        to read as driving, enough sky for the buildings to go up into.
+      */
+      shiftY: height * 0.1,
+      fov: (54 * Math.PI) / 180,
+    });
+  }, []);
+
+  /* ---- scroll ---- */
   useIsomorphicLayoutEffect(() => {
     const el = root.current;
     const stageEl = stage.current;
@@ -142,12 +151,15 @@ export function City() {
         end: 'bottom bottom',
         pin: stageEl,
         pinSpacing: false,
-        scrub: true,
+        scrub: 0.5,
         onUpdate: (self) => {
-          progress.current = self.progress;
-          const span = Math.max(1, BEATS.length - 1);
-          const near = Math.round(self.progress * span);
-          setActive((prev) => (prev === near ? prev : near));
+          distance.current = self.progress * ROUTE.length;
+          // The nearest named place behind us, for the corner of the screen.
+          let name = '';
+          for (const mark of ROUTE.marks) {
+            if (mark.d <= distance.current + 40) name = mark.name;
+          }
+          setPlace((prev) => (prev === name ? prev : name));
         },
       });
     }, el);
@@ -156,9 +168,7 @@ export function City() {
     return () => ctx.revert();
   }, []);
 
-  /* ---------------------------------------------------------------
-     The frame loop.
-     --------------------------------------------------------------- */
+  /* ---- the frame loop ---- */
   useEffect(() => {
     if (reduced) return;
     const el = canvas.current;
@@ -169,11 +179,12 @@ export function City() {
     let width = 0;
     let height = 0;
     const start = performance.now();
+    let last = start;
 
     const resize = () => {
       const rect = el.getBoundingClientRect();
-      // Capped: a 4K display at devicePixelRatio 2 is 33 million pixels a
-      // frame, and the drawing is line work — it gains almost nothing past 2.
+      // Capped at 2: a 4K display at devicePixelRatio 3 is 33 million pixels a
+      // frame, and line work gains almost nothing past two.
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       width = Math.round(rect.width);
       height = Math.round(rect.height);
@@ -187,28 +198,27 @@ export function City() {
 
     const tick = (now: number) => {
       const time = (now - start) / 1000;
-      const cam = cameraAt(progress.current, width, height);
-      camera.current = cam;
+      // Clamped, so a backgrounded tab does not resume by teleporting every car
+      // three hundred metres down the road.
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
 
-      const span = Math.max(1, BEATS.length - 1);
-      const at = Math.max(0, Math.min(span, progress.current * span));
-      const i = Math.min(BEATS.length - 1, Math.round(at));
-      const beat = BEATS[i];
+      const d = distance.current;
+      const here = at(ROUTE, d);
+      stepTraffic(traffic.current, ROUTE, d, dt, here.oneWay);
 
-      renderCity(ctx2d, cam, {
+      renderCity(ctx2d, cameraFor(d, width, height), {
         palette,
         time,
-        radius: beat.render?.radius,
-        massRadius: beat.render?.massRadius,
-      });
-
-      // Where this beat's building actually is on the page, this frame.
-      const p = project(cam, beat.anchor);
-      setLines((prev) => {
-        if (!p) return prev === null ? prev : null;
-        const next = { x: Math.round(p.x), y: Math.round(p.y) };
-        if (prev && prev.x === next.x && prev.y === next.y) return prev;
-        return next;
+        route: ROUTE,
+        distance: d,
+        corridor: CORRIDOR,
+        traffic: traffic.current,
+        signs: SIGNS,
+        // Detail stays tight: at street level you can see three blocks, and
+        // spending the budget past that buys nothing you can look at.
+        radius: 900,
+        massRadius: 22000,
       });
 
       frame.current = requestAnimationFrame(tick);
@@ -219,7 +229,7 @@ export function City() {
       cancelAnimationFrame(frame.current);
       observer.disconnect();
     };
-  }, [reduced, palette, cameraAt]);
+  }, [reduced, palette, cameraFor]);
 
   /* --------------------------------------------------------------- */
 
@@ -229,20 +239,10 @@ export function City() {
         <h1>{founder.name}</h1>
         <p className="city__standfirst">{founder.standfirst}</p>
         <ol className="city__list">
-          {BEATS.map((beat) => (
-            <li key={beat.id}>
-              <span className="mono-label">{beat.kicker}</span>
-              <h2>{beat.title}</h2>
-              {beat.body.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-              {beat.points ? (
-                <ul>
-                  {beat.points.map((point) => (
-                    <li key={point}>{point}</li>
-                  ))}
-                </ul>
-              ) : null}
+          {MESSAGES.map((message) => (
+            <li key={message.id}>
+              <h2>{message.lines.join(' · ')}</h2>
+              {message.footer ? <p>{message.footer}</p> : null}
             </li>
           ))}
         </ol>
@@ -250,75 +250,22 @@ export function City() {
     );
   }
 
-  const beat = BEATS[Math.min(active, BEATS.length - 1)];
-
   return (
     <div
       className="city"
       ref={root}
-      style={{ height: `${BEATS.length * BEAT_SCROLL * 100}vh` }}
+      style={{ height: `${Math.round((ROUTE.length / METRES_PER_SCREEN) * 100)}vh` }}
     >
       <div className="city__stage" ref={stage}>
         <canvas
           className="city__canvas"
           ref={canvas}
           role="img"
-          aria-label="A hand-drawn New York, flown through as you scroll."
+          aria-label={`A hand-drawn New York, driven from Bowling Green to Harlem. ${founder.name}, ${founder.role}.`}
         />
-
-        {/* The tether. Drawn to where the building is, not to where the card
-            wishes it were. */}
-        {lines && hook ? (
-          <svg className="city__tether" aria-hidden="true">
-            {/* Two segments with a bend, the way a hand-drawn callout runs: out
-                from the card, then a diagonal across to the building. */}
-            <polyline
-              className="city__tether-line"
-              points={[
-                `${hook.x},${hook.y}`,
-                `${hook.x + (beat.side === 'left' ? 36 : -36)},${hook.y}`,
-                `${lines.x},${lines.y}`,
-              ].join(' ')}
-            />
-            <circle className="city__tether-dot" cx={lines.x} cy={lines.y} r={4.5} />
-            <circle className="city__tether-hub" cx={hook.x} cy={hook.y} r={2.5} />
-          </svg>
-        ) : null}
-
-        <article
-          key={beat.id}
-          ref={card}
-          className={`city__card city__card--${beat.side}`}
-          aria-live="polite"
-        >
-          <span className="mono-label city__kicker">{beat.kicker}</span>
-          <h2 className="city__title">{beat.title}</h2>
-          {beat.body.map((line) => (
-            <p className="city__body" key={line}>
-              {line}
-            </p>
-          ))}
-          {beat.points ? (
-            <ul className="city__points">
-              {beat.points.map((point) => (
-                <li key={point}>{point}</li>
-              ))}
-            </ul>
-          ) : null}
-          {beat.tags ? (
-            <p className="city__tags">
-              {beat.tags.map((tag) => (
-                <em key={tag}>{tag}</em>
-              ))}
-            </p>
-          ) : null}
-        </article>
-
-        <div className="city__progress" aria-hidden="true">
-          {BEATS.map((b, i) => (
-            <span key={b.id} className={i === active ? 'is-active' : undefined} />
-          ))}
-        </div>
+        <p className="city__place" aria-live="polite">
+          {place}
+        </p>
       </div>
     </div>
   );

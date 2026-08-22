@@ -6914,19 +6914,18 @@ html.no-js .exploded .exploded__svg {
    THE CITY
    ==================================================================
 
-   The founder page, entire. A pinned full-screen canvas with cards over it,
-   and nothing else on the page.
+   The founder page, entire: a pinned full-screen canvas and nothing else.
 
-   The canvas paints its own sky, ground and weather, so this file styles only
-   what sits on top of it: the cards, the tether lines, and the progress marks.
-   Every colour here has to survive being drawn over a drawing that changes from
-   a pale morning to a dark night, which is why the cards are near-opaque rather
-   than tinted glass.
+   The canvas paints its own sky, ground, weather and signage, so this file
+   styles almost nothing. That is the point — the earlier version had a card
+   floating over the drawing with a dashed line pointing at a building, and it
+   read as an interface bolted to a picture. Everything the page says is now on
+   the gantry signs, inside the world, lit by the same clock.
 */
 
 .city {
   position: relative;
-  /* Height is set inline from the number of beats — one place, not two. */
+  /* Height is set inline from the length of the road — one source, not two. */
 }
 
 .city__stage {
@@ -6944,165 +6943,28 @@ html.no-js .exploded .exploded__svg {
   height: 100%;
 }
 
-/* ---- the tether ---------------------------------------------------
-   Drawn to where the building actually is on the page this frame, so it
-   swings and stretches as the city moves under the card. Non-scaling
-   stroke and a dash, so it reads as a callout rather than as structure. */
-
-.city__tether {
+/* Where you are, in the corner. The only chrome on the page, and it says the
+   one thing the drawing cannot: the name of the street you are on. */
+.city__place {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.city__tether-line {
-  fill: none;
-  stroke: var(--fg);
-  stroke-width: 1.2;
-  stroke-dasharray: 5 4;
-  opacity: 0.62;
-}
-
-.city__tether-dot {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.6;
-}
-
-.city__tether-hub {
-  fill: var(--fg);
-}
-
-/* ---- the card ----------------------------------------------------- */
-
-.city__card {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: min(420px, 34vw);
-  padding: 26px 28px 28px;
-  background: color-mix(in srgb, var(--bg-raise) 94%, transparent);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(7px);
-  animation: city-card-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.city__card--left {
   left: var(--gutter);
-}
-
-.city__card--right {
-  right: var(--gutter);
-}
-
-@keyframes city-card-in {
-  from {
-    opacity: 0;
-    transform: translateY(calc(-50% + 18px));
-  }
-  to {
-    opacity: 1;
-    transform: translateY(-50%);
-  }
-}
-
-.city__kicker {
-  color: var(--accent);
-}
-
-.city__title {
-  font-size: clamp(22px, 2.4vw, 32px);
-  line-height: 1.12;
-  margin: 10px 0 12px;
-}
-
-.city__body {
-  font-size: 15px;
-  line-height: 1.58;
-  color: var(--fg-dim);
-  margin-bottom: 10px;
-}
-
-.city__body:first-of-type {
-  color: var(--fg);
-  font-weight: 500;
-}
-
-.city__points {
-  list-style: none;
-  display: grid;
-  gap: 7px;
-  margin: 14px 0;
-}
-
-.city__points li {
-  position: relative;
-  padding-left: 18px;
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--fg-dim);
-}
-
-.city__points li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.62em;
-  width: 9px;
-  height: 1px;
-  background: var(--accent);
-}
-
-.city__tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 14px;
-}
-
-.city__tags em {
-  font-style: normal;
+  bottom: 26px;
+  margin: 0;
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  padding: 3px 8px;
-  border: 1px solid var(--line);
-  color: var(--fg-dim);
-}
-
-/* ---- progress ------------------------------------------------------ */
-
-.city__progress {
-  position: absolute;
-  left: 50%;
-  bottom: 22px;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 7px;
-}
-
-.city__progress span {
-  width: 22px;
-  height: 2px;
-  background: var(--line-strong);
-  transition: background 0.3s ease;
-}
-
-.city__progress span.is-active {
-  background: var(--accent);
+  color: #fff;
+  mix-blend-mode: difference;
+  pointer-events: none;
 }
 
 /* ---- reduced motion ------------------------------------------------
-   No canvas, no pinning, no flight. The route becomes what it is
-   underneath: an ordered list of places and what happened at each. */
+   No canvas, no pinning, no drive. What the signs would have said,
+   as an ordinary list. */
 
 .city--static {
-  max-width: 74ch;
+  max-width: 70ch;
   margin: 0 auto;
   padding: clamp(48px, 9vh, 110px) var(--gutter);
 }
@@ -7122,70 +6984,21 @@ html.no-js .exploded .exploded__svg {
 .city__list {
   list-style: none;
   display: grid;
-  gap: 44px;
+  gap: 30px;
 }
 
 .city__list h2 {
-  font-size: clamp(20px, 2.4vw, 27px);
-  margin: 6px 0 10px;
+  font-size: clamp(18px, 2.2vw, 24px);
+  margin-bottom: 6px;
 }
 
 .city__list p {
   color: var(--fg-dim);
-  margin-bottom: 8px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  letter-spacing: 0.06em;
 }
 
-.city__list ul {
-  margin-top: 10px;
-  padding-left: 18px;
-  color: var(--fg-dim);
-}
-
-/* ---- narrow screens -------------------------------------------------
-   The card cannot have a third of the width when the width is 390px, so
-   it takes the bottom of the screen and the drawing keeps the rest. The
-   tether still points at the right building — it just points down. */
-
-@media (max-width: 860px) {
-  .city__card {
-    top: auto;
-    bottom: 46px;
-    left: 12px;
-    right: 12px;
-    width: auto;
-    transform: none;
-    max-height: 48svh;
-    overflow-y: auto;
-    padding: 16px 18px 18px;
-    animation-name: city-card-in-mobile;
-  }
-  .city__card--left,
-  .city__card--right {
-    left: 12px;
-    right: 12px;
-  }
-  @keyframes city-card-in-mobile {
-    from {
-      opacity: 0;
-      transform: translateY(16px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-  .city__title {
-    font-size: 20px;
-  }
-  .city__body,
-  .city__points li {
-    font-size: 13px;
-  }
-  /* No room for a callout to reach anything without crossing the card. */
-  .city__tether {
-    display: none;
-  }
-}
 /* ==================================================================
    MOBILE — reported defects
    ================================================================== */
