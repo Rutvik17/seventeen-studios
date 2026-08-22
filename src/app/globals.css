@@ -1867,6 +1867,24 @@ body:has(.resume-modal__sheet:hover) .cursor-ring.is-active:not(.is-labelled) {
   margin: 0 auto;
   padding: clamp(110px, 16vh, 190px) var(--gutter) clamp(60px, 8vw, 120px);
 }
+
+/*
+  A page whose body is a full-bleed row list. The container holds the header
+  only, so it must not also reserve the bottom space the content would have
+  used — the list supplies its own.
+*/
+.page--head-only {
+  padding-bottom: 0;
+}
+
+/*
+  No rule under a header that is immediately followed by a list of ruled rows.
+  The two lines end up a few pixels apart and read as a mistake.
+*/
+.page-head--flush {
+  border-bottom: 0;
+  margin-bottom: clamp(28px, 4vw, 54px);
+}
 .page-head {
   display: grid;
   gap: 22px;
@@ -5333,7 +5351,13 @@ html.no-js .exploded .exploded__svg {
   display: flex;
   align-items: baseline;
   gap: clamp(10px, 1.6vw, 24px);
-  padding: 0 var(--gutter);
+  /*
+    The bottom padding is descender room, and it has to live HERE rather than on
+    the title: the open height is measured from this element's `scrollHeight`,
+    so space added anywhere else is not seen by the measurement and the row
+    still closes over the tails of g, p and y.
+  */
+  padding: 0 var(--gutter) 0.1em;
   text-decoration: none;
   color: inherit;
 }
@@ -5600,10 +5624,26 @@ html.no-js .exploded .exploded__svg {
   finish, and a nav column beside a 62-character measure mostly steals width
   from the thing being read.
 */
+/*
+  Header and body align because they now have the SAME box model, not merely the
+  same max-width. That distinction was the bug.
+
+  The header was `padding: gutter` on the outer element with the measure applied
+  to an inner one; the body put the measure on the padded element itself. So the
+  header's measure excluded its gutter and the body's included it, and the two
+  text columns started exactly one gutter apart — 76px at desktop. Both looked
+  "centred" and neither lined up with the other.
+
+  Now both are: full-width element, gutter padding, children centred at the
+  measure. Any new block inherits the alignment for free.
+*/
 .entry__body {
-  max-width: var(--entry-measure);
-  margin: 0 auto;
   padding: clamp(44px, 8vh, 90px) var(--gutter) clamp(60px, 10vh, 120px);
+}
+
+.entry__body > * {
+  max-width: var(--entry-measure);
+  margin-inline: auto;
 }
 
 .entry__body > h2 {
@@ -5622,9 +5662,13 @@ html.no-js .exploded .exploded__svg {
 }
 
 .entry__foot {
-  max-width: var(--entry-measure);
-  margin: 0 auto;
   padding: 0 var(--gutter) clamp(70px, 12vh, 140px);
+}
+
+.entry__foot > * {
+  max-width: var(--entry-measure);
+  margin-inline: auto;
+  display: block;
 }
 
 /* ---- a defined word ---- */
@@ -5739,11 +5783,17 @@ html.no-js .exploded .exploded__svg {
   Bleeds past the reading measure. An instrument squeezed into 62 characters is
   unusable, and the measure exists for prose, not for a control surface.
 */
+/*
+  Wider than the reading measure, and centred on the same axis.
+
+  It used to escape with `margin-left: 50%` and a translate, which worked only
+  while its parent was the measure-width column. Now that the parent is full
+  width the override is a plain max-width — fewer moving parts, and it cannot
+  drift out of alignment with the prose above it.
+*/
 .prose__embed {
-  margin: calc(var(--grid-unit) * 2) 0;
-  width: min(96vw, 1180px);
-  margin-left: 50%;
-  transform: translateX(-50%);
+  margin: calc(var(--grid-unit) * 2) auto;
+  max-width: min(96vw, 1180px);
 }
 
 .prose__embed-caption {

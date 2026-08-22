@@ -20,8 +20,9 @@ export const metadata: Metadata = {
  */
 export default function ProductsIndexPage() {
   return (
-    <div className="page">
-      <header className="page-head">
+    <>
+      <div className="page page--head-only">
+        <header className="page-head page-head--flush">
         <span className="mono-label">Products</span>
         <SplitText as="h1" className="page-head__title" stagger={0.03} depth>
           Shipped
@@ -32,7 +33,8 @@ export default function ProductsIndexPage() {
             <TransitionLink href="/lab/">lab</TransitionLink>.
           </p>
         </Reveal>
-      </header>
+        </header>
+      </div>
 
       <ProductRows
         rows={products.map((product) => {
@@ -52,6 +54,6 @@ export default function ProductsIndexPage() {
           };
         })}
       />
-    </div>
+    </>
   );
 }

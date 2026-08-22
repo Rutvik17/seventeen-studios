@@ -71,12 +71,10 @@ const fragmentShader = /* glsl */ `
 
   varying vec2 vUv;
 
-  uniform sampler2D uBitmap;   // r channel: 0 paper, 1 black, 2 accent (as 0/0.5/1)
+  uniform sampler2D uBitmap;   // r channel holds the ink index, scaled to 0..1
   uniform sampler2D uGhost;    // the previous image, for the residue
   uniform vec2  uResolution;   // panel size in device pixels
-  uniform vec3  uPaper;
-  uniform vec3  uInk;
-  uniform vec3  uAccent;
+  uniform vec3  uPalette[7];   // the seven states an ACeP capsule can hold
   uniform float uHasGhost;
 
   /* --- value noise, for the capsule texture ---------------------------- */
@@ -125,21 +123,26 @@ const fragmentShader = /* glsl */ `
 
     float state = texture2D(uBitmap, sampleUv).r;
 
-    // Three discrete states. Anything between them is a sampling artefact and
-    // must be resolved to one of the three, never blended — the panel has no
-    // intermediate state to blend toward.
-    vec3 colour = uPaper;
-    if (state > 0.75) colour = uAccent;
-    else if (state > 0.25) colour = uInk;
+    /*
+      Seven discrete states, resolved by rounding rather than blended. The panel
+      has no intermediate state to blend toward — a capsule is driven to one
+      colour or another — so any value between two indices is a sampling
+      artefact and has to snap.
+    */
+    int index = int(floor(state * 6.0 + 0.5));
+    vec3 colour = uPalette[0];
+    for (int i = 0; i < 7; i++) {
+      if (i == index) colour = uPalette[i];
+    }
 
     /*
       Ghosting. A faint residue of the previous image, and only where the panel
       is now PAPER — pigment that failed to return is visible against white and
       invisible under fresh ink.
     */
-    if (uHasGhost > 0.5 && state < 0.25) {
+    if (uHasGhost > 0.5 && index == 0) {
       float previous = texture2D(uGhost, vUv).r;
-      if (previous > 0.25) colour = mix(colour, uInk, 0.055);
+      if (previous > 0.08) colour = mix(colour, uPalette[1], 0.055);
     }
 
     // The capsule texture, applied as a small multiplicative variation. It has
@@ -160,18 +163,29 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
-export type EinkPalette = {
-  paper: [number, number, number];
-  ink: [number, number, number];
-  accent: [number, number, number];
-};
+export type EinkPalette = [number, number, number][];
 
-/** Warm off-white, near-black, and a red the pigment can actually manage. */
-export const DEFAULT_PALETTE: EinkPalette = {
-  paper: [0.918, 0.906, 0.871],
-  ink: [0.102, 0.102, 0.11],
-  accent: [0.106, 0.31, 0.878],
-};
+/**
+ * The seven colours an ACeP panel can actually produce.
+ *
+ * Deliberately desaturated. These are pigments, not backlit phosphors — they
+ * reflect ambient light and can only ever return a fraction of it, so the red
+ * is a brick rather than a signal red and the green is closer to sage than to
+ * anything a screen would show. Using vivid values would draw a display nobody
+ * has ever held.
+ *
+ * Order matters: it is the controller's own index order, and the bitmap stores
+ * these indices directly.
+ */
+export const ACEP_PALETTE: EinkPalette = [
+  [0.918, 0.906, 0.871], // 0 paper — warm off-white, the capsule layer is cloudy
+  [0.102, 0.102, 0.11],  // 1 black — reflects a few percent, never a true black
+  [0.690, 0.227, 0.180], // 2 red
+  [0.247, 0.478, 0.290], // 3 green
+  [0.169, 0.290, 0.541], // 4 blue
+  [0.788, 0.635, 0.153], // 5 yellow
+  [0.788, 0.416, 0.118], // 6 orange
+];
 
 /**
  * Render a bitmap as an e-ink panel and return it as a PNG data URL.
@@ -184,8 +198,8 @@ export function renderEink(
   bitmap: Bitmap,
   options: { scale?: number; ghost?: Bitmap | null; palette?: EinkPalette } = {},
 ): string | null {
-  const scale = options.scale ?? 3;
-  const palette = options.palette ?? DEFAULT_PALETTE;
+  const scale = options.scale ?? 2;
+  const palette = options.palette ?? ACEP_PALETTE;
 
   const canvas = document.createElement('canvas');
   canvas.width = bitmap.width * scale;
@@ -205,8 +219,10 @@ export function renderEink(
   const toTexture = (source: Bitmap) => {
     const rgba = new Uint8Array(source.width * source.height * 4);
     for (let i = 0; i < source.data.length; i++) {
-      // 0 / 1 / 2 mapped onto 0 / 128 / 255 so the shader can threshold it.
-      const v = source.data[i] === 2 ? 255 : source.data[i] === 1 ? 128 : 0;
+      // Ink index spread across the byte range so the shader can recover it by
+      // rounding. Six steps, not seven, because index 0 maps to 0 and index 6
+      // to 255.
+      const v = Math.round((source.data[i] / 6) * 255);
       rgba[i * 4] = v;
       rgba[i * 4 + 3] = 255;
     }
@@ -230,9 +246,7 @@ export function renderEink(
       uBitmap: { value: bitmapTexture },
       uGhost: { value: ghostTexture },
       uResolution: { value: [bitmap.width, bitmap.height] },
-      uPaper: { value: new Vector3(...palette.paper) },
-      uInk: { value: new Vector3(...palette.ink) },
-      uAccent: { value: new Vector3(...palette.accent) },
+      uPalette: { value: palette.map((c) => new Vector3(...c)) },
       uHasGhost: { value: options.ghost ? 1 : 0 },
     },
   });

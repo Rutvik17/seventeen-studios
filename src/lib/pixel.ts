@@ -88,6 +88,19 @@ const FACES: Record<Expression, { eyes: keyof typeof EYES; mouth: keyof typeof M
 export type PixelCell = { x: number; y: number; ink: 'black' | 'accent' };
 
 /**
+ * Which of the panel's colours a mood should be drawn in.
+ *
+ * Red for a fall and green for a rise, because that is the convention every
+ * reader of a market screen already has — and a convention the audience already
+ * holds is worth more than any palette chosen for its own sake.
+ */
+export function inkFor(sigmas: number): 'green' | 'red' | 'black' {
+  if (sigmas > 0.25) return 'green';
+  if (sigmas < -0.25) return 'red';
+  return 'black';
+}
+
+/**
  * The sprite for an expression, as cells.
  *
  * Returns only the cells that are inked. A 16 × 16 face is 256 cells of which
@@ -137,21 +150,53 @@ export function expressionFor(value: number, awake = true): Expression {
   return 'alarmed';
 }
 
-/** Display geometry, in device pixels — a real 2.9" three-colour panel. */
+/**
+ * Display geometry — a real 4.01" seven-colour ACeP module.
+ *
+ * ---
+ *
+ * WHY THIS PART AND NOT THE 2.9" IT REPLACED
+ *
+ * A market readout wants red for down and green for up, and a three-colour
+ * panel physically cannot do that: it holds black pigment, white pigment and
+ * ONE accent. Red or yellow, never both, and never green. Colouring a fall red
+ * and a rise green on such a panel would be drawing a device that cannot exist.
+ *
+ * ACeP — Advanced Color ePaper — stacks pigments of several colours in each
+ * capsule and drives them out selectively, which gives seven. It is a real,
+ * purchasable part and it is the honest way to get the readout that was asked
+ * for.
+ *
+ * ---
+ *
+ * WHAT IT COSTS, STATED PLAINLY
+ *
+ * It is very slow: a full refresh is around thirty seconds against fifteen for
+ * the three-colour panel, because every pigment has to be driven to its own
+ * position in turn. There is no partial refresh at all. And the colours are
+ * muted — the pigments are not dyes and cannot be saturated — so the palette
+ * below is deliberately desaturated rather than screen-bright.
+ *
+ * That suits this device exactly. It changes a few times an hour and is read
+ * from across a room.
+ */
 export const PANEL = {
-  width: 296,
-  height: 128,
+  width: 640,
+  height: 400,
   /** Active area, mm. */
-  mmWidth: 66.9,
-  mmHeight: 29.05,
+  mmWidth: 81.6,
+  mmHeight: 51.0,
+  /** The module including its bezel, mm. */
+  moduleWidth: 91.0,
+  moduleHeight: 60.4,
   /**
    * Full-refresh time in seconds.
    *
-   * Not a guess — three-colour panels are genuinely this slow, because the red
-   * pigment needs a long, repeated drive waveform to migrate. It is the reason
-   * these displays are used for things that change hourly and never for
-   * anything interactive, and the page says so rather than animating a refresh
-   * that would be dishonest.
+   * Not a guess. Every pigment has to be driven to position in sequence, and
+   * the panel flashes through its whole palette while it works. It is the reason
+   * these are used for things that change hourly and never for anything
+   * interactive — and the page says so rather than animating a refresh that
+   * would be dishonest.
    */
-  refreshSeconds: 15,
+  refreshSeconds: 30,
 } as const;
