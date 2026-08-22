@@ -717,11 +717,16 @@ function Working({ act }: { act: number }) {
               <br />
             </>
           ) : null}
+          The face is a trained model, not the move: a logistic regression
+          fitted on two years of returns, currently reading{' '}
+          {Math.round(NVDA_PERCENTILE * 100)} out of 100 on its own scale.
+          <br />
           <span className="board-story__note">
-            Fetched when this page was built, not when you opened it — Yahoo
-            sends no CORS headers, so a browser is not allowed to make that
-            call. The device would poll it directly over Wi-Fi, which is why it
-            is what the panel shows.
+            Prices are fetched when this page is built, not when you open it —
+            Yahoo sends no CORS headers, so a browser is not allowed to make
+            that call. The device would poll it directly over Wi-Fi, which is
+            why it is what the panel shows. The model does not beat guessing
+            &ldquo;up&rdquo;, and the lesson says so.
           </span>
         </dd>
       </dl>

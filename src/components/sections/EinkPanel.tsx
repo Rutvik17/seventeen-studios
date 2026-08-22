@@ -102,8 +102,24 @@ function compose(props: EinkPanelProps): Bitmap {
   bmp.fitText(textX, 130, move, moodInk, 10, room);
 
   bmp.fitText(textX, 240, `$${price.toFixed(2)}`, INK.black, 5, room);
-  const conf = `MODEL ${Math.round(props.percentile * 100)} PCT`;
-  bmp.fitText(textX, 292, conf, INK.black, 4, room);
+
+  /*
+    The fourth line used to read "MODEL 44 PCT", which is unreadable — it meant
+    the 44th percentile of the model's own output range, and nothing on the
+    panel said so. A four-line readout has no room to explain a term, so a line
+    that needs explaining does not belong on it.
+
+    It shows the session the close belongs to instead: a fact, instantly
+    understood, and the one thing the panel was missing. The model is still
+    there — it is the FACE, which needs no label at all.
+  */
+  const asOf = props.asOf
+    ? new Date(props.asOf + 'T00:00:00Z')
+        .toUTCString()
+        .slice(5, 11)
+        .toUpperCase()
+    : '';
+  bmp.fitText(textX, 292, `CLOSE ${asOf}`, INK.black, 4, room);
 
   return bmp;
 }
