@@ -3,9 +3,8 @@
 /**
  * Full-screen index.
  *
- * Not just a nav: it exposes the whole site — every concept brief and every
- * essay — so a visitor two clicks deep can reach anything without going back
- * to the home page. Opening locks scroll; Escape and route changes close it.
+ * Every route in one place, so a visitor two clicks deep can reach anything
+ * without going back. Opening locks scroll; Escape and route changes close it.
  */
 
 import { useEffect, useRef } from 'react';
@@ -15,8 +14,6 @@ import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { lockScroll, unlockScroll } from '@/lib/lenis';
 import { useUi } from '@/lib/store';
 import { nav, site } from '@/content/studio';
-import { concepts } from '@/content/work';
-import { essays } from '@/content/thinking';
 import { TransitionLink } from './Transition';
 import { ContactLink } from '@/components/ContactLink';
 
@@ -150,38 +147,6 @@ export function MenuOverlay() {
           </ul>
         </div>
 
-        <div className="menu__columns">
-          <div className="menu__list">
-            <span className="mono-label menu__caption">Concept briefs</span>
-            <ul>
-              {concepts.map((concept) => (
-                <li className="menu__list-item" key={concept.slug}>
-                  <TransitionLink href={`/work/${concept.slug}/`}>
-                    <span className="mono-label">{concept.index}</span>
-                    <span>{concept.name}</span>
-                    <span className="menu__list-meta">{concept.sector}</span>
-                  </TransitionLink>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="menu__list">
-            <span className="mono-label menu__caption">Thinking</span>
-            <ul>
-              {essays.map((essay) => (
-                <li className="menu__list-item" key={essay.slug}>
-                  <TransitionLink href={`/thinking/${essay.slug}/`}>
-                    <span className="mono-label">{essay.index}</span>
-                    <span>{essay.title}</span>
-                    <span className="menu__list-meta">{essay.topic}</span>
-                  </TransitionLink>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
         <div className="menu__foot">
           <ContactLink className="menu__email" />
           <div className="menu__social">
@@ -203,7 +168,7 @@ export function MenuOverlay() {
               ),
             )}
           </div>
-          <span className="mono-label">{site.availability}</span>
+          <span className="mono-label">{site.location}</span>
         </div>
       </div>
     </div>

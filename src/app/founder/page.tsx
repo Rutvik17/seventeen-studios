@@ -107,9 +107,7 @@ export default function FounderPage() {
           title={
             <p className="section-header__lead">
               {spellCapitalised(yearsOfExperience())} years of production
-              engineering, delivered inside the organisations below. The
-              studio&rsquo;s own engagements are published separately as concept
-              briefs.
+              engineering, delivered inside the organisations below.
             </p>
           }
         />

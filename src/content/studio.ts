@@ -1,363 +1,122 @@
-import type { Block, Capability, ProcessStep } from './types';
+/**
+ * Site copy.
+ *
+ * ---
+ *
+ * WHAT THIS SITE IS, AND WHAT IT STOPPED BEING
+ *
+ * Seventeen Studios is Rutvik's portfolio — an engineer's digital footprint,
+ * built to be read by hiring managers and staff engineers at large companies.
+ * It is NOT an agency site, and every trace of that framing has been removed:
+ * no engagements, no availability, no slot counts, no process diagram, no
+ * principles, no "we".
+ *
+ * That framing was actively harmful for the actual goal. A senior engineering
+ * candidate who appears to be running a consultancy on the side reads as
+ * divided, and a reviewer skimming for evidence of ability has to wade through
+ * sales copy to find any. The work is the evidence; the words exist only to
+ * label it.
+ *
+ * ---
+ *
+ * THE RULE THAT REPLACED THE OLD ONE
+ *
+ * **A sentence earns its place by saying something the demonstration cannot.**
+ * Everything else is cut. If a paragraph explains what a project does, the
+ * project is not doing enough on screen — fix the project, delete the
+ * paragraph. Nobody reads a portfolio; they scan it and then they play with
+ * whatever moves.
+ */
+
 import { foundedYear } from '@/lib/time';
 
-/** Global site facts. Single source of truth for metadata and the footer. */
 export const site = {
   name: 'Seventeen Studios',
   wordmark: 'SEVENTEEN',
-  tagline: 'An engineering studio for work that has to be right.',
+  wordmarkSecond: 'STUDIOS',
+  tagline: 'The engineering notebook of Rutvik Patel.',
   description:
-    'Seventeen Studios is an independent engineering studio building software, interfaces and AI systems for teams whose ambition has outgrown their tooling.',
+    'Seventeen Studios is Rutvik Patel’s engineering portfolio — interactive instruments, custom hardware, and software built to be taken apart.',
   founded: String(foundedYear()),
   location: 'Toronto, Canada',
   timezone: 'America/Toronto',
   timezoneLabel: 'ET',
   /*
-    There is deliberately no `email` field on this object.
-    It held `hello@seventeenstudios.co`, an address that never existed — every
-    enquiry the site generated bounced silently. Assembling the real one here
-    instead was the next attempt and it was also wrong: this module is evaluated
-    during the static export, so anything rendered from it is baked into the
-    HTML as a literal. Contact goes through <ContactLink>, which attaches the
-    address on the client. See `lib/contact.ts`.
+    There is deliberately no `email` field. It is assembled on the client by
+    `lib/contact.ts` so the address never lands in the static export — see the
+    note there.
   */
-
-  /**
-   * Evergreen on purpose. A quarter and a slot count ("Taking two engagements
-   * for Q4 2026") is a promise with an expiry date on it: it goes stale the
-   * moment the slots fill or the quarter turns, and a prospective client
-   * reading a stale one learns the site is not maintained. The concurrency
-   * limit is still stated — on the home page, on /start and in the writing —
-   * where it reads as the studio's shape rather than as live inventory.
-   */
-  availability: 'Accepting new engagements',
   social: [
     { label: 'GitHub', href: 'https://github.com/rutvik17' },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/' },
-    /* `contact` marks the row that must render through <ContactLink>: its
-       href is assembled on the client so the address stays out of the export. */
+    /* `contact` marks the row that must render through <ContactLink>. */
     { label: 'Email', href: '/start/', contact: true },
   ],
 } as const;
 
 export const nav = [
-  { label: 'Studio', href: '/studio/' },
-  { label: 'Founder', href: '/founder/' },
-  { label: 'Products', href: '/products/' },
-  { label: 'Work', href: '/work/' },
-  { label: 'Thinking', href: '/thinking/' },
+  { label: 'Lab', href: '/lab/' },
+  { label: 'Grasp', href: '/products/grasp/' },
+  { label: 'Rutvik', href: '/founder/' },
   { label: 'Contact', href: '/start/' },
 ] as const;
 
 /**
- * The hero, which is the studio's whole pitch in four fields.
+ * The landing.
  *
- * It opens on the PROBLEM rather than on the studio. Every agency site in the
- * world opens by describing itself, so a visitor has read that paragraph a
- * hundred times and skims it by reflex. Naming the failure they are living
- * through buys the next ten seconds, and the next ten seconds are all any of
- * this is competing for.
+ * Six words of copy on the whole first screen. The board assembling behind them
+ * is the argument; a paragraph next to it would only be an apology for the
+ * board not being clear enough.
  */
 export const hero = {
-  eyebrow: 'Independent engineering studio · Toronto',
-  title: 'Most software fails long before it ships.',
-  lead: 'It fails in the gap between what a team can describe and what a team can build. Agencies fill that gap with headcount. Consultancies fill it with process. We fill it with senior engineers who write the code, own the architecture, and stay accountable to the outcome.',
-  primaryAction: 'Start a brief',
-  secondaryAction: 'See what we build for ourselves',
+  wordmarkTop: 'SEVENTEEN',
+  wordmarkBottom: 'STUDIOS',
+  eyebrow: 'Rutvik Patel — software engineer, Toronto',
+  line: 'Things I build, with the working left in.',
 } as const;
 
 /**
- * The workshop section — what the studio IS, told as a place.
+ * The board story's five acts.
  *
- * Deliberately concrete. "Boutique", "passionate" and "partner" are the three
- * words every competitor uses and none of them survive contact with a
- * procurement conversation; a headcount, a project count and a named person do.
+ * The captions are the only text on the landing and each is under nine words,
+ * because they are read at a glance while something is moving.
  */
-export const craft = {
-  label: 'The workshop',
-  lead: 'A small workshop, and everything that follows from being one.',
-  body: [
-    'Seventeen Studios is deliberately small. One engagement at a time, taken by the people who will do the work — no pyramid, no account layer, no handoff to a delivery team you have never spoken to.',
-    'That constraint is the product. A studio this size cannot survive a project it does not understand, so it declines the ones it does not, and it says so in week one rather than in month four. What you lose is the ability to throw bodies at a slipping date. What you gain is that the date stops slipping.',
-  ],
-  marks: [
-    { value: 'One', label: 'Engagement at a time' },
-    { value: 'Senior', label: 'Only, on the keyboard' },
-    { value: 'Week 1', label: 'Something real, running' },
-    { value: 'Open', label: 'Reasoning published first' },
-  ],
-} as const;
-
-/**
- * The proof section's framing.
- *
- * The honest problem this site has: a new studio has no client logos, and every
- * device for hiding that — stock photography, invented testimonials, "trusted
- * by" rows of generic marks — is a lie a competent buyer detects instantly.
- *
- * So it does the opposite and says the quiet part first. What sits below this
- * heading is not a case study, it is a working instrument: real quantitative
- * methods, computed live in the visitor’s browser, with the inputs exposed.
- * A prospect cannot verify a testimonial. They can verify a Monte Carlo.
- */
-export const proof = {
-  label: 'Instruments',
-  lead: 'No client logos. Working instruments instead.',
-  body: 'Every figure below is computed in your browser as you read it — no recorded video, no screenshot, no number typed into a slide. Move an input and watch the distribution move. This is the level of rigour the studio brings to a client’s numbers, demonstrated on its own.',
-} as const;
-
-/** Marquee strip items. */
-export const marqueeItems = [
-  'Product Engineering',
-  'Creative Engineering',
-  'AI Systems',
-  'Platform Modernisation',
-  'Design Systems',
-  'Realtime Data',
-  'Technical Direction',
-  'Interface Craft',
-] as const;
-
-/** The manifesto statement — split into an accented lead and body. */
-export const manifesto = {
-  label: 'Who we are',
-  lead: 'We are a small studio that takes on the engineering other people call *impossible, expensive, or both* — and then makes it boring, on purpose.',
-  body: [
-    'Seventeen Studios started from a simple observation: most software fails long before it ships. It fails in the gap between what a team can describe and what a team can build. Agencies fill that gap with headcount. Consultancies fill it with process. We fill it with senior engineers who write the code, own the architecture, and stay accountable to the outcome.',
-    'So this site shows the work rather than describing it: concept briefs designed end to end, essays on the decisions behind them, and the standard we hold — published in full, before anyone has paid us to hold it.',
-  ],
-} as const;
-
-/** Numbered principles used on the studio page. */
-export const principles: { index: string; title: string; body: string }[] = [
+export const boardActs = [
   {
     index: '01',
-    title: 'Senior hands on the keyboard',
-    body: 'The people you meet in the first call are the people who write the code. No pyramid, no handoff to a delivery team you have never spoken to. If we cannot staff it with people we would hire twice, we decline it.',
+    title: 'Substrate',
+    caption: 'Two layers of copper on 1.6 mm FR-4.',
   },
   {
     index: '02',
-    title: 'Ship in weeks, not quarters',
-    body: 'Every engagement puts something real into a real environment inside three weeks — a running service, a working interface, a measured benchmark. Slides are a byproduct, never a deliverable.',
+    title: 'Placement',
+    caption: 'Real footprints, to the tenth of a millimetre.',
   },
   {
     index: '03',
-    title: 'Architecture is a budget',
-    body: 'Every abstraction spends something: build time, cognitive load, hiring surface. We spend deliberately and write down what each decision cost, so the next team can audit our reasoning instead of guessing at it.',
+    title: 'Routing',
+    caption: 'Forty-five degrees only. Width from IPC-2221.',
   },
   {
     index: '04',
-    title: 'Motion carries meaning',
-    body: 'Interface animation is not decoration. It is how software explains cause and effect — where a thing came from, what it belongs to, what just changed. We treat it with the same rigour as data modelling.',
+    title: 'Power',
+    caption: 'Regulated to 3.3 V. The crystal starts.',
   },
   {
     index: '05',
-    title: 'Leave the codebase teachable',
-    body: 'We measure success by how quickly your team stops needing us. Documented decisions, tests that describe intent, and a handover session that ends with your engineers making the next change unassisted.',
+    title: 'Awake',
+    caption: 'A companion on e-ink, fed by live data.',
   },
-  {
-    index: '06',
-    title: 'Say the uncomfortable thing early',
-    body: 'If the plan is wrong, the deadline is fiction, or the feature should not exist, you hear it in week one — when it is still cheap. We would rather lose the scope than deliver something we would not defend.',
-  },
-];
+] as const;
 
-export const capabilities: Capability[] = [
-  {
-    title: 'Systems Architecture',
-    description:
-      'Event-driven and service topologies, data contracts, failure domains, and the migration path from what you have to what you need.',
-  },
-  {
-    title: 'Applied AI',
-    description:
-      'Retrieval pipelines, tool-using agents, evaluation harnesses, and the guardrail design that decides whether any of it is shippable.',
-  },
-  {
-    title: 'Interface Engineering',
-    description:
-      'React and TypeScript at production scale — accessible, fast, and built as a component system your designers can actually drive.',
-  },
-  {
-    title: 'Realtime & Streaming',
-    description:
-      'WebSocket and event-stream architectures, backpressure strategy, and interfaces that stay honest when the data is a second old.',
-  },
-  {
-    title: 'WebGL & Motion',
-    description:
-      'GPU-accelerated interfaces, shader work, and choreography systems that hold sixty frames on the hardware your users actually own.',
-  },
-  {
-    title: 'Developer Experience',
-    description:
-      'Build pipelines, preview environments, typed API clients, and the boring infrastructure that quietly doubles a team’s output.',
-  },
-  {
-    title: 'Data Platform',
-    description:
-      'Warehouse modelling, lineage, and the semantic layer that stops three dashboards from disagreeing about the same number.',
-  },
-  {
-    title: 'Performance',
-    description:
-      'Budgets set before the first commit, traced hot paths, and the unglamorous profiling work that turns a 4-second load into 800ms.',
-  },
-];
-
-export const process: ProcessStep[] = [
-  {
-    index: '01',
-    title: 'Interrogate',
-    duration: 'Week 1',
-    description:
-      'We spend the first week trying to disprove the brief. What is actually broken, who feels it, what has already been attempted, and what would have to be true for this to be worth building? You get our honest read even when it shrinks the engagement.',
-    outputs: ['Problem statement', 'Constraint map', 'Kill criteria', 'Revised scope'],
-  },
-  {
-    index: '02',
-    title: 'Prove',
-    duration: 'Weeks 2–3',
-    description:
-      'The riskiest assumption gets built first, not last. A working spike in your environment against your data — the thing most likely to sink the project, resolved while the cost of being wrong is still a fortnight.',
-    outputs: ['Technical spike', 'Benchmark results', 'Architecture decision records'],
-  },
-  {
-    index: '03',
-    title: 'Build',
-    duration: 'Weeks 4–12',
-    description:
-      'Weekly increments into a real environment behind flags. You see progress in the product, not in a status document. Scope moves; the ship date does not.',
-    outputs: ['Production increments', 'Test suite', 'Instrumentation', 'Weekly demo'],
-  },
-  {
-    index: '04',
-    title: 'Hand over',
-    duration: 'Final 2 weeks',
-    description:
-      'We work ourselves out of the job on purpose. Your engineers drive the last two increments while we review. The engagement ends when your team ships a change we never touched.',
-    outputs: ['Runbooks', 'Decision log', 'Pairing sessions', 'Thirty-day support window'],
-  },
-];
-
-export const engagements: {
-  name: string;
-  price: string;
-  duration: string;
-  summary: string;
-  includes: string[];
-  best: string;
-}[] = [
-  {
-    name: 'Diagnostic',
-    price: 'Fixed fee',
-    duration: '1–2 weeks',
-    summary:
-      'A senior read on an existing system: architecture, delivery bottlenecks, risk. Ends with a written assessment and a sequenced plan you own, whether or not we build it.',
-    includes: [
-      'Codebase and infrastructure review',
-      'Team and delivery interviews',
-      'Written assessment with prioritised findings',
-      'Twelve-month sequencing plan',
-    ],
-    best: 'You inherited something and need to know how bad it is.',
-  },
-  {
-    name: 'Build sprint',
-    price: 'Monthly',
-    duration: '6–12 weeks',
-    summary:
-      'A dedicated senior pair shipping a defined outcome — a product surface, a migration, an AI capability — into production behind flags, with your team embedded alongside.',
-    includes: [
-      'Two senior engineers, full-time',
-      'Weekly production increments',
-      'Architecture decision records',
-      'Instrumentation and runbooks',
-      'Handover pairing at the end',
-    ],
-    best: 'You know what to build and need it built properly, quickly.',
-  },
-  {
-    name: 'Studio partner',
-    price: 'Retained',
-    duration: '6+ months',
-    summary:
-      'Continuous technical direction and delivery capacity. We hold the architecture, review the hires, and stay on the hook for the roadmap alongside your leadership.',
-    includes: [
-      'Standing engineering capacity',
-      'Technical direction and hiring support',
-      'Quarterly architecture review',
-      'Priority scheduling',
-    ],
-    best: 'You are scaling and do not yet have the senior bench for it.',
-  },
-];
-
-export const faq: { question: string; answer: string }[] = [
-  {
-    question: 'The studio is young. Why would we hire you?',
-    answer:
-      'Because you can audit the thinking before you spend anything. Every concept brief here is a complete engagement plan — architecture, sequencing, risks, the numbers we would be measured against. Read one, then judge. The engineering behind the studio is not young: six years of production work across enterprise AI platforms, a mobile product taken through to acquisition, and connected-vehicle infrastructure.',
-  },
-  {
-    question: 'How do you price work?',
-    answer:
-      'Fixed fee for diagnostics, monthly for build sprints, retained for partnerships. No hourly billing — it rewards slowness and punishes the shortcuts that come from experience. Scope is negotiable throughout; the price is not renegotiated mid-engagement.',
-  },
-  {
-    question: 'Who actually does the work?',
-    answer:
-      'Senior engineers only, with a hard cap of five people on the studio bench. Larger scope means a longer timeline or a smaller scope — never a junior team wearing our name.',
-  },
-  {
-    question: 'Do you work with existing engineering teams?',
-    answer:
-      'Preferably. The best outcomes come from embedding: your engineers in our reviews, ours in your standups. We are not trying to build a dependency, we are trying to leave a capability behind.',
-  },
-  {
-    question: 'What do you not do?',
-    answer:
-      'Staff augmentation by the seat, work we cannot see the outcome of, projects where the deadline is already impossible on day one, and anything requiring us to pretend a plan is fine when it is not.',
-  },
-  {
-    question: 'What stack do you work in?',
-    answer:
-      'TypeScript, React and Next.js on the front; Node, Python and Go on the back; Postgres by default; Terraform for infrastructure; whatever cloud you are already in. For AI work: the current frontier model families with an evaluation harness that lets you swap them out when the pricing changes.',
-  },
-];
-
-/** The long-form studio narrative on /studio. */
-export const studioStory: Block[] = [
-  {
-    type: 'p',
-    text: 'Seventeen Studios exists because of a pattern that shows up in almost every company that has ever hired outside help to build software: the work arrives technically complete and practically useless. The API is there. The screens are there. Nobody on the team can extend any of it, nobody wrote down why it is shaped that way, and the first real change costs more than the original build.',
-  },
-  {
-    type: 'p',
-    text: 'That failure is not a talent problem. It is a structural one. The agency model makes money on leverage — sell senior, deliver junior — and the consultancy model makes money on duration. Both are rational businesses. Neither is optimised for the thing you actually want, which is a system your own team can carry.',
-  },
-  { type: 'h2', text: 'The bet' },
-  {
-    type: 'p',
-    text: 'So the studio is built the other way around. Small, capped, senior-only, priced by outcome rather than hour. We take fewer engagements than we could sell. We publish our reasoning before anyone commissions it. And we treat the handover — the part most vendors quietly skip — as the deliverable that everything else serves.',
-  },
-  {
-    type: 'p',
-    text: 'The bet is that a studio which is *harder to scale* is easier to trust, and that trust compounds faster than headcount. We would rather be the shop three companies call first than the shop thirty companies call once.',
-  },
-  { type: 'h2', text: 'Working in the open' },
-  {
-    type: 'p',
-    text: 'The concept briefs on this site are how that gets demonstrated rather than asserted. Each one takes a real problem in a real industry and works it end to end — the research we would run, the architecture we would choose, the decisions we would regret, the numbers we would be judged on, and the risks that could sink it.',
-  },
-  {
-    type: 'note',
-    label: 'On the record',
-    text: 'The briefs are concepts and are labelled as such — every number in them is a projection published with its measurement method. The delivered engineering behind the studio sits on the founder’s record: enterprise AI platforms, a mobile product taken through to acquisition, connected-vehicle infrastructure.',
-  },
-  { type: 'h2', text: 'Where the name comes from' },
-  {
-    type: 'p',
-    text: 'Seventeen is the number of a system that refuses to factor cleanly — prime, awkward, the first number people reach for when asked to pick one at random and the one they are least able to explain. It is a reasonable description of most interesting engineering problems, and a better description of the work we want than any word ending in “-ly”.',
-  },
-];
+/** Marquee strip. Nouns, not adjectives. */
+export const marqueeItems = [
+  'Interactive Instruments',
+  'Quantitative Modelling',
+  'Embedded Hardware',
+  'WebGL & Canvas',
+  'React · TypeScript',
+  'Design Systems',
+  'Realtime Data',
+  'Teaching Tools',
+] as const;

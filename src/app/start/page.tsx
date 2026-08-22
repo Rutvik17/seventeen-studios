@@ -1,41 +1,62 @@
 import type { Metadata } from 'next';
 import { site } from '@/content/studio';
-import { BriefBuilder } from '@/components/BriefBuilder';
+import { ContactLink } from '@/components/ContactLink';
 import { Reveal } from '@/components/motion/Reveal';
 import { SplitText } from '@/components/motion/SplitText';
 
 export const metadata: Metadata = {
-  title: 'Start a brief',
-  description:
-    'Five questions, three minutes, and a reply from the person who would do the work.',
+  title: 'Contact',
+  description: 'What would you like to build?',
 };
 
+/**
+ * Contact.
+ *
+ * A question and three ways to answer it.
+ *
+ * This page used to be a five-step brief builder that asked for a service, a
+ * stage, a timeline and a budget — a qualification funnel, which is a thing an
+ * agency needs and a portfolio actively should not have. It asked a hiring
+ * manager to categorise themselves before they could say hello, and it framed
+ * every visitor as a prospective client when most of them are not.
+ *
+ * One line, one link, and the two profiles a technical reader will want anyway.
+ */
 export default function StartPage() {
   return (
-    <div className="page start">
+    <div className="page contact-page">
       <header className="page-head">
         <span className="mono-label">Contact</span>
         <SplitText as="h1" className="page-head__title" stagger={0.03} depth>
-          Start a brief
+          What would you like to build?
         </SplitText>
         <Reveal className="page-head__lead">
           <p>
-            Five questions. Three minutes. The reply comes from the person who
-            would do the work, within two working days — and if we are the wrong
-            studio for it, we will say so and point you somewhere better.
-          </p>
-        </Reveal>
-        <Reveal className="page-head__note">
-          <span className="mono-label">Currently</span>
-          <p>
-            {site.availability}. We run two at a time — if both are underway
-            when you write, we will tell you when the next slot opens rather
-            than stretching the team to take yours now.
+            Roles, collaborations, or an idea you want a second opinion on —
+            all welcome. Replies come from Rutvik, usually within a day.
           </p>
         </Reveal>
       </header>
 
-      <BriefBuilder />
+      <Reveal className="contact-page__links">
+        <ContactLink className="contact-page__primary" data-cursor="Write">
+          Write to me
+        </ContactLink>
+        <ul className="contact-page__elsewhere">
+          {site.social
+            .filter((item) => !('contact' in item))
+            .map((item) => (
+              <li key={item.label}>
+                <a href={item.href} target="_blank" rel="noreferrer noopener">
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          <li>
+            <span className="mono-label">{site.location}</span>
+          </li>
+        </ul>
+      </Reveal>
     </div>
   );
 }
