@@ -111,19 +111,37 @@ export const boardActs = [
 ] as const;
 
 /**
- * The first-load sequence.
+ * The first-load sequence: the board coming up.
  *
- * What was here — "Software / Interfaces / AI systems / Conviction", under
- * "Compiling the studio" — was an agency announcing itself, and "Conviction" in
- * particular is the kind of word that means nothing and costs trust.
+ * ---
  *
- * These are the four things this portfolio actually contains, and the status
- * line echoes the landing page: the site opens by bringing up a circuit board,
- * so the loader is that board's boot rather than a brand statement.
+ * WHY A BOOT LOG
+ *
+ * The landing page opens by assembling a circuit board, so the loader is that
+ * board being powered on — the same object, one moment earlier. What was here
+ * was four abstract nouns cycling over a progress bar, which said nothing and
+ * connected to nothing that followed it.
+ *
+ * The lines are stylised but not invented. An ESP32-C3 really does print a reset
+ * reason and a ROM banner to its serial port at power-on, and the rail, the
+ * crystal, the flash and the panel are the actual peripherals on this board,
+ * checked in the order firmware would bring them up. The figures come from the
+ * same design data the landing page is drawn from.
+ *
+ * `at` is a fraction of the load window rather than a delay in seconds, so the
+ * sequence stretches or compresses with the window instead of finishing before
+ * the page is ready or running on after it.
  */
 export const preloader = {
-  words: ['Circuits', 'Simulations', 'Interfaces', 'Instruments'],
   status: 'Bringing up the board',
+  lines: [
+    { at: 0.0, label: 'rst:0x1 (poweron)', value: '' },
+    { at: 0.12, label: 'esp32c3 rom', value: 'v1.1' },
+    { at: 0.3, label: '3v3 rail', value: '3.31 v' },
+    { at: 0.48, label: 'xtal 32.768 khz', value: 'lock' },
+    { at: 0.62, label: 'flash 4 mb', value: 'ok' },
+    { at: 0.78, label: 'epd 640x400 acep', value: 'ready' },
+  ],
 } as const;
 
 /** Marquee strip. Nouns, not adjectives. */

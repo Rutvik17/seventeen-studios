@@ -6358,3 +6358,54 @@ html.no-js .exploded .exploded__svg {
   color: var(--muted);
   line-height: 1.4;
 }
+
+/* ---------- Preloader: the boot log ------------------------------- */
+
+/*
+  A serial console, set in the mono face at a size that reads as a readout
+  rather than as copy. Left-aligned and left-anchored, because a boot log is a
+  transcript — centring it would make it a graphic.
+*/
+.preloader__boot {
+  display: grid;
+  gap: 6px;
+  width: min(88vw, 30rem);
+  margin: 0 auto;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: clamp(11px, 1.1vw, 13px);
+  letter-spacing: 0.04em;
+}
+
+.preloader__line {
+  display: grid;
+  grid-template-columns: auto minmax(1.5rem, 1fr) auto;
+  gap: 8px;
+  align-items: baseline;
+  text-transform: uppercase;
+  will-change: transform, opacity;
+}
+
+.preloader__line-label {
+  color: var(--fg-dim);
+  white-space: nowrap;
+}
+
+/*
+  The dot leaders. A repeating radial gradient rather than a row of full stops,
+  so the run always ends flush against the value at any width — typed dots have
+  to be counted, and the count is wrong at every width but one.
+*/
+.preloader__line-dots {
+  height: 1em;
+  background-image: radial-gradient(circle, var(--line-strong) 0.9px, transparent 1px);
+  background-size: 5px 100%;
+  background-position: 0 65%;
+  background-repeat: repeat-x;
+  opacity: 0.75;
+}
+
+.preloader__line-value {
+  color: var(--accent);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}

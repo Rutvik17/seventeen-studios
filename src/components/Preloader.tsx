@@ -1,33 +1,53 @@
 'use client';
 
 /**
- * First-visit preloader.
+ * First visit: the board being powered on.
  *
- * Runs once per session (and never for reduced-motion visitors): a counter,
- * the studio's disciplines cycling, and a hairline that fills while fonts
- * resolve — then the same column sweep the page transitions use, so the two
- * read as one system.
+ * A serial boot log, a rail coming up, and a counter — then the same column
+ * sweep the page transitions use, so the loader and the navigation read as one
+ * system.
  *
- * The counter is tied to a real signal (`document.fonts.ready`) with a floor
- * duration, rather than being pure theatre on a fixed timer.
+ * ---
+ *
+ * WHY IT IS A BOOT AND NOT A BRAND ANIMATION
+ *
+ * The landing page opens by assembling a circuit board. A loader showing
+ * abstract nouns over a progress bar sits in front of that with no relationship
+ * to it — it is a held breath, and then something unrelated begins.
+ *
+ * This is the same object one moment earlier. The rail rises, the crystal locks,
+ * the panel reports ready, and the curtain lifts onto the board those lines were
+ * describing. Nothing about the wait is decorative any more; it is the first act
+ * of the thing being waited for.
+ *
+ * ---
+ *
+ * IT IS TIED TO A REAL SIGNAL
+ *
+ * The counter and the sequence track the same window the fonts resolve in, not
+ * a fixed timer chosen to look good. A progress bar that finishes before the
+ * page does — or keeps running after it is ready — is the most common lie in
+ * this pattern and the one people notice.
+ *
+ * Runs once per session, and never for reduced-motion visitors.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { lockScroll, unlockScroll } from '@/lib/lenis';
 import { hasEnteredThisSession, markEnteredThisSession, useUi } from '@/lib/store';
 import { preloader, site } from '@/content/studio';
 
-
+/** How long the sequence runs, in seconds. */
+const WINDOW = 1.6;
 
 export function Preloader() {
   const enter = useUi((state) => state.enter);
   const [active, setActive] = useState(true);
   const rootRef = useRef<HTMLDivElement>(null);
   const countRef = useRef<HTMLSpanElement>(null);
-  const barRef = useRef<HTMLSpanElement>(null);
-  const wordsRef = useRef<HTMLDivElement>(null);
+  const railRef = useRef<HTMLSpanElement>(null);
 
   useIsomorphicLayoutEffect(() => {
     // Skip entirely on repeat views and for reduced-motion visitors.
@@ -44,7 +64,6 @@ export function Preloader() {
 
     const ctx = gsap.context(() => {
       const counter = { value: 0 };
-      const words = wordsRef.current?.querySelectorAll('.preloader__word');
 
       const timeline = gsap.timeline({
         onComplete: () => {
@@ -54,30 +73,36 @@ export function Preloader() {
         },
       });
 
-      if (words && words.length) {
-        // Each discipline occupies an equal slice of the load window.
-        words.forEach((word, index) => {
-          timeline.fromTo(
-            word,
-            { yPercent: 100, opacity: 0 },
-            { yPercent: 0, opacity: 1, duration: 0.34, ease: 'power3.out' },
-            index * 0.34,
-          );
-          if (index < words.length - 1) {
-            timeline.to(
-              word,
-              { yPercent: -100, opacity: 0, duration: 0.3, ease: 'power3.in' },
-              index * 0.34 + 0.3,
-            );
-          }
-        });
-      }
+      /*
+        Each line arrives at its own point in the window. Hidden state is set by
+        JS, never CSS (rule 4) — with no bundle the whole log is simply present
+        and the loader is a static panel rather than an empty screen.
+      */
+      const lines = gsap.utils.toArray<HTMLElement>('[data-boot-line]');
+      gsap.set(lines, { opacity: 0, x: -6 });
+
+      lines.forEach((line, index) => {
+        const at = preloader.lines[index]?.at ?? 0;
+        timeline.to(
+          line,
+          { opacity: 1, x: 0, duration: 0.22, ease: 'power2.out' },
+          at * WINDOW,
+        );
+      });
+
+      // The rail rising IS the progress bar, doing an honest job.
+      timeline.fromTo(
+        railRef.current,
+        { scaleX: 0 },
+        { scaleX: 1, duration: WINDOW, ease: 'power2.inOut' },
+        0,
+      );
 
       timeline.to(
         counter,
         {
           value: 100,
-          duration: 1.5,
+          duration: WINDOW,
           ease: 'power2.inOut',
           onUpdate: () => {
             if (countRef.current) {
@@ -90,17 +115,10 @@ export function Preloader() {
         0,
       );
 
-      timeline.fromTo(
-        barRef.current,
-        { scaleX: 0 },
-        { scaleX: 1, duration: 1.5, ease: 'power2.inOut' },
-        0,
-      );
-
       timeline.to(
         root.querySelectorAll('.preloader__meta'),
-        { opacity: 0, duration: 0.3, ease: 'power2.in' },
-        '>-0.1',
+        { opacity: 0, duration: 0.28, ease: 'power2.in' },
+        '>-0.05',
       );
 
       timeline.to(
@@ -110,8 +128,8 @@ export function Preloader() {
           duration: 0.75,
           ease: 'power4.inOut',
           stagger: 0.06,
-          // Hand over as the curtain starts lifting, not after it has gone:
-          // the hero should already be building as the columns clear, which is
+          // Hand over as the curtain starts lifting, not after it has gone: the
+          // board should already be assembling as the columns clear, which is
           // what makes the two read as one continuous move.
           onStart: enter,
         },
@@ -137,18 +155,22 @@ export function Preloader() {
 
       <div className="preloader__inner">
         <div className="preloader__meta preloader__top">
-          <span className="mono-label">Seventeen Studios</span>
-          <span className="mono-label">Est. {site.founded}</span>
+          <span className="mono-label">{site.name}</span>
+          <span className="mono-label">Companion · rev A</span>
         </div>
 
-        <div className="preloader__center preloader__meta">
-          <div className="preloader__words" ref={wordsRef}>
-            {preloader.words.map((word) => (
-              <span className="preloader__word" key={word}>
-                {word}
-              </span>
-            ))}
-          </div>
+        {/*
+          Decorative. A screen reader is already told the page is loading, and a
+          simulated boot log read aloud is noise rather than information.
+        */}
+        <div className="preloader__boot preloader__meta" aria-hidden="true">
+          {preloader.lines.map((line) => (
+            <span className="preloader__line" data-boot-line key={line.label}>
+              <span className="preloader__line-label">{line.label}</span>
+              <span className="preloader__line-dots" />
+              <span className="preloader__line-value">{line.value}</span>
+            </span>
+          ))}
         </div>
 
         <div className="preloader__meta preloader__bottom">
@@ -159,7 +181,7 @@ export function Preloader() {
         </div>
 
         <div className="preloader__track" aria-hidden="true">
-          <span className="preloader__bar" ref={barRef} />
+          <span className="preloader__bar" ref={railRef} />
         </div>
       </div>
     </div>

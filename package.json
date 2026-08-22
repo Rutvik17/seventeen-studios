@@ -11,7 +11,9 @@
     "market": "node scripts/fetch-market.mjs",
     "prebuild": "node scripts/fetch-market.mjs",
     "claims": "node scripts/verify-claims.mjs",
-    "verify": "npm run typecheck && npm run claims"
+    "verify": "npm run typecheck && npm run claims",
+    "drawing": "node scripts/verify-drawing.mjs",
+    "postbuild": "node scripts/verify-drawing.mjs"
   },
   "dependencies": {
     "gsap": "^3.12.5",
