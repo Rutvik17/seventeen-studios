@@ -20,13 +20,18 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-  # Calendar-derived copy — years of experience, the quarter the studio is
-  # booking for, the copyright line — is computed at build time by
-  # `src/lib/time.ts`. A static export freezes those at the moment it was
-  # built, so rebuild on the 1st of every month to keep them true without a
-  # push. 06:00 UTC is the quiet hour for this repository.
+  # Two things go stale in a static export and both are fixed by rebuilding.
+  #
+  # Calendar-derived copy — years of experience, the copyright line — is
+  # computed at build time by `src/lib/time.ts` and freezes at the moment of
+  # the build.
+  #
+  # Market data is the reason this is DAILY rather than monthly: `prebuild`
+  # runs `scripts/fetch-market.mjs`, which pulls real closes for the risk desk.
+  # 22:30 UTC is after the US close and its settlement, so the fetch picks up a
+  # finished session rather than a partial one.
   schedule:
-    - cron: '0 6 1 * *'
+    - cron: '30 22 * * 1-5'
   # Lets you publish a build by hand from the Actions tab.
   workflow_dispatch:
 

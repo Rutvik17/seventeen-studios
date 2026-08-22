@@ -1,7 +1,14 @@
 # Seventeen Studios
 
-The studio site: a statically exported Next.js 14 application with a WebGL hero,
-GSAP-driven choreography, Lenis smooth scroll and generative SVG artwork.
+Rutvik Patel's engineering portfolio: a statically exported Next.js 14
+application built around interactive instruments rather than prose. A circuit
+board that assembles itself as you scroll, a Monte Carlo risk desk on real
+market data, a character rigged on springs and inverse kinematics, and a
+calculus demo you operate by dragging.
+
+Every figure on it is computed and shows its working — the board's trace widths
+come out of IPC-2221A, the risk desk prints its disagreement with the
+closed-form answer. Nothing is a screenshot.
 
 Live: **https://rutvik17.github.io/seventeen-studios/**
 
@@ -70,11 +77,12 @@ src/
   app/                     routes (App Router, all statically exported)
     layout.tsx             fonts, metadata, global chrome
     page.tsx               home — section composition
-    studio/                the studio: principles, engagements, FAQ
-    founder/               the founder: record, independent work, tools
-    work/                  concept-brief index + [slug] detail
-    thinking/              essay index + [slug] detail
-    start/                 the brief builder
+    lab/                   working instruments — risk desk, companion rig
+    notebook/              writing: index + [slug] detail
+    products/              shipped software: index + [slug] detail
+    founder/               personal record, independent work, tools
+    legal/                 privacy + terms ([slug])
+    start/                 contact
     globals.css            the entire design system
   components/
     Providers.tsx          Lenis + GSAP frame loop, ScrollTrigger sync
@@ -82,27 +90,34 @@ src/
     Preloader.tsx          first-visit counter and column sweep
     Cursor.tsx             dot / ring / contextual label
     Nav.tsx, MenuOverlay   header and full-screen index
-    Field.tsx              mounts the WebGL hero (dynamic import)
-    Poster.tsx             generative SVG artwork
     founder/               portrait shader, career timeline, counters
+    instruments/           the things that actually run
     Prose.tsx              renders authored content blocks
     motion/                Reveal, SplitText, Magnetic, Scramble
     sections/              the home-page sections
   content/                 all copy, as typed data (types.ts is the model)
+    market.json            real closes, written by scripts/fetch-market.mjs
   lib/
-    webgl/field.ts         GLSL particle field
-    generative.ts          seeded poster geometry
+    board.ts               PCB geometry + IPC-2221A trace maths
+    pixel.ts               the e-ink companion sprite
+    quant.ts               Monte Carlo, VaR, expected shortfall, Cholesky
+    calculus.ts            central differences + exact derivatives
+    physics.ts             springs, pendulums, two-bone IK, Verlet
+    companion.ts           Mochi's rig
+    webgl/portrait.ts      founder portrait shader
     gsap.ts, lenis.ts      animation and scroll singletons
     text.ts, inline.tsx    split-text and inline markup helpers
+scripts/
+  fetch-market.mjs         build-time price fetch (see below)
   hooks/                   useMagnetic, useTilt, useReducedMotion, …
 ```
 
 ### Content
 
-Every word on the site lives in `src/content` as typed data, not JSX. Adding an
-essay means appending an `Essay` to `src/content/thinking.ts`; the index page,
-the footer, the site index overlay, the sitemap and the static route are all
-generated from it. The same is true of concept briefs (`work.ts`) and services.
+Every word on the site lives in `src/content` as typed data, not JSX. Adding a
+notebook entry means appending one object to `src/content/notebook.ts`; the
+index page, the footer, the site index overlay, the sitemap and the static route
+are all generated from it. The same is true of projects and products.
 
 Inline emphasis inside content strings uses a three-token subset resolved by
 `lib/inline.tsx`: `*accent*`, `_italic_` and `` `mono` ``.
@@ -110,12 +125,12 @@ Inline emphasis inside content strings uses a three-token subset resolved by
 ### Anything that moves with the calendar
 
 `lib/time.ts` derives it from a fixed anchor rather than having it typed into
-the copy: years of experience, the quarter being booked, the copyright line, the
-counts in "five complete engagements", and each essay's reading time (measured
-from the essay's own word count). Nothing needs editing when a year turns over.
+the copy: years of experience, the copyright line, counts of things in a
+collection, and each notebook entry's reading time (measured from its own word
+count). Nothing needs editing when a year turns over.
 
 Dates of things that *happened* stay literal — the founding year, employment
-start and end dates, essay publication dates — because those are facts, not
+start and end dates, publication dates — because those are facts, not
 durations.
 
 The values resolve at build time, so `deploy.yml` also runs on the 1st of each
@@ -159,12 +174,37 @@ portrait in `public/founder`, which is graded in a shader at runtime
 
 ---
 
+## Market data
+
+`scripts/fetch-market.mjs` runs as `prebuild` and writes `src/content/market.json`
+— two years of adjusted daily closes for six tickers, with annualised drift and
+volatility from log returns.
+
+It cannot run in the browser: the export is static with no server, and Yahoo
+sends no CORS headers, so a call from the page is blocked before our code runs.
+Fetching at build time is the only way to have real prices on a static host
+without standing up a proxy.
+
+The fetch never fails the build — any error keeps the committed fixture and
+exits zero. The deploy workflow reruns each weekday at 22:30 UTC, after the US
+close, so the figures refresh on their own.
+
+```bash
+npm run market      # refresh by hand
+```
+
+---
+
 ## Notes on the content
 
-The concept briefs are self-initiated, speculative engagements — labelled as
-such everywhere they appear. Every projected figure is published with the method
-that would produce it. Nothing on the site is presented as delivered client
-work.
+Nothing is invented. No clients, no testimonials, no metric that was not
+measured; a project's `status` says `Designing` or `In progress` when that is
+the truth. The founder page is a personal employment record and every date on it
+is real.
+
+Explanatory writing follows one rule, borrowed from Grasp: assume the reader has
+never studied any of this. Every symbol is introduced before it is used, every
+equation is stated in words before symbols, and no jargon goes undefined.
 
 `design-reference/` holds the original static prototype the current site was
 rebuilt from. It is not part of the build.
