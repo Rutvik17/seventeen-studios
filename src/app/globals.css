@@ -416,8 +416,17 @@ code {
   display: inline-block;
   overflow: hidden;
   vertical-align: bottom;
-  padding-bottom: 0.06em;
-  margin-bottom: -0.06em;
+  /*
+    0.2em, not the 0.06em this used to carry. The mask exists to hide a word
+    rising from below, and its `overflow: hidden` clips the bottom of the line
+    box just as happily — so g, p, y and j lost their tails wherever this was
+    used. Syne's descenders are deep and 0.06em did not reach them.
+
+    The negative margin gives the space straight back, so the padding changes
+    what is CLIPPED without changing what is LAID OUT.
+  */
+  padding-bottom: 0.2em;
+  margin-bottom: -0.2em;
 }
 .word {
   display: inline-block;
@@ -5292,7 +5301,10 @@ html.no-js .exploded .exploded__svg {
   font-size: clamp(28px, 5.6vw, 88px);
   font-weight: 700;
   letter-spacing: -0.035em;
-  line-height: 1;
+  /* Matches `.rows__title`. The row measures its open height from the content,
+     so the two leadings have to agree or the measurement is of a shorter box
+     than the one being displayed. */
+  line-height: 1.16;
   overflow: hidden;
   /* Stops a row's relayout escaping into the rest of the page — the thing that
      makes animating height affordable at all. */
@@ -5354,6 +5366,17 @@ html.no-js .exploded .exploded__svg {
   text-overflow: ellipsis;
   color: var(--fg);
   will-change: color;
+  /*
+    `overflow: hidden` is here for the ellipsis, and it clips descenders as a
+    side effect — every g, p and y in a row title lost its tail.
+
+    Two changes fix it together. The leading goes above 1 so the line box is
+    taller than the glyphs and the tails fall inside it, and the padding gives
+    the clip somewhere to happen that is below the text rather than through it.
+    Leading alone is not enough: a descender can still sit on the content edge.
+  */
+  line-height: 1.16;
+  padding-bottom: 0.14em;
 }
 
 .rows__row.is-open .rows__title {
@@ -5556,7 +5579,8 @@ html.no-js .exploded .exploded__svg {
   font-family: var(--font-display), sans-serif;
   font-size: clamp(32px, 5.2vw, 68px);
   font-weight: 700;
-  line-height: 1;
+  /* Above 1, so descenders sit inside the line box rather than on its edge. */
+  line-height: 1.06;
   letter-spacing: -0.032em;
   margin-top: 10px;
   /* Sub-1 leading under a reveal mask clips descenders — pad, then pull back. */

@@ -113,8 +113,11 @@ export function RevealRows({
         // and must be applied BEFORE measuring or the measurement is of the
         // state we are leaving.
         node.classList.toggle('is-open', isOpen);
+        // The floor allows for a full line box plus its descenders. Measuring
+        // alone is not enough on the first frame after a font swaps in, when
+        // `scrollHeight` can briefly report the fallback's metrics.
         const target = isOpen
-          ? Math.max(link?.scrollHeight ?? 0, fontSize * 1.02)
+          ? Math.max(link?.scrollHeight ?? 0, fontSize * 1.3)
           : fontSize * CLOSED;
 
         gsap.to(node, {
