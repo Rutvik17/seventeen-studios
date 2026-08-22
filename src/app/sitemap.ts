@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { products } from '@/content/products';
 import { policies } from '@/content/policies';
+import { entries } from '@/content/notebook';
 
 /**
  * Static sitemap. `output: 'export'` writes this to /sitemap.xml at build time.
@@ -12,7 +13,7 @@ const base = (process.env.NEXT_PUBLIC_SITE_URL || 'https://seventeenstudios.co')
 );
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = ['', '/lab', '/founder', '/products', '/start'].map((route) => ({
+  const staticRoutes = ['', '/notebook', '/lab', '/founder', '/products', '/start'].map((route) => ({
     url: `${base}${route}/`,
     lastModified: new Date(),
     changeFrequency: 'monthly' as const,
@@ -38,5 +39,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.3,
   }));
 
-  return [...staticRoutes, ...productRoutes, ...policyRoutes];
+  const entryRoutes = entries.map((entry) => ({
+    url: `${base}/notebook/${entry.slug}/`,
+    lastModified: new Date(entry.date),
+    changeFrequency: 'yearly' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...entryRoutes, ...productRoutes, ...policyRoutes];
 }

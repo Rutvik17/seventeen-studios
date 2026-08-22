@@ -60,6 +60,7 @@ import {
   pathLength,
   peakCurrentMa,
   resistorBands,
+  ribbon,
   routePath,
   toE12,
   traceWidthMm,
@@ -67,7 +68,6 @@ import {
 import { PANEL, expressionFor, faceCells } from '@/lib/pixel';
 import { boardActs, hero } from '@/content/studio';
 import { assetBySymbol, market, sigmasFor } from '@/content/market';
-import { nextArrival, shortStop, transit } from '@/content/transit';
 
 /* The drawing's frame: the board, plus room above it for the display. */
 const VIEW = { x: -8, y: -50, w: 104, h: 116 };
@@ -81,23 +81,24 @@ const DISPLAY = {
 };
 
 /*
-  What the display shows is REAL, and that is the point of it.
+  What the display shows is REAL: the last adjusted close for NVDA and its move,
+  fetched at build time by `scripts/fetch-market.mjs`. Yahoo sends no CORS
+  headers, so a browser cannot make that call and it has to happen at build.
 
-  `NVDA` is the last adjusted close and its move, fetched at build time by
-  `scripts/fetch-market.mjs`. The arrival is a genuine TTC prediction for a real
-  stop, from `scripts/fetch-transit.mjs`. Neither can be fetched in the browser
-  — this is a static export and both feeds are same-origin-blocked — so both are
-  captured at build and the readout beside the board says when.
-
-  The face is not decoration either: `expressionFor` is handed the move measured
+  The face is not decoration either — `expressionFor` is handed the move measured
   in units of NVDA's OWN daily volatility, so a 2% day on a 45%-vol name reads
   differently from a 2% day on a 30%-vol one. It is the same function the
   firmware would call.
 */
 const NVDA = assetBySymbol('NVDA');
-const ARRIVAL = nextArrival();
 const NVDA_CHANGE = NVDA?.changeDay ?? 0;
 const NVDA_SIGMAS = NVDA ? sigmasFor(NVDA, NVDA_CHANGE, market.tradingDays) : 0;
+
+/*
+  The cable, built as a real flat-flex: a band with seven conductors running down
+  it rather than one fat stroke, which read as a rope. See `ribbon()`.
+*/
+const RIBBON = ribbon([74, 20.2], [78, 2], [66, -6], [58, -8], 7.2, 7);
 
 const AVERAGE_MA = averageCurrentMa();
 const PEAK_MA = peakCurrentMa();
@@ -134,24 +135,20 @@ export function BoardStory() {
       gsap.set(q('[data-trace]'), { drawSVG: undefined, opacity: 0 });
       gsap.set(q('[data-flow]'), { opacity: 0 });
       gsap.set(q('[data-display]'), { opacity: 0, y: 26 });
-      // The ribbon DRAWS rather than fading in. A cable that materialises at
-      // full length reads as a layer being switched on; one that unrolls reads
-      // as being plugged in, which is the thing actually happening.
-      const ribbon = el.querySelector<SVGPathElement>('[data-ribbon]');
-      const ribbonLen = ribbon?.getTotalLength?.() ?? 60;
-      gsap.set(ribbon, {
-        opacity: 1,
-        strokeDasharray: ribbonLen,
-        strokeDashoffset: ribbonLen,
-      });
-      gsap.set(q('[data-osc]'), { opacity: 0 });
+      /*
+        The cable is revealed by sliding a CLIP rectangle, not by a dash offset.
 
-      // Traces are drawn with dashoffset rather than a plugin: the length is
-      // already known from `pathLength`, so this needs no DrawSVG licence.
-      q('[data-trace]').forEach((node) => {
-        const len = Number((node as unknown as SVGPathElement).dataset.length ?? 0);
-        gsap.set(node, { strokeDasharray: len, strokeDashoffset: len });
-      });
+        The dash version produced a stray dot: with `stroke-dasharray: L` and
+        `stroke-dashoffset: L` the visible run is zero, but a round line cap on a
+        zero-length dash still paints its cap — so a dot sat at the connector
+        from first paint and vanished the moment the draw began. Round caps are
+        wanted everywhere else on this drawing, so the fix is to stop using
+        dashes here rather than to square the cap.
+
+        A clip also suits the object better: a ribbon cable is a solid band with
+        conductors in it, and it should be uncovered rather than drawn.
+      */
+      gsap.set('[data-ribbon-clip] rect', { attr: { y: -8, height: 0 } });
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -203,8 +200,8 @@ export function BoardStory() {
 
       /* 05 — the display wakes */
       tl.to(
-        ribbon,
-        { strokeDashoffset: 0, duration: 0.8, ease: 'power2.inOut' },
+        '[data-ribbon-clip] rect',
+        { attr: { height: 40 }, duration: 0.8, ease: 'power2.inOut' },
         3.85,
       )
         // The panel starts arriving only once the cable has most of the way to
@@ -364,11 +361,19 @@ export function BoardStory() {
             </g>
 
             {/* ---------- 05 ribbon + display ---------- */}
-            <path
-              data-ribbon
-              d={`M 74 20.2 C 74 6, 66 -2, 58 ${DISPLAY.y + DISPLAY.h}`}
-              className="board-story__ribbon"
-            />
+            <g data-ribbon>
+              <clipPath id="ribbon-clip" data-ribbon-clip>
+                {/* Grows downward from above the board, so the cable is
+                    uncovered from the display end toward the connector. */}
+                <rect x={40} y={-8} width={60} height={0} />
+              </clipPath>
+              <g clipPath="url(#ribbon-clip)">
+                <path d={RIBBON.outline} className="board-story__ribbon-body" />
+                {RIBBON.conductors.map((d, i) => (
+                  <path key={i} d={d} className="board-story__ribbon-wire" />
+                ))}
+              </g>
+            </g>
 
             <g data-display>
               <rect
@@ -398,24 +403,6 @@ export function BoardStory() {
                 ${NVDA?.price?.toFixed(2) ?? '—'} · {NVDA_SIGMAS >= 0 ? '+' : ''}
                 {NVDA_SIGMAS.toFixed(1)}σ
               </text>
-              {ARRIVAL && (
-                <>
-                  <text
-                    x={DISPLAY.x + 28}
-                    y={DISPLAY.y + 32}
-                    className="board-story__epd-small"
-                  >
-                    {ARRIVAL.route} · {ARRIVAL.minutes[0]} min
-                  </text>
-                  <text
-                    x={DISPLAY.x + 28}
-                    y={DISPLAY.y + 36}
-                    className="board-story__epd-tiny"
-                  >
-                    {shortStop(ARRIVAL.stopTitle)}
-                  </text>
-                </>
-              )}
             </g>
           </svg>
         </div>
@@ -468,16 +455,28 @@ function ScrollCue() {
     if (!el) return;
 
     const ctx = gsap.context(() => {
-      // The arrow travels and fades at the bottom — a hint of the motion being
-      // asked for, not a bouncing icon.
-      gsap.to('[data-cue-arrow]', {
-        y: 9,
-        opacity: 0.25,
-        duration: 1.15,
-        ease: 'power1.inOut',
-        repeat: -1,
-        yoyo: true,
-      });
+      /*
+        A segment travelling down a hairline rail, rather than a bouncing arrow.
+
+        The arrow version sat centred at the bottom of the frame, which is
+        exactly where the STUDIOS wordmark is — it overlapped the type and read
+        as a mistake. This lives on the left edge, out of the composition, and
+        reads as an instrument's gauge rather than as an icon: the same
+        register as the rest of the board.
+      */
+      gsap.fromTo(
+        '[data-cue-arrow]',
+        { yPercent: -100, opacity: 0 },
+        {
+          yPercent: 260,
+          opacity: 1,
+          duration: 1.9,
+          ease: 'power1.inOut',
+          repeat: -1,
+          // Fades at both ends of the travel so it never appears to hit a stop.
+          keyframes: undefined,
+        },
+      );
       gsap.to(el, {
         autoAlpha: 0,
         duration: 0.4,
@@ -490,10 +489,10 @@ function ScrollCue() {
 
   return (
     <div className="board-cue" ref={ref}>
-      <span className="mono-label">Scroll to build it</span>
-      <svg viewBox="0 0 12 22" className="board-cue__arrow" data-cue-arrow aria-hidden="true">
-        <path d="M6 0 L6 19 M1 14 L6 19 L11 14" />
-      </svg>
+      <span className="mono-label board-cue__label">Scroll to build it</span>
+      <span className="board-cue__rail" aria-hidden="true">
+        <span className="board-cue__travel" data-cue-arrow />
+      </span>
     </div>
   );
 }
@@ -658,44 +657,23 @@ function Working({ act }: { act: number }) {
   if (act === 4) {
     return (
       <dl className="board-story__calc">
-        <dt className="mono-label">Power budget · duty-cycled</dt>
-        <dd>
-          average <strong>{AVERAGE_MA.toFixed(2)} mA</strong> · peak {PEAK_MA} mA
-          <br />
-          {BATTERY_MAH} mAh × 0.85 ÷ {AVERAGE_MA.toFixed(2)} mA ={' '}
-          <strong>{batteryDays(BATTERY_MAH).toFixed(0)} days</strong>
-          <br />
-          <span className="board-story__note">
-            Peak sizes the regulator. Average sizes the battery. Confusing the
-            two is the classic way to ship a device that dies in a week.
-          </span>
-        </dd>
-      </dl>
-    );
-  }
-  if (act === 4) {
-    return (
-      <dl className="board-story__calc">
         <dt className="mono-label">On the panel · real data</dt>
         <dd>
           {NVDA ? (
             <>
-              {NVDA.symbol} ${NVDA.price.toFixed(2)}, close {NVDA.asOf}
+              {NVDA.symbol} ${NVDA.price.toFixed(2)} · close {NVDA.asOf}
               <br />
-            </>
-          ) : null}
-          {ARRIVAL ? (
-            <>
-              {ARRIVAL.routeTitle} · {shortStop(ARRIVAL.stopTitle)}
+              {NVDA_CHANGE >= 0 ? '+' : ''}
+              {NVDA_CHANGE.toFixed(2)}% = {NVDA_SIGMAS >= 0 ? '+' : ''}
+              {NVDA_SIGMAS.toFixed(2)}σ of its own daily move
               <br />
             </>
           ) : null}
           <span className="board-story__note">
-            Both fetched when this page was built, not when you opened it — a
-            static export has no server to call an API on your behalf, and
-            neither feed permits a request from a browser. The device itself
-            would poll them directly over Wi-Fi, which is why they are what it
-            shows. Captured {new Date(transit.capturedAt).toISOString().slice(0, 10)}.
+            Fetched when this page was built, not when you opened it — Yahoo
+            sends no CORS headers, so a browser is not allowed to make that
+            call. The device would poll it directly over Wi-Fi, which is why it
+            is what the panel shows.
           </span>
         </dd>
       </dl>

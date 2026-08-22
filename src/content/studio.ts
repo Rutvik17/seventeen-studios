@@ -55,6 +55,7 @@ export const site = {
 } as const;
 
 export const nav = [
+  { label: 'Notebook', href: '/notebook/' },
   { label: 'Lab', href: '/lab/' },
   { label: 'Grasp', href: '/products/grasp/' },
   { label: 'Rutvik', href: '/founder/' },

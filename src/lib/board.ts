@@ -355,6 +355,100 @@ export function pathLength(points: [number, number][]): number {
   return total;
 }
 
+
+/* ------------------------------------------------------------------ *
+ * The flat-flex cable
+ * ------------------------------------------------------------------ */
+
+export type Ribbon = {
+  /** The cable's outline, as a closed fill. */
+  outline: string;
+  /** One polyline per conductor inside it. */
+  conductors: string[];
+  /** Where the cable ends, for placing the display. */
+  tip: { x: number; y: number };
+};
+
+/**
+ * Build a flat-flex cable along a cubic curve.
+ *
+ * A single thick stroke was the first attempt and it reads as a rope. A real
+ * FFC is a flat ribbon: a band of translucent plastic with parallel copper
+ * conductors running down it, and it is the CONDUCTORS that make it legible as
+ * a cable rather than as a drawn line.
+ *
+ * So the curve is sampled, a normal is taken at every sample, and the band is
+ * built by offsetting along those normals. Offsetting a bezier exactly is not
+ * generally possible — the offset of a cubic is not a cubic — but sampling and
+ * offsetting point-by-point is exact at every sample and the error between
+ * samples is far below a pixel at this density.
+ *
+ * The normal comes from the derivative of the curve, rotated a quarter turn:
+ * if the tangent is (dx, dy) then (−dy, dx) is perpendicular to it.
+ */
+export function ribbon(
+  p0: [number, number],
+  c1: [number, number],
+  c2: [number, number],
+  p3: [number, number],
+  width: number,
+  conductorCount = 7,
+  samples = 48,
+): Ribbon {
+  const at = (t: number): [number, number] => {
+    const u = 1 - t;
+    return [
+      u * u * u * p0[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t * t * t * p3[0],
+      u * u * u * p0[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t * t * t * p3[1],
+    ];
+  };
+  // Derivative of a cubic bezier — the tangent direction at t.
+  const slope = (t: number): [number, number] => {
+    const u = 1 - t;
+    return [
+      3 * u * u * (c1[0] - p0[0]) + 6 * u * t * (c2[0] - c1[0]) + 3 * t * t * (p3[0] - c2[0]),
+      3 * u * u * (c1[1] - p0[1]) + 6 * u * t * (c2[1] - c1[1]) + 3 * t * t * (p3[1] - c2[1]),
+    ];
+  };
+
+  const offsets: number[] = [];
+  for (let i = 0; i < conductorCount; i++) {
+    // Evenly spaced across the band, inset from the edges so the outermost
+    // conductor is not sitting on the cable's own boundary.
+    const f = conductorCount === 1 ? 0.5 : i / (conductorCount - 1);
+    offsets.push((f - 0.5) * width * 0.78);
+  }
+
+  const left: [number, number][] = [];
+  const right: [number, number][] = [];
+  const lanes: [number, number][][] = offsets.map(() => []);
+
+  for (let i = 0; i <= samples; i++) {
+    const t = i / samples;
+    const [x, y] = at(t);
+    const [dx, dy] = slope(t);
+    const len = Math.hypot(dx, dy) || 1;
+    // Rotate the tangent a quarter turn to get the normal.
+    const nx = -dy / len;
+    const ny = dx / len;
+
+    left.push([x + nx * (width / 2), y + ny * (width / 2)]);
+    right.push([x - nx * (width / 2), y - ny * (width / 2)]);
+    offsets.forEach((o, k) => lanes[k].push([x + nx * o, y + ny * o]));
+  }
+
+  const poly = (pts: [number, number][], close = false) =>
+    pts
+      .map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${round(x)} ${round(y)}`)
+      .join(' ') + (close ? ' Z' : '');
+
+  return {
+    outline: poly(left) + ' ' + poly([...right].reverse().map((pt) => pt), false).replace(/^M/, 'L') + ' Z',
+    conductors: lanes.map((lane) => poly(lane)),
+    tip: { x: p3[0], y: p3[1] },
+  };
+}
+
 /* ------------------------------------------------------------------ *
  * Resistor colour bands
  * ------------------------------------------------------------------ */
