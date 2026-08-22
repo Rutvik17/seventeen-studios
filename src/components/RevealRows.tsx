@@ -69,38 +69,35 @@ export type RevealRow = {
 };
 
 /**
- * How much of the LETTERFORM shows at rest, as a fraction of the font size.
+ * How much of the LINE BOX shows at rest, as a fraction of the font size.
  *
- * Walked out three times. 0.6 read as a band of fragments, 0.72 as words you
- * could almost make out, 0.9 as words you can read that are still visibly held
- * back — which is the effect actually wanted. It should look like something
- * tucked into an envelope, not like something censored.
+ * The line box is about 1.16 here, so anything below that clips — and the clip
+ * is the whole gesture. Half-leading puts the cap-tops at roughly 0.08 and the
+ * baseline at roughly 0.83, so 0.8 cuts just above the baseline: the letters
+ * lose their feet and stay readable, which is what "tucked into an envelope"
+ * actually looks like.
  *
- * It cannot go much past this: a full line box is about 1.16 with the leading
- * these carry, so beyond roughly 0.95 the clip stops reading as deliberate and
- * starts reading as a rendering fault.
+ * Walked out four times. 0.6 was a band of fragments; 0.72 was words you could
+ * almost make out; 0.9 combined with padding below stopped clipping ENTIRELY
+ * and the effect disappeared.
  */
-const CLOSED = 0.9;
+const SHOW = 0.8;
 
 /**
- * Space above and below that band, as a fraction of the font size.
+ * Space above the type, as a fraction of the font size.
  *
- * This is a SEPARATE quantity from the clip depth and conflating the two is
- * what made the rows feel wrong. `CLOSED` decides how much of a letter you can
- * see; this decides whether the letter has any room around it. At zero the type
- * fills its row edge to edge and consecutive titles nearly touch, which reads as
- * cramped no matter how much of each glyph is showing — so opening the clip
- * further was fixing the wrong number.
+ * ABOVE ONLY, and that is the correction. The previous version padded both
+ * sides, which made the row taller than the line box needed — so the bottom of
+ * every letter fitted comfortably inside and nothing was cut. Air below and a
+ * tuck are mutually exclusive: the row's bottom edge IS the cut.
  *
- * The row's resting height is therefore CLOSED + two of these. At 0.34 an 88px
- * title sits in a 143px row with 30px of air above and below it — generous, and
- * the point of separating the two numbers is that this one can be tuned for
- * rhythm without touching how much of a letter is visible.
+ * So the rhythm comes from the gap between one row's severed letters and the
+ * next row's letter-tops, which is exactly the space an envelope's edge leaves.
  */
-const BREATHE = 0.34;
+const AIR = 0.3;
 
 /** Resting height of a row, in pixels, for a given font size. */
-const closedHeight = (fontSize: number) => fontSize * (CLOSED + BREATHE * 2);
+const closedHeight = (fontSize: number) => fontSize * (AIR + SHOW);
 
 export function RevealRows({
   rows,
@@ -146,8 +143,12 @@ export function RevealRows({
         // breathing room. Measuring alone is not enough on the first frame
         // after a font swaps in, when `scrollHeight` can briefly report the
         // fallback's metrics.
+        // Open, the row has to clear a full line box plus the air above it and
+        // the descenders below. Measuring alone is not enough on the first
+        // frame after a font swaps in, when `scrollHeight` can briefly report
+        // the fallback's metrics.
         const target = isOpen
-          ? Math.max(link?.scrollHeight ?? 0, fontSize * (1.16 + BREATHE * 2))
+          ? Math.max(link?.scrollHeight ?? 0, fontSize * (AIR + 1.16 + 0.08))
           : closedHeight(fontSize);
 
         gsap.to(node, {
