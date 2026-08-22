@@ -113,14 +113,17 @@ derivative cannot follow it end to end.
 
 ## Design tokens
 
-Defined once in `src/app/globals.css` as custom properties; mirrored in
-`src/lib/tokens.ts` only for consumers that cannot read CSS (WebGL materials).
-**That mirror fails silently when the two drift — change both together.**
+Defined once in `src/app/globals.css` as custom properties. That stylesheet is
+the single source of truth — there is no second copy to keep in step.
 
-`tokens.ts` currently has no importer: its only consumer was the founder
-portrait shader, which went with that page. It is kept because the rule above
-still holds for the next WebGL material that needs a colour — but if nothing
-adopts it, delete it rather than leaving it to rot out of sync.
+There used to be a mirror in `src/lib/tokens.ts` for consumers that cannot read
+CSS. It is gone, and how it went is the point: its last consumer disappeared
+with the founder portrait shader, and by then it had already drifted — it still
+claimed `bg: #faf9f5` against a stylesheet that says `#eceae4`. It failed
+exactly the way its own comment warned it would, silently, because both halves
+were internally consistent. If a WebGL material needs a palette colour again,
+read it once at runtime with `getComputedStyle(document.documentElement)
+.getPropertyValue('--accent')` rather than writing the number down twice.
 
 | Token | Value | Use |
 |-------|-------|-----|

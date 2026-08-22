@@ -107,7 +107,7 @@ src/
     text.ts, inline.tsx    split-text and inline markup helpers
 scripts/
   fetch-market.mjs         build-time price fetch (see below)
-  hooks/                   useMagnetic, useTilt, useReducedMotion, …
+  hooks/                   useMagnetic, useIsomorphicLayoutEffect
 ```
 
 ### Content
