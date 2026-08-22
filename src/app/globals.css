@@ -776,20 +776,6 @@ code {
   color: var(--accent);
   transform: translateX(18px);
 }
-.menu__list-item a {
-  display: grid;
-  grid-template-columns: 34px 1fr;
-  gap: 6px 14px;
-  padding: 13px 0;
-  border-bottom: 1px solid var(--line);
-  font-size: 15px;
-  transition: color 0.3s, padding-left 0.35s var(--ease-out);
-}
-.menu__list-item a:hover {
-  color: var(--accent);
-  padding-left: 10px;
-}
-
 .menu__foot {
   grid-column: 1 / -1;
   display: flex;
@@ -1274,10 +1260,6 @@ ol.prose__list li::before {
   .menu__caption {
     margin-bottom: 14px;
     padding-bottom: 10px;
-  }
-  .menu__list-item a {
-    padding: 10px 0;
-    font-size: 14.5px;
   }
   .menu__foot {
     gap: 14px;
