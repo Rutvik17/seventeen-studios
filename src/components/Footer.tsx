@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { site, nav } from '@/content/studio';
-import { concepts } from '@/content/work';
 import { products } from '@/content/products';
 import { policies } from '@/content/policies';
-import { essays } from '@/content/thinking';
 import { TransitionLink } from './Transition';
 import { ContactLink } from './ContactLink';
 import { FitText } from './FitText';
@@ -47,31 +45,9 @@ export function Footer({ buildYear }: { buildYear: number }) {
           </ul>
         </div>
 
-        <div className="footer__col">
-          <span className="mono-label">Concept briefs</span>
-          <ul>
-            {concepts.map((concept) => (
-              <li key={concept.slug}>
-                <TransitionLink href={`/work/${concept.slug}/`}>
-                  {concept.name}
-                </TransitionLink>
-              </li>
-            ))}
-          </ul>
-        </div>
+        
 
-        <div className="footer__col">
-          <span className="mono-label">Recent writing</span>
-          <ul>
-            {essays.slice(0, 4).map((essay) => (
-              <li key={essay.slug}>
-                <TransitionLink href={`/thinking/${essay.slug}/`}>
-                  {essay.title}
-                </TransitionLink>
-              </li>
-            ))}
-          </ul>
-        </div>
+        
 
         <div className="footer__col">
           <span className="mono-label">Elsewhere</span>

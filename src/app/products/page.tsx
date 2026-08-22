@@ -36,12 +36,11 @@ export default function ProductsIndexPage() {
           </p>
         </Reveal>
         <Reveal className="page-head__note">
-          <span className="mono-label">Not client work</span>
+          <span className="mono-label">Built and shipped</span>
           <p>
-            These are the studio&rsquo;s products, built and paid for by the
-            studio. The engagements we would take for other people are in the{' '}
-            <TransitionLink href="/work/">concept briefs</TransitionLink>, and
-            they are labelled speculative because they are.
+            Everything here runs. The rest of the work — the instruments, the
+            rig, the hardware — is in the{' '}
+            <TransitionLink href="/lab/">lab</TransitionLink>.
           </p>
         </Reveal>
       </header>
