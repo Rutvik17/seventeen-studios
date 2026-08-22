@@ -82,6 +82,13 @@
 
   --gutter: clamp(20px, 4.4vw, 76px);
   --max: 1680px;
+  /*
+    One reading column for a notebook entry, header and body alike. Sized so the
+    prose lands near 70 characters — comfortably inside the 45–75 the
+    typographic literature agrees on — with the gutter included, because both
+    consumers pad by it.
+  */
+  --entry-measure: min(94vw, 46rem);
   --radius: 3px;
   --radius-lg: 8px;
 
@@ -5248,16 +5255,29 @@ html.no-js .exploded .exploded__svg {
   pointer-events: none;
 }
 
+/*
+  FULL BLEED.
+
+  The section carries no horizontal padding; the padding lives on each row's
+  link instead. That is what lets the colour band run edge to edge while the
+  type still lines up with the rest of the page. Padding the section and
+  bleeding the fill out of it with negative offsets was the first attempt and it
+  breaks the moment a scrollbar changes the viewport width.
+*/
 .section-rows {
   position: relative;
-  max-width: var(--max);
-  margin: 0 auto;
-  padding: clamp(64px, 11vh, 140px) var(--gutter);
+  padding: clamp(64px, 11vh, 140px) 0;
+}
+
+.section-rows--flush {
+  padding-top: 0;
 }
 
 .section-rows__head {
   color: var(--muted);
-  margin-bottom: clamp(18px, 3vh, 36px);
+  margin: 0 auto clamp(18px, 3vh, 36px);
+  max-width: var(--max);
+  padding: 0 var(--gutter);
 }
 
 .rows {
@@ -5266,39 +5286,31 @@ html.no-js .exploded .exploded__svg {
   padding: 0;
 }
 
-/*
-  Each row is a fixed-height window onto a full-size line of type. Height is
-  animated in `em`, so the open and closed sizes track the responsive font size
-  instead of being pinned to one viewport width.
-*/
 .rows__row {
   position: relative;
   font-family: var(--font-display), sans-serif;
-  font-size: clamp(30px, 6.4vw, 96px);
+  font-size: clamp(28px, 5.6vw, 88px);
   font-weight: 700;
   letter-spacing: -0.035em;
   line-height: 1;
-  height: 1.02em;
   overflow: hidden;
-  /* Stops the row's own relayout escaping into the rest of the page — the one
-     thing that makes animating height affordable here. */
+  /* Stops a row's relayout escaping into the rest of the page — the thing that
+     makes animating height affordable at all. */
   contain: layout paint;
 }
 
+/*
+  One hairline between rows, none above the first or below the last. The
+  previous version also ruled under the section heading, which left two
+  horizontal lines belonging to nothing.
+*/
 .rows__row + .rows__row {
-  /* A single hairline between rows and none above the first or below the last.
-     The previous version had a rule under the section heading as well, which
-     left two lines belonging to nothing. */
   border-top: 1px solid var(--line);
 }
 
 .rows__fill {
   position: absolute;
   inset: 0;
-  /* Bleeds past the gutter so the wash reaches the viewport edge, matching the
-     full-bleed bands in the reference rather than stopping at the text column. */
-  left: calc(var(--gutter) * -1);
-  right: calc(var(--gutter) * -1);
   transform-origin: left center;
   will-change: transform;
   pointer-events: none;
@@ -5307,17 +5319,47 @@ html.no-js .exploded .exploded__svg {
 .rows__link {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: clamp(10px, 1.6vw, 24px);
-  height: 1.02em;
+  padding: 0 var(--gutter);
   text-decoration: none;
   color: inherit;
 }
 
+/*
+  Title and tag travel together, so the tag stays pinned to the end of the words
+  rather than drifting off to a column of its own.
+*/
+.rows__lead {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(8px, 1.2vw, 18px);
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+/*
+  Closed: one line, ellipsised. Open: allowed to wrap.
+
+  `min-width: 0` on both this and its flex parent is what makes the ellipsis
+  possible — a flex item's default `min-width: auto` refuses to shrink below its
+  content, so `text-overflow` never has anything to act on and the title simply
+  overflows instead.
+*/
 .rows__title {
+  display: block;
+  min-width: 0;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--fg);
-  will-change: transform, color;
+  will-change: color;
+}
+
+.rows__row.is-open .rows__title {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .rows__tag {
@@ -5331,6 +5373,9 @@ html.no-js .exploded .exploded__svg {
   border-radius: 999px;
   padding: 3px 10px;
   opacity: 0.7;
+  /* The tag rides at the title's baseline, and at this type size that puts it
+     visually low. Nudging it back up costs nothing and reads much better. */
+  transform: translateY(-0.18em);
 }
 
 .rows__meta {
@@ -5340,10 +5385,11 @@ html.no-js .exploded .exploded__svg {
   font-size: clamp(12px, 0.9vw, 15px);
   font-weight: 400;
   letter-spacing: 0;
-  line-height: 1.3;
-  white-space: nowrap;
+  line-height: 1.35;
   overflow: hidden;
-  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .rows__trail {
@@ -5356,21 +5402,24 @@ html.no-js .exploded .exploded__svg {
   color: var(--muted);
 }
 
+.rows__row.is-open .rows__trail {
+  color: inherit;
+  opacity: 0.7;
+}
+
 @media (max-width: 900px) {
-  /* The meta line has nowhere to go beside a title this size on a phone. The
-     tag and the trailing status carry enough. */
+  /* No room for a supporting line beside type this size. The tag and the
+     trailing marker carry enough. */
   .rows__meta {
     display: none;
   }
 }
 
-/* ---- reduced motion: open, quiet, and colour-coded by a border ---- */
+/* ---- reduced motion: open, quiet, colour-coded by a border ---- */
 
 .rows--static .rows__row {
   height: auto;
-  padding: 0.1em 0 0.14em;
-  border-left: 4px solid var(--row-color, var(--accent));
-  padding-left: 0.24em;
+  padding: 0.12em 0 0.16em;
 }
 
 .rows--static .rows__fill {
@@ -5378,16 +5427,23 @@ html.no-js .exploded .exploded__svg {
 }
 
 .rows--static .rows__link {
-  height: auto;
   flex-wrap: wrap;
+  border-left: 4px solid var(--row-color, var(--accent));
+  padding-left: calc(var(--gutter) - 4px);
+}
+
+.rows--static .rows__title {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .rows--static .rows__meta {
   display: block;
-  white-space: normal;
   opacity: 1;
   visibility: visible;
   flex-basis: 100%;
+  -webkit-line-clamp: none;
 }
 
 /* ==================================================================
@@ -5469,8 +5525,19 @@ html.no-js .exploded .exploded__svg {
   padding: clamp(110px, 16vh, 190px) var(--gutter) clamp(40px, 7vh, 80px);
 }
 
+/*
+  Header and body share ONE centred column, and that is the whole fix.
+
+  They previously had different containers: the header was left-aligned inside
+  1180px while the body was a 62ch measure centred in the viewport. Both were
+  "centred", but their left edges were nowhere near each other — on a wide
+  screen the prose started several hundred pixels right of the title, which
+  reads as the article having drifted off to one side.
+
+  One token, used by both, and the two cannot drift again.
+*/
 .entry__head-inner {
-  max-width: 1180px;
+  max-width: var(--entry-measure);
   margin: 0 auto;
 }
 
@@ -5487,12 +5554,11 @@ html.no-js .exploded .exploded__svg {
 
 .entry__title {
   font-family: var(--font-display), sans-serif;
-  font-size: clamp(34px, 6.4vw, 92px);
+  font-size: clamp(32px, 5.2vw, 68px);
   font-weight: 700;
-  line-height: 0.96;
-  letter-spacing: -0.035em;
+  line-height: 1;
+  letter-spacing: -0.032em;
   margin-top: 10px;
-  max-width: 18ch;
   /* Sub-1 leading under a reveal mask clips descenders — pad, then pull back. */
   padding-bottom: 0.1em;
   margin-bottom: -0.1em;
@@ -5511,7 +5577,7 @@ html.no-js .exploded .exploded__svg {
   from the thing being read.
 */
 .entry__body {
-  max-width: 62ch;
+  max-width: var(--entry-measure);
   margin: 0 auto;
   padding: clamp(44px, 8vh, 90px) var(--gutter) clamp(60px, 10vh, 120px);
 }
@@ -5532,7 +5598,7 @@ html.no-js .exploded .exploded__svg {
 }
 
 .entry__foot {
-  max-width: 62ch;
+  max-width: var(--entry-measure);
   margin: 0 auto;
   padding: 0 var(--gutter) clamp(70px, 12vh, 140px);
 }

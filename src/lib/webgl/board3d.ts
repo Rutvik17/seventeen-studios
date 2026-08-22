@@ -266,7 +266,24 @@ export function createBoard3D(
   };
   const onMove = (e: PointerEvent) => {
     if (!dragging) return;
-    target.theta -= (e.clientX - lastX) * 0.006;
+
+    /*
+      Horizontal drag ADDS to theta, and the sign is worth deriving rather than
+      guessing — it shipped inverted.
+
+      The camera sits at (r·sinφ·cosθ, r·cosφ, r·sinφ·sinθ). At θ = 0 it is on
+      the +X axis looking back at the origin, so its forward is (−1, 0, 0) and
+      with up (0, 1, 0) its right is forward × up = (0, 0, −1).
+
+      Dragging right should carry the object right, which means orbiting the
+      camera LEFT — toward +Z. Increasing θ increases sin θ and therefore z, so
+      right-drag is `+=`. Subtracting rotated the board against the pointer,
+      which is the one thing a direct-manipulation control must never do.
+
+      Vertical is already correct and stays as it is: dragging down decreases φ,
+      which raises the camera and tips the board toward the viewer.
+    */
+    target.theta += (e.clientX - lastX) * 0.006;
     // Clamped well short of the poles: at the top the board is edge-on and
     // becomes an invisible line, and past it the scene flips.
     target.phi = Math.min(1.45, Math.max(0.25, target.phi - (e.clientY - lastY) * 0.005));
