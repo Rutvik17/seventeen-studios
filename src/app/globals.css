@@ -6911,160 +6911,342 @@ html.no-js .exploded .exploded__svg {
 }
 
 /* ==================================================================
-   THE CAREER WALK
-   ================================================================== */
+   THE CITY
+   ==================================================================
 
-/*
-  Track and stage, the same split the board story uses: the outer element
-  carries the scroll distance and the inner one pins. One viewport of travel per
-  role, so the pacing does not change as roles are added.
+   The founder page, entire. A pinned full-screen canvas with cards over it,
+   and nothing else on the page.
+
+   The canvas paints its own sky, ground and weather, so this file styles only
+   what sits on top of it: the cards, the tether lines, and the progress marks.
+   Every colour here has to survive being drawn over a drawing that changes from
+   a pale morning to a dark night, which is why the cards are near-opaque rather
+   than tinted glass.
 */
-.journey {
+
+.city {
   position: relative;
-  height: 420vh;
+  /* Height is set inline from the number of beats — one place, not two. */
 }
 
-.journey__stage {
-  position: relative;
+.city__stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
   height: 100svh;
   overflow: hidden;
+  background: var(--bg);
 }
 
-.journey__canvas {
+.city__canvas {
+  display: block;
   width: 100%;
   height: 100%;
-  display: block;
 }
 
-/*
-  The card is chrome over the walk rather than beside it — the canvas needs the
-  full width for the camera to have anywhere to travel, and a two-column layout
-  would leave the character shuffling inside a letterbox.
-*/
-.journey__card {
+/* ---- the tether ---------------------------------------------------
+   Drawn to where the building actually is on the page this frame, so it
+   swings and stretches as the city moves under the card. Non-scaling
+   stroke and a dash, so it reads as a callout rather than as structure. */
+
+.city__tether {
   position: absolute;
-  left: var(--gutter);
-  bottom: clamp(24px, 5vh, 56px);
-  width: min(92vw, 26rem);
-  padding: calc(var(--grid-unit) * 0.95);
-  background: var(--bg-raise);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
 }
 
-.journey__period {
+.city__tether-line {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 1.2;
+  stroke-dasharray: 5 4;
+  opacity: 0.62;
+}
+
+.city__tether-dot {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+}
+
+.city__tether-hub {
+  fill: var(--fg);
+}
+
+/* ---- the card ----------------------------------------------------- */
+
+.city__card {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(420px, 34vw);
+  padding: 26px 28px 28px;
+  background: color-mix(in srgb, var(--bg-raise) 94%, transparent);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(7px);
+  animation: city-card-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.city__card--left {
+  left: var(--gutter);
+}
+
+.city__card--right {
+  right: var(--gutter);
+}
+
+@keyframes city-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-50% + 18px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
+}
+
+.city__kicker {
   color: var(--accent);
 }
 
-.journey__role {
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(20px, 2.2vw, 30px);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  margin: 6px 0 2px;
+.city__title {
+  font-size: clamp(22px, 2.4vw, 32px);
+  line-height: 1.12;
+  margin: 10px 0 12px;
 }
 
-.journey__org {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.journey__summary {
-  font-size: 14px;
-  line-height: 1.55;
+.city__body {
+  font-size: 15px;
+  line-height: 1.58;
   color: var(--fg-dim);
-  margin-top: calc(var(--grid-unit) * 0.6);
+  margin-bottom: 10px;
 }
 
-.journey__highlights {
+.city__body:first-of-type {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.city__points {
   list-style: none;
   display: grid;
-  gap: 5px;
-  margin-top: calc(var(--grid-unit) * 0.6);
+  gap: 7px;
+  margin: 14px 0;
 }
 
-.journey__highlights li {
+.city__points li {
   position: relative;
-  padding-left: 14px;
-  font-size: 13px;
+  padding-left: 18px;
+  font-size: 14px;
   line-height: 1.45;
+  color: var(--fg-dim);
 }
 
-.journey__highlights li::before {
+.city__points li::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 0.55em;
-  width: 5px;
+  top: 0.62em;
+  width: 9px;
   height: 1px;
   background: var(--accent);
 }
 
-.journey__stack {
+.city__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  margin-top: calc(var(--grid-unit) * 0.7);
-  padding-top: calc(var(--grid-unit) * 0.6);
-  border-top: 1px solid var(--line);
+  gap: 6px;
+  margin-top: 14px;
 }
 
-.journey__stack em {
+.city__tags em {
   font-style: normal;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.05em;
-  color: var(--muted);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 2px 7px;
+  color: var(--fg-dim);
 }
 
-.journey__hint {
+/* ---- progress ------------------------------------------------------ */
+
+.city__progress {
   position: absolute;
-  right: var(--gutter);
-  bottom: clamp(24px, 5vh, 56px);
-  color: var(--muted);
-  pointer-events: none;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 7px;
 }
 
-/* Reduced motion and no-JS: the record as a list, nothing pinned. */
-.journey--static {
-  height: auto;
+.city__progress span {
+  width: 22px;
+  height: 2px;
+  background: var(--line-strong);
+  transition: background 0.3s ease;
 }
 
-.journey__list {
+.city__progress span.is-active {
+  background: var(--accent);
+}
+
+/* ---- reduced motion ------------------------------------------------
+   No canvas, no pinning, no flight. The route becomes what it is
+   underneath: an ordered list of places and what happened at each. */
+
+.city--static {
+  max-width: 74ch;
+  margin: 0 auto;
+  padding: clamp(48px, 9vh, 110px) var(--gutter);
+}
+
+.city--static h1 {
+  font-size: clamp(34px, 5vw, 64px);
+  line-height: 1.02;
+  margin-bottom: 18px;
+}
+
+.city__standfirst {
+  font-size: 18px;
+  color: var(--fg-dim);
+  margin-bottom: 48px;
+}
+
+.city__list {
   list-style: none;
   display: grid;
-  gap: clamp(24px, 4vh, 44px);
+  gap: 44px;
 }
 
-.journey__list h3 {
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(19px, 2vw, 26px);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  margin: 6px 0;
+.city__list h2 {
+  font-size: clamp(20px, 2.4vw, 27px);
+  margin: 6px 0 10px;
 }
 
-.journey__list p {
+.city__list p {
   color: var(--fg-dim);
-  max-width: 68ch;
+  margin-bottom: 8px;
 }
 
-@media (max-width: 700px) {
-  .journey {
-    height: 300vh;
-  }
-  .journey__card {
+.city__list ul {
+  margin-top: 10px;
+  padding-left: 18px;
+  color: var(--fg-dim);
+}
+
+/* ---- narrow screens -------------------------------------------------
+   The card cannot have a third of the width when the width is 390px, so
+   it takes the bottom of the screen and the drawing keeps the rest. The
+   tether still points at the right building — it just points down. */
+
+@media (max-width: 860px) {
+  .city__card {
+    top: auto;
+    bottom: 46px;
     left: 12px;
     right: 12px;
     width: auto;
+    transform: none;
+    max-height: 48svh;
+    overflow-y: auto;
+    padding: 16px 18px 18px;
+    animation-name: city-card-in-mobile;
   }
-  /* No room for both, and the card is the content. */
-  .journey__hint {
+  .city__card--left,
+  .city__card--right {
+    left: 12px;
+    right: 12px;
+  }
+  @keyframes city-card-in-mobile {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .city__title {
+    font-size: 20px;
+  }
+  .city__body,
+  .city__points li {
+    font-size: 13px;
+  }
+  /* No room for a callout to reach anything without crossing the card. */
+  .city__tether {
     display: none;
+  }
+}
+/* ==================================================================
+   MOBILE — reported defects
+   ================================================================== */
+
+@media (max-width: 700px) {
+  /*
+    THE WORDMARK OVERFLOWED.
+
+    It was sized with a `vw` clamp, which is a guess about glyph advance — and
+    Syne ExtraBold is a wide face, so the guess was wrong in the direction that
+    overflows. I cannot measure the real advance from here, so it is sized for
+    the WIDEST the face could plausibly be (0.82em) rather than for an estimate
+    of what it is: at 12vw the word is 331px of an available 350px even in that
+    worst case, and comfortably inside for anything narrower.
+
+    `FitText` would measure this properly and is already in the codebase — but
+    it fills its container, and both wordmarks are deliberately NOT full-bleed
+    on desktop. Using it here would fix the phone by changing the composition
+    everywhere, which is the trade this whole section exists to avoid.
+  */
+  .board-story__wordmark {
+    font-size: clamp(38px, 12vw, 54px);
+    max-width: 100%;
+  }
+
+  /*
+    THE BOARD PAINTED OVER THE WORDS.
+
+    `.board-story__svg` carries `overflow: visible`, so anything the drawing
+    puts outside its box — the display panel sits well above the board in the
+    viewBox — lands on top of whatever grid row is above it. On a phone that row
+    is the wordmark.
+
+    Clipping the canvas cell fixes it without touching the drawing, and it is
+    safe: the geometry check in `scripts/verify-drawing.mjs` already asserts
+    that nothing legitimately leaves the frame, so there is nothing outside the
+    viewBox worth showing.
+  */
+  .board-story__canvas {
+    overflow: hidden;
+  }
+
+  /*
+    SIDEWAYS SCROLL ON THE LESSON PAGES.
+
+    `overflow-x: hidden` on `body` does not reliably stop the page scrolling —
+    the propagation rules between `html` and `body` mean the viewport can still
+    pan when a descendant overflows. `clip` on the root is the guarantee, and
+    unlike `hidden` it does not create a scroll container, so `position: sticky`
+    and the pinned sections keep working.
+
+    Deliberately mobile-only: on desktop a stray overflow should stay visible so
+    it gets FIXED rather than quietly hidden.
+  */
+  html {
+    overflow-x: clip;
+  }
+
+  /* The lesson header's type is sized for a wide measure and has nowhere to go
+     at this width. */
+  .page-head__title {
+    font-size: clamp(34px, 11vw, 52px);
   }
 }

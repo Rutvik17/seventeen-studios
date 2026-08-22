@@ -129,6 +129,7 @@ if (body) {
   check('ribbon meets the display squarely', Math.abs(pts[half - 1][1] - pts[half][1]) < 0.01);
 }
 
+
 console.log();
 if (failures > 0) {
   console.error(`${failures} drawing check(s) failed.`);
