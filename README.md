@@ -80,7 +80,7 @@ src/
     lab/                   working instruments — risk desk, companion rig
     notebook/              writing: index + [slug] detail
     products/              shipped software: index + [slug] detail
-    founder/               personal record, independent work, tools
+    founder/               empty — awaiting a rebuild (see the note below)
     legal/                 privacy + terms ([slug])
     start/                 contact
     globals.css            the entire design system
@@ -90,7 +90,6 @@ src/
     Preloader.tsx          first-visit counter and column sweep
     Cursor.tsx             dot / ring / contextual label
     Nav.tsx, MenuOverlay   header and full-screen index
-    founder/               portrait shader, career timeline, counters
     instruments/           the things that actually run
     Prose.tsx              renders authored content blocks
     motion/                Reveal, SplitText, Magnetic, Scramble
@@ -104,7 +103,6 @@ src/
     calculus.ts            central differences + exact derivatives
     physics.ts             springs, pendulums, two-bone IK, Verlet
     companion.ts           Mochi's rig
-    webgl/portrait.ts      founder portrait shader
     gsap.ts, lenis.ts      animation and scroll singletons
     text.ts, inline.tsx    split-text and inline markup helpers
 scripts/
@@ -138,9 +136,11 @@ month to keep a long-untouched site from sitting on a stale figure.
 
 ### The résumé
 
-`src/content/resume.ts` is the single source for three artefacts: the modal on
-/founder, the PDF download, and the .docx for applicant tracking systems. The
-files are regenerated with:
+`src/content/resume.ts` is the source for the two files in `public/founder`: a
+PDF to hand to a person, and a .docx for applicant tracking systems. Nothing on
+the site links to them at the moment — the founder page that did was torn down
+— so whatever replaces that page is where they surface again. They are
+regenerated with:
 
 ```bash
 npm i -D playwright        # only needed for the PDF step
@@ -155,11 +155,10 @@ suspiciously small.
 
 ### Artwork
 
-Every poster is generated from a seed by `lib/generative.ts` and rendered as SVG
-on the server, so the same brief always produces the same artwork, with no
-requests and no layout shift. The only raster asset on the site is the founder
-portrait in `public/founder`, which is graded in a shader at runtime
-(`lib/webgl/portrait.ts`) with the plain `<img>` underneath as the fallback.
+Everything drawn on this site is generated at runtime — the board as SVG, the
+e-ink panel and the instruments on canvas — so there is nothing to optimise and
+nothing to lay out late. The only raster assets are in `public/founder`: a
+portrait and the two résumé files.
 
 ### Motion
 
@@ -199,12 +198,15 @@ npm run market      # refresh by hand
 
 Nothing is invented. No clients, no testimonials, no metric that was not
 measured; a project's `status` says `Designing` or `In progress` when that is
-the truth. The founder page is a personal employment record and every date on it
-is real.
+the truth. The founder page is a personal employment record, and every date in
+`src/content/founder.ts` that the rebuilt page will draw on is real.
 
 Explanatory writing follows one rule, borrowed from Grasp: assume the reader has
 never studied any of this. Every symbol is introduced before it is used, every
 equation is stated in words before symbols, and no jargon goes undefined.
 
-`design-reference/` holds the original static prototype the current site was
-rebuilt from. It is not part of the build.
+The founder page is currently empty. The route, its metadata and its place in
+the sitemap are intact — it is the one URL the JSON-LD on every notebook lesson
+names as the author — but the page itself is waiting to be rebuilt. The record
+it will be built from is still in `src/content/founder.ts` and
+`src/content/resume.ts`.
