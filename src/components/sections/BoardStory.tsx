@@ -118,6 +118,13 @@ const VIEW = {
 const NVDA = assetBySymbol('NVDA');
 const NVDA_CHANGE = NVDA?.changeDay ?? 0;
 const NVDA_SIGMAS = NVDA ? sigmasFor(NVDA, NVDA_CHANGE, market.tradingDays) : 0;
+/*
+  The face is driven by the sentiment model's reading, not by today's move — see
+  `lib/face.ts`. 0.5 is the neutral fallback for the case where training failed
+  and no model shipped, which must degrade to a blank expression rather than to
+  a permanently alarmed one.
+*/
+const NVDA_PERCENTILE = NVDA?.sentiment?.percentile ?? 0.5;
 
 /*
   The cable, built as a real flat-flex: a band with seven conductors running down
@@ -468,6 +475,7 @@ export function BoardStory() {
                 price={NVDA?.price ?? 0}
                 changePercent={NVDA_CHANGE}
                 sigmas={NVDA_SIGMAS}
+                percentile={NVDA_PERCENTILE}
                 asOf={NVDA?.asOf ?? ''}
               />
             </g>

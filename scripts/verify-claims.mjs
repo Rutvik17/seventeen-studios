@@ -27,6 +27,17 @@
 
 let failures = 0;
 
+/**
+ * A boolean assertion, for the checks that are not "this number equals that
+ * number" — kept separate from `check` rather than overloading it, because a
+ * boolean silently reaching the numeric path throws on `toFixed` and the whole
+ * run dies instead of reporting.
+ */
+function assert(label, condition, detail = '') {
+  if (!condition) failures += 1;
+  console.log(`  ${condition ? 'ok  ' : 'FAIL'} ${label}${detail ? ` — ${detail}` : ''}`);
+}
+
 function check(label, actual, claimed, tolerance = 0.005) {
   const pass = Math.abs(actual - claimed) <= tolerance;
   if (!pass) failures += 1;
@@ -117,6 +128,40 @@ if (portfolioVol >= averageVol) {
   failures += 1;
 } else {
   console.log('  ok   portfolio: vol is below the weighted average'.padEnd(56));
+}
+
+/* ---------- the sentiment model, "A face that guesses" ---------- */
+
+const model = market.sentiment;
+if (!model) {
+  console.log('  FAIL sentiment model missing from market.json');
+  failures += 1;
+} else {
+  // The entry's whole argument is that the model does NOT beat the base rate.
+  // If a retrain ever flipped that, the prose would become wrong — so the claim
+  // is asserted rather than assumed.
+  const beatsBase = model.test.accuracy > model.test.baseRate;
+  console.log(
+    (beatsBase ? '  FAIL' : '  ok  ') +
+      ' model: test accuracy does not beat the base rate'.padEnd(49) +
+      ` computed ${(model.test.accuracy * 100).toFixed(1)}%   base ${(model.test.baseRate * 100).toFixed(1)}%`,
+  );
+  if (beatsBase) failures += 1;
+
+  // Evaluated on days it never saw, chronologically after training.
+  assert('model: train and test both have rows', model.train.n > 0 && model.test.n > 0, `${model.train.n} / ${model.test.n}`);
+
+  // The face maps a percentile, which needs a non-degenerate output range.
+  const span = model.quantiles[model.quantiles.length - 1] - model.quantiles[0];
+  assert('model: output band is non-degenerate', span > 0.002, `${(span * 100).toFixed(2)} pts`);
+
+  // Standardisation statistics must ship, or inference silently uses raw
+  // features against weights fitted on standardised ones.
+  assert(
+    'model: ships its standardisation stats',
+    model.mean.length === model.weights.length && model.std.length === model.weights.length,
+  );
+  assert('model: no zero standard deviations', model.std.every((v) => v !== 0));
 }
 
 /* ---------- steepness, "Steepness" ---------- */

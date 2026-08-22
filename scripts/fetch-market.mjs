@@ -30,6 +30,7 @@
  */
 
 import { writeFile, readFile } from 'node:fs/promises';
+import { predictLatest, trainSentiment } from './train-sentiment.mjs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -201,6 +202,9 @@ async function main() {
         // nobody reads and the matrix is the only thing downstream needs.
         _returns: logReturns(series),
         _stamps: series.map((s) => s.t),
+        // Kept only to train the sentiment model below, then stripped. The
+        // model's weights ship; its training set does not.
+        _closes: series.map((s) => s.c),
         price: round(last.c, 2),
         asOf: new Date(last.t * 1000).toISOString().slice(0, 10),
         ...stats,
@@ -268,15 +272,48 @@ async function main() {
     }
   }
 
+  /*
+    Train the companion's sentiment model on the real series, then throw the
+    series away. This is the honest shape of a shipped model: fitting is
+    expensive and happens once here, and inference is a dot product cheap enough
+    to run on the microcontroller the board is designed around.
+  */
+  let sentiment = null;
+  try {
+    const seriesBySymbol = Object.fromEntries(assets.map((a) => [a.symbol, a._closes]));
+    sentiment = trainSentiment(seriesBySymbol);
+    console.log(
+      `  sentiment: test ${(sentiment.test.accuracy * 100).toFixed(1)}% vs ` +
+        `base rate ${(sentiment.test.baseRate * 100).toFixed(1)}% ` +
+        `(n=${sentiment.test.n})`,
+    );
+  } catch (error) {
+    console.warn(`! sentiment training failed: ${error.message}`);
+  }
+
+  /*
+    Each asset's current reading, computed here because inference needs the last
+    sixty real daily returns and the shipped file only carries a downsampled
+    sparkline. The panel's data is captured at build time regardless — Yahoo
+    sends no CORS headers — so this changes nothing about how live it is.
+  */
+  if (sentiment) {
+    for (const a of assets) {
+      a.sentiment = predictLatest(a._closes, sentiment);
+    }
+  }
+
   for (const a of assets) {
     delete a._returns;
     delete a._stamps;
+    delete a._closes;
   }
 
   const payload = {
     fetchedAt: new Date().toISOString(),
     correlations,
     correlationSessions: Number.isFinite(minOverlap) ? minOverlap : 0,
+    sentiment,
     tradingDays: TRADING_DAYS,
     window: '2y daily',
     source: 'Yahoo Finance chart API, adjusted closes',

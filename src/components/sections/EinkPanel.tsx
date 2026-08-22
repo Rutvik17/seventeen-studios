@@ -32,7 +32,8 @@
 
 import { useEffect, useState } from 'react';
 import { Bitmap, INK, type Ink } from '@/lib/pixelfont';
-import { PANEL, expressionFor, faceCells, inkFor } from '@/lib/pixel';
+import { PANEL, inkFor } from '@/lib/pixel';
+import { FACE_SIZE, expressionFor, faceCells } from '@/lib/face';
 
 export type EinkPanelProps = {
   /** Placement in board millimetres. */
@@ -45,6 +46,8 @@ export type EinkPanelProps = {
   changePercent: number;
   sigmas: number;
   asOf: string;
+  /** Where the model sits in its own range, 0 to 1. Drives the expression. */
+  percentile: number;
 };
 
 /** Compose the panel's bitmap. Pure, so it can be reasoned about and tested. */
@@ -63,48 +66,44 @@ function compose(props: EinkPanelProps): Bitmap {
   const moodInk: Ink = mood === 'green' ? INK.green : mood === 'red' ? INK.red : INK.black;
 
   /* ---- the face, left ---- */
-  // The sprite is 16 x 16; at 14x it occupies 224 px of the 640 available.
-  const FACE = 14;
-  const faceX = 30;
-  const faceY = Math.round((PANEL.height - 16 * FACE) / 2);
-  for (const cell of faceCells(expressionFor(sigmas))) {
-    bmp.fillRect(
-      faceX + cell.x * FACE,
-      faceY + cell.y * FACE,
-      FACE,
-      FACE,
-      // The face takes the mood colour too, so the reading is legible from
-      // across a room before a single character is resolved.
-      cell.ink === 'accent' ? moodInk : INK.black,
-    );
+  /*
+    The expression comes from the MODEL, not from today's move. It is where the
+    model's probability sits inside its own output distribution — the raw
+    probabilities span about two percentage points, so a threshold on them would
+    leave the companion permanently neutral.
+
+    The colour still comes from the move, because red-down/green-up is what a
+    reader already expects from a market screen. Mood from the model, sign from
+    the market.
+  */
+  const FACE = 10;
+  const faceX = 24;
+  const faceY = Math.round((PANEL.height - FACE_SIZE * FACE) / 2);
+  for (const cell of faceCells(expressionFor(props.percentile))) {
+    bmp.fillRect(faceX + cell.x * FACE, faceY + cell.y * FACE, FACE, FACE, moodInk);
   }
 
   /* ---- a rule between face and figures ---- */
-  const railX = faceX + 16 * FACE + 34;
+  const railX = faceX + FACE_SIZE * FACE + 28;
   bmp.fillRect(railX, 40, 2, PANEL.height - 80, INK.black);
 
   /* ---- the readout, right ---- */
-  const textX = railX + 34;
+  const textX = railX + 32;
   /*
     Every line is drawn at the largest scale that FITS the remaining width,
-    never at a scale chosen by eye. A ticker is four or five characters and a
-    percentage is usually six — but a three-digit move is eight, and at the size
-    the move is set that runs off the panel. Measuring first removes the whole
-    class of bug rather than the instances of it.
+    never at a scale chosen by eye. Measuring first removes the whole class of
+    bug rather than the instances of it.
   */
   const room = PANEL.width - textX - 24;
 
-  bmp.fitText(textX, 56, symbol, INK.black, 8, room);
+  bmp.fitText(textX, 62, symbol, INK.black, 7, room);
 
-  // The move, in the mood colour and largest: it is what you read from across a
-  // room, and everything else is supporting detail.
   const move = `${changePercent >= 0 ? '+' : '-'}${Math.abs(changePercent).toFixed(2)}%`;
-  bmp.fitText(textX, 140, move, moodInk, 11, room);
+  bmp.fitText(textX, 130, move, moodInk, 10, room);
 
-  // Price and how unusual the move is, small.
-  bmp.fitText(textX, 250, `$${price.toFixed(2)}`, INK.black, 6, room);
-  const sig = `${sigmas >= 0 ? '+' : '-'}${Math.abs(sigmas).toFixed(1)} SIGMA`;
-  bmp.fitText(textX, 300, sig, INK.black, 5, room);
+  bmp.fitText(textX, 240, `$${price.toFixed(2)}`, INK.black, 5, room);
+  const conf = `MODEL ${Math.round(props.percentile * 100)} PCT`;
+  bmp.fitText(textX, 292, conf, INK.black, 4, room);
 
   return bmp;
 }
@@ -125,7 +124,7 @@ export function EinkPanel(props: EinkPanelProps) {
           same bitmap as its own ghost would produce no residue at all, which
           defeats the point.
         */
-        const ghost = compose({ ...props, changePercent: 0, sigmas: 0 });
+        const ghost = compose({ ...props, changePercent: 0, sigmas: 0, percentile: 0.5 });
         // Scale 2 on a 640 x 400 panel is a 1280 x 800 render, which is more
         // than enough for the capsule texture to read at the size it appears.
         setHref(renderEink(compose(props), { scale: 2, ghost }));
@@ -137,7 +136,7 @@ export function EinkPanel(props: EinkPanelProps) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.symbol, props.price, props.changePercent, props.sigmas]);
+  }, [props.symbol, props.price, props.changePercent, props.sigmas, props.percentile]);
 
   const { x, y, width, height } = props;
 

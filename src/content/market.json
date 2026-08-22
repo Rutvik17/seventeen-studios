@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-08-22T05:07:03.880Z",
+  "fetchedAt": "2026-08-22T08:19:34.083Z",
   "correlations": [
     [
       1,
@@ -51,6 +51,86 @@
     ]
   ],
   "correlationSessions": 500,
+  "sentiment": {
+    "kind": "logistic-regression",
+    "featureNames": [
+      "return_1d",
+      "momentum_5d",
+      "momentum_20d",
+      "vol_regime"
+    ],
+    "weights": [
+      0.01544,
+      -0.02632,
+      0.00023,
+      0.02162
+    ],
+    "bias": 0.05537,
+    "mean": [
+      0.03353,
+      0.07481,
+      0.18831,
+      -0.08025
+    ],
+    "std": [
+      1.01736,
+      0.99911,
+      0.98796,
+      0.33426
+    ],
+    "train": {
+      "accuracy": 0.5149,
+      "logLoss": 0.6926,
+      "baseRate": 0.5138,
+      "upShare": 0.5138,
+      "n": 1843
+    },
+    "test": {
+      "accuracy": 0.5272,
+      "logLoss": 0.6914,
+      "baseRate": 0.5322,
+      "upShare": 0.5322,
+      "n": 791
+    },
+    "calibration": [
+      {
+        "predicted": 0.5026,
+        "actual": 0.5409,
+        "n": 159
+      },
+      {
+        "predicted": 0.5084,
+        "actual": 0.4684,
+        "n": 158
+      },
+      {
+        "predicted": 0.5124,
+        "actual": 0.5443,
+        "n": 158
+      },
+      {
+        "predicted": 0.5174,
+        "actual": 0.538,
+        "n": 158
+      },
+      {
+        "predicted": 0.5256,
+        "actual": 0.5696,
+        "n": 158
+      }
+    ],
+    "quantiles": [
+      0.50357,
+      0.50651,
+      0.50906,
+      0.51106,
+      0.51326,
+      0.5154,
+      0.51804,
+      0.52082,
+      0.525
+    ]
+  },
   "tradingDays": 252,
   "window": "2y daily",
   "source": "Yahoo Finance chart API, adjusted closes",
@@ -188,7 +268,17 @@
         217.5,
         225.01,
         214.72
-      ]
+      ],
+      "sentiment": {
+        "probability": 0.51232,
+        "percentile": 0.444,
+        "features": [
+          -0.3901,
+          -0.839,
+          0.3304,
+          -0.4473
+        ]
+      }
     },
     {
       "symbol": "TSLA",
@@ -323,7 +413,17 @@
         332.81,
         339.3,
         362.86
-      ]
+      ],
+      "sentiment": {
+        "probability": 0.50958,
+        "percentile": 0.333,
+        "features": [
+          1.3668,
+          0.7128,
+          0.9012,
+          -0.3991
+        ]
+      }
     },
     {
       "symbol": "AMZN",
@@ -458,7 +558,17 @@
         272.27,
         261.31,
         258.63
-      ]
+      ],
+      "sentiment": {
+        "probability": 0.50622,
+        "percentile": 0.111,
+        "features": [
+          -0.2072,
+          -0.2505,
+          0.8785,
+          -0.6299
+        ]
+      }
     },
     {
       "symbol": "GOOGL",
@@ -593,7 +703,17 @@
         343.8,
         344,
         344.82
-      ]
+      ],
+      "sentiment": {
+        "probability": 0.50985,
+        "percentile": 0.333,
+        "features": [
+          0.505,
+          -0.0583,
+          0.7042,
+          -0.4937
+        ]
+      }
     },
     {
       "symbol": "RKLB",
@@ -728,7 +848,17 @@
         80.01,
         82.08,
         72.57
-      ]
+      ],
+      "sentiment": {
+        "probability": 0.50521,
+        "percentile": 0.111,
+        "features": [
+          -0.0878,
+          -0.7563,
+          0.4777,
+          -0.9251
+        ]
+      }
     },
     {
       "symbol": "QCOM",
@@ -863,7 +993,17 @@
         162.68,
         162.18,
         160.75
-      ]
+      ],
+      "sentiment": {
+        "probability": 0.5019,
+        "percentile": 0,
+        "features": [
+          0.0016,
+          -0.3494,
+          -0.2148,
+          -0.9828
+        ]
+      }
     }
   ]
 }
