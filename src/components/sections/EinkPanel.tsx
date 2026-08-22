@@ -46,12 +46,38 @@ export type EinkPanelProps = {
   changePercent: number;
   sigmas: number;
   asOf: string;
+  /**
+   * ISO instant the data was captured — the fallback before the clock starts.
+   *
+   * The strip normally shows the LIVE time; this is what it reads during server
+   * render and in the first frame, so the markup is deterministic.
+   */
+  stamp: string;
   /** Where the model sits in its own range, 0 to 1. Drives the expression. */
   percentile: number;
 };
 
+/**
+ * The status strip's two halves.
+ *
+ * Uppercase and abbreviated because the font has no lowercase, and 24-hour
+ * because a device on a shelf has no room for AM/PM and no reason to be
+ * ambiguous. Rendered in UTC deliberately: the panel is a picture built on a
+ * server, so a local time would be the BUILD machine's local time, which is
+ * nobody's.
+ */
+function formatStamp(at: string | number): { date: string; time: string } {
+  const d = typeof at === 'number' ? new Date(at) : at ? new Date(at) : new Date(0);
+  if (Number.isNaN(d.getTime())) return { date: '', time: '' };
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const month = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][d.getUTCMonth()];
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mm = String(d.getUTCMinutes()).padStart(2, '0');
+  return { date: `${day} ${month}`, time: `${hh}:${mm} UTC` };
+}
+
 /** Compose the panel's bitmap. Pure, so it can be reasoned about and tested. */
-function compose(props: EinkPanelProps): Bitmap {
+function compose(props: EinkPanelProps & { at?: number | null }): Bitmap {
   const bmp = new Bitmap(PANEL.width, PANEL.height);
   const { symbol, price, changePercent, sigmas } = props;
 
@@ -65,6 +91,23 @@ function compose(props: EinkPanelProps): Bitmap {
   const mood = inkFor(sigmas);
   const moodInk: Ink = mood === 'green' ? INK.green : mood === 'red' ? INK.red : INK.black;
 
+  /*
+    ---- the status strip, across the top ----
+
+    A real dashboard says WHEN before it says anything else, and it says it in
+    the corner rather than in the body. The date used to be the fourth line of
+    the readout, competing with the price for the same eye — which is the wrong
+    place for a timestamp: you glance at it once to decide whether to trust the
+    rest, and then never again.
+  */
+  const STRIP = 3;
+  const stamped = formatStamp(props.at ?? props.stamp);
+  bmp.text(24, 16, stamped.date, INK.black, STRIP);
+  const timeW = Bitmap.measure(stamped.time, STRIP);
+  bmp.text(PANEL.width - 24 - timeW, 16, stamped.time, INK.black, STRIP);
+  // A hairline under it, so the strip reads as chrome rather than as content.
+  bmp.fillRect(24, 48, PANEL.width - 48, 1, INK.black);
+
   /* ---- the face, left ---- */
   /*
     The expression comes from the MODEL, not from today's move. It is where the
@@ -76,16 +119,17 @@ function compose(props: EinkPanelProps): Bitmap {
     reader already expects from a market screen. Mood from the model, sign from
     the market.
   */
+  const TOP = 62;
   const FACE = 10;
   const faceX = 24;
-  const faceY = Math.round((PANEL.height - FACE_SIZE * FACE) / 2);
+  const faceY = TOP + Math.round((PANEL.height - TOP - FACE_SIZE * FACE) / 2);
   for (const cell of faceCells(expressionFor(props.percentile))) {
     bmp.fillRect(faceX + cell.x * FACE, faceY + cell.y * FACE, FACE, FACE, moodInk);
   }
 
   /* ---- a rule between face and figures ---- */
   const railX = faceX + FACE_SIZE * FACE + 28;
-  bmp.fillRect(railX, 40, 2, PANEL.height - 80, INK.black);
+  bmp.fillRect(railX, TOP + 16, 2, PANEL.height - TOP - 48, INK.black);
 
   /* ---- the readout, right ---- */
   const textX = railX + 32;
@@ -96,36 +140,45 @@ function compose(props: EinkPanelProps): Bitmap {
   */
   const room = PANEL.width - textX - 24;
 
-  bmp.fitText(textX, 62, symbol, INK.black, 7, room);
+  bmp.fitText(textX, TOP + 34, symbol, INK.black, 7, room);
 
   const move = `${changePercent >= 0 ? '+' : '-'}${Math.abs(changePercent).toFixed(2)}%`;
-  bmp.fitText(textX, 130, move, moodInk, 10, room);
+  bmp.fitText(textX, TOP + 104, move, moodInk, 10, room);
 
-  bmp.fitText(textX, 240, `$${price.toFixed(2)}`, INK.black, 5, room);
-
-  /*
-    The fourth line used to read "MODEL 44 PCT", which is unreadable — it meant
-    the 44th percentile of the model's own output range, and nothing on the
-    panel said so. A four-line readout has no room to explain a term, so a line
-    that needs explaining does not belong on it.
-
-    It shows the session the close belongs to instead: a fact, instantly
-    understood, and the one thing the panel was missing. The model is still
-    there — it is the FACE, which needs no label at all.
-  */
-  const asOf = props.asOf
-    ? new Date(props.asOf + 'T00:00:00Z')
-        .toUTCString()
-        .slice(5, 11)
-        .toUpperCase()
-    : '';
-  bmp.fitText(textX, 292, `CLOSE ${asOf}`, INK.black, 4, room);
+  bmp.fitText(textX, TOP + 214, `$${price.toFixed(2)}`, INK.black, 5, room);
 
   return bmp;
 }
 
 export function EinkPanel(props: EinkPanelProps) {
   const [href, setHref] = useState<string | null>(null);
+  /*
+    The live clock.
+    
+    Starts as null so the server and the first client frame agree — seeding it
+    from `Date.now()` would render one time on the server and a different one in
+    the browser, which React reports as a hydration mismatch and then throws the
+    whole subtree away.
+
+    The interval is aligned to the next minute boundary rather than firing every
+    60,000ms from mount, so the display changes ON the minute the way a clock
+    does instead of at whatever offset the page happened to load at.
+  */
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNow(Date.now());
+    let interval: number | undefined;
+    const align = window.setTimeout(() => {
+      setNow(Date.now());
+      interval = window.setInterval(() => setNow(Date.now()), 60_000);
+    }, 60_000 - (Date.now() % 60_000));
+
+    return () => {
+      window.clearTimeout(align);
+      if (interval) window.clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -143,7 +196,7 @@ export function EinkPanel(props: EinkPanelProps) {
         const ghost = compose({ ...props, changePercent: 0, sigmas: 0, percentile: 0.5 });
         // Scale 2 on a 640 x 400 panel is a 1280 x 800 render, which is more
         // than enough for the capsule texture to read at the size it appears.
-        setHref(renderEink(compose(props), { scale: 2, ghost }));
+        setHref(renderEink(compose({ ...props, at: now }), { scale: 2, ghost }));
       })
       .catch(() => {
         /* No WebGL. The plain SVG panel below stays. */
@@ -152,7 +205,11 @@ export function EinkPanel(props: EinkPanelProps) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.symbol, props.price, props.changePercent, props.sigmas, props.percentile]);
+    // `now` is in the dependency list, so the panel is re-rendered once a
+    // minute. A full WebGL pass costs about twenty milliseconds and happens
+    // sixty times an hour, which is nothing — and it is the only way to move
+    // pixels inside an image that has already been rasterised.
+  }, [props.symbol, props.price, props.changePercent, props.sigmas, props.percentile, props.stamp, now]);
 
   const { x, y, width, height } = props;
 
