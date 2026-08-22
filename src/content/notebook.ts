@@ -1,35 +1,73 @@
 import type { Block } from './types';
 
 /**
- * The notebook.
+ * The notebook — lessons, not blog posts.
  *
  * ---
  *
- * WHAT THESE ARE FOR
+ * WHAT THESE ARE
  *
- * Each entry explains one of the things on this site, from nothing, to someone
- * who has never studied the subject. Not a write-up for people who could
- * already have built it — those are worth nothing to a reader and nothing to
- * the writer.
+ * Each one teaches you to build a thing this studio built, from nothing, and
+ * you should be able to do it yourself at the end. Not a write-up. Not "here is
+ * what I made and why it was hard". A lesson, with the maths and the physics
+ * and the code that actually produced the result.
+ *
+ * The product argument behind that: an AI agent can produce a working artefact
+ * from a prompt far faster than a person can type one. What it cannot do is
+ * leave the person understanding it. Understanding is the thing worth having
+ * and the thing worth publishing, so these are written to transfer it rather
+ * than to display it.
  *
  * ---
  *
  * THE RULES, WHICH ARE GRASP'S
  *
  * 1. **Assume no prior knowledge at all.** Not "rusty" — none. Read it back as
- *    someone who does not know what a volt is, and find the first word they
- *    would have had to look up.
+ *    someone who does not know what a volt or a derivative is, and find the
+ *    first word they would have had to look up.
  * 2. **Every symbol is introduced before it is used.** The `equation` block
  *    type enforces this: `words` and `where` are required fields, so a symbolic
  *    form cannot be authored without an English sentence and a named list of
  *    every symbol in it.
  * 3. **Show the arithmetic with real numbers in it.** Never a bare result.
- * 4. **No filler.** The standard failure of technical writing is a thousand
+ * 4. **The reader must be able to rebuild it.** If a step cannot be followed to
+ *    a working result, it is not finished — however well it reads.
+ * 5. **No filler.** The standard failure of technical writing is a thousand
  *    words of preamble before the first useful sentence. Start at the thing.
- * 5. **If it can be operated, operate it.** An embedded instrument teaches more
- *    in four seconds of dragging than six paragraphs, and the reader believes it
- *    because they moved it themselves.
+ * 6. **If it can be operated, operate it.** An embedded instrument teaches more
+ *    in four seconds of dragging than six paragraphs, and the reader believes
+ *    it because they moved it themselves.
  */
+
+/**
+ * Subjects a lesson can be filed under.
+ *
+ * A closed union rather than free strings, so a typo becomes a type error
+ * instead of a tag page with one entry on it that nobody can find.
+ */
+export type Tag =
+  | 'hardware'
+  | 'electronics'
+  | 'quantitative'
+  | 'machine-learning'
+  | 'physics'
+  | 'mathematics'
+  | 'graphics'
+  | 'teaching';
+
+export const TAGS: { id: Tag; label: string; blurb: string }[] = [
+  { id: 'hardware', label: 'Hardware', blurb: 'Boards, parts, power budgets' },
+  { id: 'electronics', label: 'Electronics', blurb: 'Circuits from first principles' },
+  { id: 'quantitative', label: 'Quantitative', blurb: 'Risk, simulation, money' },
+  { id: 'machine-learning', label: 'Machine learning', blurb: 'Models that are actually fitted' },
+  { id: 'physics', label: 'Physics', blurb: 'Forces, motion, simulation' },
+  { id: 'mathematics', label: 'Mathematics', blurb: 'The maths under the surface' },
+  { id: 'graphics', label: 'Graphics', blurb: 'Drawing with code' },
+  { id: 'teaching', label: 'Teaching', blurb: 'How understanding is built' },
+];
+
+export const tagLabel = (id: Tag): string =>
+  TAGS.find((t) => t.id === id)?.label ?? id;
 
 export type Entry = {
   slug: string;
@@ -39,6 +77,18 @@ export type Entry = {
   standfirst: string;
   /** The subject, for the row's pill. */
   topic: string;
+  /** Subjects this lesson is filed under. The first is its primary. */
+  tags: Tag[];
+  /**
+   * What a reader can do at the end that they could not at the start.
+   *
+   * Required, and the most useful field in this file. A lesson that cannot
+   * state one has not decided what it is teaching — and the exercise of writing
+   * it catches an entry that is really a write-up wearing a lesson's clothes.
+   */
+  outcome: string;
+  /** What they need first. Empty means genuinely nothing. */
+  prerequisites: string[];
   /** ISO date the entry was published. A fact, so it stays literal. */
   date: string;
   /** The wash this row brings to the index page. */
@@ -56,6 +106,10 @@ export const entries: Entry[] = [
     standfirst:
       'Designing a small device from nothing: what every part on a circuit board is for, and why it has to be there.',
     topic: 'Hardware',
+    tags: ['hardware', 'electronics'],
+    outcome:
+      'Read a circuit board, work out how wide a wire has to be, and size a battery for a device that sleeps.',
+    prerequisites: ['None. It starts at what a circuit board is.'],
     date: '2026-08-22',
     color: '#d3e3da',
     ink: '#123f33',
@@ -297,6 +351,10 @@ export const entries: Entry[] = [
     standfirst:
       'How you work out the chance of something when the maths is too hard to solve — starting with a coin.',
     topic: 'Quantitative',
+    tags: ['quantitative', 'mathematics'],
+    outcome:
+      'Answer a probability question by simulating it, and know when the answer you get is worth trusting.',
+    prerequisites: ['Arithmetic. Nothing else.'],
     date: '2026-08-22',
     color: '#f7e4c8',
     ink: '#7a4410',
@@ -434,6 +492,10 @@ export const entries: Entry[] = [
     standfirst:
       'Nothing on this site is keyframed. The difference between a curve and a force, and why your eye catches it.',
     topic: 'Motion',
+    tags: ['physics', 'graphics'],
+    outcome:
+      'Animate anything with forces instead of curves, and write a spring integrator that does not explode.',
+    prerequisites: ['Being able to read a few lines of code helps, but the maths is explained from scratch.'],
     date: '2026-08-22',
     color: '#f8dde1',
     ink: '#8f2338',
@@ -523,6 +585,10 @@ export const entries: Entry[] = [
     standfirst:
       'Calculus is one idea about slopes, buried under notation. Here it is without the notation.',
     topic: 'Teaching',
+    tags: ['mathematics', 'teaching'],
+    outcome:
+      'Understand what a derivative measures, and read one off a graph without touching the notation.',
+    prerequisites: ['None. It starts at what steepness is.'],
     date: '2026-08-22',
     color: '#dce5fc',
     ink: '#12379c',
@@ -608,6 +674,10 @@ export const entries: Entry[] = [
     standfirst:
       'Credit risk is three questions, not one. Taking apart the number behind every lending decision.',
     topic: 'Quantitative',
+    tags: ['quantitative'],
+    outcome:
+      'Decompose a lending decision into the three questions behind it, and price the risk of an account.',
+    prerequisites: ['Arithmetic. Nothing else.'],
     date: '2026-08-22',
     color: '#d9e9db',
     ink: '#1d5632',
@@ -685,6 +755,10 @@ export const entries: Entry[] = [
     standfirst:
       'Training a real model to predict tomorrow, finding out it barely works, and why that is the honest answer.',
     topic: 'Machine learning',
+    tags: ['machine-learning', 'quantitative'],
+    outcome:
+      'Train a classifier by gradient descent, and — more usefully — tell whether it has learned anything at all.',
+    prerequisites: ['Helps to have read Guessing well first, but it is not required.'],
     date: '2026-08-22',
     color: '#e8dff2',
     ink: '#4a2c6b',

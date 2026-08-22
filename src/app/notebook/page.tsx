@@ -3,11 +3,12 @@ import { entries } from '@/content/notebook';
 import { SplitText } from '@/components/motion/SplitText';
 import { Reveal } from '@/components/motion/Reveal';
 import { NotebookRows } from '@/components/notebook/NotebookRows';
+import { jsonLd, notebookSchema } from '@/lib/schema';
 
 export const metadata: Metadata = {
   title: 'Notebook',
   description:
-    'How the things on this site work, explained from nothing — circuit boards, simulation, motion, calculus and credit risk.',
+    'Free engineering lessons that start from nothing: circuit board design and IPC-2221 trace width, Monte Carlo simulation and value at risk, spring physics and inverse kinematics, derivatives from scratch, credit risk, and training a classifier by gradient descent.',
 };
 
 /**
@@ -25,34 +26,27 @@ export default function NotebookPage() {
   */
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLd(notebookSchema(entries)) }}
+      />
       <div className="page page--head-only">
         <header className="page-head page-head--flush">
           <span className="mono-label">Notebook</span>
           <SplitText as="h1" className="page-head__title" stagger={0.03} depth>
-            How these work
+            Lessons
           </SplitText>
           <Reveal className="page-head__lead">
             <p>
-              Written for someone who has never studied any of it. Every symbol
-              is explained before it is used, and anything that can be operated
-              is.
+              Lessons, not write-ups. Each one starts at nothing and ends with
+              you able to build the thing yourself — the maths, the physics and
+              the code that actually produced it.
             </p>
           </Reveal>
         </header>
       </div>
 
-      <NotebookRows
-        rows={entries.map((e) => ({
-          id: e.slug,
-          title: e.title,
-          tag: e.topic,
-          meta: e.standfirst,
-          href: `/notebook/${e.slug}/`,
-          color: e.color,
-          ink: e.ink,
-          trail: e.index,
-        }))}
-      />
+      <NotebookRows entries={entries} />
     </>
   );
 }
