@@ -69,14 +69,38 @@ export type RevealRow = {
 };
 
 /**
- * How much of the letterform shows at rest, as a fraction of the font size.
+ * How much of the LETTERFORM shows at rest, as a fraction of the font size.
  *
- * 0.6 was too little — the titles read as a band of fragments rather than as
- * words you could almost make out, which is the effect being aimed at. 0.72
- * shows enough of the x-height to recognise the word while still obviously
- * withholding something.
+ * Walked out three times. 0.6 read as a band of fragments, 0.72 as words you
+ * could almost make out, 0.9 as words you can read that are still visibly held
+ * back — which is the effect actually wanted. It should look like something
+ * tucked into an envelope, not like something censored.
+ *
+ * It cannot go much past this: a full line box is about 1.16 with the leading
+ * these carry, so beyond roughly 0.95 the clip stops reading as deliberate and
+ * starts reading as a rendering fault.
  */
-const CLOSED = 0.72;
+const CLOSED = 0.9;
+
+/**
+ * Space above and below that band, as a fraction of the font size.
+ *
+ * This is a SEPARATE quantity from the clip depth and conflating the two is
+ * what made the rows feel wrong. `CLOSED` decides how much of a letter you can
+ * see; this decides whether the letter has any room around it. At zero the type
+ * fills its row edge to edge and consecutive titles nearly touch, which reads as
+ * cramped no matter how much of each glyph is showing — so opening the clip
+ * further was fixing the wrong number.
+ *
+ * The row's resting height is therefore CLOSED + two of these. At 0.34 an 88px
+ * title sits in a 143px row with 30px of air above and below it — generous, and
+ * the point of separating the two numbers is that this one can be tuned for
+ * rhythm without touching how much of a letter is visible.
+ */
+const BREATHE = 0.34;
+
+/** Resting height of a row, in pixels, for a given font size. */
+const closedHeight = (fontSize: number) => fontSize * (CLOSED + BREATHE * 2);
 
 export function RevealRows({
   rows,
@@ -118,9 +142,13 @@ export function RevealRows({
         // The floor allows for a full line box plus its descenders. Measuring
         // alone is not enough on the first frame after a font swaps in, when
         // `scrollHeight` can briefly report the fallback's metrics.
+        // The floor allows for a full line box plus its descenders and the
+        // breathing room. Measuring alone is not enough on the first frame
+        // after a font swaps in, when `scrollHeight` can briefly report the
+        // fallback's metrics.
         const target = isOpen
-          ? Math.max(link?.scrollHeight ?? 0, fontSize * 1.3)
-          : fontSize * CLOSED;
+          ? Math.max(link?.scrollHeight ?? 0, fontSize * (1.16 + BREATHE * 2))
+          : closedHeight(fontSize);
 
         gsap.to(node, {
           height: target,
@@ -172,7 +200,7 @@ export function RevealRows({
         const node = el.querySelector<HTMLElement>(`[data-row="${row.id}"]`);
         if (!node) return;
         const fontSize = parseFloat(getComputedStyle(node).fontSize) || 48;
-        gsap.set(node, { height: fontSize * CLOSED });
+        gsap.set(node, { height: closedHeight(fontSize) });
         gsap.set(node.querySelector('[data-row-fill]'), {
           scaleX: 0,
           transformOrigin: 'left center',

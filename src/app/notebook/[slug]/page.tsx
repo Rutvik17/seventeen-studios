@@ -7,6 +7,8 @@ import { SplitText } from '@/components/motion/SplitText';
 import { TransitionLink } from '@/components/Transition';
 import { ReadingProgress } from '@/components/ReadingProgress';
 import { readingTime } from '@/lib/time';
+import { jsonLd, lessonSchema } from '@/lib/schema';
+import { tagLabel } from '@/content/notebook';
 
 interface Params {
   params: { slug: string };
@@ -19,14 +21,34 @@ export function generateStaticParams() {
 export function generateMetadata({ params }: Params): Metadata {
   const entry = entryBySlug(params.slug);
   if (!entry) return { title: 'Not found' };
+  const url = `/notebook/${entry.slug}/`;
   return {
     title: entry.title,
-    description: entry.standfirst,
+    /*
+      The OUTCOME, not the standfirst. A search result is read as a promise, and
+      "you will be able to work out how wide a wire has to be" is a far better
+      one than a description of what the article is about. It is also the
+      sentence the lesson is obliged to deliver on.
+    */
+    description: `${entry.outcome} ${entry.standfirst}`,
+    keywords: entry.tags.map(tagLabel),
+    authors: [{ name: 'Rutvik Patel' }],
+    // Tells a search engine which URL is authoritative — without it, the same
+    // lesson reachable with a query string counts as duplicate content.
+    alternates: { canonical: url },
     openGraph: {
       title: entry.title,
-      description: entry.standfirst,
+      description: entry.outcome,
       type: 'article',
       publishedTime: entry.date,
+      authors: ['Rutvik Patel'],
+      tags: entry.tags.map(tagLabel),
+      url,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: entry.title,
+      description: entry.outcome,
     },
   };
 }
@@ -50,6 +72,15 @@ export default function NotebookEntryPage({ params }: Params) {
 
   return (
     <article className="entry">
+      {/*
+        Structured data. It is what lets a search engine understand this as a
+        LESSON with an outcome and prerequisites rather than as an
+        undifferentiated article — see `lib/schema.ts`.
+      */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLd(lessonSchema(entry)) }}
+      />
       <ReadingProgress />
 
       <header
@@ -71,6 +102,25 @@ export default function NotebookEntryPage({ params }: Params) {
 
           <Reveal className="entry__standfirst" delay={0.08}>
             <p>{entry.standfirst}</p>
+          </Reveal>
+
+          {/*
+            A lesson opens by saying what you will be able to do and what you
+            need first. Both are required fields on an entry, so neither can be
+            quietly skipped — and the exercise of writing an outcome is what
+            catches a write-up wearing a lesson's clothes.
+          */}
+          <Reveal className="entry__contract" delay={0.14}>
+            <dl>
+              <div>
+                <dt className="mono-label">By the end</dt>
+                <dd>{entry.outcome}</dd>
+              </div>
+              <div>
+                <dt className="mono-label">You need first</dt>
+                <dd>{entry.prerequisites.join(' ')}</dd>
+              </div>
+            </dl>
           </Reveal>
         </div>
       </header>

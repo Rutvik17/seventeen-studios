@@ -5352,12 +5352,16 @@ html.no-js .exploded .exploded__svg {
   align-items: baseline;
   gap: clamp(10px, 1.6vw, 24px);
   /*
-    The bottom padding is descender room, and it has to live HERE rather than on
-    the title: the open height is measured from this element's `scrollHeight`,
-    so space added anywhere else is not seen by the measurement and the row
-    still closes over the tails of g, p and y.
+    Vertical padding is the row's breathing room, and it has to live HERE rather
+    than on the title: the open height is measured from this element's
+    `scrollHeight`, so space added anywhere else is invisible to the measurement
+    and the row closes over the tails of g, p and y.
+
+    `BREATHE` in `RevealRows.tsx` must match this — the component computes the
+    resting height from it, and if the two disagree the clip lands somewhere
+    other than where the padding put the type.
   */
-  padding: 0 var(--gutter) 0.1em;
+  padding: 0.34em var(--gutter);
   text-decoration: none;
   color: inherit;
 }
@@ -6432,4 +6436,306 @@ html.no-js .exploded .exploded__svg {
   color: var(--accent);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+
+/* ==================================================================
+   MOBILE
+   ==================================================================
+
+   Everything below lives inside a `max-width` media query, and that is a
+   deliberate constraint rather than a convention: it means the desktop
+   rendering cannot change. A rule that only exists below 900px has no way to
+   affect a 1512px viewport, so this whole section is provably regression-free
+   for the layout that already works.
+
+   The corollary is that nothing here may edit an existing rule. Where a mobile
+   value is needed, it is added as an override — never by changing the value the
+   desktop reads.
+   ================================================================== */
+
+@media (max-width: 900px) {
+  /*
+    SVG TEXT IS THE BIG ONE.
+
+    A label set at 10 user units inside a 760-unit viewBox renders at
+    10 x (rendered width / 760). On a 350px-wide phone that is 4.6px —
+    illegible, and it applies to every axis label, tick and annotation on every
+    instrument at once.
+
+    Font size inside an SVG does not respond to the element's rendered size, so
+    the only fix is to set a larger value in USER UNITS at small viewports. 26
+    units puts the label back at roughly 12px on a 350px screen, which is the
+    floor for anything meant to be read.
+  */
+  .instrument__axis {
+    font-size: 26px;
+  }
+
+  .deriv__tri-label {
+    font-size: 24px;
+  }
+
+  .deriv__tick {
+    font-size: 20px;
+  }
+
+  /*
+    The charts are drawn for a wide frame. On a phone they are squeezed to about
+    a third of that, so the bands and bars become hairlines — a taller minimum
+    gives the shape somewhere to exist.
+  */
+  .instrument__svg,
+  .deriv__svg {
+    min-height: 190px;
+  }
+}
+
+@media (max-width: 760px) {
+  /*
+    The diversification comparison is a label, a bar and a figure on one line.
+    At 13rem for the label plus 4rem for the figure, a 390px screen leaves about
+    34px for the bar itself — which is the one part carrying the meaning.
+    Stacked, the bar gets the full width.
+  */
+  .diversify__bar {
+    grid-template-columns: minmax(0, 1fr) 4.5rem;
+    row-gap: 4px;
+  }
+
+  .diversify__bar .mono-label {
+    grid-column: 1 / -1;
+  }
+
+  /* The board's readout column sits under the drawing here and does not need
+     to hold a monospace block at desktop measure. */
+  .board-story__calc {
+    font-size: 11.5px;
+  }
+}
+
+@media (max-width: 700px) {
+  /*
+    THE ROW LIST.
+
+    At 5.6vw the titles fall to their 28px floor on a phone, and a band 0.9 of
+    that is 25px — readable, but the type has stopped being the point. Bumping
+    the floor keeps these as the display objects they are on desktop.
+  */
+  .rows__row {
+    font-size: clamp(34px, 9vw, 48px);
+  }
+
+  /* The trailing status marker and the tag cannot both fit beside type that
+     size. The status is the one a reader can infer from the page they land on. */
+  .rows__trail {
+    display: none;
+  }
+
+  /*
+    THE BOARD STORY.
+
+    560vh of pinned scroll is a long way to travel on a phone for a drawing that
+    is a third the size. The five acts still run; they simply need less thumb.
+  */
+  .board-story {
+    height: 340vh;
+  }
+
+  .board-story__stage {
+    padding-top: clamp(56px, 12vh, 88px);
+  }
+
+  /*
+    The wordmark is the site's signature and should still dominate, but at 11.4vw
+    it lands at 44px on a phone — smaller than the row titles below it, which
+    inverts the hierarchy.
+  */
+  .board-story__wordmark {
+    font-size: clamp(46px, 15vw, 72px);
+  }
+
+  .board-story__svg {
+    max-height: 46svh;
+  }
+
+  .board-story__caption {
+    font-size: 15px;
+  }
+
+  /* The entry header's type is sized for a wide measure. */
+  .entry__title {
+    font-size: clamp(30px, 8.4vw, 42px);
+  }
+
+  .outro__question {
+    font-size: clamp(38px, 12vw, 62px);
+  }
+
+  /*
+    Equations scroll horizontally rather than wrapping, which is correct — a
+    formula that wraps mid-expression says something different. But the scroll
+    needs to be discoverable, so the container gets a visible edge.
+  */
+  .equation__symbols,
+  .equation__substituted {
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(to right, #000 92%, transparent);
+  }
+
+  /* Code blocks are the other thing allowed its own scrollbar. */
+  .rig__code pre,
+  .prose__code pre {
+    font-size: 11.5px;
+  }
+}
+
+@media (max-width: 560px) {
+  /*
+    The explorer's 4:3 stage is 292px tall at this width, which is not enough to
+    turn a board in. Squarer gives the object room without pushing the panel
+    below the fold.
+  */
+  .explorer__stage {
+    aspect-ratio: 1 / 1;
+  }
+
+  .explorer__spot {
+    font-size: 9.5px;
+    padding: 2px 6px;
+  }
+
+  /*
+    The holdings table keeps its price column here; at 5.5rem it is the one
+    figure that stays comparable down a column, and losing it would leave a
+    weight slider with nothing to weigh.
+  */
+  .holdings__row {
+    grid-template-columns: minmax(0, 1fr) 5rem;
+  }
+
+  .holdings__price {
+    text-align: right;
+  }
+
+  /* Readouts stack to two-up rather than one, so the panel stays scannable. */
+  .instrument__readout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .instrument__value {
+    font-size: 16px;
+  }
+}
+
+/* ==================================================================
+   TAG FILTER
+   ================================================================== */
+
+.tagbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: var(--max);
+  margin: 0 auto clamp(20px, 3vh, 40px);
+  padding: 0 var(--gutter);
+}
+
+/*
+  The fill is a separate element scaled from the left rather than a background
+  colour that fades. A colour fading in reads as a state change; one that sweeps
+  across reads as a selection being made, which is what actually happened.
+*/
+.tagbar__pill {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 7px 15px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
+}
+
+.tagbar__fill {
+  position: absolute;
+  inset: 0;
+  background: var(--fg);
+  will-change: transform;
+}
+
+.tagbar__label {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.tagbar__pill.is-active {
+  color: var(--bg);
+  border-color: var(--fg);
+}
+
+/* The count rides along at a smaller size, dimmed against whichever ground it
+   currently sits on. */
+.tagbar__label em {
+  font-style: normal;
+  font-size: 9.5px;
+  opacity: 0.6;
+}
+
+.tagbar__pill:hover:not(.is-active) {
+  color: var(--fg);
+  border-color: var(--fg);
+}
+
+/* ==================================================================
+   A LESSON'S CONTRACT
+   ================================================================== */
+
+/*
+  What you will be able to do, and what you need first. Stated before the lesson
+  rather than discovered during it — a reader deciding whether to spend twenty
+  minutes deserves both answers in the first screen.
+*/
+.entry__contract {
+  margin-top: calc(var(--grid-unit) * 1.6);
+  padding-top: calc(var(--grid-unit) * 1.1);
+  border-top: 1px solid currentColor;
+}
+
+.entry__contract dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: clamp(14px, 2.4vw, 36px);
+}
+
+.entry__contract dt {
+  opacity: 0.65;
+  margin-bottom: 6px;
+}
+
+.entry__contract dd {
+  font-size: clamp(14px, 1.05vw, 16.5px);
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .tagbar {
+    /* A wrapping pill grid eats the whole first screen on a phone. One row that
+       scrolls keeps the lessons above the fold. */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(to right, #000 88%, transparent);
+  }
+  .tagbar::-webkit-scrollbar {
+    display: none;
+  }
+  .tagbar__pill {
+    flex: none;
+  }
 }
