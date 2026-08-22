@@ -1,14 +1,22 @@
 /**
- * The founder.
+ * Rutvik, as data.
  *
- * Ported from the founder page in `llm-vs-market` and rewritten for this site.
- * One distinction is load-bearing and must not blur: the engagements below are
- * Rutvik's professional record — work delivered inside the companies named, not
- * client work delivered by Seventeen Studios. The studio's own work is in
- * `work.ts` and is labelled as concept briefs. Keep the two separate.
+ * This file is the factual record only: who he is, and where he has worked.
+ * It survived the founder page being torn down on purpose — the page was an
+ * implementation of this data, not the data itself, and retyping a career is
+ * not something the next design should have to do.
+ *
+ * What was removed with the page: a three-line positioning statement, a grid of
+ * side work, a stack listing, a row of counters and a marquee band. All of them
+ * were either written in the studio-with-clients voice the site no longer uses,
+ * or described a version of this site that no longer exists. They are in git if
+ * a line is ever worth recovering.
+ *
+ * The same employment history, phrased for an applicant tracking system rather
+ * than for a page, is in `resume.ts`. Keep the two in step.
  */
 
-import { foundedYear, yearsOfExperience, spell, spellCapitalised } from '@/lib/time';
+import { yearsOfExperience, spell } from '@/lib/time';
 import { asset } from '@/lib/asset';
 
 const years = yearsOfExperience();
@@ -16,40 +24,19 @@ const years = yearsOfExperience();
 export const founder = {
   name: 'Rutvik Patel',
   initials: 'RP',
-  role: 'Founder · Principal Engineer',
+  role: 'Software Engineer',
   location: 'Toronto, Canada',
   portrait: asset('/founder/rutvik-patel.jpg'),
-  portraitAlt: 'Rutvik Patel, founder and principal engineer at Seventeen Studios',
+  portraitAlt: 'Rutvik Patel',
   resume: asset('/founder/rutvik-patel-resume.pdf'),
   github: 'https://github.com/Rutvik17',
-  /** One line, used for metadata and the studio-page cross-link. */
-  summary: `Principal engineer with ${spell(years)} years building interfaces and platforms at enterprise scale — agentic AI at Ernst & Young, a mobile product taken from zero to acquisition, connected-vehicle infrastructure at Ford.`,
-  /** Shown under the name in the hero. */
-  standfirst:
-    'I started Seventeen Studios because the best engineering I have done was always the work where one person stayed accountable from the architecture through to the last deploy. This is that, made deliberate.',
+  /** One line. Used for the page's metadata, so it has to stand alone. */
+  summary: `Software engineer with ${spell(years)} years building interfaces and platforms at enterprise scale — agentic AI at Ernst & Young, a mobile product taken from zero to acquisition, connected-vehicle infrastructure at Ford.`,
 } as const;
-
-/** The three-sentence position. Accented fragments render in the accent colour. */
-export const founderStatement: { lead: string; accent: string; tail: string }[] = [
-  {
-    lead: 'I build interfaces that feel',
-    accent: 'inevitable once used',
-    tail: '— and invisible while you use them.',
-  },
-  {
-    lead: `${spellCapitalised(years)} years shipping React, Next.js and React Native across`,
-    accent: 'enterprise platforms and zero-to-one products',
-    tail: ', most of it under real production load.',
-  },
-  {
-    lead: 'The studio exists to do that work',
-    accent: 'without the layer of people',
-    tail: 'that usually sits between the decision and the deploy.',
-  },
-];
 
 export interface CareerEntry {
   index: string;
+  /** Literal, because it is a fact about when something happened. */
   period: string;
   role: string;
   org: string;
@@ -59,7 +46,7 @@ export interface CareerEntry {
   stack: string[];
 }
 
-/** Professional record — delivered inside these organisations, not as the studio. */
+/** The employment record. Every date and figure on it is real. */
 export const career: CareerEntry[] = [
   {
     index: '01',
@@ -130,53 +117,3 @@ export const career: CareerEntry[] = [
     stack: [],
   },
 ];
-
-/** Things built outside client hours — the studio's visual language started here. */
-export const sideWork: {
-  title: string;
-  role: string;
-  year: string;
-  description: string;
-  href: string | null;
-  stack: string[];
-}[] = [
-  {
-    title: 'Seventeen Studios',
-    role: 'Founder · Principal Engineer',
-    year: `${foundedYear()} →`,
-    description:
-      'This site. Custom GLSL hero, curtain page transitions, drag-driven galleries and generative artwork — the studio’s standard, applied to the studio.',
-    href: 'https://github.com/Rutvik17/seventeen-studios',
-    stack: ['Next.js', 'TypeScript', 'GSAP', 'Three.js', 'Lenis'],
-  },
-];
-
-export const founderStack: { group: string; items: string[] }[] = [
-  { group: 'Interface', items: ['React', 'Next.js', 'React Native', 'TypeScript'] },
-  { group: 'Motion & GPU', items: ['GSAP', 'Three.js', 'GLSL', 'Lenis', 'Canvas'] },
-  { group: 'Services', items: ['Node.js', 'Python', 'Java', 'PostgreSQL', 'Supabase'] },
-  { group: 'Platform', items: ['AWS', 'Azure', 'Terraform', 'CI/CD'] },
-];
-
-export const founderStats: { label: string; value: string; suffix?: string; note: string }[] = [
-  { label: 'Years shipping', value: String(years), suffix: '+', note: 'In production, under load' },
-  { label: 'Platforms', value: '3', note: 'Web · iOS · Android' },
-  { label: 'Zero-to-one products', value: '2', note: 'One through to acquisition' },
-  { label: 'Studio bench', value: '5', note: 'Hard cap, senior only' },
-];
-
-/** Marquee band on the founder page. */
-export const founderMarquee = [
-  'React',
-  'Next.js',
-  'TypeScript',
-  'React Native',
-  'GSAP',
-  'Three.js',
-  'GLSL',
-  'Node',
-  'Python',
-  'PostgreSQL',
-  'Azure',
-  'AWS',
-] as const;

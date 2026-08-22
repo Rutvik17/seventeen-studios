@@ -1,20 +1,19 @@
 import type { Metadata } from 'next';
 import { founder } from '@/content/founder';
 import { site } from '@/content/studio';
-import { City } from '@/components/founder/City';
 
 /**
- * The founder page is the city, and nothing else.
+ * The founder page — intentionally empty.
  *
- * It used to be eight stacked sections — a hero, a marquee, a statement, a
- * record, a grid of side work, a stack, a row of counters, a call to action.
- * All of it said in prose what the drawing now says by being walked through,
- * and the drawing cannot share a page with a scroll of text: the canvas is
- * pinned for its whole length, so anything after it is something you reach by
- * scrolling past the story rather than by finishing it.
+ * What was here (a hand-drawn New York driven end to end, and before that eight
+ * stacked sections of prose) has been removed so the page can be rebuilt from a
+ * new idea. The route itself stays, deliberately: it is in the nav, in the
+ * sitemap, and it is the `url` on the Person node that every notebook lesson
+ * names as its author. Retiring the URL would break all three and cost the
+ * accumulated indexing; an empty page costs nothing but a visit.
  *
- * So there is one component here. Everything the old sections carried is a beat
- * on the route.
+ * The employment record the new page will be built from is still in
+ * `content/founder.ts` and `content/resume.ts` — nothing factual was deleted.
  */
 export const metadata: Metadata = {
   title: `${founder.name} — Founder`,
@@ -27,5 +26,10 @@ export const metadata: Metadata = {
 };
 
 export default function FounderPage() {
-  return <City />;
+  /*
+    An empty `.page` shell rather than a bare fragment. The header is fixed, so
+    a page with no height at all lets the footer ride up underneath it — blank
+    is the intent, broken is not.
+  */
+  return <div className="page founder-blank" />;
 }

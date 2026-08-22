@@ -76,7 +76,8 @@ say hello. All of it is deleted, and none of it should come back:
    measured. `status` on a project says `Designing` or `In progress` when that is
    the truth; presenting an intention as a shipped product is the fastest way to
    lose a technical reader. The founder page is a personal employment record and
-   everything on it is real.
+   everything on it is real — the record lives in `src/content/founder.ts`, and
+   the page that renders it is currently being rebuilt.
 9. **Never type a calendar-dependent value into the copy.** Durations, "now"
    years, counts of things in a collection and reading times all come from
    `src/lib/time.ts` or are derived from the data itself. Dates of events that
@@ -115,6 +116,11 @@ derivative cannot follow it end to end.
 Defined once in `src/app/globals.css` as custom properties; mirrored in
 `src/lib/tokens.ts` only for consumers that cannot read CSS (WebGL materials).
 **That mirror fails silently when the two drift — change both together.**
+
+`tokens.ts` currently has no importer: its only consumer was the founder
+portrait shader, which went with that page. It is kept because the rule above
+still holds for the next WebGL material that needs a colour — but if nothing
+adopts it, delete it rather than leaving it to rot out of sync.
 
 | Token | Value | Use |
 |-------|-------|-----|
