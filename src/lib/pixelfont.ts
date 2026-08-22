@@ -96,7 +96,24 @@ export const GLYPH_H = 7;
 /** One blank column between glyphs — the cell is 6 wide in practice. */
 export const TRACKING = 1;
 
-export type Ink = 0 | 1 | 2; // 0 paper · 1 black · 2 accent
+/**
+ * A panel colour index.
+ *
+ * These are not arbitrary — they are the seven states an ACeP capsule can be
+ * driven to, in the order the controller expects them. There is no eighth, and
+ * no blending between any two: a pixel is one of these or it is not drawn.
+ */
+export const INK = {
+  paper: 0,
+  black: 1,
+  red: 2,
+  green: 3,
+  blue: 4,
+  yellow: 5,
+  orange: 6,
+} as const;
+
+export type Ink = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 /**
  * A 1-bit bitmap the panel is composed into.

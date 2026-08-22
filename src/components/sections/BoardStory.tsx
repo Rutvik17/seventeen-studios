@@ -66,18 +66,30 @@ import {
   traceWidthMm,
 } from '@/lib/board';
 import { EinkPanel } from '@/components/sections/EinkPanel';
+import { PANEL as PANEL_MODULE } from '@/lib/pixel';
 import { boardActs, hero } from '@/content/studio';
 import { assetBySymbol, market, sigmasFor } from '@/content/market';
 
-/* The drawing's frame: the board, plus room above it for the display. */
-const VIEW = { x: -8, y: -50, w: 104, h: 116 };
+/*
+  The drawing's frame: the board, plus room above it for the display.
 
-/** Where the display panel sits, in board millimetres. */
+  Sized from the module rather than chosen — the 4.01" ACeP is 91 x 60.4 mm
+  overall, which is genuinely WIDER than the 88 mm board it drives. That is
+  normal for e-ink (the driver board hides behind the panel) and the frame has to
+  make room for it rather than the panel being trimmed to fit the drawing.
+*/
 const DISPLAY = {
-  w: 79,
-  h: 36,
-  x: 44 - 79 / 2,
-  y: -44,
+  w: PANEL_MODULE.width,
+  h: PANEL_MODULE.height,
+  x: BOARD.width / 2 - PANEL_MODULE.width / 2,
+  y: -76,
+};
+
+const VIEW = {
+  x: -10,
+  y: DISPLAY.y - 8,
+  w: BOARD.width + 20,
+  h: BOARD.height + Math.abs(DISPLAY.y) + 20,
 };
 
 /*
@@ -101,22 +113,16 @@ const NVDA_SIGMAS = NVDA ? sigmasFor(NVDA, NVDA_CHANGE, market.tradingDays) : 0;
   BOTH CONTROL POINTS SIT DIRECTLY ABOVE THEIR ENDPOINTS, and that is what makes
   the joins work. A ribbon of this construction is a band offset along the
   curve's NORMAL, so the band is perpendicular to the tangent at every point —
-  including the two ends. The first version curved away sideways as it left the
-  connector and arrived at the display travelling mostly horizontally, so the
-  band met both edges side-on and appeared to slice into them instead of butting
-  against them.
+  including the two ends. Leaving each end vertically makes the band horizontal
+  exactly where it meets a horizontal edge, which is the only way the two line up.
 
-  Leaving each end vertically makes the band horizontal exactly where it meets a
-  horizontal edge, which is the only way the two line up.
-
-  The width matches J2's 5 mm body rather than exceeding it; at 7.2 mm the cable
-  visibly overhung the connector it was supposed to be plugged into.
+  The width matches J2's 5 mm body rather than exceeding it.
 */
 const RIBBON = ribbon(
-  [74, 20.2],   // J2's top edge, on its centreline
-  [74, 8],      // straight up out of the connector
-  [58, 4],      // then across
-  [58, -8],     // and vertically into the display's bottom edge
+  [74, 20.2],                        // J2's top edge, on its centreline
+  [74, 8],                           // straight up out of the connector
+  [58, DISPLAY.y + DISPLAY.h + 12],  // then across
+  [58, DISPLAY.y + DISPLAY.h],       // and vertically into the display's bottom edge
   4.6,
   7,
 );
@@ -155,7 +161,14 @@ export function BoardStory() {
       gsap.set(q('[data-part]'), { opacity: 0, y: -14, scale: 0.9 });
       gsap.set(q('[data-trace]'), { drawSVG: undefined, opacity: 0 });
       gsap.set(q('[data-flow]'), { opacity: 0 });
-      gsap.set(q('[data-display]'), { opacity: 0, y: 26 });
+      /*
+        The panel does not travel. It used to start 26 units below its resting
+        place — down over the board — and slide up, which read as the display
+        emerging from inside the PCB. It is revealed in place instead, by a clip
+        that grows from its bottom edge upward, so the end of the ribbon is
+        attached from the first frame it is visible.
+      */
+      gsap.set('[data-display-clip] rect', { attr: { y: DISPLAY.y + DISPLAY.h, height: 0 } });
       /*
         The cable is revealed by a CLIP rectangle that grows UPWARD from the
         connector, so the ribbon unrolls out of J2 toward the display.
@@ -227,16 +240,24 @@ export function BoardStory() {
         { attr: { y: -10, height: 31 }, duration: 0.8, ease: 'power2.inOut' },
         3.85,
       )
-        // The panel starts arriving only once the cable has most of the way to
-        // go, so it reads as being pulled up on the end of it.
-        .to('[data-display]', { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, 4.35)
+        /*
+          The panel begins only once the cable has ARRIVED, not while it is
+          still travelling. The ribbon tween starts at 3.85 and runs 0.8, so it
+          lands at 4.65 — anything earlier had the display appearing at the end
+          of a cable that did not yet reach it.
+        */
+        .to(
+          '[data-display-clip] rect',
+          { attr: { y: DISPLAY.y, height: DISPLAY.h }, duration: 0.5, ease: 'power2.out' },
+          4.65,
+        )
         /*
           The panel fades rather than drawing pixel by pixel. A three-colour
           e-ink refresh does not sweep — it flashes the whole area black and
           white several times and then settles, which is not a thing worth
           reproducing on a landing page. A clean fade is the honest abstraction.
         */
-        .from('[data-display] image, [data-display] rect', { opacity: 0, duration: 0.3 }, 4.55);
+        .from('[data-display]', { opacity: 0, duration: 0.28 }, 4.65);
 
       /*
         Current flow and the oscillator run on their own repeating tweens rather
@@ -391,6 +412,16 @@ export function BoardStory() {
 
             {/* ---------- 05 ribbon + display ---------- */}
             <g data-ribbon>
+              {/* Grows upward from the panel's own bottom edge, so it is
+                  uncovered where it sits rather than arriving from elsewhere. */}
+              <clipPath id="display-clip" data-display-clip>
+                <rect
+                  x={DISPLAY.x - 2}
+                  y={DISPLAY.y + DISPLAY.h}
+                  width={DISPLAY.w + 4}
+                  height={0}
+                />
+              </clipPath>
               <clipPath id="ribbon-clip" data-ribbon-clip>
                 {/* Anchored at the connector and grown upward — see the note
                     on the timeline. Wide enough to clear the cable's full
@@ -405,7 +436,7 @@ export function BoardStory() {
               </g>
             </g>
 
-            <g data-display>
+            <g data-display clipPath="url(#display-clip)">
               <EinkPanel
                 x={DISPLAY.x}
                 y={DISPLAY.y}

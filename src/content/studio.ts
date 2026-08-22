@@ -110,6 +110,22 @@ export const boardActs = [
   },
 ] as const;
 
+/**
+ * The first-load sequence.
+ *
+ * What was here — "Software / Interfaces / AI systems / Conviction", under
+ * "Compiling the studio" — was an agency announcing itself, and "Conviction" in
+ * particular is the kind of word that means nothing and costs trust.
+ *
+ * These are the four things this portfolio actually contains, and the status
+ * line echoes the landing page: the site opens by bringing up a circuit board,
+ * so the loader is that board's boot rather than a brand statement.
+ */
+export const preloader = {
+  words: ['Circuits', 'Simulations', 'Interfaces', 'Instruments'],
+  status: 'Bringing up the board',
+} as const;
+
 /** Marquee strip. Nouns, not adjectives. */
 export const marqueeItems = [
   'Interactive Instruments',

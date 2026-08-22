@@ -17,9 +17,9 @@ import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { lockScroll, unlockScroll } from '@/lib/lenis';
 import { hasEnteredThisSession, markEnteredThisSession, useUi } from '@/lib/store';
-import { site } from '@/content/studio';
+import { preloader, site } from '@/content/studio';
 
-const WORDS = ['Software', 'Interfaces', 'AI systems', 'Conviction'];
+
 
 export function Preloader() {
   const enter = useUi((state) => state.enter);
@@ -143,7 +143,7 @@ export function Preloader() {
 
         <div className="preloader__center preloader__meta">
           <div className="preloader__words" ref={wordsRef}>
-            {WORDS.map((word) => (
+            {preloader.words.map((word) => (
               <span className="preloader__word" key={word}>
                 {word}
               </span>
@@ -152,7 +152,7 @@ export function Preloader() {
         </div>
 
         <div className="preloader__meta preloader__bottom">
-          <span className="mono-label">Compiling the studio</span>
+          <span className="mono-label">{preloader.status}</span>
           <span className="preloader__count" ref={countRef}>
             000
           </span>

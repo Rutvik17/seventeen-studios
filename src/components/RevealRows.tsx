@@ -88,6 +88,8 @@ export function RevealRows({
   const root = useRef<HTMLUListElement>(null);
   const [reduced, setReduced] = useState(false);
   const active = useRef<string | null>(null);
+  /** Last known mouse position, so hover can be re-derived after a scroll. */
+  const pointer = useRef<{ x: number; y: number } | null>(null);
 
   useIsomorphicLayoutEffect(() => {
     setReduced(prefersReducedMotion());
@@ -188,9 +190,63 @@ export function RevealRows({
     };
     window.addEventListener('resize', onResize);
 
+    /*
+      HOVER HAS TO BE RE-DERIVED DURING SCROLL, and this is not a nicety.
+
+      `pointerenter` and `pointerleave` fire on pointer MOVEMENT. Scrolling moves
+      the page under a stationary cursor, so rows slide beneath it and not a
+      single event is dispatched — the row under the pointer stays closed, and it
+      stays closed after the scroll stops too, until the mouse is nudged. Every
+      hover-driven list on the web has this bug; most ship with it.
+
+      The fix is to stop treating hover as an event and treat it as a QUERY: keep
+      the last pointer position, and whenever the page moves, ask what is under
+      it now.
+
+      Throttled to one animation frame. `elementFromPoint` forces a layout flush,
+      and scroll can fire far more often than the screen refreshes, so calling it
+      per event would be doing the same expensive work several times for one
+      painted frame.
+    */
+    let queued = false;
+    const syncHover = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        const point = pointer.current;
+        if (!point) return;
+        const under = document.elementFromPoint(point.x, point.y);
+        const row = under?.closest('[data-row]') ?? null;
+        // Only this list's rows. Another `RevealRows` on the same page must not
+        // be able to drive this one's state.
+        const mine = row && el.contains(row) ? row.getAttribute('data-row') : null;
+        open(mine);
+      });
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      // Mouse only. A touch leaves its last position behind for good, which
+      // would pin a row open long after the finger was lifted.
+      if (e.pointerType !== 'mouse') return;
+      pointer.current = { x: e.clientX, y: e.clientY };
+    };
+    const forgetPointer = () => {
+      pointer.current = null;
+    };
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerleave', forgetPointer);
+    window.addEventListener('blur', forgetPointer);
+    window.addEventListener('scroll', syncHover, { passive: true });
+
     return () => {
       ctx.revert();
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerleave', forgetPointer);
+      window.removeEventListener('blur', forgetPointer);
+      window.removeEventListener('scroll', syncHover);
     };
   }, [reduced, rows, open]);
 
@@ -198,6 +254,8 @@ export function RevealRows({
     <ul
       className={`rows${reduced ? ' rows--static' : ''}`}
       ref={root}
+      /* Kept alongside the scroll-driven hit test: this fires on the very
+         first hover, before any scroll has happened to trigger a sync. */
       onPointerLeave={() => open(null)}
     >
       {rows.map((row) => (

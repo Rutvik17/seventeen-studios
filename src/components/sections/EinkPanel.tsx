@@ -31,8 +31,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Bitmap } from '@/lib/pixelfont';
-import { PANEL, expressionFor, faceCells } from '@/lib/pixel';
+import { Bitmap, INK, type Ink } from '@/lib/pixelfont';
+import { PANEL, expressionFor, faceCells, inkFor } from '@/lib/pixel';
 
 export type EinkPanelProps = {
   /** Placement in board millimetres. */
@@ -52,21 +52,39 @@ function compose(props: EinkPanelProps): Bitmap {
   const bmp = new Bitmap(PANEL.width, PANEL.height);
   const { symbol, price, changePercent, sigmas } = props;
 
+  /*
+    Red down, green up — the convention every reader of a market screen already
+    carries. A convention the audience already holds beats any palette chosen
+    for its own sake, and it is the whole reason this design moved to a
+    seven-colour panel: a three-colour one has a single accent and physically
+    cannot show both.
+  */
+  const mood = inkFor(sigmas);
+  const moodInk: Ink = mood === 'green' ? INK.green : mood === 'red' ? INK.red : INK.black;
+
   /* ---- the face, left ---- */
-  // The sprite is 16 × 16; at 5× it occupies 80 px of the 296 available.
-  const FACE = 5;
-  const faceX = 12;
+  // The sprite is 16 x 16; at 14x it occupies 224 px of the 640 available.
+  const FACE = 14;
+  const faceX = 30;
   const faceY = Math.round((PANEL.height - 16 * FACE) / 2);
   for (const cell of faceCells(expressionFor(sigmas))) {
-    bmp.fillRect(faceX + cell.x * FACE, faceY + cell.y * FACE, FACE, FACE, cell.ink === 'accent' ? 2 : 1);
+    bmp.fillRect(
+      faceX + cell.x * FACE,
+      faceY + cell.y * FACE,
+      FACE,
+      FACE,
+      // The face takes the mood colour too, so the reading is legible from
+      // across a room before a single character is resolved.
+      cell.ink === 'accent' ? moodInk : INK.black,
+    );
   }
 
   /* ---- a rule between face and figures ---- */
-  const railX = faceX + 16 * FACE + 14;
-  bmp.fillRect(railX, 16, 1, PANEL.height - 32, 1);
+  const railX = faceX + 16 * FACE + 34;
+  bmp.fillRect(railX, 40, 2, PANEL.height - 80, INK.black);
 
   /* ---- the readout, right ---- */
-  const textX = railX + 14;
+  const textX = railX + 34;
   /*
     Every line is drawn at the largest scale that FITS the remaining width,
     never at a scale chosen by eye. A ticker is four or five characters and a
@@ -74,19 +92,19 @@ function compose(props: EinkPanelProps): Bitmap {
     the move is set that runs off the panel. Measuring first removes the whole
     class of bug rather than the instances of it.
   */
-  const room = PANEL.width - textX - 8;
+  const room = PANEL.width - textX - 24;
 
-  bmp.fitText(textX, 18, symbol, 1, 3, room);
+  bmp.fitText(textX, 56, symbol, INK.black, 8, room);
 
-  // The move, in the accent and largest: it is what you read from across a
+  // The move, in the mood colour and largest: it is what you read from across a
   // room, and everything else is supporting detail.
   const move = `${changePercent >= 0 ? '+' : '-'}${Math.abs(changePercent).toFixed(2)}%`;
-  bmp.fitText(textX, 46, move, 2, 4, room);
+  bmp.fitText(textX, 140, move, moodInk, 11, room);
 
   // Price and how unusual the move is, small.
-  bmp.fitText(textX, 84, `$${price.toFixed(2)}`, 1, 2, room);
+  bmp.fitText(textX, 250, `$${price.toFixed(2)}`, INK.black, 6, room);
   const sig = `${sigmas >= 0 ? '+' : '-'}${Math.abs(sigmas).toFixed(1)} SIGMA`;
-  bmp.fitText(textX, 102, sig, 1, 2, room);
+  bmp.fitText(textX, 300, sig, INK.black, 5, room);
 
   return bmp;
 }
@@ -108,7 +126,9 @@ export function EinkPanel(props: EinkPanelProps) {
           defeats the point.
         */
         const ghost = compose({ ...props, changePercent: 0, sigmas: 0 });
-        setHref(renderEink(compose(props), { scale: 3, ghost }));
+        // Scale 2 on a 640 x 400 panel is a 1280 x 800 render, which is more
+        // than enough for the capsule texture to read at the size it appears.
+        setHref(renderEink(compose(props), { scale: 2, ghost }));
       })
       .catch(() => {
         /* No WebGL. The plain SVG panel below stays. */
