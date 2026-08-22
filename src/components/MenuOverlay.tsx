@@ -50,7 +50,10 @@ export function MenuOverlay() {
 
     const panels = el.querySelectorAll('.menu__panel');
     const primary = el.querySelectorAll('.menu__primary-item');
-    const secondary = el.querySelectorAll('.menu__list-item, .menu__foot > *');
+    // The foot: the address, the social row and the location line. There was
+    // a `.menu__list-item` in this selector too, left from a secondary link
+    // list this overlay no longer renders — it matched nothing.
+    const secondary = el.querySelectorAll('.menu__foot > *');
 
     const ctx = gsap.context(() => {
       if (open) {
