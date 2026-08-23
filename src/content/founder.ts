@@ -61,11 +61,24 @@ export const founderPage = {
   outroLine: 'Building things. Making them worth taking apart.',
   /*
     What the panel prints, and it is deliberately not read from `founder.role`.
-
     That field is the site's own description of him and reads in sentence case;
-    this is firmware output on a 5 x 7 bitmap font with no lowercase and no
-    ampersand — which is why the employer is "EY", the name the firm actually
-    trades under, rather than "Ernst & Young" with a hole where the & should be.
+    this is firmware output on a 5 x 7 bitmap font with no lowercase.
+
+    THE EMPLOYER IS "EY" ON EDITORIAL GROUNDS, NOT TECHNICAL ONES
+    The firm rebranded in 2013. "EY" is not an abbreviation of the current name,
+    it IS the current name — the one on their letterhead and on ey.com — and
+    "Ernst & Young" is the older legal entity. So this is the correct label even
+    where there is room for the longer one.
+
+    Worth stating, because the font has no `&` glyph and unknown glyphs fall back
+    to a space (`pixelfont.ts`), so the long form would print with a hole in it.
+    That looks like the reason and is not: at scale 2 "ERNST & YOUNG" measures
+    154 of the 286px available, so it would fit comfortably if an ampersand were
+    drawn. Adding one would not make it the right thing to print here.
+
+    The long form is not missing from the site — `founder.summary` above and the
+    résumé's company header both carry it, which is where a reader meets the name
+    cold. This is the short form after first reference.
   */
   panelRole: 'Senior Software Engineer',
   panelEmployer: 'EY',
