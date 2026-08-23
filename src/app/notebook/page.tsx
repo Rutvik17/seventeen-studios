@@ -8,7 +8,14 @@ import { jsonLd, notebookSchema } from '@/lib/schema';
 export const metadata: Metadata = {
   title: 'Notebook',
   description:
-    'Free engineering lessons that start from nothing: circuit board design and IPC-2221 trace width, Monte Carlo simulation and value at risk, spring physics and inverse kinematics, derivatives from scratch, credit risk, and training a classifier by gradient descent.',
+    /*
+      Written to match the six entries, and it had drifted from them: it named
+      the trace-width standard as IPC-2221 rather than IPC-2221A, and described
+      the calculus entry as "derivatives from scratch" after it had been
+      retitled. A description is the one piece of copy nobody sees on the page
+      it belongs to, which is exactly why it goes stale.
+    */
+    'Engineering lessons that start from nothing: circuit board design and IPC-2221A trace width, Monte Carlo simulation and value at risk, spring physics and two-bone inverse kinematics, what a derivative measures, credit risk decomposed into default and exposure, and logistic regression by gradient descent.',
 };
 
 /**

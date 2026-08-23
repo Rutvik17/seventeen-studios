@@ -228,9 +228,10 @@ export function RiskInstrument() {
           />
         </div>
         <p className="diversify__saved">
-          <strong>{formatPercent(saved, 1)}</strong> of annual swing removed for
-          free — no forecast, no timing, no skill. Just owning things that do not
-          all fall on the same day.
+          <strong>{formatPercent(saved, 1)}</strong> of annual volatility removed
+          by holding assets whose returns are imperfectly correlated. No forecast
+          and no timing are involved: it is the one reduction in risk that does
+          not cost expected return.
         </p>
       </div>
 
