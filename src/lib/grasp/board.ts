@@ -107,6 +107,8 @@ export type Write = {
   size: number;
   ink?: Ink;
   at: number;
+  /** Defaults to `start`. Axis numbers hang off the end of their tick. */
+  anchor?: 'start' | 'middle' | 'end';
 };
 
 /** A drawn mark: axes, curves, construction lines. Revealed by drawing it. */
@@ -141,18 +143,76 @@ export type Act = {
  * Pieces the acts share
  * ------------------------------------------------------------------ */
 
-const axes = (at: number): Stroke[] => [
-  {
-    d: `M ${toX(PLOT.domain[0])} ${toY(0)} L ${toX(PLOT.domain[1])} ${toY(0)}`,
-    at,
-    width: 3,
-  },
-  {
-    d: `M ${toX(0)} ${toY(PLOT.range[1])} L ${toX(0)} ${toY(PLOT.range[0])}`,
-    at,
-    width: 3,
-  },
-];
+/**
+ * Which values get a tick and a number.
+ *
+ * The three inputs the lesson actually uses, and the three outputs they
+ * produce. Not a regular scale — 1, 2, 3 across and 1, 4, 9 up is the
+ * arithmetic of this function made visible on the frame, so a reader can see
+ * that the marks climb faster than the steps do before a single word about
+ * steepness.
+ */
+const X_TICKS = [1, 2, 3];
+const Y_TICKS = [1, 4, 9];
+
+/**
+ * The frame: two axes, ticks at the values that matter, and an arrow head on
+ * each so it is obvious which way the numbers grow.
+ *
+ * A graph with no scale on it is a picture of a curve, not a graph. Everything
+ * else on this board is checkable — the axes have to be too, or "the slope at
+ * x = 2 is 4" is a claim about an unlabelled drawing.
+ */
+const axes = (at: number): Stroke[] => {
+  const y0 = toY(0);
+  const x0 = toX(0);
+  const strokes: Stroke[] = [
+    {
+      d: `M ${toX(PLOT.domain[0])} ${y0} L ${toX(PLOT.domain[1])} ${y0}`,
+      at,
+      width: 3,
+    },
+    {
+      d: `M ${x0} ${toY(PLOT.range[1])} L ${x0} ${toY(PLOT.range[0])}`,
+      at,
+      width: 3,
+    },
+  ];
+
+  for (const x of X_TICKS) {
+    strokes.push({ d: `M ${toX(x)} ${y0 - 9} L ${toX(x)} ${y0 + 9}`, at, width: 2.5 });
+  }
+  for (const y of Y_TICKS) {
+    strokes.push({ d: `M ${x0 - 9} ${toY(y)} L ${x0 + 9} ${toY(y)}`, at, width: 2.5 });
+  }
+
+  return strokes;
+};
+
+/**
+ * The numbers on the frame, and the two axis letters.
+ *
+ * Separate from `axes` because they are handwriting rather than drawing, and
+ * the two are revealed by different mechanisms — see the note in
+ * `Chalkboard.tsx`.
+ */
+const axisLabels = (at: number): Write[] => {
+  const y0 = toY(0);
+  const x0 = toX(0);
+  const out: Write[] = [
+    { text: 'x', x: toX(PLOT.domain[1]) - 6, y: y0 + 46, size: 30, ink: 'dim', at, anchor: 'end' },
+    { text: 'y', x: x0 - 26, y: toY(PLOT.range[1]) + 30, size: 30, ink: 'dim', at, anchor: 'end' },
+  ];
+
+  for (const x of X_TICKS) {
+    out.push({ text: String(x), x: toX(x), y: y0 + 42, size: 26, ink: 'dim', at, anchor: 'middle' });
+  }
+  for (const y of Y_TICKS) {
+    out.push({ text: String(y), x: x0 - 18, y: toY(y) + 9, size: 26, ink: 'dim', at, anchor: 'end' });
+  }
+
+  return out;
+};
 
 /** f(x) = x², plotted across the visible domain. */
 const curvePath = (from = PLOT.domain[0], to = PLOT.domain[1]): string =>
@@ -160,11 +220,28 @@ const curvePath = (from = PLOT.domain[0], to = PLOT.domain[1]): string =>
     .map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${toX(x).toFixed(1)} ${toY(y).toFixed(1)}`)
     .join(' ');
 
-/** A straight line through (x0,y0) with the given slope, spanning ±span in x. */
+/**
+ * A straight line through (x0, y0) with the given slope, spanning ±span in x.
+ *
+ * The span is SHORTENED if the line would leave the plotted range, and that is
+ * not a nicety. A tangent to x² at x = 3 has slope 6, so a span of 0.9 takes it
+ * from y = 3.6 to y = 14.4 — five units above the top of the frame. The act's
+ * clip cuts it off at the board edge and what is left reads as a floating stub
+ * with no relationship to the curve, which is worse than not drawing it.
+ *
+ * Clamping here rather than at each call site means a steeper function cannot
+ * reintroduce it later.
+ */
 const lineAt = (x0: number, y0: number, slope: number, span: number): string => {
-  const a = x0 - span;
-  const b = x0 + span;
-  return `M ${toX(a)} ${toY(y0 - slope * span)} L ${toX(b)} ${toY(y0 + slope * span)}`;
+  let reach = span;
+  if (slope !== 0) {
+    const toTop = (PLOT.range[1] - y0) / Math.abs(slope);
+    const toBottom = (y0 - PLOT.range[0]) / Math.abs(slope);
+    reach = Math.min(reach, toTop, toBottom);
+  }
+  const a = x0 - reach;
+  const b = x0 + reach;
+  return `M ${toX(a)} ${toY(y0 - slope * reach)} L ${toX(b)} ${toY(y0 + slope * reach)}`;
 };
 
 /* ------------------------------------------------------------------ *
@@ -192,6 +269,28 @@ export const ACTS: Act[] = [
         size: 38,
         ink: 'dim',
         at: 0.6,
+      },
+      ...axisLabels(0.16),
+      // On the graph, and short. A first-timer needs to be told once that the
+      // two numbers in a pair are an across and an up; after that the picture
+      // says it.
+      {
+        text: 'across',
+        x: toX(2),
+        y: toY(0) + 92,
+        size: 26,
+        ink: 'dim',
+        at: 0.68,
+        anchor: 'middle',
+      },
+      {
+        text: 'up',
+        x: toX(0) - 18,
+        y: toY(5.5),
+        size: 26,
+        ink: 'dim',
+        at: 0.68,
+        anchor: 'end',
       },
     ],
     strokes: axes(0.12),
@@ -229,6 +328,36 @@ export const ACTS: Act[] = [
         size: 34,
         ink: 'dim',
         at: 0.76,
+      },
+      ...axisLabels(0),
+      // The two sides of the triangle, named where they are drawn. This is the
+      // one place a label genuinely teaches: "rise" and "run" are words for
+      // things the reader is looking at, and pointing at them once is the whole
+      // explanation.
+      {
+        text: 'run',
+        x: (toX(1) + toX(2)) / 2,
+        y: toY(F1) + 42,
+        size: 28,
+        ink: 'dim',
+        at: 0.36,
+        anchor: 'middle',
+      },
+      {
+        text: 'rise',
+        x: toX(2) + 16,
+        y: (toY(F1) + toY(F2)) / 2,
+        size: 28,
+        ink: 'dim',
+        at: 0.36,
+      },
+      {
+        text: 'f(x) = x^2',
+        x: toX(2.72),
+        y: toY(8.9),
+        size: 30,
+        ink: 'dim',
+        at: 0.18,
       },
     ],
     strokes: [
@@ -282,6 +411,26 @@ export const ACTS: Act[] = [
         size: 34,
         ink: 'dim',
         at: 0.8,
+      },
+      ...axisLabels(0),
+      // Both lines named where they are, because the whole act is about the
+      // difference between them and two unlabelled straight lines do not show
+      // it.
+      {
+        text: 'through 2 points',
+        x: toX(2.55),
+        y: toY(4.1),
+        size: 24,
+        ink: 'dim',
+        at: 0.14,
+      },
+      {
+        text: 'touching at 1',
+        x: toX(2.35),
+        y: toY(1.5),
+        size: 26,
+        ink: 'accent',
+        at: 0.7,
       },
     ],
     strokes: [
@@ -337,6 +486,53 @@ export const ACTS: Act[] = [
       },
       { text: 'let h → 0', x: 120, y: 630, size: 46, ink: 'dim', at: 0.68 },
       { text: "f'(x) = 2x", x: 150, y: 760, size: 90, ink: 'accent', at: 0.8 },
+      ...axisLabels(0.04),
+      /*
+        THE THREE LINES ON THE GRAPH ARE THE RESULT, CHECKED THREE TIMES.
+
+        They are the tangents at x = 1, 2 and 3, and their slopes are 2, 4 and 6
+        — which is exactly `2x` at each of those x. Drawn without their numbers
+        they were three unexplained diagonals cluttering the act, which is fair
+        comment; labelled, they are the reason the boxed answer is believable
+        before anyone has dragged anything.
+
+        The slopes are read from the hand-differentiated function rather than
+        typed, so they cannot disagree with the line they sit beside.
+      */
+      {
+        text: `slope ${SQUARE.exact(1)}`,
+        x: toX(1) - 22,
+        y: toY(F1) - 14,
+        size: 26,
+        ink: 'dim',
+        at: 0.24,
+        anchor: 'end',
+      },
+      {
+        text: `slope ${SQUARE.exact(2)}`,
+        x: toX(2) + 22,
+        y: toY(F2) + 40,
+        size: 26,
+        ink: 'dim',
+        at: 0.54,
+      },
+      {
+        text: `slope ${SQUARE.exact(3)}`,
+        x: toX(3) - 20,
+        y: toY(F3) - 18,
+        size: 26,
+        ink: 'dim',
+        at: 0.74,
+        anchor: 'end',
+      },
+      {
+        text: '2x, every time',
+        x: toX(0.35),
+        y: toY(8.6),
+        size: 28,
+        ink: 'accent',
+        at: 0.86,
+      },
     ],
     strokes: [
       // The box round the answer, drawn last, the way you would underline it.
@@ -422,6 +618,33 @@ export const ACTS: Act[] = [
         size: 46,
         ink: 'accent',
         at: 0.72,
+      },
+      ...axisLabels(0),
+      /*
+        Both curves named. This act puts two on one set of axes for the first
+        time, and an unlabelled pair is genuinely ambiguous — the whole reveal
+        depends on knowing which one is the function and which one is its slope.
+      */
+      {
+        /*
+          Left of the curve rather than beside it. At x = 2.72 this label sat
+          on top of the plotted point at (3, 9); out here the curve is far below
+          and there is nothing to collide with.
+        */
+        text: 'f(x) = x^2',
+        x: toX(1.35),
+        y: toY(9.5),
+        size: 28,
+        ink: 'dim',
+        at: 0.06,
+      },
+      {
+        text: "f'(x) = 2x",
+        x: toX(3.05),
+        y: toY(5.2),
+        size: 30,
+        ink: 'accent',
+        at: 0.82,
       },
     ],
     strokes: [

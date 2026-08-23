@@ -30,11 +30,22 @@
 
 /* ---------- the only chrome on the page --------------------------- */
 
+/*
+  A title screen, a full viewport tall.
+
+  It was a band of padding with the name in it, which put the board halfway up
+  the first screen and gave the page no opening. At full height the name and the
+  tagline sit centred, the cue sits at the foot, and the first scroll takes the
+  reader out of the title and into the lesson.
+*/
 .head {
+  position: relative;
   max-width: var(--max);
   margin: 0 auto;
-  padding: clamp(96px, 15vh, 180px) var(--gutter) clamp(30px, 5vh, 64px);
+  min-height: 100svh;
+  padding: clamp(96px, 15vh, 180px) var(--gutter) clamp(96px, 16vh, 170px);
   display: grid;
+  align-content: center;
   justify-items: center;
   text-align: center;
   gap: 10px;
@@ -72,6 +83,125 @@
   font-weight: 500;
   font-size: clamp(20px, 2.4vw, 32px);
   color: var(--chalk-dim);
+}
+
+/* ---------- the scroll cue ---------------------------------------- */
+
+.cue {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(28px, 5vh, 56px);
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.cueLabel {
+  font-family: var(--font-hand), 'Segoe Print', cursive;
+  font-size: clamp(17px, 1.5vw, 21px);
+  color: var(--chalk-dim);
+}
+
+.cueArrow {
+  width: clamp(22px, 2vw, 28px);
+  height: auto;
+  overflow: visible;
+  fill: none;
+  stroke: var(--chalk-dim);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: cue-drift 2.8s var(--ease-out) infinite;
+}
+
+/*
+  The arrow is DRAWN, on a loop — shaft first, then the head, then both fade and
+  it starts again. It is the same `stroke-dashoffset` mechanism the board uses
+  for every curve on it, so the cue is made of the same material as the lesson
+  rather than being a UI icon that happens to be nearby.
+
+  The dash lengths are the paths' own: the shaft is 48 units long and each leg
+  of the head is √(9² + 13²) ≈ 15.8, so 32 covers the pair.
+*/
+.cueShaft {
+  stroke-dasharray: 48;
+  animation: cue-shaft 2.8s var(--ease-out) infinite;
+}
+
+.cueHead {
+  stroke-dasharray: 32;
+  animation: cue-head 2.8s var(--ease-out) infinite;
+}
+
+@keyframes cue-shaft {
+  0% {
+    stroke-dashoffset: 48;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  46% {
+    stroke-dashoffset: 0;
+  }
+  76% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes cue-head {
+  0%,
+  36% {
+    stroke-dashoffset: 32;
+    opacity: 0;
+  }
+  42% {
+    opacity: 1;
+  }
+  64% {
+    stroke-dashoffset: 0;
+  }
+  76% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes cue-drift {
+  0% {
+    transform: translateY(-5px);
+  }
+  70%,
+  100% {
+    transform: translateY(5px);
+  }
+}
+
+/*
+  A repeating downward drift is a vestibular offender and the arrow is the one
+  thing on this page that never stops moving. Reduced motion gets it drawn,
+  still, saying the same thing.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .cueArrow,
+  .cueShaft,
+  .cueHead {
+    animation: none;
+  }
+  .cueShaft,
+  .cueHead {
+    stroke-dashoffset: 0;
+  }
 }
 
 /* ---------- the pinned lesson ------------------------------------- */

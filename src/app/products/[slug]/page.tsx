@@ -77,6 +77,27 @@ export default function ProductPage({ params }: Params) {
         </TransitionLink>
         <h1 className={styles.name}>{product.name}</h1>
         <p className={styles.tagline}>{product.tagline}</p>
+
+        {/*
+          The cue, at the foot of the title screen.
+
+          A pinned story has one real usability problem: the first turn of the
+          wheel does not move the page, it writes on the board — so a visitor
+          can decide the site is broken and leave. This says which way to go.
+
+          Pure CSS and pure SVG: it is drawn by a `stroke-dashoffset` animation
+          on a loop, the same mechanism the board itself uses, so the arrow is
+          chalk being drawn rather than an icon being bounced. Nothing has to
+          fade it out on scroll either — it sits at the bottom of a full-height
+          title screen and leaves with it.
+        */}
+        <div className={styles.cue} aria-hidden="true">
+          <span className={styles.cueLabel}>scroll to learn</span>
+          <svg viewBox="0 0 28 72" className={styles.cueArrow}>
+            <path className={styles.cueShaft} d="M14 6 V 54" />
+            <path className={styles.cueHead} d="M5 45 L 14 58 L 23 45" />
+          </svg>
+        </div>
       </header>
 
       <Chalkboard />
