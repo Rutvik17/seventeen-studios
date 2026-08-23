@@ -8,7 +8,14 @@ import { ProductRows } from '@/components/sections/ProductRows';
 
 export const metadata: Metadata = {
   title: 'Products',
-  description: 'Software built and shipped on my own account.',
+  /*
+    Names the product. "Software built and shipped on my own account" described
+    the category and left the search result and the link preview saying nothing
+    about what the software is — and there is exactly one, so there is no reason
+    to be general about it.
+  */
+  description:
+    'Grasp — an iOS app that teaches calculus by making every idea something you drag. Nine lessons, four surfaces each.',
 };
 
 /**

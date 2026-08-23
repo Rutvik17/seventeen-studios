@@ -6,13 +6,15 @@ import { SplitText } from '@/components/motion/SplitText';
 
 export const metadata: Metadata = {
   title: 'Contact',
-  description: 'What would you like to build?',
+  description:
+    'Contact Rutvik Patel — engineering roles, technical questions, or anything on this site.',
 };
 
 /**
  * Contact.
  *
- * A question and three ways to answer it.
+ * One statement of what the inbox is for, one link, and the profiles a
+ * technical reader will want anyway.
  *
  * This page used to be a five-step brief builder that asked for a service, a
  * stage, a timeline and a budget — a qualification funnel, which is a thing an
@@ -27,13 +29,22 @@ export default function StartPage() {
     <div className="page contact-page">
       <header className="page-head">
         <span className="mono-label">Contact</span>
+        {/*
+          "What would you like to build?" was here and in the page's metadata —
+          the last of the agency, asking every visitor to brief a studio. Most
+          of them are hiring managers who have just read the work.
+
+          The reply-time line went with it: "usually within a day" is a service
+          promise nobody can check, and rule 8 says nothing on this site is
+          claimed that was not measured.
+        */}
         <SplitText as="h1" className="page-head__title" stagger={0.03} depth>
-          What would you like to build?
+          Roles, questions, second opinions.
         </SplitText>
         <Reveal className="page-head__lead">
           <p>
-            Roles, collaborations, or an idea you want a second opinion on —
-            all welcome. Replies come from Rutvik, usually within a day.
+            Anything on this site is fair game — the mathematics, the hardware,
+            or how a page was built.
           </p>
         </Reveal>
       </header>
