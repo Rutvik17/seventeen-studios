@@ -276,31 +276,36 @@ export function Chalkboard() {
         const length = path.getTotalLength();
         path.dataset.length = String(length);
         /*
-          THE OFFSET OVERSHOOTS THE LENGTH ON PURPOSE.
+          HIDDEN BY `visibility`, NOT BY THE DASH OFFSET.
 
-          At `strokeDashoffset: length` the visible run of the dash is exactly
-          zero — which draws nothing, unless the line has round caps. It does:
-          chalk has round caps. A zero-length segment with a round cap renders
-          as a DOT, so every axis, curve and tangent on this board announced
-          itself with a chalk full stop sitting at its start point long before
-          it was drawn, and the graph was covered in them.
+          The obvious way to hide an undrawn path is `strokeDashoffset: length`,
+          which leaves a visible run of exactly zero. That draws nothing — unless
+          the line has round caps, and chalk has round caps: a zero-length dash
+          with a round cap renders as a DOT. So every axis, curve and tangent
+          announced itself with a chalk full stop before it was drawn.
 
-          Pushing the offset past the end of the dash pattern moves the whole
-          run into the gap, where there is no cap to draw. The stroke width is
-          the right amount to overshoot by, because that is how far a round cap
-          extends beyond the point it is centred on.
+          The obvious fix is to push the offset PAST the length, into the gap.
+          That is wrong, and wrong in a way that looks right: `dasharray: L` means
+          [L on, L off] REPEATING, so the on-runs sit at [−d, −d+L], [−d+2L,
+          −d+3L] and so on. At d = L + w the first run clears the path, and the
+          SECOND one lands at [L−w, 2L−w] — which overlaps the path's last w
+          units. Every stroke drew a tiny stub at its far end instead of its
+          near one, and the graph was covered in ticks and dashes before a single
+          line had been drawn. That shipped, and it is what the photograph shows.
+
+          There is no dash offset that hides a round-capped path, because the
+          pattern repeats. So the gate is `visibility` — set here, lifted in the
+          timeline at the instant the stroke starts drawing. `visibility` rather
+          than `opacity` because the dusty pass carries its own opacity from CSS,
+          and writing an inline one would flatten it to solid.
+
+          The dot at the very start of the draw is then correct rather than an
+          artefact: chalk touching a board makes a dot before it makes a line.
         */
-        /*
-          `parseFloat`, not `Number`. `getComputedStyle` returns "10.4px", and
-          `Number("10.4px")` is NaN — which fell through to the default of 4 and
-          left the wide dusty pass (up to 13px) overshooting by less than half
-          its own cap. A faint chalk dot survived at the start of every accent
-          line, which is exactly the artefact this whole block exists to remove.
-        */
-        const width = parseFloat(getComputedStyle(path).strokeWidth) || 4;
         gsap.set(path, {
           strokeDasharray: length,
-          strokeDashoffset: length + width,
+          strokeDashoffset: length,
+          visibility: 'hidden',
         });
       });
 
@@ -353,10 +358,15 @@ export function Chalkboard() {
         });
 
         act.strokes.forEach((stroke, i) => {
+          const at = base + stroke.at * WRITE_SHARE;
+          // Uncovered at the instant it starts being drawn, and put back when
+          // the timeline is scrubbed the other way — see the note on the
+          // hidden state above for why this is not a dash offset.
+          timeline.set(q(`[data-stroke="${index}-${i}"]`), { visibility: 'visible' }, at);
           timeline.to(
             q(`[data-stroke="${index}-${i}"]`),
             { strokeDashoffset: 0, duration: 0.13, ease: 'power1.out' },
-            base + stroke.at * WRITE_SHARE,
+            at,
           );
         });
 
