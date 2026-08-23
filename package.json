@@ -16,6 +16,8 @@
     "postbuild": "node scripts/verify-drawing.mjs"
   },
   "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "gsap": "^3.12.5",
     "lenis": "^1.1.14",
     "next": "^14.2.5",
