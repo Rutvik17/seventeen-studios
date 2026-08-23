@@ -103,10 +103,9 @@ function Device({
     holder.scale.setScalar(scale);
     /*
       The export faces the HDMI/power edge toward +Z. From the chair that is
-      upside down. 165° — a touch short of a half-turn — so the board is
-      readable but not squared to the table edge.
+      upside down. 190° — a touch past a half-turn.
     */
-    holder.rotation.y = (165 * Math.PI) / 180;
+    holder.rotation.y = (190 * Math.PI) / 180;
 
     const parts = collectParts(clone);
     const panelMesh = findPanelMesh(clone);
