@@ -1014,6 +1014,14 @@ code {
 
 .prose {
   display: grid;
+  /*
+    An explicit `minmax(0, 1fr)` track. A grid with no `grid-template-columns`
+    gets one implicit `auto` column, and `auto` cannot shrink below its widest
+    child's min-content width — so a single wide embed (the risk desk, the board
+    explorer) stretched the whole prose column past the viewport and took every
+    paragraph with it. That is why lesson text ran off the right on a phone.
+  */
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   max-width: 68ch;
 }
@@ -1628,7 +1636,10 @@ html.no-js .exploded .exploded__svg {
 
 @media (max-width: 900px) {
   .product__section {
-    grid-template-columns: 1fr;
+    /* `minmax(0, 1fr)`, not a bare `1fr`: a bare one is `minmax(auto, 1fr)`
+       and cannot shrink below its widest unbreakable child, so the column
+       — and everything in it — overflows the phone instead of fitting. */
+    grid-template-columns: minmax(0, 1fr);
   }
   .product__section-head {
     position: static;
@@ -2081,7 +2092,10 @@ html.no-js .exploded .exploded__svg {
 
 @media (max-width: 900px) {
   .rig {
-    grid-template-columns: 1fr;
+    /* `minmax(0, 1fr)`, not a bare `1fr`: a bare one is `minmax(auto, 1fr)`
+       and cannot shrink below its widest unbreakable child, so the column
+       — and everything in it — overflows the phone instead of fitting. */
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -2598,7 +2612,12 @@ html.no-js .exploded .exploded__svg {
   /* The readout column cannot survive a narrow viewport without squeezing the
      drawing into a strip. It goes under the board instead. */
   .board-story__stage {
-    grid-template-columns: 1fr;
+    /* `minmax(0, 1fr)`, never a bare `1fr`. A bare `1fr` is `minmax(auto, 1fr)`,
+       so the column cannot shrink below its content's min-content width — and
+       the wordmark is one unbreakable word. At 390px that pinned the single
+       column to 476px inside a 350px box and pushed the readout, the drawing
+       and the calc block off the right edge together. */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr auto auto;
   }
   .board-story__readout {
@@ -3268,6 +3287,12 @@ html.no-js .exploded .exploded__svg {
 */
 .prose__embed {
   margin: calc(var(--grid-unit) * 2) auto;
+  /*
+    The auto inline margins make this a shrink-to-fit grid item, which would let
+    it size to its content and overflow the track again. Cap it at the column.
+  */
+  max-width: 100%;
+  min-width: 0;
 }
 
 .prose__embed-caption {
@@ -3472,7 +3497,10 @@ html.no-js .exploded .exploded__svg {
 
 @media (max-width: 900px) {
   .explorer {
-    grid-template-columns: 1fr;
+    /* `minmax(0, 1fr)`, not a bare `1fr`: a bare one is `minmax(auto, 1fr)`
+       and cannot shrink below its widest unbreakable child, so the column
+       — and everything in it — overflows the phone instead of fitting. */
+    grid-template-columns: minmax(0, 1fr);
   }
   .explorer__panel {
     position: static;
@@ -3601,7 +3629,10 @@ html.no-js .exploded .exploded__svg {
 
 @media (max-width: 860px) {
   .trace-calc {
-    grid-template-columns: 1fr;
+    /* `minmax(0, 1fr)`, not a bare `1fr`: a bare one is `minmax(auto, 1fr)`
+       and cannot shrink below its widest unbreakable child, so the column
+       — and everything in it — overflows the phone instead of fitting. */
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -4340,22 +4371,24 @@ html.no-js .exploded .exploded__svg {
 
 @media (max-width: 700px) {
   /*
-    THE WORDMARK OVERFLOWED.
+    THE WORDMARK OVERFLOWED, AND THE FIRST FIX GUESSED.
 
-    It was sized with a `vw` clamp, which is a guess about glyph advance — and
-    Syne ExtraBold is a wide face, so the guess was wrong in the direction that
-    overflows. I cannot measure the real advance from here, so it is sized for
-    the WIDEST the face could plausibly be (0.82em) rather than for an estimate
-    of what it is: at 12vw the word is 331px of an available 350px even in that
-    worst case, and comfortably inside for anything narrower.
+    It was sized by a `vw` clamp against an ESTIMATED glyph advance of 0.82em,
+    chosen as a supposed worst case. The estimate was 27% low, so the word still
+    ran off the screen. Measured on a clone at a 100px reference — the same
+    technique `FitText` uses, and for the same reason — Syne ExtraBold sets
+    "SEVENTEEN" at 1016px, i.e. 10.16x the font size, and "STUDIOS" at 7.31x.
+    Every number below comes from that measurement rather than from a guess.
 
-    `FitText` would measure this properly and is already in the codebase — but
-    it fills its container, and both wordmarks are deliberately NOT full-bleed
-    on desktop. Using it here would fix the phone by changing the composition
-    everywhere, which is the trade this whole section exists to avoid.
+    Inside the gutter, fitting SEVENTEEN means 350 / 10.16 = 34.4px — smaller
+    than the 35.1px row titles underneath, which is the hierarchy inversion this
+    block was originally written to avoid. So on a phone the lockup goes
+    full-bleed instead (see the narrower query below): it is the treatment the
+    footer wordmark already uses, it reads as deliberate rather than clipped,
+    and it buys back the size.
   */
   .board-story__wordmark {
-    font-size: clamp(38px, 12vw, 54px);
+    font-size: min(8.4vw, 54px);
     max-width: 100%;
   }
 
@@ -4396,5 +4429,33 @@ html.no-js .exploded .exploded__svg {
      at this width. */
   .page-head__title {
     font-size: clamp(34px, 11vw, 52px);
+  }
+}
+
+/* ==================================================================
+   PHONES — the landing lockup goes full-bleed
+   ==================================================================
+
+   Last in the file on purpose. The `max-width: 700px` block above also sets
+   `.board-story__wordmark`'s font-size, and at equal specificity the later rule
+   wins — so this has to come after it or the phone size is silently ignored,
+   which is exactly what happened on the first attempt.
+*/
+
+@media (max-width: 560px) {
+  /*
+    Edge to edge, cancelling the stage's gutter with a negative inline margin
+    rather than `width: 100vw` — `100vw` counts a classic scrollbar and would
+    overflow by its width on any browser that still draws one.
+
+    9.6vw sizes SEVENTEEN (10.16x its font size, measured on a clone at a 100px
+    reference) to the full viewport with a little air: 312px of 320, 380px of
+    390, 546px of 560. That lands it above the 35.1px row titles below it, which
+    is the hierarchy the in-gutter sizing could not hold.
+  */
+  .board-story__wordmark {
+    margin-inline: calc(var(--gutter) * -1);
+    max-width: none;
+    font-size: 9.6vw;
   }
 }
