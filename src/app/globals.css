@@ -2198,12 +2198,26 @@ html.no-js .exploded .exploded__svg {
   font-size: clamp(16px, 1.05vw, 19px);
 }
 
+/*
+  THE INSTRUMENT SETS ITS OWN INK.
+
+  It paints a light panel of its own and then relied on inheriting `--fg` from
+  whatever it was dropped into. That held while everything on the site was
+  paper; on Grasp's slate board it inherited CHALK, and the function tabs came
+  out near-white on near-white — present, unreadable, and only on the one page
+  where choosing a function is the point.
+
+  An instrument that can be embedded anywhere — this one also appears inside
+  notebook entries — cannot take its text colour from its surroundings. It
+  supplies its own background, so it has to supply the ink that goes on it.
+*/
 .deriv {
   background: var(--bg-raise);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   padding: clamp(16px, 2.4vw, 32px);
+  color: var(--fg);
 }
 
 .deriv__tabs {
@@ -2219,7 +2233,17 @@ html.no-js .exploded .exploded__svg {
   border-radius: 999px;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 13px;
-  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
+  /* Stated, not inherited — an unselected tab is the control, not a label. */
+  color: var(--fg-dim);
+  transition:
+    background 0.2s var(--ease-out),
+    color 0.2s var(--ease-out),
+    border-color 0.2s var(--ease-out);
+}
+
+.deriv__tab:hover {
+  color: var(--fg);
+  border-color: var(--fg);
 }
 
 .deriv__tab.is-active {

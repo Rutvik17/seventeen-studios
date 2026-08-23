@@ -168,6 +168,7 @@ function ActMarks({ act, index }: { act: Act; index: number }) {
             x={write.x}
             y={write.y}
             fontSize={write.size}
+            textAnchor={write.anchor}
           >
             {maths(write.text)}
           </text>
@@ -177,14 +178,28 @@ function ActMarks({ act, index }: { act: Act; index: number }) {
   );
 }
 
-/** The clip rectangles the writing is uncovered by, one per line. */
+/**
+ * The clip rectangles the writing is uncovered by, one per line.
+ *
+ * The rectangle has to START left of the glyphs, and where that is depends on
+ * how the text is anchored: a `start` line grows rightwards from its x, but an
+ * `end`-anchored axis number sits entirely to the LEFT of it. Anchoring the
+ * clip at `write.x` for those would place the whole label outside its own clip
+ * and it would never appear at all.
+ */
+const LEAD: Record<'start' | 'middle' | 'end', number> = {
+  start: 12,
+  middle: 300,
+  end: 600,
+};
+
 function Pens({ act, index }: { act: Act; index: number }) {
   return (
     <>
       {act.writes.map((write, i) => (
         <clipPath key={i} id={`pen-${index}-${i}`}>
           <rect
-            x={write.x - 12}
+            x={write.x - LEAD[write.anchor ?? 'start']}
             y={write.y - write.size * 1.15}
             width={BOARD.width}
             height={write.size * 1.8}
@@ -260,7 +275,33 @@ export function Chalkboard() {
         const path = node as unknown as SVGPathElement;
         const length = path.getTotalLength();
         path.dataset.length = String(length);
-        gsap.set(path, { strokeDasharray: length, strokeDashoffset: length });
+        /*
+          THE OFFSET OVERSHOOTS THE LENGTH ON PURPOSE.
+
+          At `strokeDashoffset: length` the visible run of the dash is exactly
+          zero — which draws nothing, unless the line has round caps. It does:
+          chalk has round caps. A zero-length segment with a round cap renders
+          as a DOT, so every axis, curve and tangent on this board announced
+          itself with a chalk full stop sitting at its start point long before
+          it was drawn, and the graph was covered in them.
+
+          Pushing the offset past the end of the dash pattern moves the whole
+          run into the gap, where there is no cap to draw. The stroke width is
+          the right amount to overshoot by, because that is how far a round cap
+          extends beyond the point it is centred on.
+        */
+        /*
+          `parseFloat`, not `Number`. `getComputedStyle` returns "10.4px", and
+          `Number("10.4px")` is NaN — which fell through to the default of 4 and
+          left the wide dusty pass (up to 13px) overshooting by less than half
+          its own cap. A faint chalk dot survived at the start of every accent
+          line, which is exactly the artefact this whole block exists to remove.
+        */
+        const width = parseFloat(getComputedStyle(path).strokeWidth) || 4;
+        gsap.set(path, {
+          strokeDasharray: length,
+          strokeDashoffset: length + width,
+        });
       });
 
       const timeline = gsap.timeline({
