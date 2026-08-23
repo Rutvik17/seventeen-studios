@@ -364,12 +364,36 @@ export function shotAt(progress: number): ShotFrame {
  * from straight up and is off by ninety degrees from every sentence you would
  * say about the shot.
  */
+/**
+ * How much further back the camera has to stand at a given viewport shape.
+ *
+ * The shots' distances are tuned against a landscape window — about 1.6 wide
+ * for every 1 tall. The vertical field of view is fixed, so the HORIZONTAL
+ * extent the camera can see is `2·d·tan(fov/2)·aspect`: halve the aspect and
+ * you halve the width in frame. On a portrait phone at 0.46 that is less than a
+ * third of the width the framing was built for, and a board that fills the
+ * desktop shot runs off both sides of the screen.
+ *
+ * Standing further back by the same ratio puts it back inside the frame. The
+ * clamp matters in both directions: below 1 a very wide window would push the
+ * camera in until the board overflowed vertically instead, and without a
+ * ceiling a narrow enough window would retreat until the device was a speck.
+ */
+const REFERENCE_ASPECT = 1.6;
+
+export function fitDistance(aspect: number): number {
+  if (!Number.isFinite(aspect) || aspect <= 0) return 1;
+  const scale = REFERENCE_ASPECT / aspect;
+  return Math.max(1, Math.min(2.4, scale));
+}
+
 export function placeCamera(
   frame: ShotFrame,
   anchors: Anchors,
   centre: THREE.Vector3,
   outPosition: THREE.Vector3,
   outTarget: THREE.Vector3,
+  distanceScale = 1,
 ): void {
   const { from, to, t } = frame;
   const a = (from.focus ? anchors.get(from.focus) : null) ?? centre;
@@ -383,7 +407,7 @@ export function placeCamera(
 
   const azimuth = mix(from.azimuth, to.azimuth, t);
   const elevation = mix(from.elevation, to.elevation, t);
-  const distance = mix(from.distance, to.distance, t);
+  const distance = mix(from.distance, to.distance, t) * distanceScale;
 
   const horizontal = Math.cos(elevation) * distance;
   scratchB.set(

@@ -1,5 +1,21 @@
+<!--
+  The site's mark, for the tab.
+
+  The same two paths as `src/components/Logo.tsx`, on a tile — a favicon needs a
+  shape to sit in at 16px. They are duplicated here rather than imported
+  because Next reads this file statically and nothing can be imported into it;
+  if the mark changes, change both.
+
+  It used to be acid green on near-black, which was the palette from the dark,
+  agency-era version of this site and had been wrong for months — the site is
+  warm paper and graphite. Paper tile with graphite numerals reads on light
+  browser chrome and on dark, which a transparent mark would not.
+-->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect width="64" height="64" rx="12" fill="#07070a"/>
-  <text x="32" y="45" font-family="Helvetica, Arial, sans-serif" font-size="34"
-        font-weight="700" letter-spacing="-2" text-anchor="middle" fill="#d4ff3f">17</text>
+  <rect width="64" height="64" rx="14" fill="#eceae4"/>
+  <!-- Centred: the numerals are 36 x 26, scaled 0.95 and offset to the middle. -->
+  <g transform="translate(14.9 19.6) scale(0.95)" fill="#14161a">
+    <path d="M13 0V26H6.5V6.5L1.5 9.5V3L7.5 0Z"/>
+    <path d="M19 0H36V5.5L27 26H20L29 6H19Z"/>
+  </g>
 </svg>
