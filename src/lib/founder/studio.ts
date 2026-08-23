@@ -178,8 +178,11 @@ export function buildEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
 const ease = (t: number): number => t * t * (3 - 2 * t);
 const clamp01 = (t: number): number => (t < 0 ? 0 : t > 1 ? 1 : t);
 
-/** HDMI/power edge toward the assembler. GPIO at the far side of the table. */
-const AZIMUTH = 0.18;
+/**
+ * Off-axis on the USB side. A person at a bench does not look down the
+ * centreline — they sit slightly to one side so the ports have thickness.
+ */
+const AZIMUTH = 0.58;
 
 const scratchB = new THREE.Vector3();
 
@@ -204,12 +207,11 @@ export function assemblerAt(progress: number): AssemblerPose {
 
   return {
     azimuth: AZIMUTH,
-    // ~47° walking up, ~38° seated. The glance does not dive — it only
-    // softens a few degrees so the glass is more in front of you.
-    elevation: 0.84 - sit * 0.18 - glance * 0.04,
-    // Walk in (board grows). When the panel arrives the subject gets wider,
-    // so the head eases back a little rather than cropping the Pi off the table.
-    distance: 4.05 - sit * 1.45 + glance * 0.5,
+    // Chest height, not a drone. ~33° walking up, ~27° seated — you see the
+    // board as a thing on a table, with the GPIO pins standing up, not as a
+    // floorplan.
+    elevation: 0.58 - sit * 0.12 - glance * 0.03,
+    distance: 3.55 - sit * 1.15 + glance * 0.35,
     glance,
   };
 }

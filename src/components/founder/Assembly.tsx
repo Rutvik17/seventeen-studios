@@ -101,6 +101,13 @@ function Device({
     const holder = new THREE.Group();
     holder.add(clone);
     holder.scale.setScalar(scale);
+    /*
+      The export faces the HDMI/power edge toward +Z. From the chair that is
+      upside down — silkscreen away from you, glass inverted. Turn the whole
+      bench 180° so GPIO is at the far side of the table and the panel reads
+      right-way-up.
+    */
+    holder.rotation.y = Math.PI;
 
     const parts = collectParts(clone);
     const panelMesh = findPanelMesh(clone);
@@ -381,7 +388,7 @@ export function Assembly() {
             frameloop={live ? 'always' : 'never'}
             dpr={[1, 2]}
             shadows
-            camera={{ fov: 32, near: 0.05, far: 60, position: [0.5, 3.05, 2.75] }}
+            camera={{ fov: 32, near: 0.05, far: 60, position: [1.85, 1.95, 2.65] }}
             gl={{
               antialias: true,
               alpha: true,
