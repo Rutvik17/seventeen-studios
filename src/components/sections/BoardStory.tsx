@@ -501,7 +501,37 @@ export function BoardStory() {
                 <span>{current.index}</span> {current.title}
               </p>
               <p className="board-story__caption">{current.caption}</p>
-              <Working act={act} />
+              {/*
+                Every act's working is rendered, and all but the current one is
+                hidden. On a phone the readout sits UNDER the drawing in a single
+                column, so its height is subtracted from the drawing's row — and
+                the working block ranges from 192px on act 01 to 384px on act 05.
+                Swapping one for another therefore moved the board up by ~96px
+                mid-scroll and shrank it, until at act 05 it painted straight over
+                both wordmarks.
+
+                Stacking them in one grid cell makes the block as tall as the
+                TALLEST act at every act, so nothing moves as the story runs, and
+                the reserved height stays correct on its own if the copy changes —
+                no measured constant to go stale.
+
+                On desktop the readout is a side column that never sizes the
+                drawing's row, and a permanently tall panel would stretch its
+                border for no reason, so there the inactive slots are removed from
+                layout entirely (see `.board-story__slot` in globals.css).
+              */}
+              <div className="board-story__working">
+                {boardActs.map((a, index) => (
+                  <div
+                    className="board-story__slot"
+                    key={a.index}
+                    data-current={index === act ? '' : undefined}
+                    aria-hidden={index === act ? undefined : true}
+                  >
+                    <Working act={index} />
+                  </div>
+                ))}
+              </div>
             </>
           )}
         </aside>
