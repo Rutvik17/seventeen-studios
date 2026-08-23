@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Syne, DM_Sans, JetBrains_Mono } from 'next/font/google';
+import { Syne, DM_Sans, JetBrains_Mono, Caveat } from 'next/font/google';
 import { Providers } from '@/components/Providers';
 import { TransitionProvider } from '@/components/Transition';
 import { Preloader } from '@/components/Preloader';
@@ -16,10 +16,11 @@ import './globals.css';
 /**
  * Root layout.
  *
- * Three typefaces, each with a job: Syne for display, DM Sans for reading,
+ * Four typefaces, each with a job: Syne for display, DM Sans for reading,
  * JetBrains Mono for the labels, indices and metadata that give the site its
- * technical register. All three are self-hosted by `next/font` at build time,
- * so the static export has no third-party font requests.
+ * technical register — and Caveat, which is only ever chalk on Grasp's board.
+ * All four are self-hosted by `next/font` at build time, so the static export
+ * makes no third-party font requests.
  */
 
 const syne = Syne({
@@ -41,6 +42,22 @@ const mono = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '500'],
   variable: '--font-mono',
+  display: 'swap',
+});
+
+/*
+  Chalk. Used on exactly one page — Grasp's board — and loaded here because
+  `next/font` has to run at module scope in a server component.
+
+  Caveat rather than one of the scratchier handwriting faces: a lesson has to be
+  READ, and the rougher hands lose legibility at the size algebra needs. The
+  texture on the board comes from the drawing (a wide faint pass under every
+  stroke) rather than from the letterforms, so the face can afford to be clear.
+*/
+const hand = Caveat({
+  subsets: ['latin'],
+  weight: ['500', '600', '700'],
+  variable: '--font-hand',
   display: 'swap',
 });
 
@@ -111,7 +128,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${syne.variable} ${dmSans.variable} ${mono.variable}`}
+      className={`${syne.variable} ${dmSans.variable} ${mono.variable} ${hand.variable}`}
     >
       <body>
         <Providers>

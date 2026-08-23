@@ -1,0 +1,350 @@
+/**
+ * Grasp's landing — the entire stylesheet.
+ *
+ * Isolated the same way the founder page is: nothing here is referenced from
+ * globals.css and nothing on this page reads a grasp-specific class from there.
+ * The page owns a world the rest of the site does not have — a slate green
+ * board — and keeping the selectors local is what stops that world leaking into
+ * the studio's paper.
+ */
+
+/* ---------- the board's world ------------------------------------- */
+
+.world {
+  /*
+    Slate, not black. A blackboard is actually a very dark green or grey, and a
+    pure black one reads as a screenshot of a terminal. The chalk is off-white
+    for the same reason: white chalk on a real board is dusty and warm, and
+    #fff against this green is a laser pointer.
+  */
+  --slate: #2d4a3f;
+  --slate-deep: #243c33;
+  --chalk: #eef1e6;
+  --chalk-dim: rgba(238, 241, 230, 0.46);
+  /* Yellow chalk, for the line that matters. The site's blue is invisible on green. */
+  --chalk-accent: #f0d266;
+
+  background: var(--slate);
+  color: var(--chalk);
+}
+
+/* ---------- the only chrome on the page --------------------------- */
+
+.head {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: clamp(96px, 15vh, 180px) var(--gutter) clamp(30px, 5vh, 64px);
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.back {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  transition: color 0.3s var(--ease-out);
+  margin-bottom: clamp(20px, 4vh, 44px);
+}
+
+.back:hover {
+  color: var(--chalk);
+}
+
+.back i {
+  font-style: normal;
+  margin-right: 8px;
+}
+
+.name {
+  font-family: var(--font-hand), 'Segoe Print', cursive;
+  font-weight: 700;
+  font-size: clamp(56px, 11vw, 150px);
+  line-height: 0.92;
+  color: var(--chalk);
+}
+
+.tagline {
+  font-family: var(--font-hand), 'Segoe Print', cursive;
+  font-weight: 500;
+  font-size: clamp(20px, 2.4vw, 32px);
+  color: var(--chalk-dim);
+}
+
+/* ---------- the pinned lesson ------------------------------------- */
+
+.track {
+  position: relative;
+  /*
+    Five acts. Each needs enough thumb to read a line of algebra before the next
+    arrives — this is a lesson, and a lesson that scrolls past faster than it can
+    be read is a screensaver.
+  */
+  height: 540vh;
+}
+
+.stage {
+  position: relative;
+  height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 3vw, 54px);
+  overflow: hidden;
+  /*
+    A slate is lit from the front of the room, so it is brighter in the middle
+    and falls off at the edges. One radial gradient, and it is most of what
+    stops the board looking like a green rectangle.
+  */
+  background:
+    radial-gradient(120% 90% at 50% 42%, rgba(255, 255, 255, 0.07), transparent 60%),
+    linear-gradient(180deg, var(--slate) 0%, var(--slate-deep) 100%);
+}
+
+.svg {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow: visible;
+}
+
+/* ---------- chalk -------------------------------------------------- */
+
+.write {
+  font-family: var(--font-hand), 'Segoe Print', cursive;
+  font-weight: 600;
+  fill: currentColor;
+  /* Chalk sits ON the surface; a hairline shadow is what gives it thickness. */
+  paint-order: stroke;
+}
+
+.stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/*
+  The dusty pass. Chalk sheds either side of the line it lays down, so every
+  stroke is drawn twice — this wide faint one under a tight bright one. It is
+  the whole chalk texture, and it costs one extra path instead of a turbulence
+  filter re-evaluated on every scrubbed frame.
+*/
+.dust {
+  opacity: 0.16;
+}
+
+.point {
+  fill: currentColor;
+  stroke: none;
+}
+
+.chalk {
+  color: var(--chalk);
+}
+
+.accent {
+  color: var(--chalk-accent);
+}
+
+.dim {
+  color: var(--chalk-dim);
+}
+
+/*
+  The surface itself: static noise, multiplied over the green. A real slate is
+  unevenly worn and holds the ghost of everything ever written on it.
+*/
+.grain {
+  mix-blend-mode: overlay;
+  opacity: 0.14;
+  pointer-events: none;
+}
+
+/* ---------- reduced motion: the same lesson, standing still -------- */
+
+.trackStatic {
+  height: auto;
+  display: grid;
+  gap: clamp(20px, 4vh, 48px);
+  padding: clamp(20px, 5vh, 64px) 0;
+}
+
+.staticBoard {
+  padding: clamp(12px, 2vw, 32px);
+  background:
+    radial-gradient(120% 90% at 50% 42%, rgba(255, 255, 255, 0.06), transparent 60%),
+    linear-gradient(180deg, var(--slate) 0%, var(--slate-deep) 100%);
+}
+
+.staticBoard .svg {
+  height: auto;
+}
+
+/* ---------- the demonstration ------------------------------------- */
+
+/*
+  The instrument keeps its own light palette. It is the one thing on the page
+  the reader is meant to TOUCH, and a control that looks like part of the
+  drawing does not read as a control — it also appears inside notebook entries
+  on paper, so it cannot be restyled globally for this page's sake.
+
+  What it gets here is a mount: the board's world recedes to a frame around it.
+*/
+.demo {
+  padding: clamp(64px, 10vh, 140px) var(--gutter) clamp(40px, 6vh, 90px);
+  max-width: var(--max);
+  margin: 0 auto;
+}
+
+.demoHead {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 10px;
+  margin-bottom: clamp(28px, 4vh, 56px);
+}
+
+.demoLabel {
+  color: var(--chalk-dim);
+}
+
+.demoTitle {
+  font-family: var(--font-hand), 'Segoe Print', cursive;
+  font-weight: 600;
+  font-size: clamp(30px, 4.6vw, 62px);
+  line-height: 1.06;
+  color: var(--chalk);
+  max-width: 20ch;
+}
+
+/* ---------- the course contents ----------------------------------- */
+
+.syllabus {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: clamp(20px, 4vh, 48px) var(--gutter) clamp(90px, 14vh, 180px);
+}
+
+.lessons {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+
+/*
+  A contents page, written up the way one is on a board: a number, the title,
+  and where it can be done. The rule under each row is the chalk line a teacher
+  draws to keep a list straight.
+*/
+.lesson {
+  display: grid;
+  grid-template-columns: 3ch minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: clamp(14px, 2.4vw, 34px);
+  padding: clamp(14px, 2vh, 22px) 0;
+  border-bottom: 1px solid rgba(238, 241, 230, 0.14);
+  font-family: var(--font-hand), 'Segoe Print', cursive;
+}
+
+.lessonIndex {
+  color: var(--chalk-dim);
+  font-size: clamp(18px, 1.8vw, 24px);
+}
+
+.lessonTitle {
+  color: var(--chalk-dim);
+  font-size: clamp(22px, 2.6vw, 36px);
+  line-height: 1.15;
+}
+
+/*
+  A lesson that can be done here is written in full chalk; one that cannot is
+  left faint. The difference is the page telling the truth about itself without
+  needing a sentence per row.
+*/
+.lesson[data-web] .lessonTitle {
+  color: var(--chalk);
+}
+
+.lessonState {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.lesson[data-web] .lessonState {
+  color: var(--chalk-accent);
+}
+
+.syllabusNote {
+  margin-top: clamp(28px, 4vh, 52px);
+  max-width: 54ch;
+  font-size: clamp(14px, 1.05vw, 17px);
+  line-height: 1.6;
+  color: var(--chalk-dim);
+}
+
+/* ---------- the way out ------------------------------------------- */
+
+.out {
+  padding: clamp(50px, 8vh, 110px) var(--gutter) clamp(90px, 14vh, 180px);
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: clamp(22px, 3vh, 38px);
+}
+
+.outLine {
+  font-family: var(--font-hand), 'Segoe Print', cursive;
+  font-weight: 600;
+  font-size: clamp(26px, 3.6vw, 46px);
+  line-height: 1.1;
+  color: var(--chalk);
+  max-width: 22ch;
+}
+
+/*
+  The button is chalk too — an outline drawn round the words, the way a teacher
+  boxes the thing that matters. Filled at rest would make it a web button
+  dropped onto a board.
+*/
+.learn {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 34px;
+  border: 2px solid var(--chalk-accent);
+  border-radius: 40px;
+  font-family: var(--font-hand), 'Segoe Print', cursive;
+  font-weight: 700;
+  font-size: clamp(22px, 2.3vw, 30px);
+  color: var(--chalk-accent);
+  transition:
+    background 0.35s var(--ease-out),
+    color 0.35s var(--ease-out),
+    gap 0.35s var(--ease-out);
+}
+
+.learn:hover {
+  background: var(--chalk-accent);
+  color: var(--slate-deep);
+  gap: 22px;
+}
+
+.learn i {
+  font-style: normal;
+}
+
+.outNote {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
