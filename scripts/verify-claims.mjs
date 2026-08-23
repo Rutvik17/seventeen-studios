@@ -284,6 +284,44 @@ function lessonTerminal(start, drift, vol, years, z) {
 
 check('slope: 1.40 / 0.50', 1.4 / 0.5, 2.8, 1e-9);
 
+/* ---------- MODEL A, founder page ---------- */
+
+/*
+  Same rule as the notebook: every figure the working column prints is produced
+  here from the same constants `src/lib/founder/device.ts` declares, so a
+  datasheet tweak that the readout follows cannot silently leave a caption
+  behind.
+*/
+{
+  const gpioPins = 40;
+  const gpioPitch = 2.54;
+  const gpioSpan = (gpioPins / 2 - 1) * gpioPitch;
+  check('founder: GPIO span (mm)', gpioSpan, 48.26);
+
+  const bandwidth = (3200e6 * 32) / 8 / 1e9;
+  check('founder: LPDDR4 bandwidth (GB/s)', bandwidth, 12.8);
+
+  const panelW = 296;
+  const panelH = 128;
+  const inks = 2;
+  const framebuffer = (panelW * panelH * (inks - 1)) / 8;
+  check('founder: framebuffer (bytes)', framebuffer, 4736);
+
+  const spiHz = 4e6;
+  const clockMs = (framebuffer * 8 * 1000) / spiHz;
+  check('founder: SPI frame clock (ms)', clockMs, 9.472);
+
+  const refreshMs = 2 * 1000;
+  check('founder: refresh is ~200x the wire', refreshMs / clockMs, 211, 0.5);
+
+  const activeW = 66.9;
+  const activeH = 29.05;
+  check('founder: panel PPI across', panelW / (activeW / 25.4), 112.38, 0.01);
+  check('founder: panel PPI down', panelH / (activeH / 25.4), 111.92, 0.01);
+  check('founder: pixel pitch across (mm)', activeW / panelW, 0.226, 0.0001);
+  check('founder: pixel pitch down (mm)', activeH / panelH, 0.227, 0.0001);
+}
+
 console.log();
 if (failures > 0) {
   console.error(`${failures} claim(s) do not match their formula.`);
