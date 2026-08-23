@@ -7,8 +7,14 @@ import { Reveal } from '@/components/motion/Reveal';
 
 export const metadata: Metadata = {
   title: 'Lab',
+  /*
+    Names all three. The heading and the lead were updated to say what is on
+    this page and this was not, so search results and link previews still
+    advertised two instruments where there are three — the credit model, which
+    is the most quantitative thing here, was the one missing.
+  */
   description:
-    'Working instruments — a Monte Carlo risk desk on real market data, and a character rigged on springs and inverse kinematics.',
+    'Working instruments: a Monte Carlo value-at-risk desk on real market data, a credit model decomposing expected loss and capital, and a character rig on springs and two-bone inverse kinematics.',
 };
 
 /**
