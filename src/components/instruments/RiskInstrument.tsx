@@ -211,7 +211,7 @@ export function RiskInstrument() {
           These six do not move together. Over the last{' '}
           {market.correlationSessions} trading days the most closely linked pair
           moved in step about half the time, the least linked about a quarter.
-          That is worth something, and here is exactly how much:
+          The diversification that buys is measurable:
         </p>
         <div className="diversify__bars">
           <Bar
