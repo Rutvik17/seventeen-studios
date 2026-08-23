@@ -9,6 +9,7 @@ import { Nav } from '@/components/Nav';
 import { MenuOverlay } from '@/components/MenuOverlay';
 import { Footer } from '@/components/Footer';
 import { site } from '@/content/studio';
+import { founder } from '@/content/founder';
 import { currentYear } from '@/lib/time';
 import './globals.css';
 
@@ -47,18 +48,33 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://seventeenstudios.co
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  /*
+    THE TAB SAYS HIS NAME.
+
+    It used to open with the studio's — "Seventeen Studios — The engineering
+    notebook of Rutvik Patel." — which is the right way round for a company and
+    the wrong way round for this. The people this site is built for are reading
+    it with twenty tabs open, half of them other candidates, and the one string
+    they need in order to know which tab is which is the name of the person
+    whose work it is. The brand still owns the page: it is the mark in the
+    header and the wordmark across the footer.
+
+    The keywords went with it. "Engineering studio", "software consultancy" and
+    "creative engineering" were bidding for agency traffic — the exact thing
+    this site stopped being, and the exact reader it does not want.
+  */
   title: {
-    default: `${site.name} — ${site.tagline}`,
-    template: `%s — ${site.name}`,
+    default: `${founder.name} — ${founder.role}, ${founder.location}`,
+    template: `%s — ${founder.name}`,
   },
   description: site.description,
   keywords: [
-    'engineering studio',
-    'software consultancy',
-    'creative engineering',
-    'AI systems',
+    'software engineer',
+    'frontend engineer',
+    'engineering portfolio',
+    'React',
+    'TypeScript',
     'WebGL',
-    'platform modernisation',
   ],
   authors: [{ name: site.name }],
   openGraph: {

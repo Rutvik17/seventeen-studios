@@ -71,6 +71,7 @@ import {
 import {
   buildEnvironment,
   captureAnchors,
+  fitDistance,
   placeCamera,
   shotAt,
 } from '@/lib/founder/studio';
@@ -91,17 +92,27 @@ const FIT_WIDTH = 2.3;
   anchored on the head instead. Measured off the file rather than guessed: the
   eyes sit a little right of centre and about a third of the way down.
 */
-const PORTRAIT_FOCUS = { x: 0.57, y: 0.37 };
+const PORTRAIT_FOCUS = { x: 0.57, y: 0.35 };
 
 /**
- * How far past a cover-crop to zoom in.
+ * How far past a cover-crop to zoom in — and it is barely at all, for a reason
+ * that is arithmetic rather than taste.
  *
- * A 3:4 photograph covering a 2.3:1 panel is decided by width alone, so at 1.0
- * the crop is the whole width of the picture — including all the empty ground
- * around the subject, which on a 296-pixel panel leaves a very small head. 1.5
- * fills the frame with the face.
+ * The source is 880 x 1160 and the head runs from about y=200 (top of the hair)
+ * to y=600 (chin) — four hundred rows. Covering a 296 x 128 panel scales the
+ * image by 0.336, so the panel sees `128 / (0.336 · zoom)` rows of it:
+ *
+ *     zoom 1.0   381 rows   the whole head, just
+ *     zoom 1.5   254 rows   forehead to nose — the crop cuts the face
+ *
+ * So anything above about 1.05 removes the part of the picture that makes it a
+ * portrait. 1.5 was tried and did exactly that. The small amount above 1 is
+ * bought for the horizontal axis instead: at exactly 1.0 the crop is pinned to
+ * the full width of the source and `focus.x` cannot move it, so the head sits
+ * wherever it happened to be in frame. 1.05 gives fifteen pixels of travel,
+ * which is enough to bring it to the middle of the panel.
  */
-const PORTRAIT_ZOOM = 1.5;
+const PORTRAIT_ZOOM = 1.05;
 
 /* ------------------------------------------------------------------ *
  * Choreography
@@ -348,7 +359,7 @@ function Device({ track, progress, reduced, data, now, onCued, onReady }: Device
     [],
   );
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const dt = Math.min(delta, 1 / 20);
 
     /* ---- where in the story are we ---- */
@@ -443,7 +454,23 @@ function Device({ track, progress, reduced, data, now, onCued, onReady }: Device
     /* ---- camera ---- */
     const frame = shotAt(t);
     model.holder.getWorldPosition(scratch.centre);
-    placeCamera(frame, model.anchors, scratch.centre, scratch.position, scratch.target);
+    /*
+      Read from the live canvas rather than a breakpoint. The shots are framed
+      for a landscape window; a portrait phone sees less than a third of that
+      width at the same distance, so the camera stands back by whatever the
+      viewport's shape actually requires. Taken off `state.size` inside the loop
+      so a rotation or a resize is picked up without a subscription and a
+      re-render.
+    */
+    const fit = fitDistance(state.size.width / state.size.height);
+    placeCamera(
+      frame,
+      model.anchors,
+      scratch.centre,
+      scratch.position,
+      scratch.target,
+      fit,
+    );
 
     if (reduced || first) {
       camera.position.copy(scratch.position);

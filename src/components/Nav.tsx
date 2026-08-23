@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation';
 import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { nav, site } from '@/content/studio';
+import { Logo } from '@/components/Logo';
 import { useUi } from '@/lib/store';
 import { TransitionLink } from './Transition';
 import { Scramble } from './motion/Scramble';
@@ -101,8 +102,13 @@ export function Nav() {
   return (
     <header className="nav" ref={ref}>
       <TransitionLink href="/" className="nav__mark" aria-label="Seventeen Studios — home">
-        <span className="nav__mark-text">{site.wordmark}</span>
-        <span className="nav__mark-dot">.</span>
+        {/*
+          The mark, not the name. The word SEVENTEEN is still set at full size
+          in the footer, where it is the signature; repeating it up here in
+          15px was the name typed out twice on one page.
+        */}
+        <Logo className="nav__logo" />
+        <span className="nav__mark-dot" aria-hidden="true">.</span>
       </TransitionLink>
 
       <nav className="nav__links" aria-label="Primary">
@@ -113,6 +119,13 @@ export function Nav() {
               key={item.href}
               href={item.href}
               className={`nav__link${active ? ' is-active' : ''}`}
+              /*
+                Named so the stylesheet can single one out. The phone bar keeps
+                only the notebook — see the note in the 700px block — and
+                selecting on the label is legible where `:first-child` would
+                silently pick a different route the day the nav is reordered.
+              */
+              data-label={item.label.toLowerCase()}
             >
               <Scramble text={item.label} />
             </TransitionLink>

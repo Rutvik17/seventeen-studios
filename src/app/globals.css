@@ -635,12 +635,24 @@ code {
   font-size: 15px;
   letter-spacing: 0.02em;
 }
+/*
+  The mark sits on the dot's baseline. `.nav__mark` aligns on `baseline`, and an
+  inline-level SVG's baseline is its bottom edge — so the numerals and the full
+  stop line up without a magic offset.
+*/
+.nav__logo {
+  display: block;
+  height: 17px;
+  width: auto;
+  color: var(--fg);
+  transition: color 0.3s;
+}
 .nav__mark-dot {
   color: var(--accent);
+  margin-left: 1px;
 }
-.nav__mark:hover .nav__mark-text {
+.nav__mark:hover .nav__logo {
   color: var(--accent);
-  transition: color 0.3s;
 }
 
 .nav__links {
@@ -1238,11 +1250,22 @@ ol.prose__list li::before {
 }
 
 @media (max-width: 900px) {
-  .nav__links {
-    display: none;
-  }
+  /*
+    THE BAR KEEPS ITS LINKS DOWN TO TABLET WIDTH.
+
+    All five used to be dropped at 900px, leaving a mark and the Index button
+    with a lot of air between them and every route two taps behind an overlay.
+    Five mono labels, the mark and the Index button measure roughly 400px, so
+    they sit comfortably from here down to about 700.
+
+    The clock goes instead: it is the one thing on the bar nobody navigates
+    with, and it buys the links their room.
+  */
   .nav__time {
     display: none;
+  }
+  .nav__links {
+    gap: 16px;
   }
   .menu__inner {
     grid-template-columns: minmax(0, 1fr);
@@ -4031,12 +4054,52 @@ html.no-js .exploded .exploded__svg {
     font-size: clamp(46px, 15vw, 72px);
   }
 
-  .board-story__svg {
-    max-height: 46svh;
+  /*
+    THE READOUT COMES OFF ON A PHONE.
+
+    On desktop it is the point of the page — the working beside the drawing, the
+    thing that makes the board checkable rather than decorative. On a phone it
+    is stacked UNDER the board in a single column, so the two of them are
+    dividing one screen between them: the act caption and its calculation take
+    roughly a third of the viewport, and what is left is a wordmark and a
+    circuit board squeezed into the gap. Everything was legible and nothing had
+    any room.
+
+    So the phone keeps the two things that survive being small — the wordmark
+    and the board — and drops the column of figures, which needs a measure it
+    cannot have here. The desktop page is where the argument is made; this is
+    the reading version of the site.
+  */
+  .board-story__readout {
+    display: none;
   }
 
-  .board-story__caption {
-    font-size: 15px;
+  /* With the readout gone the drawing can have the room it was sharing. */
+  .board-story__svg {
+    max-height: 58svh;
+  }
+
+  /*
+    THE BAR RUNS OUT OF ROOM BEFORE THE ROUTES DO.
+
+    Five labels need about 260px of the 390 a phone has, and the mark and the
+    Index button take most of the rest — so something has to go, and it is a
+    question of arithmetic rather than of taste.
+
+    What stays is the three routes that are read: the notebook, the lab and
+    Grasp. Contact and the founder page come off, and neither is lost — the
+    Index button opens the full site overlay, the footer carries contact in
+    two forms, and the founder page is still linked from the work list below.
+    They are the two the bar can most afford to drop: one is a destination
+    people arrive at from a link rather than hunt for in a header, and the
+    other is a 600vh scroll story.
+  */
+  .nav__link[data-label='contact'],
+  .nav__link[data-label='founder'] {
+    display: none;
+  }
+  .nav__links {
+    gap: 14px;
   }
 
   /* The entry header's type is sized for a wide measure. */
