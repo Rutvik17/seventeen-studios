@@ -37,10 +37,15 @@ export default function NotebookPage() {
             Lessons
           </SplitText>
           <Reveal className="page-head__lead">
+            {/*
+              "Lessons, not write-ups" was the site defending itself against a
+              charge nobody had made. What a reader needs here is what these
+              are and what they assume.
+            */}
             <p>
-              Lessons, not write-ups. Each one starts at nothing and ends with
-              you able to build the thing yourself — the maths, the physics and
-              the code that actually produced it.
+              Each one starts from nothing and ends with the thing built — the
+              maths, the physics and the code that produced it. No prior
+              knowledge is assumed beyond arithmetic.
             </p>
           </Reveal>
         </header>

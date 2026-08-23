@@ -16,13 +16,20 @@ import { ContactLink } from '@/components/ContactLink';
 export function Outro() {
   return (
     <section className="outro" id="contact">
+      {/*
+        This asked "What would you like to build?" and offered to "start a
+        conversation" — a client pitch, left over from the agency the site
+        stopped being. The people reading it are hiring managers and staff
+        engineers who have just scrolled past the work; what they need at the
+        bottom is an address, not an invitation to brief a studio.
+      */}
       <h2 className="outro__question">
-        What would you
+        Questions about
         <br />
-        like to build?
+        any of it?
       </h2>
       <ContactLink className="outro__link" data-cursor="Write">
-        Start a conversation
+        Email
       </ContactLink>
     </section>
   );
