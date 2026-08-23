@@ -28,8 +28,8 @@ const nextConfig = {
   basePath,
   assetPrefix: basePath || undefined,
   images: { unoptimized: true },
-  // Three.js ships as ES modules; fiber and drei do too.
-  transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
+  // Three.js ships as ES modules; let Next transpile it if needed.
+  transpilePackages: ['three'],
 };
 
 module.exports = nextConfig;

@@ -29,36 +29,9 @@ export const founder = {
   portrait: asset('/founder/rutvik-patel.jpg'),
   portraitAlt: 'Rutvik Patel',
   resume: asset('/founder/rutvik-patel-resume.pdf'),
-  resumeDocx: asset('/founder/rutvik-patel-resume.docx'),
   github: 'https://github.com/Rutvik17',
   /** One line. Used for the page's metadata, so it has to stand alone. */
   summary: `Software engineer with ${spell(years)} years building interfaces and platforms at enterprise scale — agentic AI at Ernst & Young, a mobile product taken from zero to acquisition, connected-vehicle infrastructure at Ford.`,
-} as const;
-
-/**
- * Chrome for the rebuilt founder page.
- *
- * The assembly itself has almost no copy — same rule as the landing. These
- * strings are the frame around it, and the labels on the employment record
- * underneath. The 3D scene and the working column do the rest.
- */
-export const founderPage = {
-  eyebrow: 'Software engineer — Toronto',
-  wordmarkTop: 'RUTVIK',
-  wordmarkBottom: 'PATEL',
-  /**
-   * What the demonstration cannot say: that the object on this page is the
-   * same device the landing draws in SVG. Everything else is on screen.
-   */
-  line: 'The landing draws this board. This page builds it.',
-  cue: 'Scroll to assemble it',
-  recordLabel: 'Record',
-  /**
-   * The panel's bitmap font has no ampersand. EY is the name the firm actually
-   * trades under, so it is what the firmware would print.
-   */
-  panelEmployer: 'EY',
-  panelSymbol: 'NVDA',
 } as const;
 
 export interface CareerEntry {
