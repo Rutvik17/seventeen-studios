@@ -2888,6 +2888,52 @@ html.no-js .exploded .exploded__svg {
   border-top: 1px solid var(--line);
 }
 
+/*
+  THE NOTEBOOK'S ROWS RUN SMALLER THAN THE WORK'S, AND IT IS A CONTENT
+  CONSTRAINT RATHER THAN A TASTE.
+
+  A row sets its title at display size and ellipsises it to one line. That works
+  for the work index, where a title is a name — "Grasp", "Portfolio risk desk".
+  It does not work for a lesson, where the title has to say what the lesson
+  teaches: at 88px, "Designing a circuit board" arrives as "Designing a circ…",
+  which is worse than the oblique title it replaced, because at least that one
+  could be read.
+
+  Two thirds of the size fits a five-word technical title on one line at this
+  measure, and the rows still read as display type.
+*/
+/*
+  58px fitted four of the six titles and clipped "Physics-based animation" and
+  "What a derivative measures" — and between the type and the words, the words
+  are the content on a lesson index. 46px fits every title on one line at this
+  measure while still reading as display type against 17px body copy.
+*/
+.section-rows--flush .rows__row {
+  font-size: clamp(24px, 3.1vw, 46px);
+}
+
+/*
+  And the title gets the width before the standfirst does.
+
+  In the row's flex line the title sits in `.rows__lead` (`flex: 0 1 auto`) and
+  the standfirst in `.rows__meta` (`flex: 1 1 auto`) — so the standfirst takes
+  the free space and the title is the one that shrinks and ellipsises. For the
+  work index that is right: those titles are two words and the meta is the
+  interesting part.
+
+  For a lesson it is backwards. The title is the thing being scanned for, and
+  the standfirst is a gloss that can lose its last few words to a line clamp
+  without costing the reader anything. So the priorities swap here, and the
+  standfirst is capped at a third of the row.
+*/
+.section-rows--flush .rows__lead {
+  flex: 1 1 auto;
+}
+
+.section-rows--flush .rows__meta {
+  flex: 0 1 34%;
+}
+
 .rows__fill {
   position: absolute;
   inset: 0;

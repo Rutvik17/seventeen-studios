@@ -82,8 +82,13 @@ export const projects: Project[] = [
   {
     slug: 'companion',
     index: '04',
-    name: 'Mochi',
-    line: 'A character rigged on springs, a pendulum and two-bone inverse kinematics.',
+    /*
+      The character is called Mochi, and its name was the title here — which
+      told a reader nothing about what was built. The row now says what the work
+      IS and keeps the name in the line under it, where it belongs.
+    */
+    name: 'Physics character rig',
+    line: 'Mochi: a character rigged on springs, a pendulum and two-bone inverse kinematics.',
     metric: 'No keyframes anywhere — every pose is integrated',
     status: 'Live demo',
     stack: ['Canvas', 'Physics', 'TypeScript'],
@@ -94,8 +99,8 @@ export const projects: Project[] = [
   {
     slug: 'companion-device',
     index: '05',
-    name: 'The companion device',
-    line: 'An ESP32 board driving a seven-colour e-ink panel, showing data as a face.',
+    name: 'E-ink companion device',
+    line: 'An ESP32 board driving a seven-colour e-ink panel, showing market data as a face.',
     metric: '0.93 mA average · 45 days on a 1200 mAh cell',
     status: 'Designing',
     stack: ['ESP32-C3', 'E-ink', 'KiCad', 'C++'],

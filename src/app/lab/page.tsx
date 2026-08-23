@@ -28,11 +28,20 @@ export default function LabPage() {
     <div className="page lab">
       <header className="page-head">
         <span className="mono-label">Lab</span>
+        {/*
+          "Things that run" was the heading here, and it was the same failure
+          the notebook had: a phrase that sounds like the site rather than a
+          label that says what is on the page. A reader scanning for evidence
+          of quantitative work should be able to see it from the heading.
+        */}
         <SplitText as="h1" className="page-head__title" stagger={0.03} depth>
-          Things that run
+          Working instruments
         </SplitText>
         <Reveal className="page-head__lead">
-          <p>Move the inputs. Everything recomputes in your browser.</p>
+          <p>
+            A Monte Carlo risk desk, a credit model and a physics rig. Move the
+            inputs — everything recomputes in your browser.
+          </p>
         </Reveal>
       </header>
 
@@ -42,14 +51,16 @@ export default function LabPage() {
 
       <section className="lab__block" id="credit">
         <h2 className="lab__title">
-          <span className="mono-label">02</span> What a lender has to survive
+          <span className="mono-label">02</span> Credit risk: expected loss and
+          required capital
         </h2>
         <CreditInstrument />
       </section>
 
       <section className="lab__block" id="companion">
         <h2 className="lab__title">
-          <span className="mono-label">03</span> Mochi, taken apart
+          <span className="mono-label">03</span> Character rig: springs,
+          pendulum and inverse kinematics
         </h2>
         <RigDemo />
       </section>

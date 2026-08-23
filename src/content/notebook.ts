@@ -100,9 +100,9 @@ export type Entry = {
 export const entries: Entry[] = [
   /* ------------------------------------------------------------------ */
   {
-    slug: 'a-thing-that-tells-you-something',
+    slug: 'designing-a-circuit-board',
     index: '01',
-    title: 'A thing that tells you something',
+    title: 'Designing a circuit board',
     standfirst:
       'Designing a small device from nothing: what every part on a circuit board is for, and why it has to be there.',
     topic: 'Hardware',
@@ -403,9 +403,9 @@ export const entries: Entry[] = [
 
   /* ------------------------------------------------------------------ */
   {
-    slug: 'guessing-well',
+    slug: 'monte-carlo-simulation',
     index: '02',
-    title: 'Guessing well',
+    title: 'Monte Carlo simulation',
     standfirst:
       'How you work out the chance of something when the maths is too hard to solve — starting with a coin.',
     topic: 'Quantitative',
@@ -663,9 +663,9 @@ export const entries: Entry[] = [
 
   /* ------------------------------------------------------------------ */
   {
-    slug: 'why-animation-looks-fake',
+    slug: 'physics-based-animation',
     index: '03',
-    title: 'Why animation looks fake',
+    title: 'Physics-based animation',
     standfirst:
       'Nothing on this site is keyframed. The difference between a curve and a force, and why your eye catches it.',
     topic: 'Motion',
@@ -863,12 +863,14 @@ export const entries: Entry[] = [
 
   /* ------------------------------------------------------------------ */
   {
-    slug: 'steepness',
+    slug: 'what-a-derivative-measures',
     index: '04',
-    title: 'Steepness',
+    title: 'What a derivative measures',
     standfirst:
       'Calculus is one idea about slopes, buried under notation. Here it is without the notation.',
-    topic: 'Teaching',
+    // 'Teaching' described the register rather than the subject; every entry
+    // here teaches. The topic label is what a reader scans for the field.
+    topic: 'Mathematics',
     tags: ['mathematics', 'teaching'],
     outcome:
       'Understand what a derivative measures, and read one off a graph without touching the notation.',
@@ -1018,9 +1020,9 @@ export const entries: Entry[] = [
 
   /* ------------------------------------------------------------------ */
   {
-    slug: 'what-a-lender-is-afraid-of',
+    slug: 'modelling-credit-risk',
     index: '05',
-    title: 'What a lender is afraid of',
+    title: 'Modelling credit risk',
     standfirst:
       'Credit risk is three questions, not one. Taking apart the number behind every lending decision.',
     topic: 'Quantitative',
@@ -1171,16 +1173,16 @@ export const entries: Entry[] = [
 
   /* ------------------------------------------------------------------ */
   {
-    slug: 'a-face-that-guesses',
+    slug: 'logistic-regression-on-market-returns',
     index: '06',
-    title: 'A face that guesses',
+    title: 'Logistic regression',
     standfirst:
       'Training a real model to predict tomorrow, finding out it barely works, and why that is the honest answer.',
     topic: 'Machine learning',
     tags: ['machine-learning', 'quantitative'],
     outcome:
       'Train a classifier by gradient descent, and — more usefully — tell whether it has learned anything at all.',
-    prerequisites: ['Helps to have read Guessing well first, but it is not required.'],
+    prerequisites: ['Helps to have read the Monte Carlo entry first, but it is not required.'],
     date: '2026-08-22',
     color: '#e8dff2',
     ink: '#4a2c6b',
