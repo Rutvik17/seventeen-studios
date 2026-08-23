@@ -20,13 +20,27 @@ import type { PanelData } from '@/lib/founder/panel';
  * It is the `url` on the Person node that every notebook lesson names as its
  * author.
  */
+/*
+  The description says what is ON the page as well as who it is about. It was
+  `founder.summary` alone — an accurate paragraph about his career, on a page
+  that is almost entirely a device assembling itself, so a search result gave no
+  hint of what a visitor would actually find.
+*/
+const FOUNDER_DESCRIPTION = `${founder.summary} The page builds MODEL A — a Raspberry Pi and 2.9" e-ink module — part by part as you scroll.`;
+
 export const metadata: Metadata = {
-  title: `${founder.name} — Founder`,
-  description: founder.summary,
+  /*
+    "Founder", not "Rutvik Patel — Founder". The root layout appends
+    "— Rutvik Patel" to every child title, so this shipped as
+    "Rutvik Patel — Founder — Rutvik Patel".
+  */
+  title: 'Founder',
+  description: FOUNDER_DESCRIPTION,
   openGraph: {
-    title: `${founder.name} — Founder, ${site.name}`,
-    description: founder.summary,
+    title: `${founder.name} — ${founder.role}`,
+    description: FOUNDER_DESCRIPTION,
     type: 'profile',
+    siteName: site.name,
   },
 };
 

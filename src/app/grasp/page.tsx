@@ -6,10 +6,15 @@ import styles from '@/components/grasp/Grasp.module.css';
 
 const grasp = productBySlug('grasp');
 
+const DESCRIPTION =
+  'Module 1 of Grasp: nine lessons that build the derivative from steepness, one idea at a time.';
+
 export const metadata: Metadata = {
   title: `Learn calculus — ${graspModule.title}`,
-  description:
-    'Module 1 of Grasp: nine lessons that build the derivative from steepness, one idea at a time.',
+  description: DESCRIPTION,
+  // Set explicitly, from the same constant. Without it this route inherits the
+  // root's `og:title` and shares itself as "Seventeen Studios".
+  openGraph: { title: `Learn calculus — ${graspModule.title}`, description: DESCRIPTION },
 };
 
 /**
