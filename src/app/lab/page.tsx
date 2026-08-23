@@ -5,16 +5,21 @@ import { RigDemo } from '@/components/instruments/RigDemo';
 import { SplitText } from '@/components/motion/SplitText';
 import { Reveal } from '@/components/motion/Reveal';
 
+/*
+  Names all three. The heading and the lead were updated to say what is on this
+  page and this was not, so search results and link previews still advertised
+  two instruments where there are three — the credit model, which is the most
+  quantitative thing here, was the one missing.
+*/
+const DESCRIPTION =
+  'Working instruments: a Monte Carlo value-at-risk desk on real market data, a credit model decomposing expected loss and capital, and a character rig on springs and two-bone inverse kinematics.';
+
 export const metadata: Metadata = {
   title: 'Lab',
-  /*
-    Names all three. The heading and the lead were updated to say what is on
-    this page and this was not, so search results and link previews still
-    advertised two instruments where there are three — the credit model, which
-    is the most quantitative thing here, was the one missing.
-  */
-  description:
-    'Working instruments: a Monte Carlo value-at-risk desk on real market data, a credit model decomposing expected loss and capital, and a character rig on springs and two-bone inverse kinematics.',
+  description: DESCRIPTION,
+  // Without this the route inherits the root's `og:title` and shares itself as
+  // "Seventeen Studios", which is the brand rather than the page.
+  openGraph: { title: 'Working instruments', description: DESCRIPTION },
 };
 
 /**

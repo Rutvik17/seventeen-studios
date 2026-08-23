@@ -4,10 +4,13 @@ import { ContactLink } from '@/components/ContactLink';
 import { Reveal } from '@/components/motion/Reveal';
 import { SplitText } from '@/components/motion/SplitText';
 
+const DESCRIPTION =
+  'Contact Rutvik Patel — engineering roles, technical questions, or anything on this site.';
+
 export const metadata: Metadata = {
   title: 'Contact',
-  description:
-    'Contact Rutvik Patel — engineering roles, technical questions, or anything on this site.',
+  description: DESCRIPTION,
+  openGraph: { title: 'Contact Rutvik Patel', description: DESCRIPTION },
 };
 
 /**

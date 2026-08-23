@@ -63,6 +63,15 @@ const hand = Caveat({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://seventeenstudios.co';
 
+/**
+ * The landing's title, written once.
+ *
+ * It is the `<title>` default, the `og:title` and the Twitter title, and those
+ * three disagreeing is the ordinary way a share card ends up advertising
+ * something the page does not say.
+ */
+const LANDING_TITLE = `${founder.name} — ${founder.role}, ${founder.location}`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   /*
@@ -81,7 +90,7 @@ export const metadata: Metadata = {
     this site stopped being, and the exact reader it does not want.
   */
   title: {
-    default: `${founder.name} — ${founder.role}, ${founder.location}`,
+    default: LANDING_TITLE,
     template: `%s — ${founder.name}`,
   },
   description: site.description,
@@ -94,8 +103,19 @@ export const metadata: Metadata = {
     'WebGL',
   ],
   authors: [{ name: site.name }],
+  /*
+    THESE ARE THE LANDING'S, AND EVERY PAGE THAT DOES NOT OVERRIDE THEM GETS
+    THEM TOO. That is how metadata inheritance works in the App Router, and it
+    is why `og:title` on the lab and on the Grasp course both read "Seventeen
+    Studios" — those routes set a `title` and no `openGraph`, so their own title
+    never reached the share card and the brand name overrode it.
+
+    Fixed in two halves: this now carries the landing's real title rather than
+    the brand's, and every static route below sets its own `openGraph` from the
+    same constants it uses for `description`, so the two cannot disagree.
+  */
   openGraph: {
-    title: site.name,
+    title: LANDING_TITLE,
     description: site.description,
     type: 'website',
     locale: 'en_CA',
@@ -103,7 +123,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: site.name,
+    title: LANDING_TITLE,
     description: site.description,
   },
   robots: { index: true, follow: true },
