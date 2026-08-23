@@ -150,7 +150,7 @@ export const entries: Entry[] = [
         text: 'Fourteen parts. One of them thinks; the rest either feed it, time it, or are told what to do. That ratio is normal — most of a board exists to keep one chip alive and honest.',
       },
 
-      { type: 'h2', text: 'Electricity arrives at the wrong strength' },
+      { type: 'h2', text: 'Regulating the supply voltage' },
       {
         type: 'term',
         word: 'Volt',
@@ -167,7 +167,7 @@ export const entries: Entry[] = [
         text: 'A USB-C socket will not give you any power at all until the device identifies itself, and it does that with two ordinary resistors. Leave them off and a perfectly good board is simply dead when you plug it in — no light, no warmth, no clue. It is the most common first-board mistake there is.',
       },
 
-      { type: 'h2', text: 'How wide does a wire have to be?' },
+      { type: 'h2', text: 'Trace width, from the IPC-2221A standard' },
       {
         type: 'p',
         text: 'A wire carrying electricity warms up. Too thin and it warms a lot; thin enough and it behaves like the element in a toaster. So there is a real question with a real answer: given how much current this line has to carry, how wide does the copper need to be?',
@@ -225,7 +225,7 @@ export const entries: Entry[] = [
         text: 'Look at any trace on the board: it turns at 45 degrees, never at a right angle. That is not styling. The board is made by dissolving unwanted copper away in acid, and a sharp inside corner holds the acid against the metal for longer than the flat runs — so the corner over-etches and the wire ends up thinnest exactly where it turns. Every board manufacturer forbids right angles for this reason.',
       },
 
-      { type: 'h2', text: 'How a computer knows what time it is' },
+      { type: 'h2', text: 'The crystal that keeps time' },
       {
         type: 'p',
         text: 'It does not. A processor has no sense of time at all; it only knows how to count. To sleep for ten minutes and wake up, it needs something outside itself that ticks at a rate nobody has to guess.',
@@ -265,7 +265,7 @@ export const entries: Entry[] = [
         text: 'Fitting 18 pF gives a load of 12.0 pF against the 12.5 the crystal wanted. That half-picofarad of error is real and it makes the clock run very slightly fast. This is what electronics is actually like: the formula gives you a number, the shop does not sell that number, and part of the job is knowing which errors you can live with.',
       },
 
-      { type: 'h2', text: 'A screen that uses no power to keep showing something' },
+      { type: 'h2', text: 'E-ink: an image that survives the power going off' },
       {
         type: 'p',
         text: 'The display is electronic paper. Instead of lighting pixels up, it moves specks of black and white pigment through a clear fluid using an electric field. Once they have moved they stay put — with the power off, for years. It only draws current while the picture is changing.',
@@ -280,7 +280,7 @@ export const entries: Entry[] = [
         text: 'It is slow. A full refresh on a three-colour panel takes about fifteen seconds, because the red pigment needs a long repeated shove to move at all — and it flashes black and white several times while it works. That rules out anything interactive and rules in exactly this: a thing that changes a few times an hour and is readable in direct sunlight.',
       },
 
-      { type: 'h2', text: 'What it costs to stay awake' },
+      { type: 'h2', text: 'The power budget, and battery life' },
       {
         type: 'p',
         text: 'Battery life comes down to one honest sum, and the trap in it catches almost everybody the first time.',
@@ -322,7 +322,7 @@ export const entries: Entry[] = [
           'Drop the 0.85 and you would claim 54 days. That is how most quoted battery lives get to be about a fifth too generous.',
       },
 
-      { type: 'h2', text: 'Why a face' },
+      { type: 'h2', text: 'Why the display shows a face' },
       {
         type: 'p',
         text: 'The screen could show a number. It shows a face instead, because a face is readable from across a room and a number is not. You do not read it — you catch it, the way you catch someone’s expression before you have heard a word.',
@@ -442,7 +442,7 @@ export const entries: Entry[] = [
         text: 'The exact answer is 11.71875%. The simulation got there without anyone knowing the formula existed. That is the whole trick, and everything below is that same trick applied to something where the formula is genuinely hard.',
       },
 
-      { type: 'h2', text: 'The same trick, applied to money' },
+      { type: 'h2', text: 'From coin flips to value at risk' },
       {
         type: 'p',
         text: 'Here is a question a bank has to answer every day: how much could this portfolio lose over the next three months? Not on average — on a bad day. Specifically, the size of loss that only gets exceeded 5% of the time.',
@@ -480,7 +480,7 @@ export const entries: Entry[] = [
         text: 'That −σ²÷2 in the exponent looks like a correction nobody would miss. Leave it out and the simulated average drifts upward as volatility rises — so a *riskier* portfolio starts looking more profitable, which inverts the entire result. It is one symbol, and it is why the panel below prints its disagreement with the exact answer: the check catches it instantly.',
       },
 
-      { type: 'h2', text: 'Run it' },
+      { type: 'h2', text: 'Running the simulation' },
       {
         type: 'p',
         text: 'Real prices, fetched when this page was built. Move anything and fifty thousand futures are redrawn in your browser.',
@@ -491,7 +491,7 @@ export const entries: Entry[] = [
         text: 'The column labelled "simulation vs formula" is the important one. An approximate closed-form answer exists, so the panel computes both and shows the gap. A simulation that lands within a fraction of a percent of the formula is a claim you can check rather than one you have to take.',
       },
 
-      { type: 'h2', text: 'Six things instead of one' },
+      { type: 'h2', text: 'Six assets, and the correlation between them' },
       {
         type: 'p',
         text: 'That panel is not simulating one company. It is simulating six, together, and that changes the problem in a way worth understanding — because it is the only thing in investing that reliably gives you something for nothing.',
@@ -627,7 +627,7 @@ export const entries: Entry[] = [
         text: 'That is the whole thing. On a three-month horizon at 36% volatility it returns a value at risk near $255,000 — and because it is a simulation rather than a formula, you can change the model without changing anything else.',
       },
       {
-        type: 'h3', text: 'Check it before you trust it',
+        type: 'h3', text: 'Checking the simulation against the closed form',
       },
       {
         type: 'p',
@@ -686,7 +686,7 @@ export const entries: Entry[] = [
         text: 'Here is the tell. Interrupt it. Start the animation, and halfway through, change your mind and send it somewhere else. A curve restarts from wherever it happens to be, at zero speed, as though the first movement never happened. Nothing physical does that.',
       },
 
-      { type: 'h2', text: 'What a real object does instead' },
+      { type: 'h2', text: 'What a spring does instead' },
       {
         type: 'p',
         text: 'A real object has momentum. Interrupt it while it is moving fast and it overshoots the new target; interrupt it while it is barely moving and it eases across. Same instruction, different outcome, decided by what it was already doing.',
@@ -731,7 +731,7 @@ export const entries: Entry[] = [
         text: 'Update the position from the OLD speed instead of the new one and the maths quietly adds a little energy on every step. A lightly damped spring then winds itself up until it flies off the screen. Same three lines, one swapped, and the difference between a stable simulation and one that explodes after four seconds. This is the whole content of "semi-implicit Euler", a phrase that sounds far more intimidating than the swap it describes.',
       },
 
-      { type: 'h2', text: 'Where the arms come from' },
+      { type: 'h2', text: 'Inverse kinematics: solving for the elbow' },
       {
         type: 'p',
         text: 'The character below has arms that bend at an elbow. Nothing anywhere animates an arm. A pose moves the *hand’s target*; a spring takes its own path toward it; and the elbow is then worked out from wherever the hand actually got to this frame.',
@@ -910,7 +910,7 @@ export const entries: Entry[] = [
         soWhat: 'For every metre forward you climb 2.8 metres. Steep.',
       },
 
-      { type: 'h2', text: 'The problem with a curve' },
+      { type: 'h2', text: 'A curve has no single steepness' },
       {
         type: 'p',
         text: 'On a straight line the steepness is the same everywhere and one measurement does. On a curve it changes continuously — so "how steep is it" has no answer until you say *where*.',
@@ -931,7 +931,7 @@ export const entries: Entry[] = [
       },
       { type: 'embed', component: 'derivative', caption: 'Drag the point along the curve' },
 
-      { type: 'h2', text: 'The part that actually opens the subject' },
+      { type: 'h2', text: 'The derivative is a curve of its own' },
       {
         type: 'p',
         text: 'Watch the lower panel while you drag. Every steepness you visit gets plotted. Keep going and those dots make a shape — and that shape is itself a curve.',
@@ -1039,7 +1039,7 @@ export const entries: Entry[] = [
         text: 'When a lender decides whether to give you a card, and what limit to put on it, they are estimating one number. It is worth knowing what it is, because it is far less mysterious than it sounds and it decomposes into three ordinary questions.',
       },
 
-      { type: 'h2', text: 'The three questions' },
+      { type: 'h2', text: 'Three questions: default, loss and exposure' },
       {
         type: 'defs',
         items: [
@@ -1082,7 +1082,7 @@ export const entries: Entry[] = [
         text: '$94.50 is an average across many accounts like this one. This particular account will almost certainly lose nothing at all — or several thousand. Nobody loses ninety-four dollars. The number is only meaningful across a book, which is exactly why a lender thinks in portfolios and an individual borrower finds the decision baffling.',
       },
 
-      { type: 'h2', text: 'Why the average is not enough' },
+      { type: 'h2', text: 'Why expected loss is not enough' },
       {
         type: 'p',
         text: 'Expected loss is budgeted for — it is priced into the interest rate like any other cost of doing business. What actually kills a lender is the unexpected part: the year when far more accounts default at once than usual.',
@@ -1208,7 +1208,7 @@ export const entries: Entry[] = [
           'The simplest useful model for a yes-or-no question. It multiplies each input by a weight, adds them up, and squashes the total into a number between 0 and 1 that you can read as a probability. Older than computers, and still the thing to try first — if it fails, that is usually the data telling you something rather than the model being too simple.',
       },
 
-      { type: 'h2', text: 'What it is looking at' },
+      { type: 'h2', text: 'The features it looks at' },
       {
         type: 'p',
         text: 'Four numbers, all built from prices before the day being predicted. That last part matters more than anything else in this entry, and I will come back to it.',
@@ -1228,7 +1228,7 @@ export const entries: Entry[] = [
         text: 'Every feature is built from data STRICTLY BEFORE the day being predicted. Slip today\u2019s return into the features for today\u2019s direction and accuracy jumps to 100% — because the answer is now inside the question. It is called lookahead leakage, it is silent, nothing errors, and it is the single most common reason a published trading model cannot be reproduced.',
       },
 
-      { type: 'h2', text: 'How it learns' },
+      { type: 'h2', text: 'How it learns: gradient descent' },
       {
         type: 'p',
         text: 'Gradient descent. Start with every weight at zero, which means the model has no opinion. Make a prediction for every day in the training set, measure how wrong you were, and nudge each weight a little in the direction that would have made you less wrong. Repeat a few thousand times.',
@@ -1326,7 +1326,7 @@ export const entries: Entry[] = [
           'evaluate(rows.slice(cut), model);   // the only number that counts',
         ].join('\n'),
       },
-      { type: 'h2', text: 'What happened' },
+      { type: 'h2', text: 'What the model actually learned' },
       {
         type: 'p',
         text: 'Trained on 1,843 days across six companies and tested on 791 later days it had never seen, the model got 52.7% of them right.',
@@ -1351,7 +1351,7 @@ export const entries: Entry[] = [
         text: 'If four numbers derived from past prices could predict tomorrow, someone with a hundred million dollars and a faster computer would already have traded that away. What is left after they are finished is close to noise, and a model that claimed otherwise on two years of daily data would be overfitted, leaking, or lying. Reporting it is not a failure — reporting something else would have been.',
       },
 
-      { type: 'h2', text: 'The three ways this gets faked' },
+      { type: 'h2', text: 'Three ways a result like this gets faked' },
       {
         type: 'list',
         ordered: true,
@@ -1362,7 +1362,7 @@ export const entries: Entry[] = [
         ],
       },
 
-      { type: 'h2', text: 'A better question than "is it right"' },
+      { type: 'h2', text: 'Calibration, not accuracy' },
       {
         type: 'p',
         text: 'For a problem with this little signal, accuracy is close to useless — a model can score well by ignoring its inputs entirely. The more useful question is whether it means what it says.',
@@ -1378,7 +1378,7 @@ export const entries: Entry[] = [
         text: 'Sorted into five groups from least to most confident, the model\u2019s predictions do line up in roughly the right order on data it never saw: its most confident fifth was right more often than its least confident fifth. The relationship is weak and not perfectly monotonic — but it is there, and it is a far more interesting result than the accuracy number.',
       },
 
-      { type: 'h2', text: 'So what is the face doing?' },
+      { type: 'h2', text: 'What the face on the board shows' },
       {
         type: 'p',
         text: 'Showing the model\u2019s confidence, not a prediction you should act on.',
