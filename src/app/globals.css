@@ -4459,3 +4459,100 @@ html.no-js .exploded .exploded__svg {
     font-size: 9.6vw;
   }
 }
+
+/* ==================================================================
+   THE BOARD'S READOUT — a reserved height, and a drawing that stays in its row
+   ==================================================================
+
+   Two faults, one symptom: on a phone the board climbed over the wordmarks as
+   the story ran.
+
+   1. The working block under the caption is a different height on every act
+      (192px on 01, 384px on 05). In the single-column phone layout the readout
+      is a grid ROW, so every act change resized the drawing's row and moved the
+      board. Every act is now rendered and stacked in one cell, so the block is
+      as tall as the tallest act throughout and nothing moves.
+
+   2. `.board-story__svg` sets `height: 100%`, which does not resolve against an
+      auto-height parent — so the drawing fell back to its intrinsic ratio
+      (350px wide against a 108x154 viewBox is 499px tall) and was pinned at the
+      `max-height` of 46svh = 388px regardless of the row it was in. Once the row
+      shrank past that it simply painted outside itself, over the type. Capping
+      it at the row's own height keeps it where it belongs.
+
+   Desktop is deliberately untouched by both: there the readout is a side column
+   that never sizes the drawing's row, and its rows are already constant at every
+   act.
+*/
+
+.board-story__working {
+  display: grid;
+}
+
+/*
+  Removed from layout on desktop, so the side panel is only ever as tall as the
+  act being shown and its border does not stretch.
+*/
+.board-story__slot {
+  display: none;
+}
+
+.board-story__slot[data-current] {
+  display: block;
+}
+
+@media (max-width: 1000px) {
+  /*
+    All slots occupy the same cell so the block reserves the tallest. Hidden with
+    `visibility`, not `display`, so they still contribute their height — and
+    `visibility: hidden` also takes them out of the accessibility tree, which
+    matters inside an `aria-live` region.
+  */
+  .board-story__slot {
+    display: block;
+    grid-area: 1 / 1;
+    visibility: hidden;
+  }
+
+  .board-story__slot[data-current] {
+    visibility: visible;
+  }
+
+  /*
+    The drawing may never be taller than the row it sits in. `min()` keeps the
+    existing 46svh ceiling as well, so the board does not grow on a short, wide
+    phone held sideways.
+  */
+  /*
+    The canvas must take its height FROM the row rather than from its content.
+    `min-height: 0` only lets the row shrink; the item itself still laid out at
+    the drawing's intrinsic 499px and hung out of the bottom. A grid item's
+    percentage height resolves against its grid area, which is definite, so this
+    pins the canvas to the row — and gives `max-height: 100%` below something
+    real to resolve against, which it did not have before.
+  */
+  .board-story__canvas {
+    height: 100%;
+    position: relative;
+  }
+
+  /*
+    Positioned rather than sized by percentages. `height: 100%` and
+    `max-height: 100%` both go through percentage resolution against a centred
+    grid item, which did not hold: the canvas was correctly pinned to its 269px
+    row and the drawing still laid out at 388px and hung 175px out of the bottom,
+    across the lower wordmark and into the readout.
+
+    `inset: 0` makes the drawing's box the canvas's box by definition, with no
+    percentage to resolve, and `preserveAspectRatio` (the default `xMidYMid
+    meet`) then scales the whole viewBox to fit inside it. The drawing cannot
+    paint outside the row it belongs to.
+  */
+  .board-story__svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+  }
+}
