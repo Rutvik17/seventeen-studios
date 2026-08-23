@@ -2,7 +2,13 @@
  * The GLB, turned into something the scroll story can drive.
  *
  * Three jobs, all of them done once when the asset lands and never per frame:
- * find the parts, MEASURE them, and fix the materials.
+ * find the parts, put the panel image on the right face, and fix the materials.
+ *
+ * It also used to MEASURE the asset — reading the board's dimensions and the
+ * GPIO pitch off the vertex data and checking them against the declared part —
+ * which went out with the working column that printed the result. It is in git
+ * (`git show ccb69d4 -- src/lib/founder/model.ts`) and belongs back here the
+ * moment there is somewhere to show it.
  *
  * ---
  *
@@ -38,7 +44,7 @@
  */
 
 import * as THREE from 'three';
-import { BOARD, GPIO_SPAN_MM, PANEL } from './device';
+import { fittingOrder } from './device';
 
 /* ------------------------------------------------------------------ *
  * Parts
@@ -46,7 +52,11 @@ import { BOARD, GPIO_SPAN_MM, PANEL } from './device';
 
 export type Part = {
   object: THREE.Object3D;
-  /** 0 for the bare board, rising to `LAST_ORDER` for the display. */
+  /**
+   * The order this part is FITTED in — 0 for the bare board, rising to 18 for
+   * the cable. Not always the `assemblyOrder` the export declared: see
+   * `fittingOrder` in `device.ts` for the three that are remapped, and why.
+   */
   order: number;
   /** Where the part belongs, in the model's own space. */
   seated: THREE.Vector3;
@@ -59,22 +69,66 @@ export type Part = {
 };
 
 /**
+ * Parts the export seats slightly INSIDE the board, and how far to drop them.
+ *
+ * Two solids cannot occupy the same millimetre. The microSD slot is a
+ * bottom-mount connector — on a real Pi 4 its body hangs under the laminate and
+ * overhangs the edge, so that a card can be pushed in — and the model puts it
+ * in the right place but a hair too high:
+ *
+ *   laminate   1.6 mm centred on y = 0.1050  ->  0.10420 .. 0.10580
+ *   slot body  2.3 mm centred on y = 0.1040  ->  0.10285 .. 0.10515
+ *
+ * which is 0.95 mm of the slot buried in the board. Dropping it by exactly that
+ * puts its top face flush against the underside:
+ *
+ *   0.10420 - 0.00115 = 0.10305,  and  0.10305 - 0.10400 = -0.00095
+ *
+ * It was invisible while the connector shells were dark and unmissable the
+ * moment they were given a correct metal — a white slab through the board.
+ * Metres, in the model's own space, before the fit-to-view scale.
+ */
+const SEATING_FIX: Readonly<Record<string, number>> = {
+  MicroSD_Card_Slot: -0.00095,
+};
+
+/**
  * Collect the assembly roots.
  *
- * The tumble each part arrives with is derived from its own `assemblyOrder`
- * rather than randomised, and that is deliberate: a random attitude changes on
- * every reload, so a part that looked right once looks wrong the next time and
- * there is nothing to fix. Deriving it means the scene is identical on every
- * visit and any part that reads badly can be reasoned about.
+ * The tumble each part arrives with is derived from its own order rather than
+ * randomised, and that is deliberate: a random attitude changes on every
+ * reload, so a part that looked right once looks wrong the next time and there
+ * is nothing to fix. Deriving it means the scene is identical on every visit
+ * and any part that reads badly can be reasoned about.
  */
 export function collectParts(root: THREE.Object3D): Part[] {
   const parts: Part[] = [];
 
+  /*
+    The laminate's own height, so a part can be asked which side of the board it
+    belongs on. Read off the PCB node rather than written down, and compared in
+    LOCAL space because every assembly root is a sibling of it — a world-space
+    comparison here would also fold in the fit-to-view scale on the group above.
+  */
+  const board = root.getObjectByName('PCB_RaspberryPi4_ModelB_85x56mm');
+  const boardY = board ? board.position.y : Number.NEGATIVE_INFINITY;
+
   root.traverse((object) => {
     if (object.userData.webRole !== 'assembly_part') return;
 
-    const order = Number(object.userData.assemblyOrder ?? 0);
+    // The order the part is FITTED in, which is not always the order the export
+    // declared — a cable cannot be fitted before the two things it joins.
+    const order = fittingOrder(Number(object.userData.assemblyOrder ?? 0));
     const seatedQuaternion = object.quaternion.clone();
+
+    const seated = object.position.clone();
+    const fix = SEATING_FIX[object.name];
+    if (fix !== undefined) {
+      seated.y += fix;
+      // Applied to the object too, so the part is correct in the assembled
+      // state even on the frames before `useFrame` has run.
+      object.position.copy(seated);
+    }
 
     const tumble = new THREE.Quaternion().setFromEuler(
       new THREE.Euler(
@@ -84,18 +138,47 @@ export function collectParts(root: THREE.Object3D): Part[] {
       ),
     );
 
+    // Blender Z-up -> glTF Y-up. See the note at the top of the file.
+    const offset = new THREE.Vector3(
+      Number(object.userData.explodeX ?? 0),
+      Number(object.userData.explodeZ ?? 0),
+      -Number(object.userData.explodeY ?? 0),
+    );
+
+    /*
+      ==================================================================
+      A PART FITTED UNDER THE BOARD HAS TO ARRIVE FROM UNDER THE BOARD.
+      ==================================================================
+
+      Every `explodeZ` in the export is positive, so every part starts above its
+      seat and descends onto it. That is right for the nineteen parts mounted on
+      the top face and wrong for the one that is not.
+
+      The microSD slot is a bottom-mount connector: its seat is BELOW the
+      laminate. Starting it 69 mm up and moving it down means it travels
+      straight through 1.6 mm of fibreglass on the way — two solids in the same
+      place, for most of a second, in the middle of the frame.
+
+      So the rule is derived from where the part is going rather than listed by
+      name: if it seats below the board, it comes up from below. Re-export the
+      model with a second underside part and it behaves correctly without this
+      file changing.
+
+      The travel is also shortened. There is nothing under the board to clear,
+      and 69 mm of it would take the part below the surface the whole assembly
+      is standing on.
+    */
+    if (seated.y < boardY && offset.y > 0) {
+      offset.y = -offset.y * 0.45;
+    }
+
     parts.push({
       object,
       order,
-      seated: object.position.clone(),
+      seated,
       seatedQuaternion,
       seatedScale: object.scale.clone(),
-      // Blender Z-up -> glTF Y-up. See the note at the top of the file.
-      offset: new THREE.Vector3(
-        Number(object.userData.explodeX ?? 0),
-        Number(object.userData.explodeZ ?? 0),
-        -Number(object.userData.explodeY ?? 0),
-      ),
+      offset,
       looseQuaternion: seatedQuaternion.clone().multiply(tumble),
     });
   });
@@ -116,151 +199,54 @@ export function findPanelMesh(root: THREE.Object3D): THREE.Mesh | null {
   return named instanceof THREE.Mesh ? named : null;
 }
 
-/* ------------------------------------------------------------------ *
- * Measurement
- * ------------------------------------------------------------------ */
-
-export type Measured = {
-  /** The PCB's own bounding box, in millimetres. */
-  board: { width: number; height: number; thickness: number };
-  /** Mean centre-to-centre spacing of one GPIO row, in millimetres. */
-  gpioPitch: number;
-  /** How many pins were actually found. */
-  gpioPins: number;
-  /** The panel's active area, in millimetres. */
-  panel: { width: number; height: number };
-  /** Total triangles across every mesh in the scene. */
-  triangles: number;
-  /** True when every measurement agrees with `device.ts` to within tolerance. */
-  agrees: boolean;
-};
-
-const TOLERANCE_MM = 0.15;
-
 /**
- * Measure the asset and check it against what `device.ts` claims.
+ * Put the panel image on the paper, not on Blender's box unwrap.
  *
- * This is the site's whole method applied to a 3D model. A dimension quoted in
- * a caption is a claim; a dimension read off the vertex data is a measurement,
- * and the two being equal is the thing worth showing. If the model is ever
- * re-exported at centimetre scale — a genuinely common glTF accident — the
- * readout says so on screen rather than the page quietly asserting 85 mm about
- * an object that is now 850.
+ * The mesh is a 0.6 mm plate, so the exporter unwraps all six faces into one
+ * atlas. The visible face only covers a strip of that atlas — which is why a
+ * 296 × 128 composition showed up as a handful of giant pixels. Mapping U and
+ * V from the plate's own width and depth puts the whole image on the paper,
+ * and the edges (0.6 mm) pick up a sliver of the same image that nobody can
+ * resolve.
  *
- * MUST be called on the loaded scene before anything recentres or rescales it.
- * `Box3.setFromObject` walks world matrices, so measuring after the fit-to-view
- * scale has been applied returns the scaled size and every figure is wrong by
- * the same invisible factor.
+ * Clones the geometry so the GLTF cache stays untouched.
  */
-export function measureDevice(root: THREE.Object3D): Measured {
-  root.updateMatrixWorld(true);
+export function projectPanelUVs(mesh: THREE.Mesh): void {
+  const geometry = mesh.geometry.clone();
+  geometry.computeBoundingBox();
+  const box = geometry.boundingBox;
+  if (!box) return;
 
-  const mm = (metres: number) => metres * 1000;
-  const box = new THREE.Box3();
-  const size = new THREE.Vector3();
-
-  /* ---- the board ---- */
-  const pcb = root.getObjectByName('PCB_RaspberryPi4_ModelB_85x56mm');
-  const boardSize = new THREE.Vector3();
-  if (pcb) {
-    /*
-      The PCB node has the whole board as its children — every trace, pad and
-      silkscreen line — and some of those (the mounting-hole bores) stand proud
-      of the laminate. Measuring the node with its children therefore measures
-      the populated board, not the substrate. `setFromObject` with
-      `precise = true` walks the actual vertices rather than the loose per-mesh
-      bounding spheres, which is the difference between 85.0 and 85.6.
-    */
-    const laminate = pcb instanceof THREE.Mesh ? pcb : null;
-    if (laminate) {
-      laminate.geometry.computeBoundingBox();
-      const local = laminate.geometry.boundingBox;
-      if (local) {
-        local.getSize(boardSize);
-        boardSize.multiplyScalar(1000);
-      }
-    } else {
-      box.setFromObject(pcb, true).getSize(size);
-      boardSize.copy(size).multiplyScalar(1000);
-    }
-  }
-
-  /* ---- the GPIO header ---- */
-  /*
-    One row only. The pins are numbered 01-20 along the near row and 21-40 along
-    the far one, so measuring across all forty would measure the diagonal of the
-    header and report a pitch about 0.3% too large — small enough to look
-    plausible, which is exactly the kind of wrong this page exists not to be.
-  */
-  const pinXs: number[] = [];
-  let pinCount = 0;
-  root.traverse((object) => {
-    const match = /^GPIO_Pin_(\d+)$/.exec(object.name);
-    if (!match) return;
-    pinCount += 1;
-    const index = Number(match[1]);
-    if (index >= 1 && index <= BOARD.gpioPins / 2) {
-      pinXs.push(object.getWorldPosition(new THREE.Vector3()).x);
-    }
-  });
-  pinXs.sort((a, b) => a - b);
-  const gpioPitch =
-    pinXs.length > 1
-      ? mm(pinXs[pinXs.length - 1] - pinXs[0]) / (pinXs.length - 1)
-      : 0;
-
-  /* ---- the panel ---- */
-  const panelMesh = findPanelMesh(root);
-  const panelSize = new THREE.Vector3();
-  if (panelMesh) {
-    panelMesh.geometry.computeBoundingBox();
-    const local = panelMesh.geometry.boundingBox;
-    if (local) {
-      local.getSize(panelSize);
-      panelSize.multiplyScalar(1000);
-    }
-  }
-
-  /* ---- triangles ---- */
-  let triangles = 0;
-  root.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-    const geometry = object.geometry as THREE.BufferGeometry;
-    const index = geometry.getIndex();
-    const position = geometry.getAttribute('position');
-    if (index) triangles += index.count / 3;
-    else if (position) triangles += position.count / 3;
-  });
+  const size = box.getSize(new THREE.Vector3());
+  const pos = geometry.getAttribute('position');
+  const uvs = new Float32Array(pos.count * 2);
 
   /*
-    The panel mesh is a flat plate, so one of its three dimensions is its 0.6 mm
-    thickness. Sorting and taking the two largest is how the active area is read
-    without assuming which axis Blender happened to lay it out on.
+    Image U (296 px) follows local X, the plate's 66.9 mm long edge.
+    Image V (128 px) follows local Z, its 29.05 mm short edge.
+
+    NEITHER AXIS IS INVERTED, and that is worth stating because inverting U
+    shipped once and is very easy to miss. A mirrored bitmap font is still a
+    grid of crisp black squares — it looks like a working display until you
+    actually read it, and then the ticker says AQVN and the clock says OTU
+    14:E0. It was caught by screenshotting the page, not by reading this loop.
+
+    The V direction depends on `flipY` being false on the texture, which is set
+    where the texture is created: with flipY off, V = 0 is the canvas's FIRST
+    row — the status strip — and it lands on the vertices with the smallest
+    local z, which is the end of the module furthest from the ribbon. The
+    ribbon therefore comes out of the bottom of the card, which is how the part
+    is built.
   */
-  const panelAxes = [panelSize.x, panelSize.y, panelSize.z].sort((a, b) => b - a);
-  const boardAxes = [boardSize.x, boardSize.y, boardSize.z].sort((a, b) => b - a);
+  for (let i = 0; i < pos.count; i += 1) {
+    const x = pos.getX(i);
+    const z = pos.getZ(i);
+    uvs[i * 2] = size.x === 0 ? 0 : (x - box.min.x) / size.x;
+    uvs[i * 2 + 1] = size.z === 0 ? 0 : (z - box.min.z) / size.z;
+  }
 
-  const measured: Omit<Measured, 'agrees'> = {
-    board: {
-      width: boardAxes[0],
-      height: boardAxes[1],
-      thickness: boardAxes[2],
-    },
-    gpioPitch,
-    gpioPins: pinCount,
-    panel: { width: panelAxes[0], height: panelAxes[1] },
-    triangles: Math.round(triangles),
-  };
-
-  const agrees =
-    Math.abs(measured.board.width - BOARD.width) < TOLERANCE_MM &&
-    Math.abs(measured.board.height - BOARD.height) < TOLERANCE_MM &&
-    Math.abs(measured.board.thickness - BOARD.thickness) < TOLERANCE_MM &&
-    Math.abs(measured.gpioPitch * (BOARD.gpioPins / 2 - 1) - GPIO_SPAN_MM) < TOLERANCE_MM &&
-    measured.gpioPins === BOARD.gpioPins &&
-    Math.abs(measured.panel.width - PANEL.activeWidth) < TOLERANCE_MM;
-
-  return { ...measured, agrees };
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  mesh.geometry = geometry;
 }
 
 /* ------------------------------------------------------------------ *
@@ -334,9 +320,11 @@ export function dressMaterials(root: THREE.Object3D): void {
       if (name === 'PCB_Green_Soldermask_Procedural') {
         material.color.copy(soldermask);
         // Real soldermask is a semi-gloss lacquer over a matte laminate, so it
-        // takes a soft, wide highlight rather than a sharp one.
-        material.roughness = 0.42;
-        material.envMapIntensity = 1.15;
+        // takes a soft, wide highlight rather than a sharp one. The env
+        // intensity stays under 1 or ACES plus the paper studio washes the
+        // green out to mint.
+        material.roughness = 0.46;
+        material.envMapIntensity = 0.82;
       } else if (name === 'PCB_Silkscreen_Paint' || name === 'Silkscreen_White') {
         material.color.copy(silkscreen);
         material.roughness = 0.68;
@@ -345,7 +333,44 @@ export function dressMaterials(root: THREE.Object3D): void {
         material.envMapIntensity = 1.7;
         material.roughness = 0.28;
       } else if (name === 'Brushed_Aluminum') {
-        material.envMapIntensity = 1.5;
+        /*
+          THE EXPORT DESCRIBES A MATERIAL THAT CANNOT EXIST, and it is worth
+          fixing rather than lighting around.
+
+          It arrives as metalness 0.55 over an albedo of rgb(0.09, 0.10, 0.11).
+          In the metallic-roughness model those two numbers fight each other: a
+          surface is a conductor or it is not, and 0.55 is the half-way state
+          that only ever appears at the boundary between two materials on one
+          texture. Worse, a metal's base colour IS its specular reflectance, so
+          an albedo of 0.09 describes a mirror that reflects nine per cent of
+          what hits it — darker than soot.
+
+          The result renders as flat light grey with no structure: not dark,
+          because a bright environment still washes over it, and not metallic,
+          because there is no F0 worth the name to carry a reflection. That is
+          exactly how the connector shells read in the first screenshots — grey
+          plastic blocks.
+
+          Aluminium is a conductor, so: metalness 1, and the base colour is its
+          reflectance rather than a pigment.
+
+          THAT REFLECTANCE IS NOT 0.91 HERE, and getting it wrong in the other
+          direction is just as visible. 0.91 is polished aluminium — a mirror —
+          and setting it sent every connector shell to near-white against this
+          page's paper studio: no tonal range, no highlight, no form. They read
+          as white plastic slabs, which is worse than the flat grey they started
+          as.
+
+          These are not mirrors. A USB shell is drawn steel with a tin or nickel
+          plate, and a brushed finish scatters most of what hits it. Around 0.6
+          with a wider specular lobe leaves the top faces catching the key light
+          and the sides falling into the darker part of the environment, which
+          is the tonal separation that makes a metal look like metal.
+        */
+        material.color.setRGB(0.6, 0.62, 0.65, THREE.SRGBColorSpace);
+        material.metalness = 1;
+        material.roughness = 0.42;
+        material.envMapIntensity = 0.8;
       } else if (name === 'Copper_Procedural') {
         material.envMapIntensity = 1.4;
       } else if (name === 'EInk_Paper_Surface') {

@@ -95,11 +95,16 @@ export const projects: Project[] = [
     slug: 'companion-device',
     index: '05',
     name: 'The companion device',
-    line: 'An ESP32 board driving a three-colour e-ink panel, showing data as a face.',
+    line: 'An ESP32 board driving a seven-colour e-ink panel, showing data as a face.',
     metric: '0.93 mA average · 45 days on a 1200 mAh cell',
     status: 'Designing',
     stack: ['ESP32-C3', 'E-ink', 'KiCad', 'C++'],
-    href: '/#top',
+    /*
+      The founder page, where the same device is built as an object rather than
+      drawn. This used to point at `/#top` — back to the top of the page the
+      card is already on — which looked like a link and did nothing.
+    */
+    href: '/founder/',
     color: '#d3e3da',
     ink: '#123f33',
   },

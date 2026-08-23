@@ -32,6 +32,7 @@
 
 import { useEffect, useState } from 'react';
 import { Bitmap, INK, type Ink } from '@/lib/pixelfont';
+import { site } from '@/content/studio';
 import { PANEL, inkFor } from '@/lib/pixel';
 import { FACE_SIZE, expressionFor, faceCells } from '@/lib/face';
 
@@ -62,18 +63,42 @@ export type EinkPanelProps = {
  *
  * Uppercase and abbreviated because the font has no lowercase, and 24-hour
  * because a device on a shelf has no room for AM/PM and no reason to be
- * ambiguous. Rendered in UTC deliberately: the panel is a picture built on a
- * server, so a local time would be the BUILD machine's local time, which is
- * nobody's.
+ * ambiguous.
+ *
+ * ---
+ *
+ * EASTERN, NOT UTC
+ *
+ * This used to render in UTC, on the reasoning that the panel is a picture
+ * built on a server and a "local" time would be the BUILD machine's local time,
+ * which is nobody's. The concern was right and the fix was wrong: the problem
+ * with local time is that it is UNNAMED, not that it is local. Naming the zone
+ * explicitly removes it — `America/Toronto` is the same instant whichever
+ * machine formats it, and it is where the device would actually sit.
+ *
+ * It also has to be a zone rather than an offset, because the offset changes
+ * twice a year: Toronto is EST (UTC−5) in winter and EDT (UTC−4) in summer, so
+ * a hard-coded −5 prints the wrong hour for half of every year. `ET` covers
+ * both and is already what the clock in the site header says, so the two
+ * cannot disagree.
  */
 function formatStamp(at: string | number): { date: string; time: string } {
   const d = typeof at === 'number' ? new Date(at) : at ? new Date(at) : new Date(0);
   if (Number.isNaN(d.getTime())) return { date: '', time: '' };
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  const month = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][d.getUTCMonth()];
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return { date: `${day} ${month}`, time: `${hh}:${mm} UTC` };
+
+  const zone = { timeZone: site.timezone } as const;
+  const day = new Intl.DateTimeFormat('en-GB', { ...zone, day: '2-digit' }).format(d);
+  const month = new Intl.DateTimeFormat('en-GB', { ...zone, month: 'short' })
+    .format(d)
+    .toUpperCase();
+  const time = new Intl.DateTimeFormat('en-GB', {
+    ...zone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(d);
+
+  return { date: `${day} ${month}`, time: `${time} ${site.timezoneLabel}` };
 }
 
 /** Compose the panel's bitmap. Pure, so it can be reasoned about and tested. */

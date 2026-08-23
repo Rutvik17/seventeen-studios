@@ -2,29 +2,27 @@
  * MODEL A — the device, as numbers.
  *
  * The landing page DRAWS a companion board; this page builds the real one. Both
- * describe the same object, so both have to agree about it, and the only way to
- * make that true is for every figure to come from a formula rather than from a
- * paragraph. Nothing in this file is typed in as a result: the constants are
- * measurements of real parts, and everything else is computed from them and
- * checked in `scripts/verify-claims.mjs`.
+ * describe the same object, so both have to agree about it.
  *
  * ---
  *
- * WHERE THE CONSTANTS COME FROM
+ * WHAT USED TO BE HERE
  *
- * Not from a datasheet PDF that nobody can check — from the GLB itself. The
- * model carries glTF `extras` on its own nodes:
+ * A full specification: the board's dimensions, the GPIO pitch, LPDDR4
+ * bandwidth, the SPI framebuffer and its clock time, the panel's PPI on both
+ * axes — each computed rather than typed, each checked in
+ * `scripts/verify-claims.mjs`, and each printed beside the drawing in a working
+ * column.
  *
- *   PCB_RaspberryPi4_ModelB_85x56mm  Dimensions_mm  "85 x 56 x 1.6"
- *   EInk_2_9in_Display_Assembly      moduleOutline_mm "79.0 x 36.7"
- *                                    activeArea_mm    "66.9 x 29.05"
- *   EInk_SPI_Cable_Assembly          signals          "3V3, GND, SCLK, MOSI"
+ * The working column has come out of the page while a better home is found for
+ * it, and the arithmetic went with it rather than being left behind unreachable.
+ * It is all in git — `git show ccb69d4 -- src/lib/founder/device.ts` — and it
+ * comes back with the surface that displays it, because a formula nothing
+ * prints is not a specification, it is dead weight that still has to be
+ * maintained.
  *
- * They are repeated here because a running page cannot block on a 2 MB download
- * to lay out a paragraph — but `measureDevice()` in `model.ts` reads the mesh
- * vertices once the model has loaded and compares what was measured against what
- * is declared below. If the asset is ever re-exported at a different scale, the
- * readout says so on screen instead of quietly lying.
+ * What is left is what the page actually runs on: the panel the firmware draws
+ * into, and the act table the choreography is derived from.
  *
  * ---
  *
@@ -38,67 +36,14 @@
  * This model is a different part, and the model says so itself: it carries
  * exactly two e-ink materials, `EInk_Black` and `EInk_Paper_Surface`. Two
  * pigments, not seven. A two-colour panel has partial refresh, updates a small
- * region in a fraction of a second — and can therefore run a clock.
+ * region in a fraction of a second — and can therefore run a clock, and needs
+ * only ONE inversion to clear itself rather than the four the seven-colour part
+ * grinds through.
  *
  * So the two pages disagree about the hardware on purpose and both are right.
- * The landing page's device shows the capture time because its panel cannot do
- * better; this one shows the actual time because its panel can. What it gives up
- * is colour: there is no red and no green here, so a rise and a fall cannot be
- * coloured and the mood has to be carried entirely by the face. That is a real
- * constraint of a real part, and the readout states it rather than hiding it.
+ * What this one gives up is colour: there is no red and no green here, which is
+ * why nothing on its panel is coloured by a rise or a fall.
  */
-
-/* ------------------------------------------------------------------ *
- * The board
- * ------------------------------------------------------------------ */
-
-export const BOARD = {
-  model: 'Raspberry Pi 4 Model B',
-  /** Millimetres, from the PCB node's own `Dimensions_mm` extra. */
-  width: 85,
-  height: 56,
-  thickness: 1.6,
-  /** Two rows of twenty, on the 0.1" grid every hat in the world assumes. */
-  gpioPins: 40,
-  gpioPitch: 2.54,
-  mountingHoles: 4,
-} as const;
-
-/**
- * The span from the first GPIO pin's centre to the fortieth's.
- *
- * Twenty pins per row means NINETEEN gaps, not twenty — the classic fencepost,
- * and worth computing rather than typing because it is also the number
- * `measureDevice()` checks the asset against. If the model's pins are on a real
- * 0.1" grid this is what measuring them has to produce.
- */
-export const GPIO_SPAN_MM = (BOARD.gpioPins / 2 - 1) * BOARD.gpioPitch;
-
-/* ------------------------------------------------------------------ *
- * The silicon
- * ------------------------------------------------------------------ */
-
-export const MEMORY = {
-  type: 'LPDDR4-3200',
-  /** Megatransfers per second. */
-  transfersPerSecond: 3200e6,
-  /** Bus width, in bits. */
-  busBits: 32,
-} as const;
-
-/**
- * Peak memory bandwidth, in gigabytes per second.
- *
- *   transfers/s x bus width in bits / 8 bits per byte
- *
- * "3200" in LPDDR4-3200 is the transfer rate, not the clock: the bus is double
- * data rate, so it clocks at 1600 MHz and moves data on both edges. Quoting the
- * clock instead of the transfer rate is the single most common way this figure
- * is stated at half its true value.
- */
-export function memoryBandwidthGBs(): number {
-  return (MEMORY.transfersPerSecond * MEMORY.busBits) / 8 / 1e9;
-}
 
 /* ------------------------------------------------------------------ *
  * The panel
@@ -127,71 +72,6 @@ export const PANEL = {
   hasPartialRefresh: true,
 } as const;
 
-/**
- * The framebuffer, in bytes.
- *
- * One bit per pixel, because there are two pigments and no intermediate states —
- * a capsule is white or it is black. Eight pixels therefore pack into a byte and
- * the controller is handed the plane as-is.
- *
- * A three-colour panel would need a SECOND plane of the same size for the accent
- * pigment, which doubles this. That is the other half of what colour costs here,
- * and it is why the figure is computed from `inks` rather than written down.
- */
-export function framebufferBytes(): number {
-  const planes = PANEL.inks - 1; // white is the absence of ink, not a plane
-  return (PANEL.width * PANEL.height * planes) / 8;
-}
-
-/**
- * Milliseconds to clock the whole framebuffer out over SPI.
- *
- * The interesting thing about this number is how small it is next to
- * `fullRefreshSeconds`. Getting the image to the panel takes about ten
- * milliseconds; getting the pigment to move takes two full seconds. The wire is
- * not the bottleneck and never was — the physics of dragging titanium dioxide
- * through oil is.
- */
-export function frameClockMs(clockHz = SPI.clockHz): number {
-  return (framebufferBytes() * 8 * 1000) / clockHz;
-}
-
-/**
- * Pixels per inch, measured along one axis.
- *
- * Computed per-axis rather than once, because on this part they genuinely
- * differ: the pixel pitch is 0.2260 mm across and 0.2270 mm down. Quoting a
- * single "112 PPI" would be rounding a real asymmetry out of existence, and the
- * readout prints both.
- */
-export function ppi(pixels: number, millimetres: number): number {
-  return pixels / (millimetres / 25.4);
-}
-
-/** Pixel pitch in millimetres, along one axis. */
-export function pitchMm(pixels: number, millimetres: number): number {
-  return millimetres / pixels;
-}
-
-/* ------------------------------------------------------------------ *
- * The link
- * ------------------------------------------------------------------ */
-
-export const SPI = {
-  /**
-   * Four conductors, named by the cable node's own `signals` extra.
-   *
-   * Worth being honest about: four wires is enough to CLOCK a panel, and a
-   * shipped driver wants four more — CS to select the device, DC to say whether
-   * a byte is a command or data, RST to reset it, and BUSY so the host can tell
-   * when a refresh has finished instead of guessing. The model has four, so the
-   * page says four and says what is missing.
-   */
-  wires: ['3V3', 'GND', 'SCLK', 'MOSI'] as const,
-  /** 4 MHz — comfortably inside what these controllers accept. */
-  clockHz: 4e6,
-} as const;
-
 /* ------------------------------------------------------------------ *
  * The acts
  * ------------------------------------------------------------------ */
@@ -207,56 +87,41 @@ export const SPI = {
 export type Act = {
   index: string;
   title: string;
-  /** Inclusive range of `assemblyOrder` values that arrive during this act. */
+  /** Inclusive range of fitting-order values that arrive during this act. */
   from: number;
   to: number;
-  caption: string;
+  /**
+   * How much of the scroll this act gets, relative to the others.
+   *
+   * They are NOT equal, and that is the difference between a sequence that
+   * reads and one that rushes. Twelve connectors need longer than one bare
+   * board; and the last act has to fit the display, the cable, the panel
+   * powering on, a pause long enough to read a name off it, the change to the
+   * photograph, and a pause on that — so it is worth more than twice any other.
+   * Equal fifths gave the whole ending about four hundred pixels of scroll and
+   * everything in it happened at once.
+   */
+  weight: number;
 };
 
 export const ACTS: Act[] = [
-  {
-    index: '01',
-    title: 'Substrate',
-    from: 0,
-    to: 0,
-    caption:
-      'Fibreglass cloth in epoxy, 1.6 mm thick, with copper on both faces and green lacquer over the top. Everything else is soldered to this.',
-  },
-  {
-    index: '02',
-    title: 'Silicon',
-    from: 1,
-    to: 3,
-    caption:
-      'The processor, the memory beside it, and the regulator that feeds them both. Three parts, and most of the board’s cost.',
-  },
-  {
-    index: '03',
-    title: 'Interfaces',
-    from: 4,
-    to: 15,
-    caption:
-      'Everything the board talks to the world with — power, video, sound, network, storage, and the forty pins this project actually uses.',
-  },
-  {
-    index: '04',
-    title: 'The link',
-    from: 16,
-    to: 17,
-    caption:
-      'Four wires from the header to a controller, and the controller to the panel. This is the entire electrical distance between the computer and the picture.',
-  },
-  {
-    index: '05',
-    title: 'The panel',
-    from: 18,
-    to: 18,
-    caption:
-      'Ink, not light. The image survives the power being cut, because nothing is holding it there — the pigment has simply been moved and left.',
-  },
+  { index: '01', title: 'Substrate', from: 0, to: 0, weight: 1 },
+  { index: '02', title: 'Silicon', from: 1, to: 3, weight: 1 },
+  { index: '03', title: 'Interfaces', from: 4, to: 15, weight: 1.3 },
+  { index: '04', title: 'The controller', from: 16, to: 16, weight: 0.9 },
+  { index: '05', title: 'The panel, then the cable', from: 17, to: 18, weight: 2.4 },
 ];
 
-/** Which act a given `assemblyOrder` belongs to. */
+const TOTAL_WEIGHT = ACTS.reduce((sum, act) => sum + act.weight, 0);
+
+/** Where an act begins and how much of the scroll it owns, both 0..1. */
+export function actRange(index: number): { start: number; span: number } {
+  let start = 0;
+  for (let i = 0; i < index; i += 1) start += ACTS[i].weight;
+  return { start: start / TOTAL_WEIGHT, span: ACTS[index].weight / TOTAL_WEIGHT };
+}
+
+/** Which act a given fitting order belongs to. */
 export function actForOrder(order: number): number {
   for (let i = ACTS.length - 1; i >= 0; i -= 1) {
     if (order >= ACTS[i].from) return i;
@@ -265,9 +130,45 @@ export function actForOrder(order: number): number {
 }
 
 /**
- * The last `assemblyOrder` in the model.
+ * Where the export's assembly order is physically impossible.
  *
- * Read off `ACTS` rather than counted from the loaded GLB, so the scroll
- * choreography can be laid out before the 2 MB asset has arrived.
+ * ==================================================================
+ * A CABLE IS FITTED LAST. IT CANNOT BE FITTED TO NOTHING.
+ * ==================================================================
+ *
+ * The Blender export numbers the last three parts:
+ *
+ *   16  EInk_SPI_Cable_Assembly
+ *   17  EInk_SPI_Controller_PCB
+ *   18  EInk_2_9in_Display_Assembly
+ *
+ * Followed literally, the four SPI wires are strung across empty space and then
+ * the controller board and the display fly IN THROUGH THEM. Both parts pass
+ * clean through four conductors on their way to the bench, which is the single
+ * most obviously wrong thing that can happen in an assembly animation — and it
+ * shipped, because the numbers came from the asset and the asset looked
+ * authoritative.
+ *
+ * A loom is the last thing fitted to any assembly, for the same reason it is
+ * the last thing on a real bench: it joins two things that both have to already
+ * be there. So the cable goes last, and the two endpoints it joins are placed
+ * before it:
+ *
+ *   16  controller   (was 17)
+ *   17  display      (was 18)
+ *   18  cable        (was 16)
+ *
+ * This is a remap and not an edit to the GLB on purpose. The asset is the
+ * artist's; the order it is *assembled* in is this page's argument about how
+ * the thing is built, and it belongs in the code that animates it.
  */
-export const LAST_ORDER = ACTS[ACTS.length - 1].to;
+const FITTING_ORDER: Readonly<Record<number, number>> = {
+  16: 18,
+  17: 16,
+  18: 17,
+};
+
+/** The order a part is actually fitted in, given the order the export declared. */
+export function fittingOrder(exported: number): number {
+  return FITTING_ORDER[exported] ?? exported;
+}
