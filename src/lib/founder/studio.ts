@@ -158,125 +158,87 @@ export function buildEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
 }
 
 /* ------------------------------------------------------------------ *
- * The camera
+ * The camera — assembler at a table
  * ------------------------------------------------------------------ */
 
 /**
- * One shot: where the camera stands, and what it is looking at.
+ * One person, sitting at a bench, looking down at a board on the table.
  *
- * The subject is named rather than given as coordinates. Every act focuses on a
- * NODE of the model, so the framing is derived from where that part actually is
- * once the asset has loaded — which means a re-export that nudges the display
- * 5 mm still frames the display. Typed coordinates would silently point the
- * camera at empty space.
+ * The previous camera orbited the device and re-parented its look-at onto
+ * whichever part was arriving. That is why the board dove out of the frame,
+ * shrank when the cable came in, and showed the panel upside down: the
+ * "camera" was a drone, not a body. An assembler does not walk around the
+ * table between the CPU and the USB stack. He sits, he leans in, and when
+ * the screen arrives he glances toward it.
+ *
+ * Azimuth is locked. Elevation and distance only move as a person would:
+ * walk up (board grows in frame), sit, work, lean toward the panel.
  */
-export type Shot = {
-  /** Node to look at. Falls back to the assembly's centre when absent. */
-  focus: string | null;
-  /** Radians around the vertical axis. 0 looks along +Z toward the origin. */
+
+const ease = (t: number): number => t * t * (3 - 2 * t);
+const clamp01 = (t: number): number => (t < 0 ? 0 : t > 1 ? 1 : t);
+
+/** HDMI/power edge toward the assembler. GPIO at the far side of the table. */
+const AZIMUTH = 0.18;
+
+const scratchB = new THREE.Vector3();
+
+export type AssemblerPose = {
   azimuth: number;
-  /** Radians above the horizontal. The board lies flat, so this is mostly down. */
   elevation: number;
-  /** Distance from the focus, in scene units — the assembly is ~2.2 wide. */
   distance: number;
-  /** Vertical framing nudge, applied to the look-at point. */
-  lift: number;
+  /** 0 = board centre, 1 = the panel. */
+  glance: number;
 };
 
 /**
- * The five shots, one per act.
+ * The head at a given point in the story.
  *
- * The board lies flat with its components facing up, which is the single fact
- * that decides all of these: everything is looked at from ABOVE, and the
- * question each act answers is only how steeply and from which side.
- *
- * Act five is the exception worth explaining. It is nearly overhead and square
- * on, because by then the panel is the subject and a panel seen at a slant is a
- * panel you cannot read. Every other act is deliberately oblique, so arriving at
- * a flat, symmetrical, orthographic-feeling frame reads as the story settling.
+ * 0.00–0.22  walk up to the table (board starts small, grows)
+ * 0.22–0.78  seated, locked — this is the assembly
+ * 0.78–1.00  lean toward the screen
  */
-export const SHOTS: Shot[] = [
-  // 01 substrate — low and raking, so the bare laminate catches the key light
-  // and the silkscreen is legible across it.
-  { focus: 'PCB_RaspberryPi4_ModelB_85x56mm', azimuth: -0.62, elevation: 0.42, distance: 2.45, lift: 0.02 },
-  // 02 silicon — pushed in over the middle of the board, looking down at the
-  // three parts that arrive there.
-  { focus: 'CPU_Broadcom_BCM2711', azimuth: -0.28, elevation: 0.72, distance: 1.42, lift: 0.0 },
-  // 03 interfaces — swung round to the connector edge and pulled back, because
-  // twelve parts land in this act and they land all over the board.
-  { focus: 'PCB_RaspberryPi4_ModelB_85x56mm', azimuth: 0.58, elevation: 0.5, distance: 2.55, lift: 0.0 },
-  // 04 the link — round to the far side, following the cable off the header
-  // and across to the controller.
-  { focus: 'EInk_SPI_Controller_PCB', azimuth: -1.15, elevation: 0.46, distance: 2.2, lift: 0.04 },
-  // 05 the panel — three-quarter on the display, pulled back far enough that
-  // the whole module sits inside the canvas and the type around it stays clear.
-  { focus: 'EInk_2_9in_Display_Assembly', azimuth: -0.58, elevation: 0.68, distance: 2.4, lift: 0.04 },
-];
-
-/** Smoothstep — zero derivative at both ends, so a shot arrives without a jerk. */
-const ease = (t: number): number => t * t * (3 - 2 * t);
-
-const scratchA = new THREE.Vector3();
-const scratchB = new THREE.Vector3();
-
-/**
- * The shot at a given point in the story, blended between its neighbours.
- *
- * Progress runs 0..1 across the whole section and is mapped onto SHOTS.length−1
- * spans. Each span is eased independently rather than the whole curve being
- * eased once, which is what gives the camera a beat of stillness on every act
- * instead of one continuous sweep that never settles anywhere.
- */
-export function shotAt(progress: number): Shot & { blend: number; index: number } {
-  const spans = SHOTS.length - 1;
-  const scaled = Math.max(0, Math.min(spans, progress * spans));
-  const index = Math.min(spans - 1, Math.floor(scaled));
-  const t = ease(scaled - index);
-
-  const a = SHOTS[index];
-  const b = SHOTS[index + 1];
+export function assemblerAt(progress: number): AssemblerPose {
+  const sit = ease(clamp01(progress / 0.22));
+  const glance = ease(clamp01((progress - 0.78) / 0.22));
 
   return {
-    // The focus SNAPS at the halfway point rather than blending, because there
-    // is no such thing as half of one node and half of another. The camera is
-    // already moving when it happens, so the change of subject is not visible.
-    focus: t < 0.5 ? a.focus : b.focus,
-    azimuth: a.azimuth + (b.azimuth - a.azimuth) * t,
-    elevation: a.elevation + (b.elevation - a.elevation) * t,
-    distance: a.distance + (b.distance - a.distance) * t,
-    lift: a.lift + (b.lift - a.lift) * t,
-    blend: t,
-    index,
+    azimuth: AZIMUTH,
+    // ~47° walking up, ~38° seated. The glance does not dive — it only
+    // softens a few degrees so the glass is more in front of you.
+    elevation: 0.84 - sit * 0.18 - glance * 0.04,
+    // Walk in (board grows). When the panel arrives the subject gets wider,
+    // so the head eases back a little rather than cropping the Pi off the table.
+    distance: 4.05 - sit * 1.45 + glance * 0.5,
+    glance,
   };
 }
 
 /**
- * Turn a shot into a camera position and a look-at point.
+ * Turn the pose into a camera position and a look-at point.
  *
- * Spherical, around the focus. Elevation is measured up from the horizontal
- * because that is how anyone describes a camera out loud ("about forty degrees
- * above it"), whereas the polar angle three.js uses internally is measured down
- * from straight up and is off by ninety degrees from every sentence you would
- * say about the shot.
+ * `centre` is the board. `panel` is the glass, used only as the glance
+ * destination — we lerp toward it, we never snap the orbit origin onto it.
  */
-export function placeCamera(
-  shot: Shot,
-  root: THREE.Object3D,
+export function placeAssembler(
+  pose: AssemblerPose,
   centre: THREE.Vector3,
+  panel: THREE.Vector3 | null,
   outPosition: THREE.Vector3,
   outTarget: THREE.Vector3,
 ): void {
-  const node = shot.focus ? root.getObjectByName(shot.focus) : null;
-  if (node) node.getWorldPosition(scratchA);
-  else scratchA.copy(centre);
+  if (panel && pose.glance > 0) {
+    outTarget.lerpVectors(centre, panel, pose.glance * 0.28);
+  } else {
+    outTarget.copy(centre);
+  }
+  outTarget.y += 0.03;
 
-  outTarget.set(scratchA.x, scratchA.y + shot.lift, scratchA.z);
-
-  const horizontal = Math.cos(shot.elevation) * shot.distance;
+  const horizontal = Math.cos(pose.elevation) * pose.distance;
   scratchB.set(
-    Math.sin(shot.azimuth) * horizontal,
-    Math.sin(shot.elevation) * shot.distance,
-    Math.cos(shot.azimuth) * horizontal,
+    Math.sin(pose.azimuth) * horizontal,
+    Math.sin(pose.elevation) * pose.distance,
+    Math.cos(pose.azimuth) * horizontal,
   );
   outPosition.copy(outTarget).add(scratchB);
 }

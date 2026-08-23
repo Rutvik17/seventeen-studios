@@ -54,9 +54,27 @@ export type Part = {
   seatedScale: THREE.Vector3;
   /** Displacement from `seated` to where the part starts, already Y-up. */
   offset: THREE.Vector3;
-  /** The attitude it arrives in — a small tumble, so it does not slide in flat. */
+  /** The attitude it arrives in. Same as seated — a hand places a part upright. */
   looseQuaternion: THREE.Quaternion;
 };
+
+/**
+ * Where a part comes from, on the table.
+ *
+ * The GLB's explode offsets are an exploded diagram: centimetres of travel that
+ * send a USB stack off the canvas. An assembler does not work like that. Chips
+ * drop a short way from above; the cable and the panel slide in from the left,
+ * where they actually live.
+ */
+export function arrivalOffset(order: number): THREE.Vector3 {
+  if (order === 0) return new THREE.Vector3(0, 0, 0);
+  if (order >= 16) {
+    const along = 0.08 + (order - 16) * 0.05;
+    return new THREE.Vector3(-along, 0.035, 0.015);
+  }
+  const drop = 0.07 + (order % 4) * 0.01;
+  return new THREE.Vector3(((order % 3) - 1) * 0.01, drop, 0.015);
+}
 
 /**
  * Collect the assembly roots.
@@ -76,27 +94,15 @@ export function collectParts(root: THREE.Object3D): Part[] {
     const order = Number(object.userData.assemblyOrder ?? 0);
     const seatedQuaternion = object.quaternion.clone();
 
-    const tumble = new THREE.Quaternion().setFromEuler(
-      new THREE.Euler(
-        ((order % 3) - 1) * 0.34,
-        ((order % 5) - 2) * 0.22,
-        ((order % 4) - 1.5) * 0.19,
-      ),
-    );
-
     parts.push({
       object,
       order,
       seated: object.position.clone(),
       seatedQuaternion,
       seatedScale: object.scale.clone(),
-      // Blender Z-up -> glTF Y-up. See the note at the top of the file.
-      offset: new THREE.Vector3(
-        Number(object.userData.explodeX ?? 0),
-        Number(object.userData.explodeZ ?? 0),
-        -Number(object.userData.explodeY ?? 0),
-      ),
-      looseQuaternion: seatedQuaternion.clone().multiply(tumble),
+      offset: arrivalOffset(order),
+      // No tumble. An assembler places a part the right way up.
+      looseQuaternion: seatedQuaternion.clone(),
     });
   });
 
@@ -139,15 +145,14 @@ export function projectPanelUVs(mesh: THREE.Mesh): void {
   const uvs = new Float32Array(pos.count * 2);
 
   /*
-    Image U (296 px, the name) follows local X (66.9 mm, the long edge).
-    Image V (128 px) follows local Z (29.05 mm). Both axes are inverted so
-    the ribbon sits at the bottom of the card, which is how the module is
-    built.
+    Assembler sits at +Z looking toward −Z, down at the table. Image U (left
+    to right) follows local X; image V (top of the card away from the
+    assembler) follows local Z so the glass reads right-way-up from the chair.
   */
   for (let i = 0; i < pos.count; i += 1) {
     const x = pos.getX(i);
     const z = pos.getZ(i);
-    uvs[i * 2] = size.x === 0 ? 0 : 1 - (x - box.min.x) / size.x;
+    uvs[i * 2] = size.x === 0 ? 0 : (x - box.min.x) / size.x;
     uvs[i * 2 + 1] = size.z === 0 ? 0 : (z - box.min.z) / size.z;
   }
 
