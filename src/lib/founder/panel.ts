@@ -9,31 +9,37 @@
  *
  * ---
  *
- * THE POWER-ON IS A REAL REFRESH, NOT A FADE
+ * WHAT IT SAYS
  *
- * An e-ink panel does not fade up. Driving a capsule from one state to another
- * leaves residue of the old image — "ghosting" — so a full refresh deliberately
- * slams the entire display to black, then to white, then back, several times,
- * to shake the pigment loose before drawing anything. It is the reason these
- * displays visibly FLICKER when they change, and it is the single most
- * recognisable thing about the technology.
+ * Who built it, and what time it is where he is. That is the whole card.
  *
- * So that is what act five does. It is not a flourish invented for the page; it
- * is the waveform, and it happens to be the most dramatic two seconds available
- * precisely because it is what the hardware really does.
+ * It used to also carry the landing page's market readout — a ticker, a price
+ * and the trained-model face. That is the LANDING's job and repeating it here
+ * said nothing new about either page, so it is gone.
  *
  * ---
  *
- * WHY THIS PANEL SHOWS A CLOCK AND THE LANDING PAGE'S DOES NOT
+ * WHY THERE IS NO FLICKER
  *
- * See the long note in `device.ts`. Short version: two pigments instead of
- * seven buys partial refresh, partial refresh buys a clock, and the price is
- * every colour. The mood that the landing page carries in red and green has to
- * be carried here by the face alone.
+ * A FULL e-ink refresh slams the whole display to black and back several times
+ * before drawing, to shake the pigment loose from its last position. That is
+ * why these panels visibly flicker, and it is what the seven-colour part on the
+ * landing page has to do — for about thirty seconds, every time.
+ *
+ * This part does not. Two pigments buys PARTIAL REFRESH (see `device.ts`),
+ * which drives only the capsules that are changing and never inverts the panel
+ * to get there. So the sequence here is three states with nothing between them:
+ * unpowered, the card, the photograph.
+ *
+ * Two earlier versions did flicker — four inversions, then one — and both were
+ * wrong for this part rather than merely busy. An unpowered panel is dark grey;
+ * flashing it to black on the way to white is a transition through a state the
+ * hardware was never in, and putting another one between the card and the
+ * photograph animates a full refresh on a panel that would do it partially.
  */
 
 import { Bitmap, INK } from '@/lib/pixelfont';
-import { FACE_SIZE, expressionFor, faceCells } from '@/lib/face';
+import { site } from '@/content/studio';
 import { PANEL } from './device';
 
 /* ------------------------------------------------------------------ *
@@ -42,149 +48,144 @@ import { PANEL } from './device';
 
 export type PanelPhase =
   | { kind: 'blank' }
-  | { kind: 'flash'; ink: 'black' | 'paper' }
   | { kind: 'card' }
-  | { kind: 'readout' };
+  | { kind: 'portrait' };
 
 export type PanelData = {
   name: string;
   role: string;
-  location: string;
-  years: string;
   employer: string;
-  symbol: string;
-  price: number;
-  changePercent: number;
-  percentile: number;
+  location: string;
   /** Milliseconds, or null before the clock has started on the client. */
   at: number | null;
-  /** ISO instant the market data was captured — the pre-clock fallback. */
+  /** ISO instant captured at build — what the panel reads before the clock starts. */
   stamp: string;
 };
 
 /**
  * The refresh sequence, as a function of progress through the final act.
  *
- * The four inversions are not decoration and their COUNT is not arbitrary:
- * driver waveforms for this class of panel run two to four full inversions
- * before the image, and four is what makes the effect read at scroll speed.
- * Their timings are uneven on purpose — a real waveform's black phases are
- * longer than its white ones, because driving pigment down to the viewing
- * surface takes longer than pulling it back.
+ * Blank while the module is still travelling, one inversion to clear the
+ * pigment, then the card — which then HOLDS for the rest of the act, because a
+ * display that has settled is the point of the whole page.
  */
 export function phaseAt(t: number): PanelPhase {
-  if (t < 0.16) return { kind: 'blank' };
-  if (t < 0.28) return { kind: 'flash', ink: 'black' };
-  if (t < 0.35) return { kind: 'flash', ink: 'paper' };
-  if (t < 0.44) return { kind: 'flash', ink: 'black' };
-  if (t < 0.5) return { kind: 'flash', ink: 'paper' };
-  if (t < 0.76) return { kind: 'card' };
-  return { kind: 'readout' };
+  if (t < 0.22) return { kind: 'blank' };
+  if (t < 0.6) return { kind: 'card' };
+  return { kind: 'portrait' };
 }
 
 /* ------------------------------------------------------------------ *
  * Layout
  * ------------------------------------------------------------------ */
 
-const MARGIN = 8;
-/** The status strip: two lines of small type and a rule under them. */
+/*
+  Five pixels, and it is a measured value rather than a taste.
+
+  The longest line the panel has to set is the role, and at scale 2 the bitmap
+  font needs 24 chars x 12 px - 2 px of tracking = 286 px for it. The panel is
+  296 wide, so the margin can be at most 5 px a side if that line is to stay at
+  a legible scale. On a 66.9 mm panel 5 px is 1.1 mm of border, which is about
+  what the bezel already covers.
+
+  Every line still goes through `fitText`, so a longer title steps down a scale
+  on its own instead of running off the glass.
+*/
+const MARGIN = 5;
 const STRIP_SCALE = 2;
 const STRIP_Y = 6;
 const RULE_Y = 26;
 
 /**
- * Uppercase, abbreviated, 24-hour, UTC.
+ * The clock, in the timezone the device would actually sit in.
  *
- * UTC because the panel is rendered in a browser but describes a device on a
- * shelf; a local time would be whichever machine happened to draw it, which is
- * nobody's. The font has no lowercase, so the month is a three-letter code
- * rather than a name.
+ * `America/Toronto` and not a fixed offset, because the offset changes twice a
+ * year: the zone is EST (UTC−5) in winter and EDT (UTC−4) in summer, and
+ * hard-coding either one prints the wrong time for half of every year. The
+ * label is `site.timezoneLabel` — "ET" — which is correct in both halves and is
+ * already what the clock in the site header says, so the two cannot disagree.
+ *
+ * The font has no lowercase, so the month comes back as a three-letter code.
  */
 function formatStamp(at: number | string): { date: string; time: string } {
   const d = typeof at === 'number' ? new Date(at) : at ? new Date(at) : new Date(0);
   if (Number.isNaN(d.getTime())) return { date: '', time: '' };
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  const month = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][d.getUTCMonth()];
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return { date: `${day} ${month}`, time: `${hh}:${mm} UTC` };
+
+  const zone = { timeZone: site.timezone } as const;
+  const day = new Intl.DateTimeFormat('en-GB', { ...zone, day: '2-digit' }).format(d);
+  const month = new Intl.DateTimeFormat('en-GB', { ...zone, month: 'short' })
+    .format(d)
+    .toUpperCase();
+  const time = new Intl.DateTimeFormat('en-GB', {
+    ...zone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(d);
+
+  return { date: `${day} ${month}`, time: `${time} ${site.timezoneLabel}` };
 }
 
-/** The strip both compositions share: where it is, and a hairline under it. */
+/**
+ * The status strip: something small at each end, and a hairline under it.
+ *
+ * The two ends are laid out so they CANNOT collide. The first version simply
+ * drew the left string at the margin and right-aligned the other, and with a
+ * location of "Toronto, Canada" the two ran into each other and the panel read
+ * "TORONTO, CANADA07:46 ET". The right-hand string is the clock and is the one
+ * worth protecting, so it is measured first and whatever is left over is what
+ * the left-hand string gets to fit inside.
+ */
 function drawStrip(bmp: Bitmap, left: string, right: string): void {
-  bmp.text(MARGIN, STRIP_Y, left, INK.black, STRIP_SCALE);
-  const width = Bitmap.measure(right, STRIP_SCALE);
-  bmp.text(PANEL.width - MARGIN - width, STRIP_Y, right, INK.black, STRIP_SCALE);
+  const rightWidth = Bitmap.measure(right, STRIP_SCALE);
+  bmp.text(PANEL.width - MARGIN - rightWidth, STRIP_Y, right, INK.black, STRIP_SCALE);
+
+  // One clear character of gap, so they read as two fields rather than one run.
+  const room = PANEL.width - MARGIN * 2 - rightWidth - 12;
+  if (room > 0) bmp.fitText(MARGIN, STRIP_Y, left, INK.black, STRIP_SCALE, room);
+
   bmp.fillRect(MARGIN, RULE_Y, PANEL.width - MARGIN * 2, 1, INK.black);
 }
 
 /**
- * The card: who built it.
+ * The card: who built it, and the time where he is.
  *
  * The name is set at the largest scale that fits the panel's full width, which
- * on a 296-pixel panel with a 12-character name is exactly scale 4 — 284 pixels
- * against 284 of room. That is a coincidence worth NOT relying on, which is why
- * it goes through `fitText`: a longer name steps down to scale 3 on its own
- * rather than running off the glass.
+ * for a 12-character name is exactly scale 4 — 284 px against 286 of room. That
+ * is a coincidence worth NOT relying on, which is why it goes through
+ * `fitText`: a longer name steps down to scale 3 on its own.
  */
 function composeCard(bmp: Bitmap, data: PanelData): void {
   const stamped = formatStamp(data.at ?? data.stamp);
   drawStrip(bmp, data.location, stamped.time);
 
   const room = PANEL.width - MARGIN * 2;
-  bmp.fitText(MARGIN, 36, data.name, INK.black, 4, room);
-  bmp.fitText(MARGIN, 74, data.role, INK.black, 2, room);
-  bmp.fitText(MARGIN, 98, `${data.years} YRS · ${data.employer}`, INK.black, 2, room);
+  bmp.fitText(MARGIN, 38, data.name, INK.black, 4, room);
+  bmp.fitText(MARGIN, 76, data.role, INK.black, 2, room);
+  bmp.fitText(MARGIN, 98, data.employer, INK.black, 2, room);
 }
 
 /**
- * The readout: what the device is for.
+ * Compose one frame of the panel.
  *
- * The same firmware the landing page's board runs, targeting a smaller panel
- * with fewer pigments. The face is on the left, a rule divides, and the figures
- * are stacked on the right at whatever scale each one fits in.
+ * `portrait` is the dithered photograph, prepared once by `portrait.ts` — it is
+ * passed in rather than composed here because turning a JPEG into one bit is
+ * asynchronous and this function has to stay synchronous and pure, so it can be
+ * called from the render loop.
  *
- * The face is the ONLY thing carrying the mood here. On the seven-colour panel
- * a fall is red and a rise is green; this panel has one pigment and cannot say
- * it in colour, so the expression has to do all of the work — which is a real
- * consequence of a real part, and the readout beside the drawing says so.
+ * When it has not arrived the portrait phase falls back to the card. A panel
+ * that has powered on and then gone blank because a fetch was slow looks
+ * broken; one still showing the previous frame does not.
  */
-function composeReadout(bmp: Bitmap, data: PanelData): void {
-  const stamped = formatStamp(data.at ?? data.stamp);
-  drawStrip(bmp, stamped.date, stamped.time);
-
-  /* ---- the face ---- */
-  const CELL = 3;
-  const faceX = MARGIN + 2;
-  const faceY = 32;
-  for (const cell of faceCells(expressionFor(data.percentile))) {
-    bmp.fillRect(faceX + cell.x * CELL, faceY + cell.y * CELL, CELL, CELL, INK.black);
-  }
-
-  /* ---- the rule ---- */
-  const railX = faceX + FACE_SIZE * CELL + 10;
-  bmp.fillRect(railX, faceY, 2, FACE_SIZE * CELL, INK.black);
-
-  /* ---- the figures ---- */
-  const textX = railX + 12;
-  const room = PANEL.width - textX - MARGIN;
-  const move = `${data.changePercent >= 0 ? '+' : '-'}${Math.abs(data.changePercent).toFixed(2)}%`;
-
-  bmp.fitText(textX, faceY, data.symbol, INK.black, 4, room);
-  bmp.fitText(textX, faceY + 34, move, INK.black, 4, room);
-  bmp.fitText(textX, faceY + 68, `$${data.price.toFixed(2)}`, INK.black, 3, room);
-}
-
-/** Compose one frame of the panel. */
-export function composePanel(phase: PanelPhase, data: PanelData): Bitmap {
+export function composePanel(
+  phase: PanelPhase,
+  data: PanelData,
+  portrait?: Bitmap | null,
+): Bitmap {
   const bmp = new Bitmap(PANEL.width, PANEL.height);
-  if (phase.kind === 'flash') {
-    if (phase.ink === 'black') bmp.fillRect(0, 0, PANEL.width, PANEL.height, INK.black);
-    return bmp;
-  }
   if (phase.kind === 'blank') return bmp;
-  if (phase.kind === 'card') composeCard(bmp, data);
-  else composeReadout(bmp, data);
+  if (phase.kind === 'portrait' && portrait) return portrait;
+  composeCard(bmp, data);
   return bmp;
 }
 
@@ -215,8 +216,24 @@ const SCALE = 4;
 */
 const PAPER: [number, number, number] = [214, 213, 205];
 const CHARCOAL: [number, number, number] = [38, 39, 43];
-/** How much of a previous image survives a refresh. Small, and never zero. */
-const GHOST_STRENGTH = 0.085;
+
+/*
+  AN UNPOWERED PANEL IS NOT WHITE.
+
+  The white of an e-ink display is titanium dioxide that has been DRIVEN to the
+  viewing surface, and driving it takes a controller, a power rail and a
+  waveform. A module lying on the bench with nothing plugged into it has had
+  none of those: what shows through the front laminate is the dark pigment
+  suspension and the backplane behind it.
+
+  This matters here because of the order the page assembles things in. The
+  panel used to paint its blank state as paper, so the display arrived already
+  glowing white, floated across the bench like that, and only afterwards ran a
+  power-on sequence — a screen that was on before it was connected to anything.
+  Dark until the cable is fitted, then the refresh, then white, and it stays
+  white because that is the whole point of the technology.
+*/
+const UNPOWERED: [number, number, number] = [46, 49, 52];
 
 /**
  * A stable hash. Same input, same output, forever.
@@ -231,11 +248,6 @@ function noise(x: number, y: number): number {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
-export type PaintOptions = {
-  /** The image being replaced, whose residue survives the refresh. */
-  ghost?: Bitmap | null;
-};
-
 /**
  * Paint a composed bitmap onto a canvas, as electrophoretic ink.
  *
@@ -247,8 +259,11 @@ export type PaintOptions = {
 export function paintPanel(
   canvas: HTMLCanvasElement,
   bitmap: Bitmap,
-  options: PaintOptions = {},
+  phase: PanelPhase,
 ): void {
+  // Nothing has been driven yet, so there is no image to draw — only the dark
+  // suspension behind the glass.
+  const surface = phase.kind === 'blank' ? UNPOWERED : PAPER;
   const width = bitmap.width * SCALE;
   const height = bitmap.height * SCALE;
   if (canvas.width !== width) canvas.width = width;
@@ -259,24 +274,13 @@ export function paintPanel(
 
   const image = ctx.createImageData(width, height);
   const out = image.data;
-  const ghost = options.ghost ?? null;
 
   for (let y = 0; y < height; y += 1) {
     const sy = (y / SCALE) | 0;
     for (let x = 0; x < width; x += 1) {
       const sx = (x / SCALE) | 0;
-
       const inked = bitmap.get(sx, sy) !== 0;
-      /*
-        The residue only shows where the OLD image had ink and the new one does
-        not. Ghosting is pigment that failed to travel all the way back, so it
-        can only ever darken paper — it cannot lighten ink, and drawing it as a
-        symmetric difference gives a halo that no panel produces.
-      */
-      const haunted = !inked && ghost !== null && ghost.get(sx, sy) !== 0;
-
-      let base = inked ? CHARCOAL : PAPER;
-      let mix = haunted ? GHOST_STRENGTH : 0;
+      const base = inked ? CHARCOAL : surface;
 
       /*
         Two grains, at two scales, and they do different jobs.
@@ -293,7 +297,7 @@ export function paintPanel(
 
       const i = (y * width + x) * 4;
       for (let c = 0; c < 3; c += 1) {
-        const value = base[c] + (CHARCOAL[c] - base[c]) * mix + shift;
+        const value = base[c] + shift;
         out[i + c] = value < 0 ? 0 : value > 255 ? 255 : value;
       }
       out[i + 3] = 255;

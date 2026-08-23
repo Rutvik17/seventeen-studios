@@ -1,19 +1,24 @@
 import type { Metadata } from 'next';
-import { founder } from '@/content/founder';
+import { founder, founderPage } from '@/content/founder';
 import { site } from '@/content/studio';
+import { market } from '@/content/market';
+import { Assembly } from '@/components/founder/Assembly';
+import { Resume } from '@/components/founder/Resume';
+import type { PanelData } from '@/lib/founder/panel';
 
 /**
- * The founder page — intentionally empty.
+ * The founder page.
  *
- * What was here (a hand-drawn New York driven end to end, and before that eight
- * stacked sections of prose) has been removed so the page can be rebuilt from a
- * new idea. The route itself stays, deliberately: it is in the nav, in the
- * sitemap, and it is the `url` on the Person node that every notebook lesson
- * names as its author. Retiring the URL would break all three and cost the
- * accumulated indexing; an empty page costs nothing but a visit.
+ * Two things, in this order: MODEL A assembling itself as you scroll, and the
+ * employment record underneath. The landing page draws the same device in SVG;
+ * this page builds it as an object. They share the soldermask token, the
+ * bitmap font and the firmware on the panel, and they disagree about the
+ * panel itself — two pigments here, seven there — for a reason the working
+ * column states.
  *
- * The employment record the new page will be built from is still in
- * `content/founder.ts` and `content/resume.ts` — nothing factual was deleted.
+ * The route, its metadata and its place in the sitemap were never taken down.
+ * It is the `url` on the Person node that every notebook lesson names as its
+ * author.
  */
 export const metadata: Metadata = {
   title: `${founder.name} — Founder`,
@@ -25,11 +30,29 @@ export const metadata: Metadata = {
   },
 };
 
+/*
+  What the device prints on its own display.
+
+  `at` is null here and stays null through the export: the clock starts on the
+  client. Putting `Date.now()` in this module would run it at BUILD time under
+  static export, and every visitor would see the minute the deploy happened.
+  `stamp` is the build instant, which is what the panel reads for the one frame
+  before the clock takes over.
+*/
+const panel: PanelData = {
+  name: founder.name,
+  role: founderPage.panelRole,
+  employer: founderPage.panelEmployer,
+  location: founder.location,
+  at: null,
+  stamp: market.fetchedAt,
+};
+
 export default function FounderPage() {
-  /*
-    An empty `.page` shell rather than a bare fragment. The header is fixed, so
-    a page with no height at all lets the footer ride up underneath it — blank
-    is the intent, broken is not.
-  */
-  return <div className="page founder-blank" />;
+  return (
+    <>
+      <Assembly data={panel} />
+      <Resume />
+    </>
+  );
 }

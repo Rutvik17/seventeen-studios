@@ -6,67 +6,102 @@
  * The landing page draws a companion board in SVG and calls it a specification.
  * This page builds the same device as an object: 200 nodes and 37,708 triangles
  * modelled in Blender, arriving part by part as the page is scrolled, ending
- * with the panel running its real power-on waveform.
+ * with the panel powering up and printing who built it.
  *
  * The relationship between the two pages is the point. One is a drawing of a
  * thing that does not exist yet; the other is the thing, photographed. They
  * share the device, the palette token for its soldermask, the bitmap font on
- * its display and the firmware behind the readout — and they disagree about the
- * panel, for a reason that is stated on screen.
+ * its display and the clock in its status strip — and they disagree about the
+ * panel itself, because they are two different parts. See `device.ts`.
+ *
+ * There is no headline over it and no caption beside it. Both were here and
+ * both came out: the type and the object were competing for the same screen,
+ * and the object is the argument.
  *
  * ---
  *
- * WHY STICKY AND NOT A GSAP PIN
+ * WHY A GSAP PIN AND NOT CSS STICKY
  *
- * `CLAUDE.md` requires a track and a stage for any pinned story, and CSS
- * `position: sticky` IS a track and a stage — the outer element carries the
- * scroll distance, the inner one stays put while it passes. The landing page
- * uses ScrollTrigger's pin because it also needs a scrubbed timeline; nothing
- * here is on a timeline. Every frame is a pure function of one number, and that
- * number is read straight off the track's `getBoundingClientRect()` inside the
- * render loop.
+ * Sticky is the obvious answer — the outer element carries the scroll distance,
+ * the inner one stays put while it passes, no library involved — and it does
+ * not work in this codebase. `globals.css` sets `overflow-x: hidden` on `body`,
+ * which makes `overflow-y` compute to `auto`, which makes `body` a scroll
+ * container. A sticky element sticks within its nearest scrolling ancestor, so
+ * the stage would be sticky relative to a box that never scrolls, and it simply
+ * would not stick.
  *
- * That removes an entire class of problem rather than solving it: no
- * `ScrollTrigger.refresh()` after a layout change, no pin-spacing arithmetic, no
- * ordering dependency on Lenis, and nothing to revert on unmount. Lenis scrolls
- * the window, so the rect is already correct.
+ * That is a real trap and it cost a round of this build: the markup looks
+ * correct, the CSS looks correct, and the failure is caused by a declaration
+ * three thousand lines away in a different file. The landing page already had
+ * the answer — a ScrollTrigger pin over the same track-and-stage pair, with
+ * `pinSpacing: false` so the track's own height is the travel — and that is
+ * what `CLAUDE.md` means when it says a pinned scroll story needs a track and a
+ * stage.
  *
  * ---
  *
  * NOTHING HERE IS IN REACT STATE PER FRAME
  *
- * Scroll progress lives in a ref and is consumed inside `useFrame`. React sees
- * exactly two things: which of the five acts is current (five transitions over
- * the whole page) and the measurements taken once when the asset lands. A
- * `setState` per frame would re-render the readout sixty times a second to
- * change nothing.
+ * Scroll progress lives in a ref and is consumed inside `useFrame`. React is
+ * told about exactly one thing after mount — that the reader has started
+ * scrolling, so the cue can fade — and that fires once. Every other frame is a
+ * pure function of one number and touches no state at all.
  */
 
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
+import { useGLTF, useProgress } from '@react-three/drei';
 import * as THREE from 'three';
 import { asset } from '@/lib/asset';
 import { clamp, damp } from '@/lib/physics';
-import { prefersReducedMotion } from '@/lib/gsap';
+import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap';
+import { useUi } from '@/lib/store';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
-import { ACTS, actForOrder } from '@/lib/founder/device';
+import { founderPage } from '@/content/founder';
+import { founder } from '@/content/founder';
+import { ACTS, PANEL, actForOrder, actRange } from '@/lib/founder/device';
+import { ditherPortrait } from '@/lib/founder/portrait';
+import type { Bitmap } from '@/lib/pixelfont';
 import {
   collectParts,
   dressMaterials,
   findPanelMesh,
-  measureDevice,
-  type Measured,
+  projectPanelUVs,
 } from '@/lib/founder/model';
-import { buildEnvironment, placeCamera, shotAt } from '@/lib/founder/studio';
+import {
+  buildEnvironment,
+  captureAnchors,
+  placeCamera,
+  shotAt,
+} from '@/lib/founder/studio';
 import { composePanel, paintPanel, phaseAt, type PanelData } from '@/lib/founder/panel';
-import { Readout } from '@/components/founder/Readout';
 import styles from '@/components/founder/Founder.module.css';
 
 const MODEL_URL = asset('/models/raspberry-pi-eink-assembly.glb');
 
 /** How wide the assembled device is made, in scene units. */
 const FIT_WIDTH = 2.3;
+
+/*
+  Where the face is in the portrait, as a fraction of each axis.
+
+  The photograph is 3:4 and the panel is 2.3:1, so nearly two thirds of the
+  image height has to be thrown away. Cropping to the centre of the frame would
+  keep the middle of a tall portrait — a chest and a chin — so the crop is
+  anchored on the head instead. Measured off the file rather than guessed: the
+  eyes sit a little right of centre and about a third of the way down.
+*/
+const PORTRAIT_FOCUS = { x: 0.57, y: 0.37 };
+
+/**
+ * How far past a cover-crop to zoom in.
+ *
+ * A 3:4 photograph covering a 2.3:1 panel is decided by width alone, so at 1.0
+ * the crop is the whole width of the picture — including all the empty ground
+ * around the subject, which on a 296-pixel panel leaves a very small head. 1.5
+ * fills the frame with the face.
+ */
+const PORTRAIT_ZOOM = 1.5;
 
 /* ------------------------------------------------------------------ *
  * Choreography
@@ -83,23 +118,45 @@ const smoothstep = (t: number): number => t * t * (3 - 2 * t);
  * leaves the last 30% as a beat of stillness before the camera moves on — the
  * thing that makes five acts read as five acts rather than as one long slide.
  */
+const FINAL_ACT = ACTS.length - 1;
+
 function seatWindow(order: number): { start: number; span: number } {
   const act = actForOrder(order);
-  const actStart = act / ACTS.length;
-  const actSpan = 1 / ACTS.length;
+  const { start: actStart, span: actSpan } = actRange(act);
   const siblings = ACTS[act].to - ACTS[act].from + 1;
   const i = order - ACTS[act].from;
 
+  /*
+    The final act is tighter than the others, because it has a second job: once
+    its last part is fitted the panel still has to power on, and that has to
+    happen with the assembly standing still. So its parts land in the first 45%
+    of the act instead of the first 70%, and each one lands faster.
+  */
+  const final = act === FINAL_ACT;
+  const spread = final ? 0.45 : 0.7;
+  const width = final ? 0.14 : siblings === 1 ? 0.15 : 0.3;
+
   return {
-    start: actStart + (i / siblings) * actSpan * 0.7,
-    /*
-      A lone part seats fast. Act five has exactly one — the display — and the
-      power-on waveform starts at 16% into the act, so a part still drifting in
-      at 30% would be flashing black while it was visibly still landing.
-    */
-    span: actSpan * (siblings === 1 ? 0.15 : 0.3),
+    start: actStart + (i / siblings) * actSpan * spread,
+    span: actSpan * width,
   };
 }
+
+/**
+ * When the panel is allowed to power on: the moment the LAST part is fitted.
+ *
+ * Derived from the act table rather than typed in, so re-ordering the acts or
+ * adding a part cannot leave the display flashing while something is still
+ * visibly flying in.
+ *
+ * With the cable now fitted last (see `fittingOrder`), this is also the moment
+ * the display is actually CONNECTED to anything — which is the only honest
+ * moment for it to light up. Before it, the panel is unpowered and dark.
+ */
+const BOOT_START = (() => {
+  const { start, span } = seatWindow(ACTS[FINAL_ACT].to);
+  return start + span;
+})();
 
 /* ------------------------------------------------------------------ *
  * The device
@@ -110,11 +167,13 @@ type DeviceProps = {
   progress: React.MutableRefObject<number>;
   reduced: boolean;
   data: PanelData;
-  onMeasured: (m: Measured) => void;
-  onAct: (act: number) => void;
+  now: React.MutableRefObject<number | null>;
+  onCued: () => void;
+  /** Fired once the model is built and the first frame can be drawn. */
+  onReady: (ready: boolean) => void;
 };
 
-function Device({ track, progress, reduced, data, onMeasured, onAct }: DeviceProps) {
+function Device({ track, progress, reduced, data, now, onCued, onReady }: DeviceProps) {
   const { scene: gltfScene } = useGLTF(MODEL_URL);
   const gl = useThree((state) => state.gl);
   const camera = useThree((state) => state.camera);
@@ -122,24 +181,18 @@ function Device({ track, progress, reduced, data, onMeasured, onAct }: DevicePro
 
   const group = useRef<THREE.Group>(null);
   const smoothed = useRef(0);
-  const actRef = useRef(-1);
   /** Scroll speed, differenced from progress. Drives the inertial sway. */
   const speed = useRef(0);
   const sway = useRef(new THREE.Vector2());
   const panelKey = useRef('');
+  const cuedRef = useRef(false);
+  /** False until the first frame has placed the camera. See the note in useFrame. */
+  const settled = useRef(false);
+  /** The dithered photograph, once it has been prepared. */
+  const portrait = useRef<Bitmap | null>(null);
 
-  /* ---- the model, measured then dressed ---- */
+  /* ---- the model, dressed and posed ---- */
   const model = useMemo(() => {
-    /*
-      MEASURED FIRST, on the untouched scene.
-
-      `Box3.setFromObject` walks world matrices, so measuring after the
-      fit-to-view scale below would return 2.3-units-worth of millimetres and
-      every figure in the readout would be wrong by the same invisible factor.
-      The order of these two blocks is load-bearing.
-    */
-    const measured = measureDevice(gltfScene);
-
     const clone = gltfScene.clone(true);
     dressMaterials(clone);
 
@@ -155,18 +208,77 @@ function Device({ track, progress, reduced, data, onMeasured, onAct }: DevicePro
 
     const parts = collectParts(clone);
     const panelMesh = findPanelMesh(clone);
+    if (panelMesh) projectPanelUVs(panelMesh);
 
-    // The seated bounding box, in scene units, so the shadow catcher can sit on
-    // the underside of the board rather than at an arbitrary depth.
+    /*
+      THE ORDER OF THE NEXT THREE BLOCKS IS LOAD-BEARING.
+
+      The GLB arrives fully assembled, and everything below reads from it in
+      that state. Measure, anchor, THEN take it apart.
+    */
     holder.updateMatrixWorld(true);
+
+    // 1. The seated bounding box, in scene units, so the shadow catcher can sit
+    //    on the underside of the board rather than at an arbitrary depth.
     const seatedBox = new THREE.Box3().setFromObject(holder);
 
-    return { holder, clone, parts, panelMesh, measured, floor: seatedBox.min.y };
+    // 2. Where every shot's subject sits when it is fitted. Captured now,
+    //    because in a moment none of these parts will be where they belong —
+    //    and a camera that aims at a part's live position spends the whole page
+    //    chasing it through the air. See `captureAnchors`.
+    const anchors = captureAnchors(clone);
+
+    // 3. Pose every part to its t = 0 exploded state, before the first frame is
+    //    drawn. Without this the visitor sees the finished board for one frame
+    //    and then watches it fly apart.
+    for (const part of parts) {
+      if (part.order === 0) continue;
+      part.object.position.copy(part.seated).add(part.offset);
+      part.object.quaternion.copy(part.looseQuaternion);
+      part.object.scale.copy(part.seatedScale).multiplyScalar(0.0001);
+      part.object.visible = false;
+    }
+
+    return { holder, clone, parts, panelMesh, anchors, floor: seatedBox.min.y };
   }, [gltfScene]);
 
+  /*
+    The scene is live. Announced from here rather than inferred from a progress
+    number, because this component does not exist until Suspense has resolved
+    the model — so reaching this line IS the definition of ready.
+  */
   useEffect(() => {
-    onMeasured(model.measured);
-  }, [model.measured, onMeasured]);
+    onReady(true);
+  }, [onReady]);
+
+  /*
+    Prepare the photograph once, off the render path.
+
+    Dithering is a serial pass over 37,888 pixels that cannot be vectorised —
+    each pixel's decision depends on the error left by the one before it — so it
+    is done once here and the result is reused for every frame that shows it.
+    Doing it per repaint would be a visible hitch on the one act the page builds
+    toward.
+  */
+  useEffect(() => {
+    let cancelled = false;
+    ditherPortrait(
+      founder.portrait,
+      PANEL.width,
+      PANEL.height,
+      PORTRAIT_FOCUS,
+      PORTRAIT_ZOOM,
+    )
+      .then((bitmap) => {
+        if (!cancelled) portrait.current = bitmap;
+      })
+      .catch(() => {
+        /* The panel keeps the card. See `composePanel`. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /* ---- the studio environment ---- */
   useEffect(() => {
@@ -201,12 +313,24 @@ function Device({ track, progress, reduced, data, onMeasured, onAct }: DevicePro
     // The exported base colour is a grey; leaving it in place would multiply the
     // panel image down to the same grey and lose most of the contrast.
     material.color.set(0xffffff);
+    /*
+      Painted blank immediately, so the very first frame shows an unpowered
+      panel rather than whatever the canvas element happened to contain — which
+      is transparent black, and reads as a hole cut in the module.
+    */
+    const blank = { kind: 'blank' } as const;
+    paintPanel(panel.canvas, composePanel(blank, data), blank);
+    panel.texture.needsUpdate = true;
     material.needsUpdate = true;
     return () => {
       material.map = null;
       material.needsUpdate = true;
     };
-  }, [model.panelMesh, panel.texture]);
+    // `data` is deliberately not a dependency: the blank frame does not read it,
+    // and re-running this on every clock tick would rebind the material sixty
+    // times an hour for no change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [model.panelMesh, panel]);
 
   useEffect(() => () => {
     panel.texture.dispose();
@@ -238,19 +362,31 @@ function Device({ track, progress, reduced, data, onMeasured, onAct }: DevicePro
       }
     }
     progress.current = raw;
+    if (raw > 0.02 && !cuedRef.current) {
+      cuedRef.current = true;
+      onCued();
+    }
 
+    /*
+      THE FIRST FRAME IS SNAPPED, NOT EASED.
+
+      Everything here — the progress, the camera position, the point it is
+      looking at — is a damped value chasing a target, and every one of them
+      starts at zero. On the first frame after the model lands, that means the
+      camera is at the origin looking at the origin while its target is several
+      units away, so the board swings in from a corner of the frame and settles.
+      It reads as the page breaking, and it is the first thing a visitor sees.
+
+      This component does not mount until the GLB has loaded (it is inside a
+      Suspense boundary), so the first frame it ever runs is the right moment to
+      place everything exactly where it belongs and start easing from there.
+    */
+    const first = !settled.current;
     const previous = smoothed.current;
     // Frame-rate independent, so the story runs at the same pace on a 60Hz
     // laptop and a 120Hz phone. A fixed per-frame lerp would not.
-    smoothed.current = reduced ? raw : damp(previous, raw, 0.055, dt);
+    smoothed.current = reduced || first ? raw : damp(previous, raw, 0.055, dt);
     const t = smoothed.current;
-
-    /* ---- act ---- */
-    const act = Math.min(ACTS.length - 1, Math.floor(t * ACTS.length));
-    if (act !== actRef.current) {
-      actRef.current = act;
-      onAct(act);
-    }
 
     /* ---- parts ---- */
     for (const part of model.parts) {
@@ -279,7 +415,7 @@ function Device({ track, progress, reduced, data, onMeasured, onAct }: DevicePro
 
     /* ---- the panel ---- */
     if (model.panelMesh) {
-      const boot = clamp((t - (ACTS.length - 1) / ACTS.length) * ACTS.length, 0, 1);
+      const boot = clamp((t - BOOT_START) / (1 - BOOT_START), 0, 1);
       const phase = phaseAt(boot);
       /*
         Repainted only when what it shows CHANGES. The key folds in the minute
@@ -287,25 +423,32 @@ function Device({ track, progress, reduced, data, onMeasured, onAct }: DevicePro
         ImageData and doing it per frame would cost more than the entire rest of
         the scene.
       */
-      const minute = data.at === null ? 'x' : Math.floor(data.at / 60000);
-      const key = `${phase.kind}:${'ink' in phase ? phase.ink : ''}:${minute}`;
+      const at = now.current;
+      const minute = at === null ? 'x' : Math.floor(at / 60000);
+      // The portrait's arrival is part of the key: without it, a photograph
+      // that finishes dithering while the panel is already showing the portrait
+      // phase would never be painted, and the card would sit there instead.
+      const key = `${phase.kind}:${minute}:${portrait.current ? 1 : 0}`;
       if (key !== panelKey.current) {
         panelKey.current = key;
-        const ghost =
-          phase.kind === 'readout' ? composePanel({ kind: 'card' }, data) : null;
-        paintPanel(panel.canvas, composePanel(phase, data), { ghost });
+        paintPanel(
+          panel.canvas,
+          composePanel(phase, { ...data, at }, portrait.current),
+          phase,
+        );
         panel.texture.needsUpdate = true;
       }
     }
 
     /* ---- camera ---- */
-    const shot = shotAt(t);
+    const frame = shotAt(t);
     model.holder.getWorldPosition(scratch.centre);
-    placeCamera(shot, model.clone, scratch.centre, scratch.position, scratch.target);
+    placeCamera(frame, model.anchors, scratch.centre, scratch.position, scratch.target);
 
-    if (reduced) {
+    if (reduced || first) {
       camera.position.copy(scratch.position);
       scratch.look.copy(scratch.target);
+      settled.current = true;
     } else {
       // The camera is damped as well as the progress that drives it. Two stages
       // of smoothing is what turns a scrubbed move into something that reads as
@@ -329,13 +472,19 @@ function Device({ track, progress, reduced, data, onMeasured, onAct }: DevicePro
       rest whenever the reader stops, and carries a little momentum when they
       stop suddenly. Mapping rotation to scroll POSITION instead would be
       reversible and dead.
+
+      Kept small on purpose. At the amplitude this first shipped (five degrees)
+      it was a third motion on top of a camera that is already travelling and a
+      subject that is already assembling, and the three together read as the
+      board being shaken rather than as weight. Two degrees is felt without
+      being seen, which is the whole job.
     */
     if (!reduced && group.current) {
       const velocity = (smoothed.current - previous) / Math.max(dt, 1e-4);
       speed.current = damp(speed.current, velocity, 0.09, dt);
-      const lean = clamp(speed.current * 0.35, -0.09, 0.09);
-      sway.current.x = damp(sway.current.x, lean, 0.11, dt);
-      sway.current.y = damp(sway.current.y, lean * 0.6, 0.14, dt);
+      const lean = clamp(speed.current * 0.16, -0.035, 0.035);
+      sway.current.x = damp(sway.current.x, lean, 0.13, dt);
+      sway.current.y = damp(sway.current.y, lean * 0.6, 0.16, dt);
       group.current.rotation.x = sway.current.x;
       group.current.rotation.z = sway.current.y;
     }
@@ -365,6 +514,69 @@ function Device({ track, progress, reduced, data, onMeasured, onAct }: DevicePro
 }
 
 /* ------------------------------------------------------------------ *
+ * Loading
+ * ------------------------------------------------------------------ */
+
+/**
+ * The wait, filled by the thing being waited for.
+ *
+ * The model is 2.1 MB — the only asset on this site big enough to be worth a
+ * loader at all — and until it lands there is nothing on screen. So the numeral
+ * fills as it downloads: `useProgress` reads three.js's own loading manager, so
+ * the fill is the actual number of bytes in, not a timer chosen to look about
+ * right. `Preloader.tsx` makes the same point about the site's own boot screen,
+ * and a bar that finishes before the page does is the most common lie in this
+ * pattern.
+ *
+ * It is dismissed on `ready` — a signal from the scene itself — rather than on
+ * the progress reaching 100. A cached model can be served without the manager
+ * ever reporting a byte, and a loader that waits for a number that will never
+ * arrive is worse than no loader.
+ */
+function Loading({ ready }: { ready: boolean }) {
+  const { progress } = useProgress();
+  const [gone, setGone] = useState(false);
+
+  useEffect(() => {
+    if (!ready) return;
+    // Outlast the fade so the panel is not torn out from under its own
+    // transition; matches the 420ms in `.loading[data-done]`.
+    const id = window.setTimeout(() => setGone(true), 460);
+    return () => window.clearTimeout(id);
+  }, [ready]);
+
+  if (gone) return null;
+
+  const shown = ready ? 100 : progress;
+
+  return (
+    <div
+      className={styles.loading}
+      data-done={ready ? '' : undefined}
+      role="status"
+      aria-label="Loading the model"
+    >
+      {/*
+        The wordmark's own numeral, filled from the bottom as the bytes arrive.
+        `background-clip: text` over a hard-stopped gradient, so the fill has an
+        edge rather than a glow — the same register as the rail on the site's
+        loader.
+      */}
+      <span
+        className={styles.loadingMark}
+        style={{ '--fill': `${shown}%` } as React.CSSProperties}
+        aria-hidden="true"
+      >
+        17
+      </span>
+      <span className={`mono-label ${styles.loadingCount}`}>
+        {String(Math.round(shown)).padStart(3, '0')}
+      </span>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
  * The section
  * ------------------------------------------------------------------ */
 
@@ -373,11 +585,13 @@ type AssemblyProps = { data: PanelData };
 export function Assembly({ data }: AssemblyProps) {
   const track = useRef<HTMLDivElement>(null);
   const progress = useRef(0);
-  const [act, setAct] = useState(0);
-  const [measured, setMeasured] = useState<Measured | null>(null);
+  const now = useRef<number | null>(null);
   const [reduced, setReduced] = useState(false);
   const [live, setLive] = useState(true);
   const [supported, setSupported] = useState(true);
+  const [cued, setCued] = useState(false);
+  const [ready, setReady] = useState(false);
+  const entered = useUi((state) => state.entered);
 
   useIsomorphicLayoutEffect(() => {
     setReduced(prefersReducedMotion());
@@ -398,6 +612,44 @@ export function Assembly({ data }: AssemblyProps) {
   }, []);
 
   /*
+    CSS sticky fails here: `body` carries `overflow-x: hidden`, which makes
+    the stage a descendant of a scroll container and sticky stops sticking.
+    The landing already solved this with a ScrollTrigger pin — same track and
+    stage, `pinSpacing: false` so the track's own height is the travel.
+  */
+  useIsomorphicLayoutEffect(() => {
+    const el = track.current;
+    const stageEl = el?.querySelector(`.${styles.stage}`);
+    if (!el || !stageEl || reduced || !supported) return;
+
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: el,
+        start: 'top top',
+        end: 'bottom bottom',
+        pin: stageEl,
+        pinSpacing: false,
+      });
+    }, el);
+
+    ScrollTrigger.refresh();
+    return () => ctx.revert();
+  }, [reduced, supported]);
+
+  /*
+    The clock starts on the client and nowhere else. Putting `Date.now()` in
+    the render path would stamp a build-time instant into the static export,
+    and the panel would show whatever minute the deploy ran at.
+  */
+  useEffect(() => {
+    now.current = Date.now();
+    const id = window.setInterval(() => {
+      now.current = Date.now();
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  /*
     Rendering stops when the section leaves the viewport. The record below it is
     long, and a WebGL loop running against nothing while someone reads it is
     pure heat.
@@ -413,13 +665,12 @@ export function Assembly({ data }: AssemblyProps) {
     return () => observer.disconnect();
   }, []);
 
-  if (!supported) {
-    return (
-      <section className={styles.fallback}>
-        <Readout act={4} measured={null} reduced />
-      </section>
-    );
-  }
+  /*
+    No WebGL: the section collapses to nothing and the employment record below
+    it carries the page on its own. Rendering an empty pinned 600vh track would
+    be six screens of blank paper to scroll past.
+  */
+  if (!supported) return null;
 
   return (
     <section
@@ -431,7 +682,7 @@ export function Assembly({ data }: AssemblyProps) {
       <div className={styles.stage}>
         <div className={styles.canvas}>
           <Canvas
-            frameloop={live ? 'always' : 'never'}
+            frameloop={live && entered ? 'always' : 'never'}
             dpr={[1, 2]}
             shadows
             camera={{ fov: 32, near: 0.05, far: 60, position: [1.4, 1.9, 2.6] }}
@@ -439,7 +690,7 @@ export function Assembly({ data }: AssemblyProps) {
               antialias: true,
               alpha: true,
               toneMapping: THREE.ACESFilmicToneMapping,
-              toneMappingExposure: 1.02,
+              toneMappingExposure: 0.92,
             }}
           >
             {/*
@@ -452,7 +703,7 @@ export function Assembly({ data }: AssemblyProps) {
             */}
             <directionalLight
               position={[-3.2, 4.4, 2.4]}
-              intensity={2.1}
+              intensity={1.55}
               castShadow
               shadow-mapSize-width={2048}
               shadow-mapSize-height={2048}
@@ -471,17 +722,29 @@ export function Assembly({ data }: AssemblyProps) {
                 progress={progress}
                 reduced={reduced}
                 data={data}
-                onMeasured={setMeasured}
-                onAct={setAct}
+                now={now}
+                onCued={() => setCued(true)}
+                onReady={setReady}
               />
             </Suspense>
           </Canvas>
         </div>
 
-        <Readout act={act} measured={measured} reduced={reduced} />
+        <Loading ready={ready} />
+
+        {!reduced && (
+          <div className={styles.cue} data-gone={cued ? '' : undefined} aria-hidden="true">
+            <span className={`mono-label ${styles.cueLabel}`}>{founderPage.cue}</span>
+            <span className={styles.cueRail}>
+              <span className={styles.cueTravel} />
+            </span>
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-useGLTF.preload(MODEL_URL);
+if (typeof window !== 'undefined') {
+  useGLTF.preload(MODEL_URL);
+}

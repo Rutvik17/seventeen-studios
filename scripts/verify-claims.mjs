@@ -284,6 +284,16 @@ function lessonTerminal(start, drift, vol, years, z) {
 
 check('slope: 1.40 / 0.50', 1.4 / 0.5, 2.8, 1e-9);
 
+/*
+  The founder page's figures used to be checked here — GPIO pitch, LPDDR4
+  bandwidth, the SPI framebuffer and its clock time, the panel's PPI on both
+  axes. They went out with the working column that printed them: this file
+  exists to catch a printed number drifting from its formula, so a claim about
+  a number nothing prints is a test with no subject.
+
+  They come back with the surface. `git show ccb69d4 -- scripts/verify-claims.mjs`
+*/
+
 console.log();
 if (failures > 0) {
   console.error(`${failures} claim(s) do not match their formula.`);

@@ -1,0 +1,335 @@
+/**
+ * Founder page — the entire stylesheet.
+ *
+ * Isolated on purpose. Nothing in here is referenced from globals.css, and
+ * nothing on this page reads a founder-specific class from there. If the 3D
+ * scene comes out, this file and the rest of `components/founder` and
+ * `lib/founder` come out with it.
+ *
+ * A tall track, a pinned viewport, and the object filling it. The tokens are
+ * the site's own custom properties; the selectors are not shared, so a landing
+ * tweak cannot quietly restyle this page, or the other way around.
+ */
+
+/* ---------- Assembly track --------------------------------------- */
+
+.track {
+  position: relative;
+  height: 560vh;
+}
+
+/*
+  The stage is the whole viewport and the canvas fills it.
+
+  It began as the landing page's grid — a drawing on the left, a working column
+  on the right, a wordmark across the top and bottom. All of that came out: the
+  type was competing with the object for the same screen, and the object is the
+  argument. With nothing else in the frame the canvas gets the entire viewport,
+  which is roughly two and a half times the drawing area it had, and the board
+  can be framed at a size worth looking at.
+*/
+.stage {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.track[data-static='true'] {
+  height: auto;
+}
+
+/*
+  Reduced motion: no pin and no travel, so the stage cannot take the full
+  viewport — it would be a screen of board with nothing telling the reader there
+  is a page under it. A fixed panel shows the assembled device and the record
+  follows immediately.
+*/
+.track[data-static='true'] .stage {
+  height: min(78svh, 720px);
+}
+
+/* ---- the canvas ---- */
+
+.canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.canvas canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ---- loading ----------------------------------------------------- */
+
+/*
+  Opaque, and over the whole stage. The canvas behind it is empty until the
+  2.1 MB model lands, so anything translucent would be a translucent panel over
+  nothing.
+*/
+.loading {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 18px;
+  background: var(--bg);
+  transition: opacity 0.42s var(--ease-out);
+}
+
+.loading[data-done] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/*
+  The numeral, filling from the bottom as the bytes arrive.
+
+  A hard two-stop gradient behind the glyph, clipped to it. The stops sit at the
+  same percentage so the boundary is an EDGE rather than a fade — a soft one
+  reads as a glow and stops looking like a measurement.
+
+  `--fill` is a percentage, and the gradient runs from the bottom, so 0% is an
+  empty outline and 100% is solid.
+*/
+.loadingMark {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: clamp(88px, 15vw, 210px);
+  line-height: 0.8;
+  letter-spacing: -0.04em;
+  /*
+    The filled part is the plotter blue the whole site accents with — the same
+    `--accent` the board's live traces and every calculated figure use — over
+    the hairline grey the empty part of any rule on this site is drawn in.
+  */
+  background-image: linear-gradient(
+    to top,
+    var(--accent) 0,
+    var(--accent) var(--fill, 0%),
+    var(--line-strong) var(--fill, 0%),
+    var(--line-strong) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.loadingCount {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- scroll cue ---- */
+
+.cue {
+  position: absolute;
+  left: calc(var(--gutter) * 0.34);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  pointer-events: none;
+  z-index: 3;
+  transition: opacity 0.4s var(--ease-out);
+}
+
+.cue[data-gone] {
+  opacity: 0;
+}
+
+.cueLabel {
+  writing-mode: vertical-rl;
+  color: var(--muted);
+  letter-spacing: 0.22em;
+  white-space: nowrap;
+}
+
+.cueRail {
+  position: relative;
+  width: 1px;
+  height: 84px;
+  background: var(--line-strong);
+  overflow: hidden;
+}
+
+.cueTravel {
+  position: absolute;
+  inset-inline: -1px;
+  top: 0;
+  height: 32%;
+  background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+  animation: cue-travel 1.9s ease-in-out infinite;
+}
+
+@keyframes cue-travel {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(260%);
+    opacity: 0;
+  }
+}
+
+/* ---------- Résumé ------------------------------------------------ */
+
+/*
+  The whole of the page below the assembly.
+
+  It was an employment record — a portrait, four roles and their highlights,
+  most of a screen of it. What is left is the file that already contains all of
+  that, and a name so the page still says whose it is when the 3D never runs.
+*/
+.resume {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: clamp(80px, 13vh, 180px) var(--gutter) clamp(80px, 11vw, 160px);
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 0;
+}
+
+.resumeEyebrow {
+  color: var(--muted);
+  margin-bottom: clamp(20px, 3vh, 34px);
+}
+
+/*
+  The one line on the page, set as large as it can be without wrapping badly.
+
+  The accent sweep is the same idea as the loading numeral: a gradient behind
+  the glyphs, clipped to them. Here it MOVES — a narrow band of the site's blue
+  travelling along the text and out the far side, once every few seconds.
+
+  It works because `background-size` is wider than the element, so animating
+  `background-position` slides the band across. Doing it with a gradient rather
+  than a real shader means no second WebGL context on a page that already has
+  one, and it degrades to flat ink where `background-clip: text` is unsupported.
+*/
+.resumeLineWrap {
+  /* The lit position, as a percentage of this box. Written by `OutroLine`. */
+  --mx: 50%;
+  --my: 50%;
+}
+
+.resumeLine {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: clamp(30px, 5.4vw, 82px);
+  line-height: 1.02;
+  letter-spacing: -0.028em;
+  max-width: 18ch;
+  /* The reveal mask clips descenders without this — see the note in CLAUDE.md. */
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+
+  background-image: linear-gradient(
+    100deg,
+    var(--fg) 0%,
+    var(--fg) 38%,
+    var(--accent) 50%,
+    var(--fg) 62%,
+    var(--fg) 100%
+  );
+  background-size: 280% 100%;
+  background-position: 100% 0;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: resume-sweep 7s cubic-bezier(0.7, 0, 0.3, 1) infinite;
+}
+
+@keyframes resume-sweep {
+  0%,
+  22% {
+    background-position: 100% 0;
+  }
+  62%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+/*
+  Under the pointer the idle sweep stops and the light goes where the cursor is.
+
+  A radial gradient centred on `--mx`/`--my`, which `OutroLine` writes straight
+  to the wrapper on every pointer move. The stops are tight so it reads as a
+  small lamp travelling through the glyphs rather than a wash over the whole
+  line — at 34% the accent has already fallen all the way back to ink, so only
+  the word being looked at is lit.
+*/
+.resumeLineWrap[data-lit] .resumeLine {
+  animation: none;
+  background-image: radial-gradient(
+    circle at var(--mx) var(--my),
+    var(--accent) 0%,
+    var(--accent) 6%,
+    var(--fg) 34%
+  );
+  background-size: 100% 100%;
+  background-position: 0 0;
+}
+
+/*
+  A sweeping highlight is exactly the kind of thing that should not run for
+  someone who has asked for less motion. The text stays, in flat ink.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .resumeLine,
+  .resumeLineWrap[data-lit] .resumeLine {
+    animation: none;
+    background-image: none;
+    color: var(--fg);
+  }
+}
+
+.resumeActions {
+  margin-top: clamp(30px, 4vh, 52px);
+}
+
+.resumeActions p {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(16px, 2.2vw, 32px);
+}
+
+/*
+  The second format is a quieter link rather than a second button. Two buttons
+  of equal weight make the reader choose before they know the difference; the
+  PDF is what a person wants and the .docx is there for the software that
+  screens them.
+*/
+.resumeAlt {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.3s var(--ease-out);
+}
+
+.resumeAlt:hover {
+  color: var(--fg);
+}
+
+.resumeAlt i {
+  font-style: normal;
+  margin-left: 6px;
+}
