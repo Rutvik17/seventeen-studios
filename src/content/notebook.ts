@@ -283,7 +283,7 @@ export const entries: Entry[] = [
       { type: 'h2', text: 'The power budget, and battery life' },
       {
         type: 'p',
-        text: 'Battery life comes down to one honest sum, and the trap in it catches almost everybody the first time.',
+        text: 'Battery life is one sum, and it is the average current that goes into it, not the peak. Sizing a cell from the transmit figure is the common error, and it is off by two orders of magnitude here.',
       },
       {
         type: 'p',
@@ -1333,7 +1333,7 @@ export const entries: Entry[] = [
       },
       {
         type: 'p',
-        text: 'That sounds like a coin flip beaten. It is not, and seeing why is the whole point of this entry.',
+        text: 'That is above 50%, which reads as an edge. It is not one, and the reason matters more than the number does.',
       },
       {
         type: 'term',
