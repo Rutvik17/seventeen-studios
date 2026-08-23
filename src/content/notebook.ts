@@ -104,7 +104,7 @@ export const entries: Entry[] = [
     index: '01',
     title: 'Designing a circuit board',
     standfirst:
-      'Designing a small device from nothing: what every part on a circuit board is for, and why it has to be there.',
+      'What every part on a circuit board is for, and how to size the two things that decide whether it works: trace width, and the battery behind a duty cycle.',
     topic: 'Hardware',
     tags: ['hardware', 'electronics'],
     outcome:
@@ -116,11 +116,11 @@ export const entries: Entry[] = [
     blocks: [
       {
         type: 'p',
-        text: 'I wanted an object that sits on a shelf and tells me one thing as I walk past. Not a phone I have to unlock and not a screen that glows all night — a small flat thing with a face on it that changes when something changes.',
+        text: 'The problem: show one figure on a device that sits on a shelf, is read at a glance, and runs for months on a single cell. Three constraints follow immediately. The display cannot be lit, because a backlight is the largest load in the budget. It has to hold its image with the power off, because the processor will be asleep almost all of the time. And the processor has to wake on a schedule it is not itself counting.',
       },
       {
         type: 'p',
-        text: 'This is how it gets built, starting from a bare green rectangle. I am assuming you have never looked inside anything electronic, and nothing below needs you to have.',
+        text: 'What follows is a board that meets those constraints, component by component, starting from the bare laminate. No prior electronics is assumed.',
       },
 
       { type: 'h2', text: 'What a circuit board actually is' },
@@ -407,7 +407,7 @@ export const entries: Entry[] = [
     index: '02',
     title: 'Monte Carlo simulation',
     standfirst:
-      'How you work out the chance of something when the maths is too hard to solve — starting with a coin.',
+      'Estimating a probability by simulation when the closed form is intractable — from a coin flip to value at risk across six correlated assets.',
     topic: 'Quantitative',
     tags: ['quantitative', 'mathematics'],
     outcome:
@@ -423,7 +423,7 @@ export const entries: Entry[] = [
       },
       {
         type: 'p',
-        text: 'The second sounds like cheating. It is not, it is often the only thing available, and it has a name.',
+        text: 'The second is not an approximation of the first. For most problems worth asking it is the only method available, because the closed form either does not exist or cannot be derived in the time you have. It has a name.',
       },
       {
         type: 'term',
@@ -667,7 +667,7 @@ export const entries: Entry[] = [
     index: '03',
     title: 'Physics-based animation',
     standfirst:
-      'Nothing on this site is keyframed. The difference between a curve and a force, and why your eye catches it.',
+      'Integrating forces instead of sampling curves: a spring, a driven pendulum, two-bone inverse kinematics, and a Verlet chain.',
     topic: 'Motion',
     tags: ['physics', 'graphics'],
     outcome:
@@ -679,7 +679,7 @@ export const entries: Entry[] = [
     blocks: [
       {
         type: 'p',
-        text: 'Most motion on the web is a curve. You say "move from here to there over 300 milliseconds, easing out", and the browser interpolates. It works, it is cheap, and something about it is subtly dead.',
+        text: 'Most motion on the web is interpolation along a curve: "move from here to there over 300 milliseconds, easing out". It is cheap, it is one line, and it does not behave the way a physical object behaves.',
       },
       {
         type: 'p',
@@ -867,7 +867,7 @@ export const entries: Entry[] = [
     index: '04',
     title: 'What a derivative measures',
     standfirst:
-      'Calculus is one idea about slopes, buried under notation. Here it is without the notation.',
+      'What a derivative measures, read off a graph before any notation is introduced.',
     // 'Teaching' described the register rather than the subject; every entry
     // here teaches. The topic label is what a reader scans for the field.
     topic: 'Mathematics',
@@ -881,11 +881,11 @@ export const entries: Entry[] = [
     blocks: [
       {
         type: 'p',
-        text: 'Ask an adult who did well at school what a derivative is and you usually get a procedure back — bring the power down, take one off — delivered fluently by someone who cannot tell you what the answer measures.',
+        text: 'A derivative is a measurement. Taught symbolically it arrives as a procedure — bring the power down, subtract one from it — which can be applied correctly by someone who cannot say what the result measures.',
       },
       {
         type: 'p',
-        text: 'That is not a failure of memory. It is what happens when something geometric is only ever taught symbolically.',
+        text: 'The measurement is geometric and the notation is a later convenience, so this takes them in that order: what the number is, how to read it off a graph, and only then how it is written.',
       },
 
       { type: 'h2', text: 'Steepness is a number' },
@@ -1024,7 +1024,7 @@ export const entries: Entry[] = [
     index: '05',
     title: 'Modelling credit risk',
     standfirst:
-      'Credit risk is three questions, not one. Taking apart the number behind every lending decision.',
+      'Decomposing expected loss into probability of default, loss given default and exposure — and why correlation rather than the average sets the capital.',
     topic: 'Quantitative',
     tags: ['quantitative'],
     outcome:
@@ -1177,7 +1177,7 @@ export const entries: Entry[] = [
     index: '06',
     title: 'Logistic regression',
     standfirst:
-      'Training a real model to predict tomorrow, finding out it barely works, and why that is the honest answer.',
+      'Fitting a logistic regression by gradient descent on two years of returns, then measuring it against the base rate it has to beat.',
     topic: 'Machine learning',
     tags: ['machine-learning', 'quantitative'],
     outcome:
@@ -1189,11 +1189,11 @@ export const entries: Entry[] = [
     blocks: [
       {
         type: 'p',
-        text: 'The companion on the landing page pulls a face. I wanted that face to come from a model rather than from a rule I made up, so I trained one — and then had to decide what to do when it did not work.',
+        text: 'The expression on the landing page’s e-ink panel is set by a trained classifier rather than by a threshold someone picked. Building it that way raises the question that turns out to be harder than the training: how do you establish whether a model has learned anything at all?',
       },
       {
         type: 'p',
-        text: 'This is that model, what it learned, and the more interesting question of how you tell whether a model has learned anything at all.',
+        text: 'What follows is the model itself — its inputs, how it is fitted by gradient descent, what it scored against the base rate, and the three ways a result like it can look better than it is.',
       },
 
       { type: 'h2', text: 'What "a model" means here' },
