@@ -107,18 +107,31 @@ export function RevealRows({
   cursor?: string;
 }) {
   const root = useRef<HTMLUListElement>(null);
-  const [reduced, setReduced] = useState(false);
+  /**
+   * Rows sit open, unclipped and wrapping instead of tucking.
+   *
+   * Two conditions, one treatment. Reduced motion is the obvious one. The other
+   * is a device with no hover: the tuck is opened BY hovering, and this
+   * component deliberately ignores non-mouse pointers (see the pointermove
+   * handler), so on a phone a row could never open at all — every title stayed
+   * truncated mid-word behind an ellipsis, which on the notebook index meant
+   * the reader could not tell one lesson from another.
+   */
+  const [staticRows, setStaticRows] = useState(false);
   const active = useRef<string | null>(null);
   /** Last known mouse position, so hover can be re-derived after a scroll. */
   const pointer = useRef<{ x: number; y: number } | null>(null);
 
   useIsomorphicLayoutEffect(() => {
-    setReduced(prefersReducedMotion());
+    setStaticRows(
+      prefersReducedMotion() ||
+        !window.matchMedia('(hover: hover) and (pointer: fine)').matches,
+    );
   }, []);
 
   const open = useCallback(
     (id: string | null) => {
-      if (reduced) return;
+      if (staticRows) return;
       const el = root.current;
       if (!el || active.current === id) return;
       active.current = id;
@@ -186,11 +199,11 @@ export function RevealRows({
         });
       }
     },
-    [reduced, rows],
+    [staticRows, rows],
   );
 
   useIsomorphicLayoutEffect(() => {
-    if (reduced) return;
+    if (staticRows) return;
     const el = root.current;
     if (!el) return;
 
@@ -277,11 +290,11 @@ export function RevealRows({
       window.removeEventListener('blur', forgetPointer);
       window.removeEventListener('scroll', syncHover);
     };
-  }, [reduced, rows, open]);
+  }, [staticRows, rows, open]);
 
   return (
     <ul
-      className={`rows${reduced ? ' rows--static' : ''}`}
+      className={`rows${staticRows ? ' rows--static' : ''}`}
       ref={root}
       /* Kept alongside the scroll-driven hit test: this fires on the very
          first hover, before any scroll has happened to trigger a sync. */
@@ -293,7 +306,7 @@ export function RevealRows({
           data-row={row.id}
           className="rows__row"
           style={
-            reduced ? ({ '--row-color': row.color } as React.CSSProperties) : undefined
+            staticRows ? ({ '--row-color': row.color } as React.CSSProperties) : undefined
           }
           onPointerEnter={() => open(row.id)}
           onFocus={() => open(row.id)}

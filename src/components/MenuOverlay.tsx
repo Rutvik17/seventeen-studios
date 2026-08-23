@@ -37,6 +37,40 @@ export function MenuOverlay() {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, setOpen]);
 
+  /*
+    THE CLOSE ANIMATION EXISTED AND NOBODY EVER SAW IT.
+
+    The open and close timelines used to be built inside a `gsap.context` whose
+    cleanup ran on every change of `open` — so closing did this, in order:
+
+      1. cleanup of the previous run calls `ctx.revert()`, which undoes the OPEN
+         tween and restores the CSS `translateY(-100%)` and `visibility: hidden`
+      2. the close timeline then animates panels that are already off-screen and
+         already invisible
+
+    Measured: the panel jumped from y=0 to y=-900 with visibility hidden in the
+    first frame, and the 0.55s slide played out from -895 to +698 where nobody
+    could see it. It read as an instant close with a beautiful open.
+
+    So the context is created ONCE here and reverted only on unmount, per the
+    animation rules. The timelines below are added into it and are never
+    reverted between states — the close is allowed to run on visible elements.
+  */
+  const ctx = useRef<gsap.Context | null>(null);
+  const timeline = useRef<gsap.core.Timeline | null>(null);
+
+  useIsomorphicLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    ctx.current = gsap.context(() => {}, el);
+    return () => {
+      timeline.current?.kill();
+      timeline.current = null;
+      ctx.current?.revert();
+      ctx.current = null;
+    };
+  }, []);
+
   useIsomorphicLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -55,11 +89,15 @@ export function MenuOverlay() {
     // list this overlay no longer renders — it matched nothing.
     const secondary = el.querySelectorAll('.menu__foot > *');
 
-    const ctx = gsap.context(() => {
+    // A fast double-toggle must not leave two timelines fighting over the same
+    // transforms; the previous one is killed, not reverted.
+    timeline.current?.kill();
+
+    ctx.current?.add(() => {
       if (open) {
         lockScroll();
         gsap.set(el, { pointerEvents: 'auto', visibility: 'visible' });
-        gsap
+        timeline.current = gsap
           .timeline()
           // `y: 0` is not redundant: the panels carry a CSS
           // `translateY(-100%)` for the no-JS case, which GSAP resolves into a
@@ -92,7 +130,7 @@ export function MenuOverlay() {
             '-=0.6',
           );
       } else {
-        gsap
+        timeline.current = gsap
           .timeline({
             onComplete: () => {
               gsap.set(el, { pointerEvents: 'none', visibility: 'hidden' });
@@ -112,9 +150,7 @@ export function MenuOverlay() {
             '-=0.1',
           );
       }
-    }, el);
-
-    return () => ctx.revert();
+    });
   }, [open]);
 
   return (
