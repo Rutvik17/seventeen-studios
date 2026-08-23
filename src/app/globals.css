@@ -659,6 +659,50 @@ code {
   display: flex;
   gap: clamp(18px, 2.6vw, 44px);
 }
+
+/*
+  THE HEADER OVER A DARK PAGE.
+
+  The bar is fixed and lives in the root layout, so it cannot inherit anything
+  from the page under it — and Grasp's two pages are a slate green board. Left
+  alone the header is graphite on dark green: technically present, unreadable.
+
+  `:has()` rather than a class toggled by JavaScript on `documentElement`. A
+  navigation bar that is only legible once a bundle has run is not a bar that
+  degrades, and this is exactly the kind of state that gets left behind on a
+  route change. The page declares `data-slate` and the header responds; there is
+  nothing to remember to clean up.
+
+  There WAS an inversion like this once and it was deleted in #29 as dead code,
+  correctly — nothing on the site had a dark background any more. It is back
+  because something does.
+*/
+body:has([data-slate]) .nav__logo,
+body:has([data-slate]) .nav__link,
+body:has([data-slate]) .nav__index {
+  color: #eef1e6;
+}
+
+body:has([data-slate]) .nav__mark-dot {
+  color: #f0d266;
+}
+
+body:has([data-slate]) .nav__time {
+  color: rgba(238, 241, 230, 0.5);
+}
+
+body:has([data-slate]) .nav__index {
+  border-color: rgba(238, 241, 230, 0.34);
+}
+
+body:has([data-slate]) .nav__index-bars i {
+  background: #eef1e6;
+}
+
+/* The bar gains a ground of its own once the page is scrolled under it. */
+body:has([data-slate]) .nav.is-scrolled {
+  background: linear-gradient(180deg, rgba(36, 60, 51, 0.94), rgba(36, 60, 51, 0));
+}
 .nav__link {
   font-family: var(--font-mono), monospace;
   font-size: 11.5px;
