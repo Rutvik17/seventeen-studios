@@ -4,7 +4,7 @@
  * MODEL A, assembled.
  *
  * The landing page draws a companion board in SVG and calls it a specification.
- * This page builds the same device as an object: 200 nodes and 37,708 triangles
+ * This page builds the same device as an object: 200 nodes and 38,460 triangles
  * modelled in Blender, arriving part by part as the page is scrolled, ending
  * with the panel powering up and printing who built it.
  *
