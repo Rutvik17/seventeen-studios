@@ -103,11 +103,10 @@ function Device({
     holder.scale.setScalar(scale);
     /*
       The export faces the HDMI/power edge toward +Z. From the chair that is
-      upside down — silkscreen away from you, glass inverted. Turn the whole
-      bench 180° so GPIO is at the far side of the table and the panel reads
-      right-way-up.
+      upside down. 165° — a touch short of a half-turn — so the board is
+      readable but not squared to the table edge.
     */
-    holder.rotation.y = Math.PI;
+    holder.rotation.y = (165 * Math.PI) / 180;
 
     const parts = collectParts(clone);
     const panelMesh = findPanelMesh(clone);
