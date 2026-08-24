@@ -4849,3 +4849,119 @@ html.no-js .exploded .exploded__svg {
     max-height: none;
   }
 }
+
+/* ---------- The liquidity-sweep desk ------------------------------ */
+
+/*
+  Everything the desk needs beyond the shared `.instrument__*` vocabulary: a
+  ticker picker and a funnel. The charts, controls and readout are the same
+  components the risk desk uses, which is why there is so little here.
+*/
+
+.sweep__picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: calc(var(--grid-unit) * 0.9);
+}
+
+.sweep__ticker {
+  display: grid;
+  gap: 1px;
+  padding: 9px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg-dim);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 0.18s var(--ease-out),
+    color 0.18s var(--ease-out),
+    background 0.18s var(--ease-out);
+}
+
+.sweep__ticker:hover {
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+.sweep__ticker.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+
+.sweep__symbol {
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+.sweep__name {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/*
+  The funnel. One row per condition, in the order a Monday meets them, with the
+  bar showing the share of ALL Mondays each stage removes — so the rows sum to
+  the whole rather than each being a percentage of whatever was left.
+*/
+.sweep__funnel {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.sweep__stage {
+  display: grid;
+  grid-template-columns: minmax(9rem, 12rem) 1fr 3rem;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--fg-dim);
+}
+
+.sweep__stage-bar {
+  display: block;
+  height: 9px;
+  background: var(--bg-sunk);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.sweep__stage-bar i {
+  display: block;
+  height: 100%;
+  background: var(--line-strong);
+}
+
+.sweep__stage-count {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* What came out the far end. */
+.sweep__stage--out {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.sweep__stage--out .sweep__stage-bar i {
+  background: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .sweep__stage {
+    grid-template-columns: 1fr 2.6rem;
+  }
+  /* The bar is decoration once the row has to wrap; the count is the fact. */
+  .sweep__stage-bar {
+    display: none;
+  }
+}

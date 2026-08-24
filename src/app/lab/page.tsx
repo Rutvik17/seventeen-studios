@@ -2,18 +2,22 @@ import type { Metadata } from 'next';
 import { ogImage } from '@/lib/og';
 import { RiskInstrument } from '@/components/instruments/RiskInstrument';
 import { CreditInstrument } from '@/components/instruments/CreditInstrument';
+import { SweepInstrument } from '@/components/instruments/SweepInstrument';
 import { RigDemo } from '@/components/instruments/RigDemo';
 import { SplitText } from '@/components/motion/SplitText';
 import { Reveal } from '@/components/motion/Reveal';
 
 /*
-  Names all three. The heading and the lead were updated to say what is on this
-  page and this was not, so search results and link previews still advertised
-  two instruments where there are three — the credit model, which is the most
-  quantitative thing here, was the one missing.
+  Names all four.
+
+  This has now been wrong twice for the same reason: an instrument was added and
+  the description was not, so the page advertised a shorter list than it had. It
+  is the one piece of copy nobody sees while editing the page it belongs to,
+  which is exactly why it goes stale — and why the lead below is written from the
+  same list rather than separately.
 */
 const DESCRIPTION =
-  'Working instruments: a Monte Carlo value-at-risk desk on real market data, a credit model decomposing expected loss and capital, and a character rig on springs and two-bone inverse kinematics.';
+  'Working instruments: a Monte Carlo value-at-risk desk on real market data, a credit model decomposing expected loss and capital, a liquidity-sweep backtest across the Magnificent Seven, and a character rig on springs and two-bone inverse kinematics.';
 
 export const metadata: Metadata = {
   title: 'Lab',
@@ -51,8 +55,8 @@ export default function LabPage() {
         </SplitText>
         <Reveal className="page-head__lead">
           <p>
-            A Monte Carlo risk desk, a credit model and a physics rig. Move the
-            inputs — everything recomputes in your browser.
+            A Monte Carlo risk desk, a credit model, a strategy backtest and a
+            physics rig. Move the inputs — everything recomputes in your browser.
           </p>
         </Reveal>
       </header>
@@ -69,9 +73,17 @@ export default function LabPage() {
         <CreditInstrument />
       </section>
 
+      <section className="lab__block" id="sweep">
+        <h2 className="lab__title">
+          <span className="mono-label">03</span> Liquidity sweeps: testing a
+          strategy that says it knows why Monday moves
+        </h2>
+        <SweepInstrument />
+      </section>
+
       <section className="lab__block" id="companion">
         <h2 className="lab__title">
-          <span className="mono-label">03</span> Character rig: springs,
+          <span className="mono-label">04</span> Character rig: springs,
           pendulum and inverse kinematics
         </h2>
         <RigDemo />
