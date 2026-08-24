@@ -31,6 +31,31 @@ import path from 'node:path';
 
 const OUT = process.argv[2] ?? 'out';
 
+/*
+  The same value `metadataBase` is built from, and the reason this script has to
+  know it.
+
+  An og:image is emitted as `metadataBase` + `/og/<name>.png`. On a GitHub
+  project page that base carries the repository segment —
+  `https://<owner>.github.io/<repo>` — but `basePath` is a SERVING prefix, not a
+  directory: the export has no `<repo>/` inside it, the file is at `out/og/…`
+  and the host maps the two together.
+
+  The first version of this check stripped only the scheme and host, so it went
+  looking for `out/seventeen-studios/og/home.png` and failed all eighteen pages
+  on a deploy that was completely correct. Locally there was nothing to catch it,
+  because `basePath` is empty and the two forms are identical.
+
+  Resolving against the site URL instead makes the checker and the metadata agree
+  by construction — they read the same environment variable — and it upgrades the
+  check: an og:image that is NOT under the site's own base is now a failure in
+  its own right rather than something quietly mis-parsed.
+*/
+const SITE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://seventeenstudios.co').replace(
+  /\/$/,
+  '',
+);
+
 function pages(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
     entry.isDirectory()
@@ -68,12 +93,19 @@ for (const file of pages(OUT)) {
   }
 
   /*
-    Strip the origin and look for the file in the export. This is the check that
-    catches a stale `metadataBase`/`basePath` combination as well as a missing
-    card — if the two ever double up the repo segment, the path stops resolving
-    here rather than in production.
+    Resolve against the site's own base, then look for the file in the export.
+
+    This is what catches the `asset()` trap: wrapping an og:image path in
+    `asset()` as well would double the repository segment, the URL would stop
+    starting with the site base, and it would be caught here rather than in
+    production where a broken share image is invisible.
   */
-  const rel = url.replace(/^https?:\/\/[^/]+/, '');
+  if (!url.startsWith(`${SITE}/`)) {
+    failures.push(`${route} — og:image is not under ${SITE}: ${url}`);
+    continue;
+  }
+
+  const rel = url.slice(SITE.length);
   const onDisk = path.join(OUT, rel);
   if (!fs.existsSync(onDisk)) {
     failures.push(`${route} — og:image does not resolve to a file in the export: ${rel}`);
