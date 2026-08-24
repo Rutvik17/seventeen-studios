@@ -191,8 +191,25 @@ export function runAlpha(input: AlphaInput, options: AlphaOptions = ALPHA): Alph
     ranked.sort((a, b) => b.score - a.score);
 
     const side = Math.max(3, Math.floor(ranked.length * options.decile));
+
+    /*
+      A LONG-ONLY BOOK IS ONLY SHOWN THE NAMES IT MIGHT BUY.
+
+      Both ends used to go into the optimiser and the bottom was expected to come
+      out at zero weight. It did not: the shift that sets net exposure lifts
+      every weight by the same amount, so a large part of the bottom quintile
+      floated back above zero. Measured — 83 names held out of a top quintile of
+      51, with 15% of the book's weight in names carrying NEGATIVE scores, one as
+      low as −1.33. A long-only model holding the names it ranks worst is
+      incoherent whatever the backtest says.
+
+      Excluding them also fixes the covariance. Estimating 102 names from 24
+      monthly observations is deeply singular and leans entirely on shrinkage;
+      51 is still short of the observations but far better conditioned.
+    */
+    const longOnly = options.net >= options.gross - 1e-9;
     const longs = ranked.slice(0, side);
-    const shorts = ranked.slice(-side);
+    const shorts = longOnly ? [] : ranked.slice(-side);
     const selected = [...longs, ...shorts];
 
     /*
