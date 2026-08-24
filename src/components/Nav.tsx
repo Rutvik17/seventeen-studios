@@ -120,6 +120,13 @@ export function Nav() {
               href={item.href}
               className={`nav__link${active ? ' is-active' : ''}`}
               /*
+                `is-active` covers a section — `/notebook/some-lesson` keeps the
+                notebook lit — but only the page itself is `aria-current`, which
+                is the distinction the attribute exists to make. It is also the
+                one row where a press scrolls to the top instead of navigating.
+              */
+              aria-current={pathname === item.href ? 'page' : undefined}
+              /*
                 Named so the stylesheet can single one out. The phone bar keeps
                 only the notebook — see the note in the 700px block — and
                 selecting on the label is legible where `:first-child` would

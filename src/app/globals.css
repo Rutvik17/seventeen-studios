@@ -889,6 +889,29 @@ body:has([data-slate]):not(:has(.menu[data-open])) .nav.is-scrolled {
   color: var(--accent);
   transform: translateX(18px);
 }
+
+/*
+  THE PAGE YOU ARE ON.
+
+  Dimmed, rather than removed. A full-screen index whose rows change depending on
+  where you are stops being a map of the site, so the row stays and says what it
+  is: pressing it closes the index and takes you to the top of the page you are
+  already reading.
+
+  Colour and nothing else. A marker was drawn beside the word first — a short
+  accent rule on a pseudo-element — and it never appeared: `.menu__primary-link`
+  is `overflow: hidden` because it doubles as the reveal mask for the entrance,
+  so anything set outside the text box is clipped away. The weight drop carries
+  it on its own, and `aria-current` is what actually announces it.
+*/
+.menu__primary-link[aria-current='page'] .menu__primary-item {
+  color: var(--muted);
+}
+
+/* It still lights up under the pointer — it is still a link. */
+.menu__primary-link[aria-current='page']:hover .menu__primary-item {
+  color: var(--accent);
+}
 .menu__foot {
   grid-column: 1 / -1;
   display: flex;

@@ -23,10 +23,30 @@ export function MenuOverlay() {
   const pathname = usePathname();
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close on route change — the link that navigated is inside the overlay.
+  /*
+    A safety net, not the main path.
+
+    Closing on a route change covers navigations that start somewhere else —
+    browser back, a link in the page underneath — but it CANNOT cover a link to
+    the page you are already on, because there is no route change to react to.
+    That was the bug: open the index on the home page, press Home, and the
+    overlay just sat there.
+
+    Links close it themselves now, on click. This stays for everything else.
+  */
   useEffect(() => {
     setOpen(false);
   }, [pathname, setOpen]);
+
+  /*
+    Trailing slashes are on (`trailingSlash: true` in next.config), so every
+    route reads `/notebook/` and the hrefs match — except the root, which is `/`
+    and would become an empty string if the slash were stripped unconditionally.
+  */
+  const samePage = (href: string) => {
+    const trim = (p: string) => (p.length > 1 ? p.replace(/\/$/, '') : p);
+    return trim(href) === trim(pathname);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -188,15 +208,38 @@ export function MenuOverlay() {
       <div className="menu__inner" data-lenis-prevent>
         <div className="menu__primary">
           <span className="mono-label menu__caption">Navigate</span>
+          {/*
+            THE CURRENT PAGE KEEPS ITS ROW.
+
+            The other way to fix a link that goes nowhere is to drop it, and it
+            is the wrong one here: this is the index of the whole site, and an
+            index whose contents change depending on where you are stops being a
+            map. `aria-current` marks it instead — a screen reader says "current
+            page", and the stylesheet draws it so you can see why pressing it
+            does not take you anywhere.
+
+            Every row closes the overlay on click, including that one. That is
+            what makes the press do something.
+          */}
           <ul>
             <li>
-              <TransitionLink href="/" className="menu__primary-link">
+              <TransitionLink
+                href="/"
+                className="menu__primary-link"
+                aria-current={samePage('/') ? 'page' : undefined}
+                onClick={() => setOpen(false)}
+              >
                 <span className="menu__primary-item">Home</span>
               </TransitionLink>
             </li>
             {nav.map((item) => (
               <li key={item.href}>
-                <TransitionLink href={item.href} className="menu__primary-link">
+                <TransitionLink
+                  href={item.href}
+                  className="menu__primary-link"
+                  aria-current={samePage(item.href) ? 'page' : undefined}
+                  onClick={() => setOpen(false)}
+                >
                   <span className="menu__primary-item">{item.label}</span>
                 </TransitionLink>
               </li>
