@@ -5,6 +5,7 @@ import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { splitChars, splitWords } from '@/lib/text';
 import { useUi } from '@/lib/store';
+import { onceInView } from '@/lib/inview';
 
 interface SplitTextProps {
   children: ReactNode;
@@ -54,6 +55,8 @@ export function SplitText({
     if (!el) return;
     if (prefersReducedMotion()) return;
 
+    let stop: (() => void) | undefined;
+
     // The split and the hidden state are applied on mount, *before* the gate
     // opens. Deferring them until the preloader finished meant the finished
     // text painted for a few frames, then snapped back to hidden and animated
@@ -91,6 +94,15 @@ export function SplitText({
       // Held hidden until the preloader hands over.
       if (!gate) return;
 
+      /*
+        Scrubbed reveals stay on ScrollTrigger — they ARE a function of scroll
+        position, which is what it is for.
+
+        The one-shot reveal does not. It only needs to know whether the text has
+        appeared, and asking the browser that directly is both simpler and
+        immune to the failure that hid this site's closing heading on a phone.
+        See `lib/inview.ts`.
+      */
       if (scrub) {
         to.scrollTrigger = {
           trigger: el,
@@ -99,14 +111,23 @@ export function SplitText({
           scrub: 0.8,
         };
         to.delay = 0;
-      } else if (trigger === 'scroll') {
-        to.scrollTrigger = { trigger: el, start: 'top 88%', once: true };
+        gsap.to(parts, to);
+        return;
+      }
+
+      if (trigger === 'scroll') {
+        const tween = gsap.to(parts, { ...to, paused: true });
+        stop = onceInView(el, () => tween.play());
+        return;
       }
 
       gsap.to(parts, to);
     }, el);
 
-    return () => ctx.revert();
+    return () => {
+      stop?.();
+      ctx.revert();
+    };
   }, [gate, mode, trigger, delay, stagger, duration, scrub, depth]);
 
   return (
