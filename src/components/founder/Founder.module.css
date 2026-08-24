@@ -68,14 +68,15 @@
   2.1 MB model lands, so anything translucent would be a translucent panel over
   nothing.
 */
+/*
+  The ground the loader sits on. The loader itself is `LoaderScreen`, shared with
+  the site's preloader and its page transitions — the numeral and the counter
+  that used to be styled here went with it.
+*/
 .loading {
   position: absolute;
   inset: 0;
   z-index: 4;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 18px;
   background: var(--bg);
   transition: opacity 0.42s var(--ease-out);
 }
@@ -83,44 +84,6 @@
 .loading[data-done] {
   opacity: 0;
   pointer-events: none;
-}
-
-/*
-  The numeral, filling from the bottom as the bytes arrive.
-
-  A hard two-stop gradient behind the glyph, clipped to it. The stops sit at the
-  same percentage so the boundary is an EDGE rather than a fade — a soft one
-  reads as a glow and stops looking like a measurement.
-
-  `--fill` is a percentage, and the gradient runs from the bottom, so 0% is an
-  empty outline and 100% is solid.
-*/
-.loadingMark {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 800;
-  font-size: clamp(88px, 15vw, 210px);
-  line-height: 0.8;
-  letter-spacing: -0.04em;
-  /*
-    The filled part is the plotter blue the whole site accents with — the same
-    `--accent` the board's live traces and every calculated figure use — over
-    the hairline grey the empty part of any rule on this site is drawn in.
-  */
-  background-image: linear-gradient(
-    to top,
-    var(--accent) 0,
-    var(--accent) var(--fill, 0%),
-    var(--line-strong) var(--fill, 0%),
-    var(--line-strong) 100%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-}
-
-.loadingCount {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
 }
 
 /* ---- scroll cue ---- */
@@ -237,20 +200,49 @@
   padding-bottom: 0.14em;
   margin-bottom: -0.14em;
 
-  background-image: linear-gradient(
-    100deg,
-    var(--fg) 0%,
-    var(--fg) 38%,
-    var(--accent) 50%,
-    var(--fg) 62%,
-    var(--fg) 100%
-  );
-  background-size: 280% 100%;
-  background-position: 100% 0;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  animation: resume-sweep 7s cubic-bezier(0.7, 0, 0.3, 1) infinite;
+  /*
+    INK FIRST. The sweep is added on top, and only where it can work.
+
+    This line went missing on a phone, and every way it can go missing ends the
+    same: the glyphs are painted in a colour that is not there. `color:
+    transparent` was set unconditionally and the gradient was expected to fill
+    it back in — so anything that stops the gradient reaching the text leaves a
+    heading that is present, selectable, read aloud by a screen reader, and
+    completely invisible.
+
+    Declaring the ink here and the effect inside `@supports` inverts that. The
+    failure mode is now a flat graphite headline, which is a headline.
+  */
+  color: var(--fg);
+}
+
+/*
+  The sweep, only where the clip is honoured.
+
+  `-webkit-text-fill-color` alongside `color` because Safari treats the fill
+  colour as the authority for glyph painting when a background is clipped to
+  text, and honours it in places where `color` alone is ignored. Both are set,
+  and both are put back in the reduced-motion block below — a fill colour left
+  transparent there would reproduce the exact bug this is fixing.
+*/
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .resumeLine {
+    background-image: linear-gradient(
+      100deg,
+      var(--fg) 0%,
+      var(--fg) 38%,
+      var(--accent) 50%,
+      var(--fg) 62%,
+      var(--fg) 100%
+    );
+    background-size: 280% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: resume-sweep 7s cubic-bezier(0.7, 0, 0.3, 1) infinite;
+  }
 }
 
 @keyframes resume-sweep {
@@ -273,16 +265,18 @@
   line — at 34% the accent has already fallen all the way back to ink, so only
   the word being looked at is lit.
 */
-.resumeLineWrap[data-lit] .resumeLine {
-  animation: none;
-  background-image: radial-gradient(
-    circle at var(--mx) var(--my),
-    var(--accent) 0%,
-    var(--accent) 6%,
-    var(--fg) 34%
-  );
-  background-size: 100% 100%;
-  background-position: 0 0;
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .resumeLineWrap[data-lit] .resumeLine {
+    animation: none;
+    background-image: radial-gradient(
+      circle at var(--mx) var(--my),
+      var(--accent) 0%,
+      var(--accent) 6%,
+      var(--fg) 34%
+    );
+    background-size: 100% 100%;
+    background-position: 0 0;
+  }
 }
 
 /*
@@ -295,6 +289,8 @@
     animation: none;
     background-image: none;
     color: var(--fg);
+    /* Without this the glyphs stay transparent and the line disappears. */
+    -webkit-text-fill-color: var(--fg);
   }
 }
 

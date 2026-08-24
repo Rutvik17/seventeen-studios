@@ -29,6 +29,7 @@
  */
 
 import { foundedYear } from '@/lib/time';
+import { resumeHeader } from './resume';
 
 export const site = {
   name: 'Seventeen Studios',
@@ -46,9 +47,22 @@ export const site = {
     `lib/contact.ts` so the address never lands in the static export — see the
     note there.
   */
+  /*
+    Built from the résumé's header rather than written out again here.
+
+    The LinkedIn row pointed at `https://www.linkedin.com/` — the site's front
+    door, not a profile — so every "LinkedIn" link on this site, in the footer
+    and in the menu, sent a hiring manager to a logged-out homepage. The correct
+    handle was in `resume.ts` the whole time, which is exactly the shape of
+    failure that comes from holding the same fact in two places.
+
+    So there is one place now. `resumeHeader` is the canonical contact record —
+    it is what the generated PDF and DOCX print — and these are the same values
+    with a scheme on the front.
+  */
   social: [
-    { label: 'GitHub', href: 'https://github.com/rutvik17' },
-    { label: 'LinkedIn', href: 'https://www.linkedin.com/' },
+    { label: 'GitHub', href: `https://${resumeHeader.github}` },
+    { label: 'LinkedIn', href: `https://${resumeHeader.linkedin}` },
     /* `contact` marks the row that must render through <ContactLink>. */
     { label: 'Email', href: '/start/', contact: true },
   ],
@@ -109,40 +123,6 @@ export const boardActs = [
     caption: 'A companion on e-ink, fed by live data.',
   },
 ] as const;
-
-/**
- * The first-load sequence: the board coming up.
- *
- * ---
- *
- * WHY A BOOT LOG
- *
- * The landing page opens by assembling a circuit board, so the loader is that
- * board being powered on — the same object, one moment earlier. What was here
- * was four abstract nouns cycling over a progress bar, which said nothing and
- * connected to nothing that followed it.
- *
- * The lines are stylised but not invented. An ESP32-C3 really does print a reset
- * reason and a ROM banner to its serial port at power-on, and the rail, the
- * crystal, the flash and the panel are the actual peripherals on this board,
- * checked in the order firmware would bring them up. The figures come from the
- * same design data the landing page is drawn from.
- *
- * `at` is a fraction of the load window rather than a delay in seconds, so the
- * sequence stretches or compresses with the window instead of finishing before
- * the page is ready or running on after it.
- */
-export const preloader = {
-  status: 'Bringing up the board',
-  lines: [
-    { at: 0.0, label: 'rst:0x1 (poweron)', value: '' },
-    { at: 0.12, label: 'esp32c3 rom', value: 'v1.1' },
-    { at: 0.3, label: '3v3 rail', value: '3.31 v' },
-    { at: 0.48, label: 'xtal 32.768 khz', value: 'lock' },
-    { at: 0.62, label: 'flash 4 mb', value: 'ok' },
-    { at: 0.78, label: 'epd 640x400 acep', value: 'ready' },
-  ],
-} as const;
 
 /** Marquee strip. Nouns, not adjectives. */
 export const marqueeItems = [

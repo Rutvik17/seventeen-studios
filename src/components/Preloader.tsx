@@ -1,33 +1,35 @@
 'use client';
 
 /**
- * First visit: the board being powered on.
+ * First visit.
  *
- * A serial boot log, a rail coming up, and a counter — then the same column
- * sweep the page transitions use, so the loader and the navigation read as one
- * system.
+ * The mark fills with water while the page resolves, then the columns sweep up
+ * onto the board. It is the same screen the page transitions and the founder
+ * page show — see `components/loader/LoaderScreen.tsx`.
  *
  * ---
  *
- * WHY IT IS A BOOT AND NOT A BRAND ANIMATION
+ * WHAT WAS HERE
  *
- * The landing page opens by assembling a circuit board. A loader showing
- * abstract nouns over a progress bar sits in front of that with no relationship
- * to it — it is a held breath, and then something unrelated begins.
+ * A simulated serial boot log: a reset reason, a ROM banner, a rail voltage, a
+ * crystal locking. It was written to make the wait part of the landing — the
+ * board being powered on one moment before it assembles — and as an idea it was
+ * sound. What it was not was the same as anything else on the site. Changing
+ * route showed a bare "17" on four sweeping columns, and the founder page showed
+ * a filling numeral, so the site had three loading screens with three different
+ * arguments and no relationship between them.
  *
- * This is the same object one moment earlier. The rail rises, the crystal locks,
- * the panel reports ready, and the curtain lifts onto the board those lines were
- * describing. Nothing about the wait is decorative any more; it is the first act
- * of the thing being waited for.
+ * One of them had to win, and it is the one that reports progress in the mark
+ * itself.
  *
  * ---
  *
  * IT IS TIED TO A REAL SIGNAL
  *
- * The counter and the sequence track the same window the fonts resolve in, not
- * a fixed timer chosen to look good. A progress bar that finishes before the
- * page does — or keeps running after it is ready — is the most common lie in
- * this pattern and the one people notice.
+ * The counter tracks the window the fonts resolve in, not a timer chosen to look
+ * good. A progress bar that finishes before the page does — or keeps running
+ * after it is ready — is the most common lie in this pattern and the one people
+ * notice.
  *
  * Runs once per session, and never for reduced-motion visitors.
  */
@@ -37,17 +39,16 @@ import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { lockScroll, unlockScroll } from '@/lib/lenis';
 import { hasEnteredThisSession, markEnteredThisSession, useUi } from '@/lib/store';
-import { preloader, site } from '@/content/studio';
+import { LoaderScreen } from '@/components/loader/LoaderScreen';
 
 /** How long the sequence runs, in seconds. */
-const WINDOW = 1.6;
+const WINDOW = 1.9;
 
 export function Preloader() {
   const enter = useUi((state) => state.enter);
   const [active, setActive] = useState(true);
+  const [progress, setProgress] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
-  const countRef = useRef<HTMLSpanElement>(null);
-  const railRef = useRef<HTMLSpanElement>(null);
 
   useIsomorphicLayoutEffect(() => {
     // Skip entirely on repeat views and for reduced-motion visitors.
@@ -74,51 +75,26 @@ export function Preloader() {
       });
 
       /*
-        Each line arrives at its own point in the window. Hidden state is set by
-        JS, never CSS (rule 4) — with no bundle the whole log is simply present
-        and the loader is a static panel rather than an empty screen.
-      */
-      const lines = gsap.utils.toArray<HTMLElement>('[data-boot-line]');
-      gsap.set(lines, { opacity: 0, x: -6 });
+        React state rather than a ref written straight to the DOM, because the
+        number is not the only thing that consumes it — the water level follows
+        it too, and both should read the same value on the same frame.
 
-      lines.forEach((line, index) => {
-        const at = preloader.lines[index]?.at ?? 0;
-        timeline.to(
-          line,
-          { opacity: 1, x: 0, duration: 0.22, ease: 'power2.out' },
-          at * WINDOW,
-        );
+        It is one setState per frame for under two seconds, on a screen with
+        nothing else mounted. The rule this bends is about gesture handlers.
+      */
+      timeline.to(counter, {
+        value: 100,
+        duration: WINDOW,
+        ease: 'power1.inOut',
+        onUpdate: () => setProgress(counter.value),
       });
 
-      // The rail rising IS the progress bar, doing an honest job.
-      timeline.fromTo(
-        railRef.current,
-        { scaleX: 0 },
-        { scaleX: 1, duration: WINDOW, ease: 'power2.inOut' },
-        0,
-      );
-
       timeline.to(
-        counter,
-        {
-          value: 100,
-          duration: WINDOW,
-          ease: 'power2.inOut',
-          onUpdate: () => {
-            if (countRef.current) {
-              countRef.current.textContent = String(
-                Math.round(counter.value),
-              ).padStart(3, '0');
-            }
-          },
-        },
-        0,
-      );
-
-      timeline.to(
-        root.querySelectorAll('.preloader__meta'),
-        { opacity: 0, duration: 0.28, ease: 'power2.in' },
-        '>-0.05',
+        root.querySelectorAll('.loader'),
+        { opacity: 0, duration: 0.3, ease: 'power2.in' },
+        // A beat at 100 so the water actually reaches the top before it goes.
+        // The level chases the counter, so it is always a little behind it.
+        '>+0.4',
       );
 
       timeline.to(
@@ -153,37 +129,7 @@ export function Preloader() {
         ))}
       </div>
 
-      <div className="preloader__inner">
-        <div className="preloader__meta preloader__top">
-          <span className="mono-label">{site.name}</span>
-          <span className="mono-label">Companion · rev A</span>
-        </div>
-
-        {/*
-          Decorative. A screen reader is already told the page is loading, and a
-          simulated boot log read aloud is noise rather than information.
-        */}
-        <div className="preloader__boot preloader__meta" aria-hidden="true">
-          {preloader.lines.map((line) => (
-            <span className="preloader__line" data-boot-line key={line.label}>
-              <span className="preloader__line-label">{line.label}</span>
-              <span className="preloader__line-dots" />
-              <span className="preloader__line-value">{line.value}</span>
-            </span>
-          ))}
-        </div>
-
-        <div className="preloader__meta preloader__bottom">
-          <span className="mono-label">{preloader.status}</span>
-          <span className="preloader__count" ref={countRef}>
-            000
-          </span>
-        </div>
-
-        <div className="preloader__track" aria-hidden="true">
-          <span className="preloader__bar" ref={railRef} />
-        </div>
-      </div>
+      <LoaderScreen progress={progress} />
     </div>
   );
 }

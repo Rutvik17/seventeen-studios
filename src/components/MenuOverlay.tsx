@@ -154,7 +154,25 @@ export function MenuOverlay() {
   }, [open]);
 
   return (
-    <div className="menu" id="site-index" ref={ref} aria-hidden={!open}>
+    /*
+      `data-open` exists for CSS, not for this component.
+
+      The header sits ABOVE this overlay (z-index 500 against 480) so its close
+      control stays reachable, and on Grasp's two pages the header is inverted to
+      chalk for the slate ground under it. Open the menu there and that chalk
+      lands on this overlay's near-white panels: the links and the mark are still
+      there, still clickable, and completely invisible.
+
+      The inversion is keyed off `:has([data-slate])`, so it needs something to
+      key OFF. This is it — see the rule in `globals.css`.
+    */
+    <div
+      className="menu"
+      id="site-index"
+      ref={ref}
+      aria-hidden={!open}
+      data-open={open ? '' : undefined}
+    >
       <div className="menu__panels" aria-hidden="true">
         {Array.from({ length: 4 }).map((_, index) => (
           <div className="menu__panel" key={index} />
