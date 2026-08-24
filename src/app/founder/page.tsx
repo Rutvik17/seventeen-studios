@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ogImage } from '@/lib/og';
 import { founder, founderPage } from '@/content/founder';
 import { site } from '@/content/studio';
 import { market } from '@/content/market';
@@ -41,6 +42,10 @@ export const metadata: Metadata = {
     description: FOUNDER_DESCRIPTION,
     type: 'profile',
     siteName: site.name,
+    images: ogImage(
+      'founder',
+      'The companion device — a Raspberry Pi with a 2.9-inch e-ink module seated on it, the panel reading Rutvik Patel, Senior Software Engineer, EY',
+    ),
   },
 };
 

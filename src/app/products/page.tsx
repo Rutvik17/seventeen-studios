@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ogImage } from '@/lib/og';
 import { products } from '@/content/products';
 import { projects } from '@/content/projects';
 import { Reveal } from '@/components/motion/Reveal';
@@ -18,7 +19,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: 'Products',
   description: DESCRIPTION,
-  openGraph: { title: 'Shipped', description: DESCRIPTION },
+  openGraph: { title: 'Shipped', description: DESCRIPTION, images: ogImage('products', "The parabola f(x) = x squared with its tangent at x = 1, drawn in Grasp blue") },
 };
 
 /**

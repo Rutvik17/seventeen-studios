@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ogImage, NOTEBOOK_CARD } from '@/lib/og';
 import { notFound } from 'next/navigation';
 import { entries, entryBySlug, entryWordCount } from '@/content/notebook';
 import { Prose } from '@/components/Prose';
@@ -22,6 +23,16 @@ export function generateMetadata({ params }: Params): Metadata {
   const entry = entryBySlug(params.slug);
   if (!entry) return { title: 'Not found' };
   const url = `/notebook/${entry.slug}/`;
+  /*
+    One card per lesson, each carrying that lesson's own diagram — the spring's
+    settle, the loss distribution, the logistic curve — drawn in the entry's own
+    two colours. A new lesson needs a row in `NOTEBOOK_CARD` naming its plate,
+    and then `npm run og`.
+  */
+  const image = ogImage(
+    `notebook-${entry.slug}`,
+    `${entry.title} — ${NOTEBOOK_CARD[entry.slug]?.alt ?? 'a diagram from the lesson'}`,
+  );
   return {
     title: entry.title,
     /*
@@ -44,11 +55,13 @@ export function generateMetadata({ params }: Params): Metadata {
       authors: ['Rutvik Patel'],
       tags: entry.tags.map(tagLabel),
       url,
+      images: image,
     },
     twitter: {
       card: 'summary_large_image',
       title: entry.title,
       description: entry.outcome,
+      images: image,
     },
   };
 }
