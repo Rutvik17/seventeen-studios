@@ -35,9 +35,10 @@ on:
   # Lets you publish a build by hand from the Actions tab.
   workflow_dispatch:
 
-# GITHUB_TOKEN permissions required by actions/deploy-pages.
+# GITHUB_TOKEN permissions required by actions/deploy-pages, plus `write` so the
+# build can commit the intraday archive back — see "Keep the intraday archive".
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -86,6 +87,66 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: ${{ steps.paths.outputs.base_path }}
           NEXT_PUBLIC_SITE_URL: ${{ steps.paths.outputs.site_url }}
         run: npm run build
+
+      # The intraday archive only grows if somebody keeps it.
+      #
+      # Yahoo serves 60 days of 15-minute bars and refuses older windows
+      # outright, so the history behind that wall cannot be fetched — but it can
+      # be REMEMBERED. `fetch-sweep.mjs` merges each run into the committed file
+      # rather than replacing it, so every weekday build adds the newest session
+      # and nothing that has scrolled past 60 days is ever lost.
+      #
+      # Without this step the accumulator is thrown away with the runner and the
+      # sample is permanently stuck at whatever Yahoo will still serve. With it,
+      # the file grows by seven Mondays a week on its own.
+      #
+      # `[skip ci]` matters: the push would otherwise trigger this same workflow
+      # and it would sit there rebuilding itself.
+      - name: Keep the intraday archive
+        if: github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+
+          # Compare SESSION COUNTS, not bytes. The payload carries a `fetchedAt`
+          # stamp that moves on every run, so a plain `git diff` is always dirty
+          # and would commit on every build for no reason.
+          grew=$(node -e '
+            const { execSync } = require("node:child_process");
+            const fs = require("node:fs");
+            const count = (json) => {
+              try {
+                const d = JSON.parse(json);
+                return (d.tickers ?? []).reduce(
+                  (s, t) => s + Object.keys(t.fine ?? {}).length, 0);
+              } catch { return -1; }
+            };
+            let before = -1;
+            try {
+              before = count(execSync("git show HEAD:src/content/sweep.json",
+                { encoding: "utf8", maxBuffer: 64e6 }));
+            } catch { before = -1; }
+            const after = count(fs.readFileSync("src/content/sweep.json", "utf8"));
+            console.error(`archive: ${before} -> ${after} sessions`);
+            process.stdout.write(after > before ? "yes" : "no");
+          ')
+
+          if [ "$grew" != "yes" ]; then
+            echo "nothing new to keep"
+            exit 0
+          fi
+
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/content/sweep.json
+          git commit -m 'chore: extend the intraday archive [skip ci]'
+
+          # Keeping the archive must never cost a deploy. If main moved while
+          # this build was running, rebase once and retry; if it still will not
+          # go, say so and carry on — the sessions are re-fetchable tomorrow,
+          # and a published site is not.
+          git push || {
+            git pull --rebase --autostash origin main && git push
+          } || echo "::warning::archive push failed; the site still deploys"
 
       # `_next/` starts with an underscore, which Jekyll would strip.
       - name: Disable Jekyll processing
