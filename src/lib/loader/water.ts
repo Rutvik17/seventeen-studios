@@ -1,9 +1,8 @@
 /**
  * A tank of water, simulated.
  *
- * The surface is a one-dimensional height field solved as the wave equation,
- * with drops and splash droplets integrated as projectiles under gravity. No
- * part of what you see is a sine wave chosen because it looked wet.
+ * The surface is a one-dimensional height field solved as the wave equation.
+ * Nothing here is a sine wave chosen because it looked wet.
  *
  * ---
  *
@@ -38,6 +37,9 @@
  * consumed in whole steps, rather than passing a variable frame delta straight
  * into the integrator. A long frame must never become a long timestep.
  *
+ * The whole thing is deterministic: no noise, no random seeding. The loader
+ * looks the same every time it is seen, which is what a mark should do.
+ *
  * ---
  *
  * THE WALLS
@@ -52,6 +54,12 @@
  *
  * WHAT IS DELIBERATELY NOT MODELLED
  *
+ * Falling drops and the crown they throw up. Both were built here — drops under
+ * gravity, splash droplets as projectiles rejoining the surface where they
+ * landed — and both were cut after seeing them: at the size the mark is drawn
+ * they read as specks rather than as water, and they cluttered the one thing
+ * that does read, which is the surface. The wave stayed.
+ *
  * Surface tension, and therefore the meniscus that climbs the side of a real
  * glass. The walls here are the edges of a numeral rather than a container, so
  * there is nothing for the water to climb; a curve drawn at the canvas edge
@@ -65,11 +73,13 @@
  * water seen side-on.
  */
 
-/** Columns across the tank.
+/**
+ * Columns across the tank.
  *
  * 128 because the surface is handed to the shader as a uniform float array and
  * indexed dynamically, which GLSL ES 3.00 allows: 128 floats is 32 vec4 slots
- * against a guaranteed minimum of 224, so there is room for everything else. */
+ * against a guaranteed minimum of 224, so there is room for everything else.
+ */
 const N = 128;
 
 /**
@@ -99,27 +109,6 @@ const DAMPING = 0.9;
  */
 const SMOOTHING = 0.14;
 
-/** Downward acceleration, in tank heights per second squared. */
-const GRAVITY = 2.6;
-
-export type Drop = {
-  x: number;
-  y: number;
-  vy: number;
-  /** Radius in tank widths. */
-  r: number;
-};
-
-export type Splash = {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;
-  /** Seconds remaining. */
-  life: number;
-};
-
 export class Water {
   readonly n = N;
   /** Surface displacement from the rest level, per column. */
@@ -130,21 +119,8 @@ export class Water {
   /** The rest level: how full the tank is, 0 to 1. */
   level = 0;
 
-  readonly drops: Drop[] = [];
-  readonly splashes: Splash[] = [];
-
   private carry = 0;
   private readonly scratch = new Float32Array(N);
-  private random: () => number;
-
-  constructor(seed = 1) {
-    // Deterministic, so the loader is the same every time it is seen.
-    let s = seed >>> 0 || 1;
-    this.random = () => {
-      s = (s * 1664525 + 1013904223) >>> 0;
-      return s / 4294967296;
-    };
-  }
 
   /** Surface height at a position across the tank, 0 to 1, interpolated. */
   surfaceAt(x: number): number {
@@ -198,11 +174,6 @@ export class Water {
     */
     const correction = total / N;
     for (let i = 0; i < N; i++) this.velocity[i] -= correction;
-  }
-
-  /** A drop released at the top of the tank. */
-  addDrop(x: number, r = 0.03): void {
-    this.drops.push({ x, y: 1.08, vy: -0.15, r });
   }
 
   /**
@@ -262,72 +233,6 @@ export class Water {
     v.set(s);
 
     for (let i = 0; i < N; i++) h[i] += v[i] * dt;
-
-    this.stepDrops(dt);
-    this.stepSplashes(dt);
-  }
-
-  private stepDrops(dt: number): void {
-    for (let i = this.drops.length - 1; i >= 0; i--) {
-      const drop = this.drops[i];
-      drop.vy -= GRAVITY * dt;
-      drop.y += drop.vy * dt;
-
-      const surface = this.surfaceAt(drop.x);
-      if (drop.y - drop.r > surface) continue;
-
-      /*
-        Impact. Momentum goes into the surface: a falling drop pushes the water
-        down, and the crown that comes back up is the surface recovering, not
-        something added on top of it. Scaled by the drop's mass — its volume, so
-        r³ — and by how fast it was going.
-      */
-      const mass = drop.r * drop.r * drop.r;
-      this.impulse(drop.x, -Math.abs(drop.vy) * mass * 900, drop.r * 1.6);
-      this.spawnSplash(drop.x, surface, Math.abs(drop.vy), drop.r);
-      this.drops.splice(i, 1);
-    }
-  }
-
-  /**
-   * Droplets thrown off an impact.
-   *
-   * Ejected in a fan biased upward and outward — the crown a real drop throws
-   * up — then integrated as projectiles under the same gravity. They are removed
-   * when they fall back through the surface, which is where they would rejoin
-   * the body of water.
-   */
-  private spawnSplash(x: number, y: number, speed: number, r: number): void {
-    const count = 3 + Math.floor(this.random() * 4);
-    for (let i = 0; i < count; i++) {
-      const angle = (this.random() - 0.5) * 1.5;
-      const power = speed * (0.35 + this.random() * 0.5);
-      this.splashes.push({
-        x,
-        y: y + r * 0.5,
-        vx: Math.sin(angle) * power * 0.6,
-        vy: Math.cos(angle) * power,
-        r: r * (0.3 + this.random() * 0.35),
-        life: 1.4,
-      });
-    }
-  }
-
-  private stepSplashes(dt: number): void {
-    for (let i = this.splashes.length - 1; i >= 0; i--) {
-      const p = this.splashes[i];
-      p.vy -= GRAVITY * dt;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.life -= dt;
-
-      const surface = this.surfaceAt(p.x);
-      if (p.life <= 0 || (p.vy < 0 && p.y <= surface)) {
-        // Rejoining the body of water is itself a small impact.
-        if (p.life > 0) this.impulse(p.x, -Math.abs(p.vy) * p.r * p.r * p.r * 400, p.r * 2);
-        this.splashes.splice(i, 1);
-      }
-    }
   }
 
   /**
@@ -338,6 +243,10 @@ export class Water {
    * the second belongs here. `rate` is how fast the level is climbing, so a fast
    * fill digs a deeper hollow under the stream — which is what pouring looks
    * like, and why the surface is never flat until the pouring stops.
+   *
+   * This is now the ONLY thing that disturbs the surface, and it is the reason
+   * the wave exists: the hollow it digs propagates outward, reflects off both
+   * walls, and comes back across itself.
    */
   pour(x: number, rate: number, dt: number): void {
     if (rate <= 0) return;
