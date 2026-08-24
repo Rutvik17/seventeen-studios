@@ -75,7 +75,7 @@ export type AlphaOptions = OptimiserOptions & {
 
 export const ALPHA: AlphaOptions = {
   ...OPTIMISER,
-  decile: 0.1,
+  decile: 0.2,
   lookback: 24,
   costBps: 10,
 };
