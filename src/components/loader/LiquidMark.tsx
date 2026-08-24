@@ -3,10 +3,14 @@
 /**
  * The 17, filling with water.
  *
- * The surface is solved by `lib/loader/water.ts` — the wave equation, drops and
- * splash droplets as projectiles — and drawn here by a fragment shader. The
- * glyph is a CSS mask over the canvas, so what you see is a tank of water with
- * a numeral-shaped window onto it.
+ * The surface is solved by `lib/loader/water.ts` — the wave equation, disturbed
+ * by the stream pouring into it — and drawn here by a fragment shader. The glyph
+ * is a CSS mask over the canvas, so what you see is a tank of water with a
+ * numeral-shaped window onto it.
+ *
+ * Falling drops and their splashes were built and then cut: at the size the mark
+ * is drawn they read as specks rather than as water, and they distracted from
+ * the surface, which is the part that reads.
  *
  * ---
  *
@@ -38,10 +42,6 @@ import { LOGO_ONE, LOGO_SEVEN, LOGO_VIEWBOX } from '@/components/Logo';
 import { Water } from '@/lib/loader/water';
 import { prefersReducedMotion } from '@/lib/gsap';
 
-/** Uniform array sizes. Must match the shader's constant loop bounds. */
-const MAX_DROPS = 12;
-const MAX_SPLASH = 28;
-
 const VERT = `#version 300 es
 in vec2 aPos;
 out vec2 vUv;
@@ -53,25 +53,20 @@ void main() {
 /*
   The water, shaded.
 
-  `smax` is a smooth maximum — it is what merges a falling drop into the body of
-  water instead of overlapping it like two stickers. Where two surfaces come
-  within `k` of each other it bulges slightly outward, which is the neck that
-  forms as a drop touches down. A plain `max` gives a hard crease and reads as
-  two separate objects that happen to intersect.
+  A pixel is under the water when it is below the surface at its own x, and the
+  surface comes from the solver. Everything else is depth: the body darkens with
+  how far below the surface a pixel is, and a thin bright band tracks the surface
+  itself — the light that collects along the meniscus of any real body of water,
+  and the thing that most makes a flat fill read as a liquid.
 
-  Everything else is depth: the body darkens with how far below the surface a
-  pixel is, and a thin bright band tracks the surface itself — the light that
-  collects along the meniscus of any real body of water, and the thing that most
-  makes a flat fill read as a liquid.
+  There were two more loops here, blending falling drops and splash droplets into
+  the body with a smooth maximum. They are gone: at the size this mark is drawn
+  they read as specks rather than as water. The surface is what carries it.
 */
 const FRAG = `#version 300 es
 precision highp float;
 
 uniform float uH[128];
-uniform vec3 uDrops[${MAX_DROPS}];
-uniform vec3 uSplash[${MAX_SPLASH}];
-uniform int uDropCount;
-uniform int uSplashCount;
 uniform vec2 uSize;
 uniform vec3 uShallow;
 uniform vec3 uDeep;
@@ -79,11 +74,6 @@ uniform vec3 uFoam;
 
 in vec2 vUv;
 out vec4 fragColor;
-
-float smax(float a, float b, float k) {
-  float h = clamp(0.5 + 0.5 * (a - b) / k, 0.0, 1.0);
-  return mix(b, a, h) + k * h * (1.0 - h);
-}
 
 float surfaceAt(float x) {
   float t = clamp(x, 0.0, 1.0) * 127.0;
@@ -93,24 +83,8 @@ float surfaceAt(float x) {
 }
 
 void main() {
-  float aspect = uSize.x / uSize.y;
-
   // Positive below the surface, negative above it.
   float w = surfaceAt(vUv.x) - vUv.y;
-
-  for (int i = 0; i < ${MAX_DROPS}; i++) {
-    if (i >= uDropCount) break;
-    vec3 d = uDrops[i];
-    vec2 p = (vUv - d.xy) * vec2(aspect, 1.0);
-    w = smax(w, d.z - length(p), 0.035);
-  }
-
-  for (int i = 0; i < ${MAX_SPLASH}; i++) {
-    if (i >= uSplashCount) break;
-    vec3 s = uSplash[i];
-    vec2 p = (vUv - s.xy) * vec2(aspect, 1.0);
-    w = smax(w, s.z - length(p), 0.02);
-  }
 
   // One pixel of coverage, in the same units as w.
   float edge = 1.2 / uSize.y;
@@ -202,10 +176,6 @@ export function LiquidMark({ progress }: { progress: number }) {
 
     const u = {
       h: gl.getUniformLocation(program, 'uH'),
-      drops: gl.getUniformLocation(program, 'uDrops'),
-      splash: gl.getUniformLocation(program, 'uSplash'),
-      dropCount: gl.getUniformLocation(program, 'uDropCount'),
-      splashCount: gl.getUniformLocation(program, 'uSplashCount'),
       size: gl.getUniformLocation(program, 'uSize'),
       shallow: gl.getUniformLocation(program, 'uShallow'),
       deep: gl.getUniformLocation(program, 'uDeep'),
@@ -222,14 +192,11 @@ export function LiquidMark({ progress }: { progress: number }) {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    const water = new Water(17);
+    const water = new Water();
     const surface = new Float32Array(128);
-    const dropData = new Float32Array(MAX_DROPS * 3);
-    const splashData = new Float32Array(MAX_SPLASH * 3);
 
     let raf = 0;
     let last = performance.now();
-    let nextDrop = 0.1;
 
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
@@ -262,40 +229,18 @@ export function LiquidMark({ progress }: { progress: number }) {
       water.level += (target.current - water.level) * Math.min(1, dt * 3.2);
       const rate = (water.level - before) / Math.max(dt, 1e-4);
 
-      // The stream lands just left of centre, and digs a hollow where it hits.
+      /*
+        The stream lands just left of centre and digs a hollow where it hits.
+        This is the only thing that disturbs the surface — the wave you see is
+        that hollow propagating out, reflecting off both walls and crossing back
+        over itself.
+      */
       water.pour(0.42, rate, dt);
-
-      // Drops, while there is still filling to do.
-      nextDrop -= dt;
-      if (nextDrop <= 0 && target.current > water.level + 0.004) {
-        water.addDrop(0.16 + Math.random() * 0.68, 0.03 + Math.random() * 0.022);
-        nextDrop = 0.16 + Math.random() * 0.3;
-      }
 
       water.step(dt);
 
       for (let i = 0; i < 128; i++) surface[i] = water.level + water.height[i];
       gl.uniform1fv(u.h, surface);
-
-      const drops = Math.min(water.drops.length, MAX_DROPS);
-      for (let i = 0; i < drops; i++) {
-        const d = water.drops[i];
-        dropData[i * 3] = d.x;
-        dropData[i * 3 + 1] = d.y;
-        dropData[i * 3 + 2] = d.r;
-      }
-      gl.uniform3fv(u.drops, dropData);
-      gl.uniform1i(u.dropCount, drops);
-
-      const splashes = Math.min(water.splashes.length, MAX_SPLASH);
-      for (let i = 0; i < splashes; i++) {
-        const s = water.splashes[i];
-        splashData[i * 3] = s.x;
-        splashData[i * 3 + 1] = s.y;
-        splashData[i * 3 + 2] = s.r;
-      }
-      gl.uniform3fv(u.splash, splashData);
-      gl.uniform1i(u.splashCount, splashes);
 
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
