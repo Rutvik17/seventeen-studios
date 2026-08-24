@@ -55,6 +55,7 @@ import * as THREE from 'three';
 import { asset } from '@/lib/asset';
 import { clamp, damp } from '@/lib/physics';
 import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap';
+import { LoaderScreen } from '@/components/loader/LoaderScreen';
 import { useUi } from '@/lib/store';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { founderPage } from '@/content/founder';
@@ -584,21 +585,16 @@ function Loading({ ready }: { ready: boolean }) {
       aria-label="Loading the model"
     >
       {/*
-        The wordmark's own numeral, filled from the bottom as the bytes arrive.
-        `background-clip: text` over a hard-stopped gradient, so the fill has an
-        edge rather than a glow — the same register as the rail on the site's
-        loader.
+        The same screen the site's preloader and its page transitions show. It
+        was this page that had it first — a numeral filled by a hard-stopped
+        gradient — and the other two have caught up, so this one now uses the
+        shared component rather than its own copy of the idea.
+
+        This is the one caller with a genuine byte count behind it: `useProgress`
+        reads three.js's loading manager, so the water level is the actual state
+        of a 2.1 MB download.
       */}
-      <span
-        className={styles.loadingMark}
-        style={{ '--fill': `${shown}%` } as React.CSSProperties}
-        aria-hidden="true"
-      >
-        17
-      </span>
-      <span className={`mono-label ${styles.loadingCount}`}>
-        {String(Math.round(shown)).padStart(3, '0')}
-      </span>
+      <LoaderScreen progress={shown} />
     </div>
   );
 }

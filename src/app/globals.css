@@ -507,6 +507,87 @@ code {
   transform: scaleX(0);
 }
 
+/* ---------- The loader ------------------------------------------- */
+
+/*
+  ONE LOADING SCREEN, THREE PLACES.
+
+  First visit, page transitions and the founder page's model all show this. They
+  used to show three unrelated things — a simulated boot log, a bare numeral, and
+  a filling one — which made the site look like three sites that shared a
+  typeface.
+
+  The mark and the counter are laid out here; the water itself is a canvas, and
+  what it is doing is `lib/loader/water.ts`.
+*/
+.loader {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: var(--gutter);
+  pointer-events: none;
+}
+
+.loader__count {
+  position: absolute;
+  right: var(--gutter);
+  bottom: var(--gutter);
+  font-size: clamp(13px, 1.1vw, 15px);
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.liquid {
+  position: relative;
+  width: clamp(200px, 26vw, 420px);
+  /* The mark's own proportions — 36 x 26. */
+  aspect-ratio: 36 / 26;
+}
+
+/* The empty glyph. What the water has not reached yet. */
+.liquid__base {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--line-strong);
+}
+
+/*
+  The canvas carries the water and the glyph carries the shape: the mask is what
+  turns a rectangle of simulated liquid into a numeral with liquid in it. Drawing
+  the glyph in the shader instead would mean an SDF of the paths and a second
+  thing to keep in step with `Logo.tsx`.
+*/
+.liquid__water,
+.liquid__flat {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+}
+
+/*
+  No WebGL2, or reduced motion. A hard edge at the fill line rather than a
+  gradient fade: the level is a fact and a soft edge makes it look like an
+  opinion.
+*/
+.liquid__flat {
+  background: linear-gradient(
+    to top,
+    var(--accent-deep) 0%,
+    var(--accent) var(--fill),
+    transparent var(--fill)
+  );
+}
+
 /* ---------- Preloader -------------------------------------------- */
 
 .preloader {
@@ -525,45 +606,6 @@ code {
   background: var(--bg);
   border-right: 1px solid rgba(16, 19, 25, 0.03);
 }
-.preloader__inner {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  padding: var(--gutter);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-.preloader__top,
-.preloader__bottom {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 20px;
-}
-.preloader__count {
-  font-family: var(--font-mono), monospace;
-  font-size: clamp(48px, 9vw, 110px);
-  font-weight: 400;
-  letter-spacing: -0.04em;
-  line-height: 0.86;
-  color: var(--accent);
-}
-.preloader__track {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background: rgba(16, 19, 25, 0.1);
-}
-.preloader__bar {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-  transform-origin: 0 50%;
-  transform: scaleX(0);
-}
 
 /* ---------- Page-transition curtain ------------------------------ */
 
@@ -579,17 +621,16 @@ code {
   background: var(--bg);
   transform: translateY(100%);
 }
+/*
+  The curtain shows the same loader as everything else now.
+
+  It used to be an outlined "17" set in the display face — a third loading
+  treatment on a site that already had two. What is left here is the positioning
+  and the hidden start state; the contents are `LoaderScreen`.
+*/
 .curtain__mark {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
-  font-family: var(--font-display), sans-serif;
-  font-weight: 800;
-  font-size: clamp(56px, 11vw, 150px);
-  letter-spacing: -0.06em;
-  color: transparent;
-  -webkit-text-stroke: 1px var(--accent);
   opacity: 0;
 }
 
@@ -677,30 +718,46 @@ code {
   correctly — nothing on the site had a dark background any more. It is back
   because something does.
 */
-body:has([data-slate]) .nav__logo,
-body:has([data-slate]) .nav__link,
-body:has([data-slate]) .nav__index {
+/*
+  …AND NOT WHILE THE MENU IS OVER IT.
+
+  The overlay tiles the viewport with `--bg-raise` panels, and the header stays
+  above it (z-index 500 against 480) so the close control remains reachable. So
+  on Grasp's two pages, opening the menu put chalk-white links and a chalk-white
+  mark onto a near-white ground: present, clickable, invisible. It reads as the
+  navigation having vanished, and it is the only place on the site where two
+  correct rules produced an unreadable result.
+
+  `:not(:has(.menu[data-open]))` on the inversion itself rather than a second
+  block restating the light colours. Suppressing the override lets the base
+  colours apply on their own, so there is still exactly one definition of what
+  the header looks like on paper — restating them here is how the two would
+  drift the next time one is touched.
+*/
+body:has([data-slate]):not(:has(.menu[data-open])) .nav__logo,
+body:has([data-slate]):not(:has(.menu[data-open])) .nav__link,
+body:has([data-slate]):not(:has(.menu[data-open])) .nav__index {
   color: #eef1e6;
 }
 
-body:has([data-slate]) .nav__mark-dot {
+body:has([data-slate]):not(:has(.menu[data-open])) .nav__mark-dot {
   color: #f0d266;
 }
 
-body:has([data-slate]) .nav__time {
+body:has([data-slate]):not(:has(.menu[data-open])) .nav__time {
   color: rgba(238, 241, 230, 0.5);
 }
 
-body:has([data-slate]) .nav__index {
+body:has([data-slate]):not(:has(.menu[data-open])) .nav__index {
   border-color: rgba(238, 241, 230, 0.34);
 }
 
-body:has([data-slate]) .nav__index-bars i {
+body:has([data-slate]):not(:has(.menu[data-open])) .nav__index-bars i {
   background: #eef1e6;
 }
 
 /* The bar gains a ground of its own once the page is scrolled under it. */
-body:has([data-slate]) .nav.is-scrolled {
+body:has([data-slate]):not(:has(.menu[data-open])) .nav.is-scrolled {
   background: linear-gradient(180deg, rgba(36, 60, 51, 0.94), rgba(36, 60, 51, 0));
 }
 .nav__link {
@@ -3131,20 +3188,108 @@ html.no-js .exploded .exploded__svg {
   white-space: nowrap;
 }
 
-.board-cue__rail {
-  position: relative;
-  width: 1px;
-  height: 84px;
-  background: var(--line-strong);
-  overflow: hidden;
+/*
+  THE ARROW, DRAWN — the same one the Grasp board uses at the foot of its title
+  screen, down to the path data and the timing.
+
+  It replaced a segment travelling down a hairline rail. There is nothing wrong
+  with a rail, but a site with two scroll cues on it should not say the same
+  thing in two accents, and the drawn arrow is the one that carries meaning: it
+  is made by the same `stroke-dashoffset` mechanism as every curve on the
+  chalkboard, so the cue is the same material as the work.
+
+  Dash lengths are the paths' own. The shaft is 48 units; each leg of the head
+  is √(9² + 13²) ≈ 15.8, so 32 covers the pair.
+*/
+.board-cue__arrow {
+  width: 22px;
+  height: auto;
+  overflow: visible;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: board-cue-drift 2.8s var(--ease-out) infinite;
 }
 
-.board-cue__travel {
-  position: absolute;
-  inset-inline: -1px;
-  top: 0;
-  height: 32%;
-  background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+.board-cue__shaft {
+  stroke-dasharray: 48;
+  animation: board-cue-shaft 2.8s var(--ease-out) infinite;
+}
+
+.board-cue__head {
+  stroke-dasharray: 32;
+  animation: board-cue-head 2.8s var(--ease-out) infinite;
+}
+
+@keyframes board-cue-shaft {
+  0% {
+    stroke-dashoffset: 48;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  46% {
+    stroke-dashoffset: 0;
+  }
+  76% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes board-cue-head {
+  0%,
+  36% {
+    stroke-dashoffset: 32;
+    opacity: 0;
+  }
+  42% {
+    opacity: 1;
+  }
+  64% {
+    stroke-dashoffset: 0;
+  }
+  76% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes board-cue-drift {
+  0% {
+    transform: translateY(-5px);
+  }
+  70%,
+  100% {
+    transform: translateY(5px);
+  }
+}
+
+/*
+  A repeating drift is a vestibular offender, and this is the only thing on the
+  landing that never stops moving. Reduced motion gets it drawn, still, saying
+  the same thing.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .board-cue__arrow,
+  .board-cue__shaft,
+  .board-cue__head {
+    animation: none;
+  }
+  .board-cue__shaft,
+  .board-cue__head {
+    stroke-dashoffset: 0;
+  }
 }
 
 @media (max-width: 1000px) {
@@ -3998,57 +4143,6 @@ html.no-js .exploded .exploded__svg {
   font-size: 11.5px;
   color: var(--muted);
   line-height: 1.4;
-}
-
-/* ---------- Preloader: the boot log ------------------------------- */
-
-/*
-  A serial console, set in the mono face at a size that reads as a readout
-  rather than as copy. Left-aligned and left-anchored, because a boot log is a
-  transcript — centring it would make it a graphic.
-*/
-.preloader__boot {
-  display: grid;
-  gap: 6px;
-  width: min(88vw, 30rem);
-  margin: 0 auto;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: clamp(11px, 1.1vw, 13px);
-  letter-spacing: 0.04em;
-}
-
-.preloader__line {
-  display: grid;
-  grid-template-columns: auto minmax(1.5rem, 1fr) auto;
-  gap: 8px;
-  align-items: baseline;
-  text-transform: uppercase;
-  will-change: transform, opacity;
-}
-
-.preloader__line-label {
-  color: var(--fg-dim);
-  white-space: nowrap;
-}
-
-/*
-  The dot leaders. A repeating radial gradient rather than a row of full stops,
-  so the run always ends flush against the value at any width — typed dots have
-  to be counted, and the count is wrong at every width but one.
-*/
-.preloader__line-dots {
-  height: 1em;
-  background-image: radial-gradient(circle, var(--line-strong) 0.9px, transparent 1px);
-  background-size: 5px 100%;
-  background-position: 0 65%;
-  background-repeat: repeat-x;
-  opacity: 0.75;
-}
-
-.preloader__line-value {
-  color: var(--accent);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 
 /* ==================================================================

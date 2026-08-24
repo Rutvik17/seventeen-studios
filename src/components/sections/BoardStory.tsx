@@ -562,27 +562,9 @@ function ScrollCue() {
 
     const ctx = gsap.context(() => {
       /*
-        A segment travelling down a hairline rail, rather than a bouncing arrow.
-
-        The arrow version sat centred at the bottom of the frame, which is
-        exactly where the STUDIOS wordmark is — it overlapped the type and read
-        as a mistake. This lives on the left edge, out of the composition, and
-        reads as an instrument's gauge rather than as an icon: the same
-        register as the rest of the board.
+        Only the dismissal is scripted now. The arrow draws itself in CSS —
+        see `.board-cue__arrow` in globals.css.
       */
-      gsap.fromTo(
-        '[data-cue-arrow]',
-        { yPercent: -100, opacity: 0 },
-        {
-          yPercent: 260,
-          opacity: 1,
-          duration: 1.9,
-          ease: 'power1.inOut',
-          repeat: -1,
-          // Fades at both ends of the travel so it never appears to hit a stop.
-          keyframes: undefined,
-        },
-      );
       gsap.to(el, {
         autoAlpha: 0,
         duration: 0.4,
@@ -593,12 +575,26 @@ function ScrollCue() {
     return () => ctx.revert();
   }, []);
 
+  /*
+    THE SAME ARROW THE GRASP BOARD DRAWS.
+
+    This was a segment travelling down a hairline rail — a different mechanism
+    saying the same thing in a different accent, on a site with exactly two
+    scroll cues on it. They are one cue now: shaft, then head, then both fade,
+    on a `stroke-dashoffset` loop.
+
+    It keeps its POSITION, though. The arrow version of this cue was centred at
+    the bottom of the frame once and sat on top of the STUDIOS wordmark, which
+    is why it moved to the left edge in the first place. Same drawing, still out
+    of the composition.
+  */
   return (
     <div className="board-cue" ref={ref}>
       <span className="mono-label board-cue__label">Scroll to build it</span>
-      <span className="board-cue__rail" aria-hidden="true">
-        <span className="board-cue__travel" data-cue-arrow />
-      </span>
+      <svg viewBox="0 0 28 72" className="board-cue__arrow" aria-hidden="true">
+        <path className="board-cue__shaft" d="M14 6 V 54" />
+        <path className="board-cue__head" d="M5 45 L 14 58 L 23 45" />
+      </svg>
     </div>
   );
 }

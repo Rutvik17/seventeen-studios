@@ -63,13 +63,26 @@ export function OutroLine({ text }: { text: string }) {
         doing real work, and cascading them a letter at a time reads as an
         effect happening TO the sentence rather than the sentence arriving.
       */}
+      {/*
+        NO `depth` HERE, AND IT IS NOT AN OVERSIGHT.
+
+        `depth` puts `perspective` and `transform-style: preserve-3d` on the
+        heading itself and rotates each word in that space. This heading is also
+        the element the gradient is clipped to — and WebKit has a long-standing
+        habit of dropping `-webkit-background-clip: text` when the clipped
+        element is a 3D rendering context, painting nothing at all.
+
+        Two effects, one element, and one of them can silently delete the other.
+        The sweep is the distinctive one and the one that was asked for; the
+        hinge is a reveal this site uses in a dozen other places where nothing is
+        clipped. So the words slide up instead.
+      */}
       <SplitText
         as="h2"
         className={styles.resumeLine}
         mode="words"
         trigger="scroll"
         stagger={0.055}
-        depth
       >
         {text}
       </SplitText>

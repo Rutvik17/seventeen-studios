@@ -26,6 +26,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap';
 import { getLenis } from '@/lib/lenis';
+import { whenSettled } from '@/lib/settled';
+import { LoaderScreen } from '@/components/loader/LoaderScreen';
 
 const COLUMNS = 4;
 
@@ -40,8 +42,10 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const curtainRef = useRef<HTMLDivElement>(null);
-  const markRef = useRef<HTMLSpanElement>(null);
+  const markRef = useRef<HTMLDivElement>(null);
+  const counterRef = useRef({ value: 0 });
   const [covering, setCovering] = useState(false);
+  const [progress, setProgress] = useState(0);
   const pendingRef = useRef<string | null>(null);
 
   const navigate = useCallback<NavigateFn>(
@@ -55,6 +59,26 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
 
       pendingRef.current = href;
       setCovering(true);
+
+      /*
+        The counter climbs while the curtain closes, but only to 86.
+
+        There is no byte count to report during a route change, and running a
+        number to 100 on a timer would be a lie of exactly the kind the loader
+        was built to avoid — it would hit 100 and then sit there while the page
+        was still mounting. It stops short instead, and the last stretch is spent
+        when the new route has actually committed and the thread has come back.
+        The number reaching 100 is a real event.
+      */
+      setProgress(0);
+      gsap.killTweensOf(counterRef.current);
+      counterRef.current.value = 0;
+      gsap.to(counterRef.current, {
+        value: 86,
+        duration: 1.1,
+        ease: 'power2.out',
+        onUpdate: () => setProgress(counterRef.current.value),
+      });
 
       const columns = curtainRef.current.querySelectorAll('.curtain__col');
       gsap.killTweensOf([columns, markRef.current]);
@@ -91,37 +115,63 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
     [pathname, router],
   );
 
-  // Uncover once the new route has committed.
+  /*
+    Uncover once the new route has committed AND the thread is free.
+
+    Not on a delay. A heavy route — `/founder/` mounts an R3F canvas and parses a
+    2.1 MB model — blocks the main thread for most of a second, and with
+    `lagSmoothing(0)` the tick after that stall advances this timeline by more
+    than its own duration. It ran to completion in one frame: the curtain did not
+    lift, it disappeared, and the page arrived with no transition. Measured at
+    764 ms on the worst frame.
+
+    `whenSettled` holds the curtain up until frames are arriving on time again,
+    which is exactly what a curtain is for.
+  */
   useEffect(() => {
     if (!covering || !curtainRef.current) return;
 
-    const columns = curtainRef.current.querySelectorAll('.curtain__col');
-    const timeline = gsap.timeline({
-      delay: 0.08,
-      onComplete: () => {
-        setCovering(false);
-        pendingRef.current = null;
-        gsap.set(curtainRef.current, { pointerEvents: 'none' });
-        ScrollTrigger.refresh();
-      },
+    let timeline: gsap.core.Timeline | null = null;
+
+    const cancel = whenSettled(() => {
+      const curtain = curtainRef.current;
+      if (!curtain) return;
+      const columns = curtain.querySelectorAll('.curtain__col');
+
+      timeline = gsap.timeline({
+        onComplete: () => {
+          setCovering(false);
+          pendingRef.current = null;
+          gsap.set(curtain, { pointerEvents: 'none' });
+          ScrollTrigger.refresh();
+        },
+      });
+
+      timeline
+        // The page is ready. Spend the last of the counter, then leave.
+        .to(counterRef.current, {
+          value: 100,
+          duration: 0.3,
+          ease: 'power2.out',
+          onUpdate: () => setProgress(counterRef.current.value),
+        })
+        .to(markRef.current, { opacity: 0, duration: 0.2, ease: 'power2.in' }, '-=0.1')
+        .to(
+          columns,
+          {
+            yPercent: -100,
+            y: 0,
+            duration: 0.6,
+            ease: 'power4.inOut',
+            stagger: 0.05,
+          },
+          '-=0.1',
+        );
     });
 
-    timeline
-      .to(markRef.current, { opacity: 0, duration: 0.2, ease: 'power2.in' })
-      .to(
-        columns,
-        {
-          yPercent: -100,
-          y: 0,
-          duration: 0.6,
-          ease: 'power4.inOut',
-          stagger: 0.05,
-        },
-        '-=0.1',
-      );
-
     return () => {
-      timeline.kill();
+      cancel();
+      timeline?.kill();
     };
     // Runs on pathname change only — `covering` is read, not depended on.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -134,9 +184,9 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
         {Array.from({ length: COLUMNS }).map((_, index) => (
           <div className="curtain__col" key={index} />
         ))}
-        <span className="curtain__mark" ref={markRef}>
-          17
-        </span>
+        <div className="curtain__mark" ref={markRef}>
+          <LoaderScreen progress={progress} />
+        </div>
       </div>
     </NavigateContext.Provider>
   );
