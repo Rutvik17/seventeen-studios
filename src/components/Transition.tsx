@@ -50,7 +50,26 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
 
   const navigate = useCallback<NavigateFn>(
     (href) => {
-      if (href === pathname) return;
+      /*
+        A LINK TO THE PAGE YOU ARE ALREADY ON STILL HAS TO DO SOMETHING.
+
+        This used to `return` here, and `TransitionLink` has already called
+        `preventDefault()` by the time it does — so the click was swallowed whole.
+        In the header that reads as a dead link; in the full-screen index it
+        reads as a broken app, because the overlay is still sitting there and
+        nothing you press will move it.
+
+        Scrolling back to the top is what the rest of the web does with a
+        self-referential link, and it is honest: you asked for this page, and
+        this is the top of it. Overlays close themselves — see `MenuOverlay`,
+        which no longer waits for a route change that is not coming.
+      */
+      if (href === pathname) {
+        const lenis = getLenis();
+        if (lenis) lenis.scrollTo(0);
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
 
       if (prefersReducedMotion() || !curtainRef.current) {
         router.push(href);
