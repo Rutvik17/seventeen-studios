@@ -66,20 +66,50 @@ for (const [label, overrides] of [
 */
 const saved = { ...DIRECTION };
 
-console.log('\nEach factor alone, at its declared sign, before costs');
-console.log('factor              sign  annualised  sharpe  hit');
+/*
+  EXCESS over the equal-weighted universe, not absolute return.
+
+  In a long-only book every factor scores twenty percent a year, because every
+  factor is mostly measuring the market. The first version of this table said
+  exactly that and it was useless — momentum, volatility and reversal all looked
+  like triumphs in a period when two of them were known to be failing.
+
+  Subtracting the universe's own return leaves the part attributable to choosing
+  these names over the others, which is the only part the model is responsible
+  for.
+*/
+const universe = [];
+for (let i = 1; i < data.monthEnds.length; i++) {
+  const moves = [];
+  for (const symbol of input.symbols) {
+    const a = data.closes[symbol]?.[i - 1];
+    const b = data.closes[symbol]?.[i];
+    if (a && b && a > 0) moves.push(b / a - 1);
+  }
+  if (moves.length) moves.length && universe.push(moves.reduce((x, y) => x + y, 0) / moves.length);
+}
+
+const annualise = (rs) => rs.reduce((p, v) => p * (1 + v), 1) ** (12 / rs.length) - 1;
+const benchmark = annualise(universe);
+
+console.log(`\nEach factor alone, as EXCESS over the universe (${pct(benchmark)} a year)`);
+console.log('factor              sign  excess      sharpe  hit');
 console.log('-'.repeat(52));
 
 for (const factor of FACTORS) {
   if (saved[factor] === 0) continue;
   for (const other of FACTORS) DIRECTION[other] = other === factor ? saved[other] : 0;
   const m = runAlpha(input, { ...ALPHA, costBps: 0 }).metrics;
+  const excess = m.annualised - benchmark;
   console.log(
     `${factor.padEnd(19)} ${String(saved[factor]).padStart(2)}   ` +
-      `${pct(m.annualised).padEnd(11)} ${m.sharpe.toFixed(2).padEnd(7)} ${pct(m.hitRate)}`,
+      `${(excess >= 0 ? '+' : '') + pct(excess).padEnd(10)} ${m.sharpe.toFixed(2).padEnd(7)} ${pct(m.hitRate)}`,
   );
 }
 for (const other of FACTORS) DIRECTION[other] = saved[other];
+
+const all = runAlpha(input, { ...ALPHA, costBps: 0 }).metrics;
+console.log(`${'all seven'.padEnd(19)}      ${'+' + pct(all.annualised - benchmark)}`);
 
 /* Neutrality is a claim the book makes about itself, so it is checked. */
 const base = runAlpha(input);
