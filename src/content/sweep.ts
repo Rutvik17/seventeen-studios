@@ -15,8 +15,8 @@
 import raw from './sweep.json';
 import type { DailyBar, IntradayBar } from '@/lib/sweep';
 
-/** `[date, high, low, close]` — no open, because nothing reads one. */
-type RawDaily = [string, number, number, number];
+/** `[date, open, high, low, close]`. The chart draws daily candles. */
+type RawDaily = [string, number, number, number, number];
 /** `[time, open, high, low, close]` — the session chart draws candles. */
 type RawIntraday = [string, number, number, number, number];
 
@@ -74,7 +74,7 @@ export function sweepTicker(symbol: string): SweepTicker | undefined {
   const built: SweepTicker = {
     symbol: source.symbol,
     name: source.name,
-    daily: source.daily.map(([date, high, low, close]) => ({ date, high, low, close })),
+    daily: source.daily.map(([date, open, high, low, close]) => ({ date, open, high, low, close })),
     sessions: Object.fromEntries(
       Object.entries(source.intraday).map(([day, rows]) => [
         day,

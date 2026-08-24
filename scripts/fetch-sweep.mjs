@@ -22,22 +22,24 @@
  *
  * TWO SERIES, AND EACH ANSWERS A DIFFERENT HALF OF THE QUESTION
  *
- * DAILY, ten years. The weekly setup — Thursday's high, Friday's failure and
- * close, and how near Monday came to that high — is entirely a daily-bar
- * question. Ten years of it is about five hundred Mondays a ticker, which is a
- * sample large enough to say something.
+ * DAILY, five years, full OHLC. Draws the six-month, year-to-date and one-year
+ * chart ranges, and carries the weekly setup — Thursday's high, Friday's failure
+ * and close — which is worth measuring over a longer run than the chart shows.
  *
- * FIFTEEN MINUTE, Mondays only, accumulating. The execution — the structure
- * shift, the gap, the fill — cannot be read at a coarser resolution. Measured:
- * a bearish fair value gap appears in 92.9% of fifteen-minute sessions and only
- * 32.1% of hourly ones, because an hourly Monday is seven bars and the gap needs
- * three of them to miss each other. Hourly bars were fetched for a while and are
- * not any more: a backtest run on them is not a coarse answer, it is a wrong
- * one.
+ * FIFTEEN MINUTE, a rolling year, every session. Draws the one-day, five-day and
+ * one-month ranges, and is the only resolution the execution can be read at:
+ * measured, a bearish fair value gap appears in 92.9% of fifteen-minute sessions
+ * and 32.1% of hourly ones, because an hourly Monday is seven bars and the gap
+ * needs three of them to miss each other. Hourly bars were fetched for a while
+ * and are not any more — a backtest run on them is not a coarse answer, it is a
+ * wrong one.
  *
  * Yahoo serves sixty days of fifteen-minute bars and refuses older windows
- * server-side, so that half of the history cannot be fetched — only kept. Each
- * run merges into the committed file rather than replacing it.
+ * server-side, so that half of the history cannot be fetched, only KEPT: each run
+ * merges into the committed file rather than replacing it, and the daily rebuild
+ * adds a session at the front while `thin()` drops one off the back. The window
+ * is therefore the permanent ceiling on the backtest's sample, which is why it is
+ * a year rather than the sixty days Yahoo hands out.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
@@ -128,31 +130,42 @@ async function chart(symbol, params) {
 }
 
 /**
- * Ten years of daily bars: the weekly setup, over a sample worth quoting.
+ * Five years of daily bars.
  *
- * No OPEN. Nothing reads it — the setup is Thursday's high against Friday's
- * high, low and close, and ATR is built from high, low and close. A field
- * nothing reads is a fifth of this series' weight for nothing.
+ * It was ten, which supported five-year and all-time chart ranges. Those ranges
+ * are gone — the intraday window is capped at a year, so a chart reaching back
+ * five would be four years of candles with no trade on them — and half of this
+ * series went with them.
+ *
+ * Five rather than one, because the daily bars do two jobs. They draw the six
+ * month, year-to-date and one-year ranges, and they carry the weekly setup —
+ * Thursday's high, Friday's failure and close — which is worth measuring over a
+ * longer run than the chart shows. Five years is about 260 Mondays a ticker at a
+ * tenth of the payload the intraday series costs.
+ *
+ * WITH the open. It was dropped once, correctly — no line of the model read it,
+ * and it was a fifth of the weight of the series. It came back the moment the
+ * chart started drawing daily candles, because a candle without an open is a bar
+ * chart.
  */
 async function daily(symbol) {
-  const bars = await chart(symbol, 'range=10y&interval=1d');
-  return bars.map((b) => [sessionDay(b.t), round(b.h), round(b.l), round(b.c)]);
+  const bars = await chart(symbol, 'range=5y&interval=1d');
+  return bars.map((b) => [sessionDay(b.t), round(b.o), round(b.h), round(b.l), round(b.c)]);
 }
 
 /**
- * Fifteen-minute bars, Mondays only.
+ * Fifteen-minute bars, every session Yahoo will still serve.
  *
- * Everything outside a Monday is dropped before it is written. The setup is a
- * Monday-morning event and a trade that outlives the session is resolved on
- * daily bars, so keeping Tuesday to Friday at this resolution would multiply the
- * payload by five to answer a question nothing asks.
+ * This kept Mondays only at first, because the STRATEGY only needs Mondays — the
+ * setup is a Monday-morning event. That was right for the backtest and wrong for
+ * the chart: a candlestick chart asked for the last five days would have had
+ * four holes in it. A chart with gaps is not a chart of anything.
  */
-async function mondays(symbol) {
+async function intraday(symbol) {
   const bars = await chart(symbol, 'range=60d&interval=15m');
   const byDay = new Map();
 
   for (const b of bars) {
-    if (sessionDow(b.t) !== 'Mon') continue;
     const day = sessionDay(b.t);
     if (!byDay.has(day)) byDay.set(day, []);
     byDay.get(day).push([sessionTime(b.t), round(b.o), round(b.h), round(b.l), round(b.c)]);
@@ -160,6 +173,68 @@ async function mondays(symbol) {
 
   return Object.fromEntries([...byDay.entries()].sort(([a], [b]) => a.localeCompare(b)));
 }
+
+/** Sessions kept at full resolution before older ones are thinned to Mondays. */
+const DENSE_DAYS = 120;
+
+/**
+ * The hard edge of the window. Nothing older is kept, at any resolution.
+ *
+ * A rolling window, so the payload stops growing: each build adds a session at
+ * the front and drops one off the back. The alternative was keeping everything,
+ * which is unbounded — pleasant for a year and a problem after three.
+ *
+ * A YEAR RATHER THAN SIXTY DAYS, AND THE REASON IS NOT COMFORT. Bars that fall
+ * out of this window are gone: Yahoo serves a rolling sixty days of
+ * fifteen-minute data and refuses older requests, so the only copy of anything
+ * behind that wall is the one here. The window size therefore IS the permanent
+ * ceiling on the backtest's sample — sixty days pins it at about thirteen
+ * Mondays a ticker forever, a year settles at about fifty-two.
+ *
+ * Neither is a large sample. A year is the larger of the two available, it is
+ * bounded, and combined with the thinning above it costs roughly 200 KB gzipped
+ * at full extent.
+ */
+const MAX_AGE_DAYS = 365;
+
+/**
+ * Thin the archive without losing the part the backtest needs.
+ *
+ * Two consumers want different things from this series and they disagree about
+ * what is worth keeping.
+ *
+ * The CHART wants continuity, but only recently: intraday candles are for the
+ * one-day, five-day and one-month ranges, and every range longer than that draws
+ * daily candles the way any trading platform does. Past a few months, a
+ * fifteen-minute Tuesday is never rendered.
+ *
+ * The BACKTEST wants Mondays, forever, because those are the sessions the model
+ * trades and Yahoo will not serve them again once they pass sixty days.
+ *
+ * So: everything within `DENSE_DAYS` of the newest session, then Mondays alone
+ * behind that. Growth settles at about a thousand bars a ticker a year instead
+ * of five thousand, and nothing that would have been drawn is thrown away.
+ */
+function thin(byDay) {
+  const days = Object.keys(byDay).sort();
+  if (days.length === 0) return byDay;
+
+  const newest = Date.parse(`${days[days.length - 1]}T12:00:00Z`);
+  const dense = newest - DENSE_DAYS * 86400000;
+  const oldest = newest - MAX_AGE_DAYS * 86400000;
+
+  const kept = {};
+  for (const day of days) {
+    const at = Date.parse(`${day}T12:00:00Z`);
+    // The window rolls: one session on at the front, one off the back.
+    if (at < oldest) continue;
+    if (at >= dense || dayOfWeekFromDate(day) === 1) kept[day] = byDay[day];
+  }
+  return kept;
+}
+
+/** Midday UTC keeps a New York calendar date on its own day in every zone. */
+const dayOfWeekFromDate = (date) => new Date(`${date}T12:00:00Z`).getUTCDay();
 
 /** Mondays already kept, so a run extends the archive rather than resetting it. */
 function loadExisting() {
@@ -186,26 +261,25 @@ async function main() {
   };
 
   for (const { symbol, name } of TICKERS) {
-    const [bars, fresh] = await Promise.all([daily(symbol), mondays(symbol)]);
+    const [bars, fresh] = await Promise.all([daily(symbol), intraday(symbol)]);
 
     const kept = existing.get(symbol) ?? {};
-    // Yahoo's sixty days win over anything stored for the same Monday: same
-    // bars, same session, and the newer fetch has seen any late correction.
-    const merged = { ...kept, ...fresh };
+    // Yahoo's sixty days win over anything stored for the same session: same
+    // bars, same day, and the newer fetch has seen any late correction.
+    const merged = thin({ ...kept, ...fresh });
 
-    out.tickers.push({
-      symbol,
-      name,
-      daily: bars,
-      intraday: Object.fromEntries(
-        Object.entries(merged).sort(([a], [b]) => a.localeCompare(b)),
-      ),
-    });
+    const sessions = Object.fromEntries(
+      Object.entries(merged).sort(([a], [b]) => a.localeCompare(b)),
+    );
+
+    out.tickers.push({ symbol, name, daily: bars, intraday: sessions });
 
     const added = Object.keys(fresh).filter((d) => !(d in kept)).length;
+    const mondays = Object.keys(sessions).filter((d) => dayOfWeekFromDate(d) === 1).length;
     console.log(
       `  ${symbol.padEnd(6)} daily=${String(bars.length).padEnd(5)} ` +
-        `Mondays=${String(Object.keys(merged).length).padEnd(4)} (+${added})`,
+        `sessions=${String(Object.keys(sessions).length).padEnd(4)} ` +
+        `(+${String(added).padEnd(3)} new, ${mondays} Mondays)`,
     );
   }
 

@@ -23,7 +23,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const data = JSON.parse(readFileSync(path.join(root, 'src', 'content', 'sweep.json'), 'utf8'));
 
 const toDaily = (rows) =>
-  rows.map(([date, high, low, close]) => ({ date, high, low, close }));
+  rows.map(([date, open, high, low, close]) => ({ date, open, high, low, close }));
 
 const toSessions = (byDay) =>
   Object.fromEntries(
@@ -41,14 +41,14 @@ console.log(`\nParameters: ${JSON.stringify(DEFAULTS)}`);
 /*
   The weekly setup first, at its own sample size.
 
-  This half needs only daily bars, so it is measured over ten years and thousands
+  This half needs only daily bars, so it is measured over five years and hundreds
   of Mondays while the trade half waits on an intraday archive that is sixty days
   deep. Printing them together, each labelled with what it rests on, is the point
   — quoting one sample size for both would be the lie.
 */
 const scans = data.tickers.map((t) => ({ symbol: t.symbol, scan: scanSetups(toDaily(t.daily)) }));
 
-console.log('\nThe weekly setup — ten years of daily bars');
+console.log(`\nThe weekly setup — ${Math.round(scans[0].scan.years)} years of daily bars`);
 console.log('ticker  mondays  qualified  reached  median reach (ATR)');
 console.log('-'.repeat(54));
 

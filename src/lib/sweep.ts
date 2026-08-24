@@ -64,6 +64,7 @@
  */
 export type DailyBar = {
   date: string;
+  open: number;
   high: number;
   low: number;
   close: number;
@@ -208,6 +209,24 @@ export type Trade = {
   r: number;
   thursdayHigh: number;
   fridayLow: number;
+
+  /*
+    Where it happened, so the chart can draw it rather than describe it.
+
+    A backtest that reports only a number asks to be believed. One that can put
+    the gap, the fill and the exit on the candles they occurred on can be checked
+    — and the first thing anyone should do with a strategy's results is look at
+    the trades it claims to have taken.
+  */
+
+  /** The gap sold into: `[bottom, top]`. The limit sits at the top. */
+  gap: [number, number];
+  /** Session time of the bar that completed the gap. */
+  gapAt: string;
+  /** Session time of the bar whose high reached the limit. */
+  entryAt: string;
+  /** Session time of the exit bar, when the trade closed inside the session. */
+  exitAt?: string;
 };
 
 export type Funnel = Record<RejectReason, number> & { traded: number; mondays: number };
@@ -342,6 +361,7 @@ export function runSession(
     the gap.
   */
   let gapTop = NaN;
+  let gapBottom = NaN;
   let gapBar = -1;
   for (let i = Math.max(0, sweepBar); i + 2 < session.length; i++) {
     if (i + 2 < shiftBar) continue;
@@ -349,6 +369,7 @@ export function runSession(
     const third = session[i + 2];
     if (first.low > third.high) {
       gapTop = first.low;
+      gapBottom = third.high;
       gapBar = i + 2;
       break;
     }
@@ -372,7 +393,17 @@ export function runSession(
   if (plannedRR < params.minRewardRisk) return 'reward-too-small';
 
   return resolve(
-    { monday, entry, stop, target, plannedRR, thursdayHigh: thursday.high, fridayLow: friday.low },
+    {
+      monday,
+      entry,
+      stop,
+      target,
+      plannedRR,
+      thursdayHigh: thursday.high,
+      fridayLow: friday.low,
+      gap: [gapBottom, gapTop],
+      gapAt: session[gapBar].time,
+    },
     session,
     gapBar,
     daily,
@@ -383,7 +414,15 @@ export function runSession(
 
 type Pending = Pick<
   Trade,
-  'monday' | 'entry' | 'stop' | 'target' | 'plannedRR' | 'thursdayHigh' | 'fridayLow'
+  | 'monday'
+  | 'entry'
+  | 'stop'
+  | 'target'
+  | 'plannedRR'
+  | 'thursdayHigh'
+  | 'fridayLow'
+  | 'gap'
+  | 'gapAt'
 >;
 
 /**
@@ -403,9 +442,17 @@ function resolve(
 ): Trade | RejectReason {
   const risk = plan.stop - plan.entry;
   let filled = false;
+  let entryAt = '';
 
-  const finish = (exit: number, exitDate: string, outcome: Trade['outcome']): Trade => ({
+  const finish = (
+    exit: number,
+    exitDate: string,
+    outcome: Trade['outcome'],
+    exitAt?: string,
+  ): Trade => ({
     ...plan,
+    entryAt,
+    exitAt,
     exit,
     exitDate,
     outcome,
@@ -419,6 +466,7 @@ function resolve(
     if (!filled) {
       if (bar.high < plan.entry) continue;
       filled = true;
+      entryAt = bar.time;
       /*
         Filled on this bar. It may also have hit the stop or the target inside
         the same bar, so the checks below run on it rather than the next one.
@@ -426,8 +474,8 @@ function resolve(
     }
 
     // Stop before target when one bar covers both — see the header.
-    if (bar.high >= plan.stop) return finish(plan.stop, plan.monday, 'stop');
-    if (bar.low <= plan.target) return finish(plan.target, plan.monday, 'target');
+    if (bar.high >= plan.stop) return finish(plan.stop, plan.monday, 'stop', bar.time);
+    if (bar.low <= plan.target) return finish(plan.target, plan.monday, 'target', bar.time);
   }
 
   if (!filled) return 'never-filled';
@@ -682,7 +730,25 @@ export function backtest(
   const funnel = EMPTY_FUNNEL();
   const trades: Trade[] = [];
 
-  const mondays = Object.keys(sessions).sort();
+  /*
+    MONDAYS ONLY, filtered here rather than assumed.
+
+    This used to take every key in `sessions`, because the archive stored nothing
+    else. It stores every session now — the chart needs continuity, and a
+    five-day candlestick chart built from Mondays would have four holes in it —
+    and this loop went on trusting the old shape. Every Tuesday was run as if it
+    were a Monday, found Monday and Friday behind it instead of Friday and
+    Thursday, and was thrown out as a short week: 343 of 420 sessions, an 82%
+    "holiday" rate against a real one nearer 8%.
+
+    It did not throw and it did not show up in the trade count, which stayed
+    zero either way. It showed up in the funnel, which is the argument for
+    printing the funnel.
+  */
+  const mondays = Object.keys(sessions)
+    .filter((date) => dayOfWeek(date) === 1)
+    .sort();
+
   for (const monday of mondays) {
     funnel.mondays++;
     const outcome = runSession(monday, sessions[monday], daily, index, atrs, params);
@@ -808,4 +874,101 @@ export function scanSetups(daily: DailyBar[], overrides: Partial<SweepParams> = 
       : 0;
 
   return scan;
+}
+
+/* ------------------------------------------------------------------ *
+ * The account
+ * ------------------------------------------------------------------ */
+
+export type Fill = {
+  trade: Trade;
+  /** Whole shares, sized so the stop costs `risk` of the balance. */
+  shares: number;
+  /** What the stop would have cost, in currency. */
+  risked: number;
+  /** Realised profit or loss, in currency. */
+  pnl: number;
+  /** Balance after this trade closed. */
+  balance: number;
+};
+
+export type Account = {
+  starting: number;
+  ending: number;
+  /** Total return on the starting balance. */
+  returnPct: number;
+  /** Deepest peak-to-trough fall, as a fraction of the peak. */
+  maxDrawdownPct: number;
+  /** Balance after each trade, starting with the opening balance. */
+  curve: number[];
+  fills: Fill[];
+  /** Trades skipped because one share already risked more than the budget. */
+  skipped: number;
+};
+
+/**
+ * Run the trades through an account.
+ *
+ * R-multiples say whether a strategy has an edge; they do not say what happened
+ * to the money, and "what happened to the money" is the only question most
+ * people are actually asking. This turns one into the other.
+ *
+ * FIXED FRACTIONAL SIZING. Each trade risks the same PERCENTAGE of the balance
+ * at the time, not the same dollar amount — which is how position sizing is
+ * really done, and why the curve compounds rather than adding. It also means a
+ * losing run shrinks the next bet automatically, which is most of why fixed
+ * fractional survives sequences that fixed-dollar does not.
+ *
+ * WHOLE SHARES. `Math.floor`, so the position is one a broker could actually
+ * fill. Fractional shares would quietly let a $500 account take a $900 stock at
+ * exactly its risk budget and make the curve smoother than any real one.
+ *
+ * A trade whose single share already risks more than the budget is SKIPPED and
+ * counted, rather than taken at a size the rules do not allow. That count is
+ * reported: a strategy that only fits a large account is a fact about the
+ * strategy, and rounding it away would hide it.
+ */
+export function simulateAccount(
+  trades: Trade[],
+  { starting = 25_000, risk = 0.01 }: { starting?: number; risk?: number } = {},
+): Account {
+  let balance = starting;
+  let peak = starting;
+  let worst = 0;
+  let skipped = 0;
+
+  const curve = [starting];
+  const fills: Fill[] = [];
+
+  for (const trade of trades) {
+    const perShare = trade.stop - trade.entry;
+    if (perShare <= 0) continue;
+
+    const budget = balance * risk;
+    const shares = Math.floor(budget / perShare);
+    if (shares < 1) {
+      skipped++;
+      continue;
+    }
+
+    // Short: the profit is the distance the price fell from the fill.
+    const pnl = (trade.entry - trade.exit) * shares;
+    balance += pnl;
+
+    peak = Math.max(peak, balance);
+    worst = Math.max(worst, (peak - balance) / peak);
+
+    curve.push(balance);
+    fills.push({ trade, shares, risked: perShare * shares, pnl, balance });
+  }
+
+  return {
+    starting,
+    ending: balance,
+    returnPct: starting > 0 ? balance / starting - 1 : 0,
+    maxDrawdownPct: worst,
+    curve,
+    fills,
+    skipped,
+  };
 }
