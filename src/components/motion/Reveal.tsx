@@ -4,6 +4,7 @@ import { useRef, type ElementType, type ReactNode } from 'react';
 import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { useUi } from '@/lib/store';
+import { onceInView } from '@/lib/inview';
 
 interface RevealProps {
   children: ReactNode;
@@ -17,8 +18,15 @@ interface RevealProps {
   delay?: number;
   /** Travel distance in pixels. */
   distance?: number;
-  /** ScrollTrigger start position. */
-  start?: string;
+  /**
+   * How far into view before it plays, as a fraction of the viewport.
+   *
+   * Was a ScrollTrigger `start` string. Nothing ever passed one, and the string
+   * form does not mean anything now that this is an IntersectionObserver — a
+   * number that says what it is beats a vocabulary borrowed from a mechanism
+   * this component no longer uses.
+   */
+  enter?: number;
   id?: string;
 }
 
@@ -38,7 +46,7 @@ export function Reveal({
   interval = 0.09,
   delay = 0,
   distance = 46,
-  start = 'top 86%',
+  enter = 0.14,
   id,
 }: RevealProps) {
   const ref = useRef<HTMLElement>(null);
@@ -52,11 +60,17 @@ export function Reveal({
     const targets = stagger ? Array.from(el.children) : [el];
     if (targets.length === 0) return;
 
-    // Content already on screen must not wait for a scroll that may never
-    // come — a hero CTA one pixel below the trigger line would stay invisible
-    // on arrival. Anything in the first viewport plays off the preloader
-    // hand-off instead; everything else keeps its scroll trigger.
+    /*
+      Content already on screen must not wait for a scroll that may never come —
+      a hero CTA one pixel below the trigger line would stay invisible on
+      arrival. That case is still handled, but it is no longer measured here:
+      `onceInView` fires immediately for anything already in view, because that
+      is what IntersectionObserver does. What is left is the part this hand-rolled
+      check could not express, which is waiting for the preloader to hand over.
+    */
     const inFirstView = el.getBoundingClientRect().top < window.innerHeight;
+
+    let stop: (() => void) | undefined;
 
     const ctx = gsap.context(() => {
       gsap.set(targets, { opacity: 0, y: distance });
@@ -76,14 +90,21 @@ export function Reveal({
         return;
       }
 
-      gsap.to(targets, {
-        ...vars,
-        scrollTrigger: { trigger: el, start, once: true },
-      });
+      /*
+        IntersectionObserver rather than a ScrollTrigger, for the same reason as
+        `SplitText`: a one-shot reveal only needs to know whether the element has
+        appeared, and a trigger whose position is computed wrongly holds its
+        content hidden forever. See `lib/inview.ts`.
+      */
+      const tween = gsap.to(targets, { ...vars, paused: true });
+      stop = onceInView(el, () => tween.play(), { enter });
     }, el);
 
-    return () => ctx.revert();
-  }, [stagger, interval, delay, distance, start, entered]);
+    return () => {
+      stop?.();
+      ctx.revert();
+    };
+  }, [stagger, interval, delay, distance, enter, entered]);
 
   return (
     <Tag
