@@ -113,19 +113,37 @@ jobs:
           grew=$(node -e '
             const { execSync } = require("node:child_process");
             const fs = require("node:fs");
+
             const count = (json) => {
-              try {
-                const d = JSON.parse(json);
-                return (d.tickers ?? []).reduce(
-                  (s, t) => s + Object.keys(t.fine ?? {}).length, 0);
-              } catch { return -1; }
+              const d = JSON.parse(json);
+              return (d.tickers ?? []).reduce(
+                (s, t) => s + Object.keys(t.intraday ?? {}).length, 0);
             };
-            let before = -1;
+
+            const after = count(fs.readFileSync("src/content/sweep.json", "utf8"));
+
+            /*
+              A zero here means the payload no longer has the shape this reads,
+              not that there are no sessions — which is exactly what happened the
+              first time this ran: it counted a field that had been renamed, saw
+              0 against 0, reported "nothing new to keep" and would have gone on
+              saying that forever while the archive never grew. A silent no-op is
+              the worst outcome available to this step, so it is now a failure.
+            */
+            if (after === 0) {
+              console.error("archive: read 0 sessions — the payload shape changed");
+              process.exit(1);
+            }
+
+            let before = 0;
             try {
               before = count(execSync("git show HEAD:src/content/sweep.json",
                 { encoding: "utf8", maxBuffer: 64e6 }));
-            } catch { before = -1; }
-            const after = count(fs.readFileSync("src/content/sweep.json", "utf8"));
+            } catch {
+              // No committed file yet: everything is new.
+              before = -1;
+            }
+
             console.error(`archive: ${before} -> ${after} sessions`);
             process.stdout.write(after > before ? "yes" : "no");
           ')
