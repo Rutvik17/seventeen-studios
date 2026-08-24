@@ -16,7 +16,9 @@
     "postbuild": "node scripts/verify-drawing.mjs && node scripts/verify-og.mjs",
     "og": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/build-og.mjs",
     "sweep": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-sweep.mjs",
-    "sweep:data": "node scripts/fetch-sweep.mjs"
+    "sweep:data": "node scripts/fetch-sweep.mjs",
+    "alpha": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-alpha.mjs",
+    "alpha:data": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/fetch-universe.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
