@@ -73,6 +73,26 @@ const outFile = path.join(root, 'src', 'content', 'sweep.json');
   No key, and none of this happens. The build still produces a complete dataset
   from Yahoo — a shorter one, honestly labelled.
 */
+/*
+  The key is read from `.env.local`, which `.gitignore` already covers.
+
+  A secret typed into a shell lives in that shell's history and dies with the
+  session; one in a gitignored file is there tomorrow and cannot be committed by
+  accident. Nothing else loads it — this script runs outside Next, so there is no
+  framework here doing it quietly.
+*/
+function loadLocalEnv() {
+  const file = path.join(root, '.env.local');
+  if (!existsSync(file)) return;
+  for (const line of readFileSync(file, 'utf8').split('\n')) {
+    const match = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/.exec(line);
+    if (!match) continue;
+    const value = match[2].replace(/^['"]|['"]$/g, '');
+    process.env[match[1]] ??= value;
+  }
+}
+loadLocalEnv();
+
 const AV_KEY = process.env.ALPHAVANTAGE_KEY ?? '';
 /** Stay under the free tier's 25/day, leaving one spare. */
 const AV_BUDGET = Number(process.env.ALPHAVANTAGE_BUDGET ?? 24);
