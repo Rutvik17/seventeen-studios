@@ -3,48 +3,72 @@
 /**
  * The liquidity-sweep desk.
  *
- * A strategy with a story attached — institutions push price up into last
- * Thursday's high on a Monday morning to find the buyers they need, then sell
- * into it — and this is the machinery for finding out whether the story leaves
- * a mark in the data. Pick a name, move the thresholds, watch what survives.
+ * Pick a name, pick a range, and the model is run over it: every setup it found,
+ * every trade it took, drawn on the candles it took them on, and what the
+ * balance did as a result.
  *
  * ---
  *
- * TWO SAMPLE SIZES, REPORTED SEPARATELY, AND THAT IS THE HONEST PART
+ * THE QUESTION THIS ANSWERS
  *
- * The weekly SETUP is a daily-bar question: did Thursday out-top Friday, did
- * Friday close weak, did Monday come back up. Ten years of daily bars answer it
- * over 3,283 Mondays.
+ * "If we had followed this strategy, what would we have made." Not "is the setup
+ * statistically interesting" — that is a different question, and answering it
+ * instead of this one is a way of avoiding the scoreboard.
  *
- * The TRADE is not. The structure shift and the fair value gap need intraday
- * bars, and Yahoo gives away a rolling sixty days of those — measured, a gap
- * appears in 92.9% of fifteen-minute sessions and 32.1% of hourly ones, so
- * coarser bars do not approximate the answer, they erase it. The archive grows
- * by seven sessions a week and cannot be hurried.
+ * So the account is the headline: a starting balance, a risk budget per trade,
+ * and where it ended up. R-multiples are still underneath — they are the only
+ * unit in which a $180 name and a $900 one are comparable — but they are shown
+ * as a consequence rather than as the result.
  *
- * So the two halves are shown at their own sample sizes, each labelled with what
- * it rests on. Quoting the ten-year figure next to a trade count drawn from
- * sixty days would be the single most flattering thing this page could do.
+ * ---
+ *
+ * WHAT THE RANGES CAN AND CANNOT SHOW
+ *
+ * One day, five days and one month draw fifteen-minute candles, which is the
+ * only resolution the model can be read at: a bearish fair value gap appears in
+ * 92.9% of fifteen-minute sessions and 32.1% of hourly ones, so a coarser bar
+ * does not approximate the entry, it erases it.
+ *
+ * Six months, year-to-date and one year draw daily candles, the way any platform
+ * does at that width — and trades on them are marked on the session rather than
+ * the bar, because a fifteen-minute gap cannot be drawn on a daily candle
+ * honestly.
+ *
+ * Nothing reaches further back than a year, because the intraday archive does
+ * not: Yahoo serves a rolling sixty days and refuses older windows, so the only
+ * copy of anything behind that wall is the one this site keeps. The window rolls
+ * at a year — see `scripts/fetch-sweep.mjs`.
  */
 
 import { useDeferredValue, useMemo, useState } from 'react';
 import {
   DEFAULTS,
   backtest,
-  monteCarlo,
-  scanSetups,
+  simulateAccount,
+  type IntradayBar,
   type SweepParams,
 } from '@/lib/sweep';
 import { sweepMeta, sweepTicker } from '@/content/sweep';
+import { SweepChart, type Candle } from '@/components/instruments/SweepChart';
 import { Reveal } from '@/components/motion/Reveal';
 
-const W = 720;
-const H = 260;
-const PAD = { top: 18, right: 18, bottom: 34, left: 46 };
+/**
+ * The ranges, and which series each one draws.
+ *
+ * `sessions` counts trading days, not calendar days — the axis is built from
+ * bars, so counting the days the market was shut would silently shorten every
+ * range by two sevenths.
+ */
+const RANGES = [
+  { key: '1d', label: '1D', sessions: 1, intraday: true },
+  { key: '5d', label: '5D', sessions: 5, intraday: true },
+  { key: '1m', label: '1M', sessions: 22, intraday: true },
+  { key: '6m', label: '6M', sessions: 126, intraday: false },
+  { key: 'ytd', label: 'YTD', sessions: 0, intraday: false },
+  { key: '1y', label: '1Y', sessions: 252, intraday: false },
+] as const;
 
-const pct = (v: number, digits = 1) =>
-  Number.isFinite(v) ? `${(v * 100).toFixed(digits)}%` : '—';
-const num = (v: number, digits = 2) => (Number.isFinite(v) ? v.toFixed(digits) : '—');
+type RangeKey = (typeof RANGES)[number]['key'];
 
 /** The funnel, in the order a Monday meets the conditions. */
 const STAGES = [
@@ -58,146 +82,271 @@ const STAGES = [
   ['never-filled', 'Limit never filled'],
 ] as const;
 
+const STARTING = 25_000;
+const RISK = 0.01;
+
+const money = (v: number) =>
+  v.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const pct = (v: number, digits = 1) =>
+  Number.isFinite(v) ? `${(v * 100).toFixed(digits)}%` : '—';
+const signed = (v: number) => `${v >= 0 ? '+' : ''}${pct(v)}`;
+
 export function SweepInstrument() {
   const [symbol, setSymbol] = useState(sweepMeta.symbols[0].symbol);
+  const [rangeKey, setRangeKey] = useState<RangeKey>('5d');
   const [sweepAtr, setSweepAtr] = useState(DEFAULTS.sweepAtr);
-  const [fridayCloseBand, setFridayCloseBand] = useState(DEFAULTS.fridayCloseBand);
   const [minRewardRisk, setMinRewardRisk] = useState(DEFAULTS.minRewardRisk);
+  /** A session the reader asked to see up close, overriding the range. */
+  const [focus, setFocus] = useState<string | null>(null);
 
   /*
-    Deferred as three primitives rather than one object, for the reason the risk
+    Deferred as two primitives rather than one object, for the reason the risk
     desk gives: `useDeferredValue` on a fresh object is a new reference every
     render and defers nothing at all.
   */
   const dSweep = useDeferredValue(sweepAtr);
-  const dClose = useDeferredValue(fridayCloseBand);
   const dReward = useDeferredValue(minRewardRisk);
 
   const ticker = useMemo(() => sweepTicker(symbol), [symbol]);
+  const range = RANGES.find((r) => r.key === rangeKey) ?? RANGES[1];
+
+  /** What the archive can currently draw, which is what gates the ranges. */
+  const available = useMemo(
+    () => ({
+      sessions: ticker ? Object.keys(ticker.sessions).length : 0,
+      days: ticker ? ticker.daily.length : 0,
+    }),
+    [ticker],
+  );
 
   const params: Partial<SweepParams> = useMemo(
-    () => ({ sweepAtr: dSweep, fridayCloseBand: dClose, minRewardRisk: dReward }),
-    [dSweep, dClose, dReward],
+    () => ({ sweepAtr: dSweep, minRewardRisk: dReward }),
+    [dSweep, dReward],
   );
 
-  const scan = useMemo(
-    () => (ticker ? scanSetups(ticker.daily, params) : null),
-    [ticker, params],
-  );
+  /* The candles for this range, and the dates they span. */
+  const view = useMemo(() => {
+    if (!ticker) return null;
 
-  const run = useMemo(
-    () => (ticker ? backtest(ticker.daily, ticker.sessions, params) : null),
-    [ticker, params],
-  );
+    /*
+      A trade the reader asked to see, rather than the tail of the range.
 
-  const risk = useMemo(
-    () => (run && run.trades.length ? monteCarlo(run.trades, { riskFraction: 0.01 }) : null),
+      Without this the markers are decoration. A month of fifteen-minute bars is
+      566 candles across nine hundred pixels, so a trade inside it is about two
+      pixels wide — drawn correctly, and impossible to look at. The ranges are
+      all anchored to "the most recent N sessions", so there was no way to get to
+      one either.
+
+      Focusing shows the session the trade opened on and the one after it,
+      because a trade that runs overnight exits on the following day and half a
+      trade is a worse picture than none.
+    */
+    if (focus) {
+      const all = Object.keys(ticker.sessions).sort();
+      const at = all.indexOf(focus);
+      const days = at === -1 ? [] : all.slice(at, at + 2);
+      const candles: Candle[] = [];
+      for (const date of days) {
+        for (const bar of ticker.sessions[date]) {
+          candles.push({
+            label: `${bar.time}`,
+            date,
+            time: bar.time,
+            open: bar.open,
+            high: bar.high,
+            low: bar.low,
+            close: bar.close,
+          });
+        }
+      }
+      if (candles.length > 0) {
+        return { candles, from: days[0], to: days[days.length - 1], focused: true };
+      }
+    }
+
+    if (range.intraday) {
+      const days = Object.keys(ticker.sessions).sort().slice(-range.sessions);
+      const candles: Candle[] = [];
+      for (const date of days) {
+        for (const bar of ticker.sessions[date]) {
+          candles.push({
+            label: range.sessions === 1 ? bar.time : shortDate(date),
+            date,
+            time: bar.time,
+            open: bar.open,
+            high: bar.high,
+            low: bar.low,
+            close: bar.close,
+          });
+        }
+      }
+      return { candles, from: days[0], to: days[days.length - 1] };
+    }
+
+    const bars =
+      range.key === 'ytd'
+        ? ticker.daily.filter((b) => b.date >= `${new Date().getUTCFullYear()}-01-01`)
+        : ticker.daily.slice(-range.sessions);
+
+    return {
+      candles: bars.map((b) => ({
+        label: shortDate(b.date),
+        date: b.date,
+        open: b.open,
+        high: b.high,
+        low: b.low,
+        close: b.close,
+      })),
+      from: bars[0]?.date ?? '',
+      to: bars[bars.length - 1]?.date ?? '',
+    };
+  }, [ticker, range, focus]);
+
+  /*
+    The span the NUMBERS cover, which is the range and not the zoom.
+
+    Focusing a trade moves the chart to two days; it must not move the account
+    with it. A balance that changes because the reader clicked a row to look at
+    something is not a backtest result, it is a different backtest — and the one
+    number on this page that has to hold still is the one that says what the
+    strategy made.
+  */
+  const span = useMemo(() => {
+    if (!ticker) return null;
+    if (range.intraday) {
+      const days = Object.keys(ticker.sessions).sort().slice(-range.sessions);
+      return { from: days[0] ?? '', to: days[days.length - 1] ?? '' };
+    }
+    const bars =
+      range.key === 'ytd'
+        ? ticker.daily.filter((b) => b.date >= `${new Date().getUTCFullYear()}-01-01`)
+        : ticker.daily.slice(-range.sessions);
+    return { from: bars[0]?.date ?? '', to: bars[bars.length - 1]?.date ?? '' };
+  }, [ticker, range]);
+
+  /*
+    The model, over exactly that span.
+
+    Scoped by filtering the sessions rather than the trades, so the funnel counts
+    the Mondays in view too. Counting setups over five years and trades over a
+    month would put two different denominators side by side.
+  */
+  const run = useMemo(() => {
+    if (!ticker || !span) return null;
+    const scoped: Record<string, IntradayBar[]> = {};
+    for (const [date, bars] of Object.entries(ticker.sessions)) {
+      if (date >= span.from && date <= span.to) scoped[date] = bars;
+    }
+    return backtest(ticker.daily, scoped, params);
+  }, [ticker, span, params]);
+
+  const account = useMemo(
+    () => (run ? simulateAccount(run.trades, { starting: STARTING, risk: RISK }) : null),
     [run],
   );
 
-  /*
-    The reach histogram: how near Monday came to Thursday's high, in ATRs, for
-    every Monday that passed the weekly filter over ten years.
+  if (!ticker || !view || !run || !account) return null;
 
-    ATRs rather than dollars or percent, because that is the only unit in which
-    a $180 name and a $900 one can share an axis — half an ATR is the same amount
-    of effort in both, half a percent is not.
-  */
-  const reach = useMemo(() => {
-    if (!scan || scan.reach.length === 0) return null;
-
-    /*
-      Wide enough that nothing is folded into an end bar.
-
-      The axis was −3 to 1.5, which clamped 1.7% of the sample into the leftmost
-      bin and 0.8% into the rightmost — small, but a clamped bin is not a tall
-      bin, it is a lie about the shape of the tail. Measured across all seven
-      names the reach runs −4.36 to +2.69, so this covers it with room and every
-      bar is now the count it says it is.
-
-      FIXED, not fitted to the selected ticker. The axis has to mean the same
-      thing when the picker changes, or comparing two names is comparing two
-      pictures drawn to different scales.
-    */
-    const lo = -5;
-    const hi = 3;
-    const bins = 32;
-    const counts = new Array<number>(bins).fill(0);
-    for (const value of scan.reach) {
-      const clamped = Math.min(hi, Math.max(lo, value));
-      const i = Math.min(bins - 1, Math.floor(((clamped - lo) / (hi - lo)) * bins));
-      counts[i]++;
-    }
-
-    const peak = Math.max(...counts, 1);
-    const w = W - PAD.left - PAD.right;
-    const h = H - PAD.top - PAD.bottom;
-    const x = (v: number) => PAD.left + ((v - lo) / (hi - lo)) * w;
-
-    return {
-      lo,
-      hi,
-      x,
-      bars: counts.map((count, i) => {
-        const left = lo + (i / bins) * (hi - lo);
-        const right = lo + ((i + 1) / bins) * (hi - lo);
-        return {
-          key: i,
-          x: x(left),
-          width: Math.max(1, x(right) - x(left) - 1),
-          height: (count / peak) * h,
-          y: PAD.top + h - (count / peak) * h,
-          // Inside the band is a Monday the model calls a sweep.
-          inBand: left >= -dSweep,
-        };
-      }),
-    };
-  }, [scan, dSweep]);
-
-  if (!ticker || !scan || !run) return null;
-
-  const funnel = run.funnel;
-  const metrics = run.metrics;
+  const wins = run.trades.filter((t) => t.r > 0).length;
+  const grew = account.ending >= account.starting;
 
   return (
     <div className="instrument sweep">
       <Reveal className="instrument__head">
         <div>
           <span className="mono-label instrument__tag">
-            {sweepMeta.symbols.length} names · {Math.round(scan.years)} years daily ·{' '}
-            {sweepMeta.sessions} intraday sessions
+            {sweepMeta.symbols.length} names · {sweepMeta.interval} bars ·{' '}
+            {available.sessions} sessions a name
           </span>
           <h3 className="instrument__title">
-            Does the Monday trap leave a mark?
+            If we had traded this, what would it have made?
           </h3>
           <p className="instrument__sub">
-            Thursday tops out. Friday fails to beat it and closes weak, leaving stops
-            under the low. Monday morning price is walked back up into Thursday&rsquo;s
-            high — and if the story is right, sold into. Move the thresholds and see
-            what survives.
+            Thursday tops out. Friday fails to beat it and closes weak. Monday morning
+            price is walked back up into Thursday&rsquo;s high, and the model sells the
+            gap left behind when it drops. Every trade it took is on the chart.
           </p>
         </div>
       </Reveal>
 
-      <div className="sweep__picker" role="group" aria-label="Ticker">
-        {sweepMeta.symbols.map((entry) => (
-          <button
-            key={entry.symbol}
-            type="button"
-            className={`sweep__ticker${entry.symbol === symbol ? ' is-active' : ''}`}
-            aria-pressed={entry.symbol === symbol}
-            onClick={() => setSymbol(entry.symbol)}
-          >
-            <span className="sweep__symbol">{entry.symbol}</span>
-            <span className="sweep__name">{entry.name}</span>
-          </button>
-        ))}
+      <div className="sweep__bar">
+        <div className="sweep__picker" role="group" aria-label="Ticker">
+          {sweepMeta.symbols.map((entry) => (
+            <button
+              key={entry.symbol}
+              type="button"
+              className={`sweep__ticker${entry.symbol === symbol ? ' is-active' : ''}`}
+              aria-pressed={entry.symbol === symbol}
+              onClick={() => { setSymbol(entry.symbol); setFocus(null); }}
+            >
+              {entry.symbol}
+            </button>
+          ))}
+        </div>
+
+        {/*
+          A range is offered only when there are bars to draw it with.
+
+          The intraday archive starts at sixty sessions and grows by five a week
+          off the daily rebuild, so a range that is short today is not broken —
+          it is early. Disabling it says that, where drawing a one-month chart
+          out of three weeks of candles would quietly lie about the window.
+        */}
+        <div className="sweep__ranges" role="group" aria-label="Range">
+          {RANGES.map((entry) => {
+            const have = entry.intraday ? available.sessions : available.days;
+            const short = entry.key !== 'ytd' && have < entry.sessions;
+            return (
+              <button
+                key={entry.key}
+                type="button"
+                className={`sweep__range${entry.key === rangeKey ? ' is-active' : ''}`}
+                aria-pressed={entry.key === rangeKey}
+                disabled={short}
+                title={
+                  short
+                    ? `Needs ${entry.sessions} sessions, has ${have}. The archive grows every trading day.`
+                    : undefined
+                }
+                onClick={() => { setRangeKey(entry.key); setFocus(null); }}
+              >
+                {entry.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
+
+      <figure className="instrument__figure sweep__figure">
+        <figcaption className="mono-label sweep__caption">
+          <span>
+            {ticker.name} · {view.candles.length}{' '}
+            {view.focused || range.intraday ? `${sweepMeta.interval} candles` : 'daily candles'} ·{' '}
+            {shortDate(view.from)} to {shortDate(view.to)}
+          </span>
+          {view.focused ? (
+            <button type="button" className="sweep__unfocus" onClick={() => setFocus(null)}>
+              back to {range.label}
+            </button>
+          ) : null}
+        </figcaption>
+        <SweepChart
+          candles={view.candles}
+          trades={run.trades}
+          intraday={Boolean(view.focused) || range.intraday}
+        />
+        <p className="sweep__legend">
+          <span className="sweep__key sweep__key--gap" /> fair value gap
+          <span className="sweep__key sweep__key--entry" /> entry
+          <span className="sweep__key sweep__key--win" /> closed at target
+          <span className="sweep__key sweep__key--loss" /> stopped out
+        </p>
+      </figure>
 
       <div className="instrument__controls">
         <Control
           label="Counts as a sweep"
-          value={`within ${num(sweepAtr)} ATR of Thursday's high`}
+          value={`within ${sweepAtr.toFixed(2)} ATR of Thursday's high`}
           min={0}
           max={2}
           step={0.05}
@@ -206,18 +355,8 @@ export function SweepInstrument() {
           hint="Zero means it must actually touch the high."
         />
         <Control
-          label="Friday must close"
-          value={`in the bottom ${pct(fridayCloseBand, 0)} of its range`}
-          min={0.1}
-          max={1}
-          step={0.05}
-          current={fridayCloseBand}
-          onChange={setFridayCloseBand}
-          hint="Weak closes are what leave stops under the low."
-        />
-        <Control
           label="Least reward accepted"
-          value={`${num(minRewardRisk)} : 1`}
+          value={`${minRewardRisk.toFixed(2)} : 1`}
           min={0.5}
           max={5}
           step={0.25}
@@ -227,157 +366,134 @@ export function SweepInstrument() {
         />
       </div>
 
-      <figure className="instrument__figure">
-        <figcaption className="mono-label">
-          How near Monday got to Thursday&rsquo;s high — {scan.qualified} qualifying
-          Mondays, {Math.round(scan.years)} years
-        </figcaption>
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          className="instrument__svg"
-          role="img"
-          aria-label={`Distribution of how close Monday came to Thursday's high, in ATRs. Median ${num(median(scan.reach))}.`}
-        >
-          {reach?.bars.map((bar) => (
-            <rect
-              key={bar.key}
-              x={bar.x}
-              y={bar.y}
-              width={bar.width}
-              height={bar.height}
-              className={bar.inBand ? 'instrument__bar instrument__bar--tail' : 'instrument__bar'}
-            />
-          ))}
-
-          {/* Thursday's high itself. Everything right of it is a real breach. */}
-          {reach ? (
-            <>
-              <line
-                x1={reach.x(0)}
-                y1={PAD.top - 6}
-                x2={reach.x(0)}
-                y2={H - PAD.bottom}
-                className="instrument__marker"
-              />
-              <text
-                x={reach.x(0)}
-                y={PAD.top - 10}
-                className="instrument__axis instrument__axis--accent"
-                textAnchor="middle"
-              >
-                Thursday&rsquo;s high
-              </text>
-              <line
-                x1={PAD.left}
-                y1={H - PAD.bottom}
-                x2={W - PAD.right}
-                y2={H - PAD.bottom}
-                className="instrument__baseline"
-              />
-              {[-4, -3, -2, -1, 0, 1, 2].map((tick) => (
-                <text
-                  key={tick}
-                  x={reach.x(tick)}
-                  y={H - 10}
-                  className="instrument__axis"
-                  textAnchor="middle"
-                >
-                  {tick} ATR
-                </text>
-              ))}
-            </>
-          ) : null}
-        </svg>
-      </figure>
-
-      <p className="instrument__plain">
-        The median Monday stops <strong>{num(Math.abs(median(scan.reach)))} ATR short</strong>{' '}
-        of Thursday&rsquo;s high, and only{' '}
-        <strong>{pct(scan.reached / Math.max(1, scan.qualified))}</strong> of qualifying
-        Mondays reach the band above. The trap the strategy is built on is real, and it
-        is rare — which is the first thing a backtest of it has to survive.
-      </p>
-
-      <figure className="instrument__figure">
-        <figcaption className="mono-label">
-          Where {funnel.mondays} intraday Mondays went — {sweepMeta.interval} bars
-        </figcaption>
-        <ul className="sweep__funnel">
-          {STAGES.map(([key, label]) => {
-            const value = funnel[key];
-            return (
-              <li key={key} className="sweep__stage">
-                <span className="sweep__stage-label">{label}</span>
-                <span className="sweep__stage-bar" aria-hidden="true">
-                  <i style={{ width: `${(value / Math.max(1, funnel.mondays)) * 100}%` }} />
-                </span>
-                <span className="sweep__stage-count">{value}</span>
-              </li>
-            );
-          })}
-          <li className="sweep__stage sweep__stage--out">
-            <span className="sweep__stage-label">Traded</span>
-            <span className="sweep__stage-bar" aria-hidden="true">
-              <i style={{ width: `${(funnel.traded / Math.max(1, funnel.mondays)) * 100}%` }} />
-            </span>
-            <span className="sweep__stage-count">{funnel.traded}</span>
-          </li>
-        </ul>
-      </figure>
-
       <dl className="instrument__readout">
         <Readout
-          label="Setup rate"
-          value={pct(scan.qualified / Math.max(1, scan.mondays))}
-          note={`${scan.qualified} of ${scan.mondays} Mondays, ${Math.round(scan.years)}y daily`}
+          label="Setups seen"
+          value={String(run.funnel.mondays - run.funnel['holiday-week'])}
+          note={`Mondays in range · ${run.funnel.traded} became trades`}
         />
         <Readout
-          label="Reaches the high"
-          value={pct(scan.reached / Math.max(1, scan.qualified))}
-          note={`${scan.reached} of ${scan.qualified} qualifying`}
+          label="Trades"
+          value={String(run.trades.length)}
+          note={
+            run.trades.length
+              ? `${wins} won, ${run.trades.length - wins} lost`
+              : 'nothing qualified in this range'
+          }
         />
         <Readout
-          label="Trades found"
-          value={String(metrics.trades)}
-          note={`from ${funnel.mondays} intraday Mondays`}
+          label="Started with"
+          value={money(account.starting)}
+          note={`risking ${pct(RISK, 0)} a trade`}
+        />
+        <Readout
+          label="Ended with"
+          value={money(account.ending)}
+          note={run.trades.length ? `${signed(account.returnPct)} on the range` : 'unchanged'}
           strong
+          tone={run.trades.length ? (grew ? 'up' : 'down') : undefined}
         />
         <Readout
-          label="Expectancy"
-          value={metrics.trades ? `${num(metrics.expectancy)} R` : '—'}
-          note={metrics.trades ? `${pct(metrics.winRate)} win rate` : 'no trades at these settings'}
-          strong
+          label="Worst dip"
+          value={account.fills.length ? pct(account.maxDrawdownPct) : '—'}
+          note="peak to trough, on the balance"
         />
         <Readout
-          label="Planned reward"
-          value={metrics.trades ? `${num(metrics.avgPlannedRR)} : 1` : '—'}
-          note="average, before the outcome"
-        />
-        <Readout
-          label="Worst drawdown"
-          value={metrics.trades ? `${num(metrics.maxDrawdown, 1)} R` : '—'}
-          note={risk ? `${pct(risk.p95Drawdown)} of capital at 1% risk, 95th pct` : 'needs trades'}
+          label="Edge"
+          value={run.trades.length ? `${run.metrics.expectancy.toFixed(2)} R` : '—'}
+          note={run.trades.length ? `per trade · ${pct(run.metrics.winRate)} win rate` : 'needs trades'}
         />
       </dl>
 
+      {/*
+        Where the Mondays went.
+
+        This was dropped when the chart went in, and the instrument immediately
+        became worse: it reported zero trades with nothing to say about why, and
+        a strategy that finds nothing is indistinguishable from one that is
+        broken. Each row is a share of every Monday in the range, so the rows sum
+        to the whole rather than each being a percentage of whatever was left.
+      */}
+      <ul className="sweep__funnel">
+        {STAGES.map(([key, label]) => {
+          const value = run.funnel[key];
+          if (value === 0) return null;
+          return (
+            <li key={key} className="sweep__stage">
+              <span className="sweep__stage-label">{label}</span>
+              <span className="sweep__stage-bar" aria-hidden="true">
+                <i style={{ width: `${(value / Math.max(1, run.funnel.mondays)) * 100}%` }} />
+              </span>
+              <span className="sweep__stage-count">{value}</span>
+            </li>
+          );
+        })}
+        <li className="sweep__stage sweep__stage--out">
+          <span className="sweep__stage-label">Traded</span>
+          <span className="sweep__stage-bar" aria-hidden="true">
+            <i style={{ width: `${(run.funnel.traded / Math.max(1, run.funnel.mondays)) * 100}%` }} />
+          </span>
+          <span className="sweep__stage-count">{run.funnel.traded}</span>
+        </li>
+      </ul>
+
+      {account.fills.length > 0 ? (
+        <table className="sweep__trades">
+          <caption className="mono-label">Every trade, in order</caption>
+          <thead>
+            <tr>
+              <th scope="col">Monday</th>
+              <th scope="col">Entry</th>
+              <th scope="col">Exit</th>
+              <th scope="col">Shares</th>
+              <th scope="col">Result</th>
+              <th scope="col">P&amp;L</th>
+              <th scope="col">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            {account.fills.map((fill) => (
+              <tr
+                key={fill.trade.monday}
+                className={`${fill.pnl >= 0 ? 'is-win' : 'is-loss'}${fill.trade.monday === focus ? ' is-focused' : ''}`}
+                onClick={() => setFocus(fill.trade.monday)}
+                tabIndex={0}
+                role="button"
+                aria-label={`Show ${fill.trade.monday} on the chart`}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFocus(fill.trade.monday); } }}
+              >
+                <td>{shortDate(fill.trade.monday)}</td>
+                <td>{fill.trade.entry.toFixed(2)}</td>
+                <td>{fill.trade.exit.toFixed(2)}</td>
+                <td>{fill.shares}</td>
+                <td>{fill.trade.outcome}</td>
+                <td>{`${fill.pnl >= 0 ? '+' : '−'}${money(Math.abs(fill.pnl))}`}</td>
+                <td>{money(fill.balance)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : null}
+
       <p className="instrument__caveat">
-        <strong>The two halves rest on different samples, and the smaller one is
-        small.</strong>{' '}
-        The setup figures come from {Math.round(scan.years)} years of daily bars.
-        The trade figures come from {funnel.mondays} Mondays, because Yahoo gives away
-        a rolling sixty days of intraday bars and refuses everything older — every
-        session beyond that exists only because a previous build kept it, and the
-        archive grows by seven a week. Read the trade column as a demonstration that
-        the machinery runs, not as evidence that the edge is real.
+        <strong>A backtest is not a track record.</strong> Every losing assumption here
+        is resolved against the trader — a bar covering both stop and target counts as
+        the stop, the limit only fills if a later bar actually reached it, and nothing
+        reads a price it would not have had. What is not modelled is commission, the
+        spread, and the fact that a real fill at the top of a gap is a hope rather than a
+        certainty. The sample is also small and stays small: the intraday archive rolls
+        at a year, because the bars behind that cannot be bought back.
       </p>
     </div>
   );
 }
 
-function median(values: number[]): number {
-  if (values.length === 0) return NaN;
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)];
+/** `2026-08-24` → `24 Aug 26`. Short enough for an axis, unambiguous anywhere. */
+function shortDate(date: string): string {
+  if (!date) return '';
+  const [y, m, d] = date.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${Number(d)} ${months[Number(m) - 1]} ${y.slice(2)}`;
 }
 
 function Control({
@@ -422,17 +538,19 @@ function Readout({
   value,
   note,
   strong,
+  tone,
 }: {
   label: string;
   value: string;
   note: string;
   strong?: boolean;
+  tone?: 'up' | 'down';
 }) {
   return (
     <div className={`instrument__cell${strong ? ' is-strong' : ''}`}>
       <dt className="mono-label">{label}</dt>
       <dd>
-        <span className="instrument__value">{value}</span>
+        <span className={`instrument__value${tone ? ` is-${tone}` : ''}`}>{value}</span>
         <span className="instrument__note">{note}</span>
       </dd>
     </div>

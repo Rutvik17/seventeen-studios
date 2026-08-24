@@ -4892,42 +4892,235 @@ html.no-js .exploded .exploded__svg {
   color: var(--fg);
 }
 
-.sweep__symbol {
-  font-family: var(--font-mono), monospace;
-  font-size: 13px;
-  letter-spacing: 0.08em;
+/* ---- the chart ---- */
+
+.sweep__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: calc(var(--grid-unit) * 0.9);
 }
 
-.sweep__name {
-  font-size: 11px;
-  color: var(--muted);
+.sweep__ranges {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.sweep__range {
+  padding: 6px 11px;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--fg-dim);
+  font-family: var(--font-mono), monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.16s var(--ease-out), color 0.16s var(--ease-out);
+}
+
+.sweep__range:hover { color: var(--fg); }
+
+.sweep__range.is-active {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.sweep__figure { margin-top: calc(var(--grid-unit) * 0.9); }
+
+.sweep__chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* The chart is the one element here that must not shrink into a smear. */
+  min-height: 240px;
+}
+
+.sweep__grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.sweep__price,
+.sweep__axis {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  fill: var(--muted);
 }
 
 /*
-  The funnel. One row per condition, in the order a Monday meets them, with the
-  bar showing the share of ALL Mondays each stage removes — so the rows sum to
-  the whole rather than each being a percentage of whatever was left.
+  Candles.
+
+  Hollow for up, filled for down — the older convention, and the one that reads
+  better on paper: a page of mostly-rising bars stays light instead of turning
+  into a wall of green. The wick takes the body's colour so a long tail still
+  belongs to its candle.
 */
+.sweep__candle line { stroke-width: 1; }
+
+.sweep__candle.is-up line,
+.sweep__candle.is-up rect {
+  stroke: var(--fg-dim);
+  fill: var(--bg);
+}
+
+.sweep__candle.is-down line,
+.sweep__candle.is-down rect {
+  stroke: var(--fg);
+  fill: var(--fg);
+}
+
+.sweep__candle rect { stroke-width: 1; }
+
+/* Too many bars to draw bodies: closes only. */
+.sweep__line {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+/*
+  The gap, behind the price.
+
+  Drawn from the bar that completed it to the bar that filled it, which is
+  exactly the span over which it was an unfilled inefficiency — the thing the
+  model claims to be trading.
+*/
+.sweep__gap {
+  fill: var(--accent);
+  opacity: 0.13;
+}
+
+.sweep__stop,
+.sweep__target {
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.sweep__stop { stroke: var(--accent-2); }
+.sweep__target { stroke: var(--accent); }
+
+.sweep__path {
+  stroke-width: 1.4;
+  fill: none;
+}
+
+.sweep__path.is-win { stroke: var(--accent); }
+.sweep__path.is-loss { stroke: var(--accent-2); }
+
+.sweep__marker.is-entry { fill: var(--fg); }
+.sweep__marker.is-win { fill: var(--accent); }
+.sweep__marker.is-loss { fill: var(--accent-2); }
+
+.sweep__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  margin-top: 10px;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.sweep__key {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  margin-right: -10px;
+}
+
+.sweep__key--gap { background: var(--accent); opacity: 0.25; }
+.sweep__key--entry { background: var(--fg); }
+.sweep__key--win { background: var(--accent); }
+.sweep__key--loss { background: var(--accent-2); }
+
+.sweep__empty {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Direction on the balance, and nowhere else — a coloured number is a claim. */
+.instrument__value.is-up { color: var(--accent); }
+.instrument__value.is-down { color: var(--accent-2); }
+
+/* ---- the trades ---- */
+
+.sweep__trades {
+  width: 100%;
+  margin-top: calc(var(--grid-unit) * 1.2);
+  border-collapse: collapse;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sweep__trades caption {
+  text-align: left;
+  padding-bottom: 10px;
+  color: var(--muted);
+}
+
+.sweep__trades th,
+.sweep__trades td {
+  padding: 7px 10px 7px 0;
+  text-align: right;
+  border-bottom: 1px solid var(--line);
+}
+
+.sweep__trades th:first-child,
+.sweep__trades td:first-child { text-align: left; }
+
+.sweep__trades th {
+  color: var(--muted);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+}
+
+.sweep__trades tr.is-win td:nth-child(6) { color: var(--accent); }
+.sweep__trades tr.is-loss td:nth-child(6) { color: var(--accent-2); }
+
+@media (max-width: 700px) {
+  /* Shares and the running balance are the first things to go on a phone. */
+  .sweep__trades th:nth-child(4),
+  .sweep__trades td:nth-child(4),
+  .sweep__trades th:nth-child(7),
+  .sweep__trades td:nth-child(7) {
+    display: none;
+  }
+}
+
+/* ---- where the Mondays went ---- */
+
 .sweep__funnel {
   list-style: none;
-  margin: 0;
+  margin: calc(var(--grid-unit) * 1.2) 0 0;
   padding: 0;
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 
 .sweep__stage {
   display: grid;
-  grid-template-columns: minmax(9rem, 12rem) 1fr 3rem;
+  grid-template-columns: minmax(9rem, 12rem) 1fr 2.5rem;
   align-items: center;
   gap: 12px;
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--fg-dim);
 }
 
 .sweep__stage-bar {
   display: block;
-  height: 9px;
+  height: 8px;
   background: var(--bg-sunk);
   border-radius: 2px;
   overflow: hidden;
@@ -4941,27 +5134,56 @@ html.no-js .exploded .exploded__svg {
 
 .sweep__stage-count {
   font-family: var(--font-mono), monospace;
-  font-size: 12px;
+  font-size: 11.5px;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
 /* What came out the far end. */
-.sweep__stage--out {
-  color: var(--fg);
-  font-weight: 500;
-}
+.sweep__stage--out { color: var(--fg); }
+.sweep__stage--out .sweep__stage-bar i { background: var(--accent); }
 
-.sweep__stage--out .sweep__stage-bar i {
-  background: var(--accent);
+.sweep__range:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {
-  .sweep__stage {
-    grid-template-columns: 1fr 2.6rem;
-  }
+  .sweep__stage { grid-template-columns: 1fr 2.5rem; }
   /* The bar is decoration once the row has to wrap; the count is the fact. */
-  .sweep__stage-bar {
-    display: none;
-  }
+  .sweep__stage-bar { display: none; }
+}
+
+/* ---- focusing a trade ---- */
+
+.sweep__caption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sweep__unfocus {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* The rows are the way to the trades on the chart, so they look like it. */
+.sweep__trades tbody tr { cursor: pointer; }
+.sweep__trades tbody tr:hover td { background: var(--accent-soft); }
+
+.sweep__trades tbody tr.is-focused td {
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.sweep__trades tbody tr:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
