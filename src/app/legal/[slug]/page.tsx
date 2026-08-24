@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { ogImage } from '@/lib/og';
 import { policies, policyBySlug } from '@/content/policies';
 import { Prose } from '@/components/Prose';
 import { Reveal } from '@/components/motion/Reveal';
@@ -21,6 +22,17 @@ export function generateMetadata({ params }: Params): Metadata {
   return {
     title: policy.title,
     description: policy.scope,
+    /*
+      Derived from the policy, like the title and the description above it, so
+      the three cannot drift apart. Without an `openGraph` block at all this
+      route inherited the root's — which would have posted a privacy policy
+      under the landing page's title and picture.
+    */
+    openGraph: {
+      title: policy.title,
+      description: policy.scope,
+      images: ogImage(`legal-${policy.slug}`, `${policy.title} — Seventeen Studios`),
+    },
     // A policy is a reference document, not something to surface in a feed.
     robots: { index: true, follow: true },
   };

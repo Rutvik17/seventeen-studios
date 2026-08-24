@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ogImage } from '@/lib/og';
 import { site } from '@/content/studio';
 import { ContactLink } from '@/components/ContactLink';
 import { Reveal } from '@/components/motion/Reveal';
@@ -10,7 +11,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: 'Contact',
   description: DESCRIPTION,
-  openGraph: { title: 'Contact Rutvik Patel', description: DESCRIPTION },
+  openGraph: { title: 'Contact Rutvik Patel', description: DESCRIPTION, images: ogImage('start', "The Seventeen Studios 17 mark on paper") },
 };
 
 /**

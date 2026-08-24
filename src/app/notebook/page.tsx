@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ogImage } from '@/lib/og';
 import { entries } from '@/content/notebook';
 import { SplitText } from '@/components/motion/SplitText';
 import { Reveal } from '@/components/motion/Reveal';
@@ -18,7 +19,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: 'Notebook',
   description: DESCRIPTION,
-  openGraph: { title: 'Engineering lessons', description: DESCRIPTION },
+  openGraph: { title: 'Engineering lessons', description: DESCRIPTION, images: ogImage('notebook', "The six notebook lessons listed as coloured bands, each in its own palette") },
 };
 
 /**

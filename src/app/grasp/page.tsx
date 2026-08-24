@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ogImage } from '@/lib/og';
 import { graspModule, onTheWeb } from '@/content/grasp';
 import { productBySlug } from '@/content/products';
 import { TransitionLink } from '@/components/Transition';
@@ -14,7 +15,14 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   // Set explicitly, from the same constant. Without it this route inherits the
   // root's `og:title` and shares itself as "Seventeen Studios".
-  openGraph: { title: `Learn calculus — ${graspModule.title}`, description: DESCRIPTION },
+  openGraph: {
+    title: `Learn calculus — ${graspModule.title}`,
+    description: DESCRIPTION,
+    images: ogImage(
+      'grasp-course',
+      'A chalkboard with the parabola f(x) = x squared and its tangent, labelled slope = 2x',
+    ),
+  },
 };
 
 /**

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ogImage } from '@/lib/og';
 import { notFound } from 'next/navigation';
 import { products, productBySlug } from '@/content/products';
 import { Chalkboard } from '@/components/grasp/Chalkboard';
@@ -24,6 +25,7 @@ export function generateMetadata({ params }: Params): Metadata {
       title: `${product.name} — ${product.tagline}`,
       description: product.summary,
       type: 'website',
+      images: ogImage(`products-${product.slug}`, `${product.name} — ${product.tagline}`),
     },
   };
 }

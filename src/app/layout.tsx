@@ -11,6 +11,7 @@ import { Footer } from '@/components/Footer';
 import { site } from '@/content/studio';
 import { founder } from '@/content/founder';
 import { currentYear } from '@/lib/time';
+import { ogImage } from '@/lib/og';
 import './globals.css';
 
 /**
@@ -72,6 +73,19 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://seventeenstudios.co
  */
 const LANDING_TITLE = `${founder.name} — ${founder.role}, ${founder.location}`;
 
+/*
+  The landing's card, and the fallback for any route that forgets its own.
+
+  Every route below does set one — but `openGraph` is inherited whole, so if one
+  ever stops, it inherits a real picture of this site rather than nothing. A
+  missing `og:image` is the one metadata failure that degrades to a bare grey
+  rectangle on every platform at once.
+*/
+const LANDING_IMAGE = ogImage(
+  'home',
+  `${founder.name} beside the companion device, its e-ink panel reading his name and title`,
+);
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   /*
@@ -120,11 +134,13 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_CA',
     siteName: site.name,
+    images: LANDING_IMAGE,
   },
   twitter: {
     card: 'summary_large_image',
     title: LANDING_TITLE,
     description: site.description,
+    images: LANDING_IMAGE,
   },
   robots: { index: true, follow: true },
 };

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ogImage } from '@/lib/og';
 import { RiskInstrument } from '@/components/instruments/RiskInstrument';
 import { CreditInstrument } from '@/components/instruments/CreditInstrument';
 import { RigDemo } from '@/components/instruments/RigDemo';
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   // Without this the route inherits the root's `og:title` and shares itself as
   // "Seventeen Studios", which is the brand rather than the page.
-  openGraph: { title: 'Working instruments', description: DESCRIPTION },
+  openGraph: { title: 'Working instruments', description: DESCRIPTION, images: ogImage('lab', "The Monte Carlo terminal-value distribution, with the worst 5 percent of outcomes marked off at the value-at-risk cut") },
 };
 
 /**
