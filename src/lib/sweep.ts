@@ -54,10 +54,16 @@
  * Bars
  * ------------------------------------------------------------------ */
 
-/** One session's daily bar. Dates are New York calendar days. */
+/**
+ * One session's daily bar. Dates are New York calendar days.
+ *
+ * No OPEN, because nothing reads one: the weekly test is Thursday's high against
+ * Friday's high, low and close, and ATR is built from high, low and close. It
+ * was a fifth of the weight of a ten-year series for a field no line of this
+ * file touched. Intraday bars DO carry it — a session chart draws candles.
+ */
 export type DailyBar = {
   date: string;
-  open: number;
   high: number;
   low: number;
   close: number;
@@ -702,4 +708,104 @@ export function backtest(
     equity: equityCurve(trades),
     years,
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * The weekly setup, on its own
+ * ------------------------------------------------------------------ */
+
+export type SetupScan = {
+  mondays: number;
+  holidayWeeks: number;
+  thursdayNotHigher: number;
+  fridayClosedStrong: number;
+  /** Mondays that passed the weekly filter. */
+  qualified: number;
+  /** …and then traded up into the sweep band. */
+  reached: number;
+  /**
+   * How near Monday came to Thursday's high, in ATRs, one per qualified Monday.
+   * Zero means it touched exactly; negative means it fell short.
+   */
+  reach: number[];
+  years: number;
+};
+
+/**
+ * Scan the weekly setup across daily bars alone.
+ *
+ * The first three conditions — Thursday higher than Friday, Friday closing weak,
+ * Monday reaching back up — are entirely daily-bar questions. Nothing about them
+ * needs an intraday series, which matters a great deal here: the intraday
+ * archive is sixty days deep and growing, while daily bars go back a decade.
+ *
+ * So the rarity of the SETUP can be measured over ten years and thousands of
+ * Mondays today, while the profitability of the TRADE waits for the archive.
+ * Reporting the two at their own sample sizes, rather than pretending both rest
+ * on the smaller one, is the difference between a result and a guess.
+ */
+export function scanSetups(daily: DailyBar[], overrides: Partial<SweepParams> = {}): SetupScan {
+  const params = { ...DEFAULTS, ...overrides };
+  const atrs = atr(daily);
+
+  const scan: SetupScan = {
+    mondays: 0,
+    holidayWeeks: 0,
+    thursdayNotHigher: 0,
+    fridayClosedStrong: 0,
+    qualified: 0,
+    reached: 0,
+    reach: [],
+    years: 0,
+  };
+
+  let first = '';
+  let last = '';
+
+  for (let i = 2; i < daily.length; i++) {
+    const monday = daily[i];
+    if (dayOfWeek(monday.date) !== 1) continue;
+
+    scan.mondays++;
+    first ||= monday.date;
+    last = monday.date;
+
+    const friday = daily[i - 1];
+    const thursday = daily[i - 2];
+
+    // A short week is skipped rather than approximated: the setup is about a
+    // week ending weak into the weekend, and a Wednesday close is not that.
+    if (dayOfWeek(friday.date) !== 5 || dayOfWeek(thursday.date) !== 4) {
+      scan.holidayWeeks++;
+      continue;
+    }
+
+    if (thursday.high <= friday.high) {
+      scan.thursdayNotHigher++;
+      continue;
+    }
+
+    const range = friday.high - friday.low;
+    const closePosition = range > 0 ? (friday.close - friday.low) / range : 1;
+    if (closePosition > params.fridayCloseBand) {
+      scan.fridayClosedStrong++;
+      continue;
+    }
+
+    const atrValue = atrs[i - 1];
+    if (!Number.isFinite(atrValue) || atrValue <= 0) continue;
+
+    scan.qualified++;
+    const gap = (monday.high - thursday.high) / atrValue;
+    scan.reach.push(gap);
+    if (gap >= -params.sweepAtr) scan.reached++;
+  }
+
+  scan.years =
+    first && last
+      ? (Date.parse(`${last}T12:00:00Z`) - Date.parse(`${first}T12:00:00Z`)) /
+        (365.25 * 24 * 3600 * 1000)
+      : 0;
+
+  return scan;
 }

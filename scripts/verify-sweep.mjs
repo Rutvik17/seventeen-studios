@@ -17,13 +17,13 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { backtest, monteCarlo, DEFAULTS } from '../src/lib/sweep.ts';
+import { backtest, monteCarlo, scanSetups, DEFAULTS } from '../src/lib/sweep.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const data = JSON.parse(readFileSync(path.join(root, 'src', 'content', 'sweep.json'), 'utf8'));
 
 const toDaily = (rows) =>
-  rows.map(([date, open, high, low, close]) => ({ date, open, high, low, close }));
+  rows.map(([date, high, low, close]) => ({ date, high, low, close }));
 
 const toSessions = (byDay) =>
   Object.fromEntries(
@@ -36,7 +36,48 @@ const toSessions = (byDay) =>
 const pct = (v) => `${(v * 100).toFixed(1)}%`;
 const num = (v, d = 2) => (Number.isFinite(v) ? v.toFixed(d) : '—');
 
-console.log(`\nParameters: ${JSON.stringify(DEFAULTS)}\n`);
+console.log(`\nParameters: ${JSON.stringify(DEFAULTS)}`);
+
+/*
+  The weekly setup first, at its own sample size.
+
+  This half needs only daily bars, so it is measured over ten years and thousands
+  of Mondays while the trade half waits on an intraday archive that is sixty days
+  deep. Printing them together, each labelled with what it rests on, is the point
+  — quoting one sample size for both would be the lie.
+*/
+const scans = data.tickers.map((t) => ({ symbol: t.symbol, scan: scanSetups(toDaily(t.daily)) }));
+
+console.log('\nThe weekly setup — ten years of daily bars');
+console.log('ticker  mondays  qualified  reached  median reach (ATR)');
+console.log('-'.repeat(54));
+
+const setups = { mondays: 0, qualified: 0, reached: 0, reach: [] };
+for (const { symbol, scan } of scans) {
+  const sorted = [...scan.reach].sort((a, b) => a - b);
+  const median = sorted.length ? sorted[Math.floor(sorted.length / 2)] : NaN;
+  console.log(
+    `${symbol.padEnd(7)} ${String(scan.mondays).padEnd(8)} ` +
+      `${String(scan.qualified).padEnd(10)} ${String(scan.reached).padEnd(8)} ${num(median)}`,
+  );
+  setups.mondays += scan.mondays;
+  setups.qualified += scan.qualified;
+  setups.reached += scan.reached;
+  setups.reach = setups.reach.concat(scan.reach);
+}
+
+const allSorted = [...setups.reach].sort((a, b) => a - b);
+console.log(
+  `${'POOLED'.padEnd(7)} ${String(setups.mondays).padEnd(8)} ` +
+    `${String(setups.qualified).padEnd(10)} ${String(setups.reached).padEnd(8)} ` +
+    `${num(allSorted[Math.floor(allSorted.length / 2)])}`,
+);
+console.log(
+  `        ${pct(setups.qualified / setups.mondays)} of Mondays qualify; ` +
+    `${pct(setups.reached / setups.qualified)} of those reach the band`,
+);
+
+console.log(`\nThe trade — ${data.interval} bars, ${Object.keys(data.tickers[0].intraday).length} Mondays a ticker and growing\n`);
 
 const header =
   'ticker  mondays  traded  win%   expect   totalR  PF    maxDD  Sharpe  plannedRR';
@@ -47,7 +88,7 @@ const all = [];
 
 for (const ticker of data.tickers) {
   const daily = toDaily(ticker.daily);
-  const sessions = toSessions(ticker[process.argv[2] === 'fine' ? 'fine' : 'hourly']);
+  const sessions = toSessions(ticker.intraday);
   const result = backtest(daily, sessions);
   const m = result.metrics;
   all.push({ ticker, result });
