@@ -29,9 +29,17 @@ export type Bar = {
   o: number | null;
   h: number | null;
   l: number | null;
-  /** Split and dividend adjusted close. */
+  /** Split and dividend adjusted close. Use for RETURNS. */
   c: number;
   v: number;
+  /**
+   * Dollar volume, from the unadjusted close.
+   *
+   * Never recompute this as `c * v`. The adjusted close divides out every
+   * dividend between that day and today, so it encodes the future — see the
+   * note in `scripts/fetch-prices.mjs`.
+   */
+  dv?: number;
 };
 
 const nan = (n: number) => new Array<number>(n).fill(NaN);
@@ -299,7 +307,13 @@ export function illiquidity(bars: Bar[], window = 21): number[] {
   const daily = nan(bars.length);
   for (let i = 1; i < bars.length; i++) {
     const a = bars[i - 1].c;
-    const dollar = bars[i].c * bars[i].v;
+    /*
+      Dollar volume must come from the UNADJUSTED close. `c * v` would use the
+      adjusted price, whose adjustment factor summarises every dividend paid
+      between that day and today — a look-ahead leak straight into the model's
+      fourth-most-important feature. Falls back only when the field is absent.
+    */
+    const dollar = bars[i].dv ?? bars[i].c * bars[i].v;
     if (a > 0 && dollar > 0) daily[i] = Math.abs(bars[i].c / a - 1) / dollar;
   }
   let sum = 0;

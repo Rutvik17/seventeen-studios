@@ -21,7 +21,8 @@
     "train": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/train.mjs",
     "data:fundamentals": "node scripts/fetch-fundamentals.mjs",
     "data:macro": "node scripts/fetch-macro.mjs",
-    "backtest": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/backtest.mjs"
+    "backtest": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/backtest.mjs",
+    "archive": "node scripts/archive.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

@@ -177,6 +177,26 @@ async function bars(symbol, period1, period2) {
       l: Number.isFinite(low) ? +(low * k).toFixed(4) : null,
       c: +adjClose.toFixed(4),
       v: Number.isFinite(volume) ? volume : 0,
+      /*
+        DOLLAR VOLUME FROM THE UNADJUSTED CLOSE, AND THIS IS A LOOK-AHEAD FIX.
+
+        The obvious computation is adjusted close x volume, and it leaks. Yahoo's
+        adjusted close divides out every dividend paid between that day and
+        TODAY, so the adjustment factor is a summary of the future. Using it to
+        value a 2013 day makes high-future-dividend names look systematically
+        less liquid in 2013 — and "will pay a lot of dividends over the next
+        thirteen years" is a real characteristic correlated with returns.
+
+        Measured on 2013-01-02: k is 0.92 for NVDA, 0.84 for AAPL, 0.70 for JPM
+        and 0.58 for XOM, so dollar volume was understated by 1.1x to 1.7x in a
+        pattern that tracks future dividend policy. Illiquidity was the model's
+        fourth most important feature at 11.4%, so this was not academic.
+
+        `q.close` is already split-adjusted by Yahoo but NOT dividend-adjusted,
+        which is exactly what dollar volume wants: the actual money that changed
+        hands, in share terms comparable across the series.
+      */
+      dv: Number.isFinite(volume) ? Math.round(close * volume) : 0,
     });
   }
   return out;
