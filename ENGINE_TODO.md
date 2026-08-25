@@ -19,12 +19,21 @@ Last updated: 2026-08-25
 | Out-of-sample IC, price-only | **+0.0215**, t 12.2, 12/14 years positive |
 | Out-of-sample IC, + fundamentals | +0.0173 (worse) |
 | Out-of-sample IC, + fundamentals + macro | +0.0214 (tie with price-only) |
-| Backtest vs SPY | 12.30% vs 14.85% — **behind by 2.55%/yr** |
-| Backtest max drawdown | **24.96% vs SPY 33.72%** — the one clear win |
-| Turnover | 71%/rebalance = **3.7%/yr in costs** |
+| Backtest vs SPY | **22.40% vs 14.85% — ahead by 7.55%/yr** |
+| Sharpe | **1.20 vs 0.91** (deflates to ~1.00 after selection) |
+| Max drawdown | **22.51% vs SPY 33.72%** |
+| Years beating SPY | **11 of 14**; 2 losing years |
+| 2018 | **+7.36% while SPY was -5.25%** |
 
-**The gap to SPY is smaller than the cost drag.** Gross of costs the strategy is
-roughly +1.2% ahead. That makes turnover the headline problem, not prediction.
+Construction, not prediction, was the problem. Three fixes moved it from -2.92%
+to +1.46% against SPY with the model untouched; monthly rebalancing took it to
++7.55%.
+
+**Read with two caveats.** Sharpe 1.20 deflates to 1.00 once corrected for
+having tried eleven configurations — 0.198 of it is pure selection. And
+survivorship is still unquantified: the universe is today's 503 names, so every
+company that failed is absent, and that flatters a long book by an unknown
+amount. It is the largest unmeasured risk to this result.
 
 ---
 
@@ -57,13 +66,22 @@ roughly +1.2% ahead. That makes turnover the headline problem, not prediction.
 
 ## Now
 
-- [ ] **Generate the prediction tape** — running, ~70 min, one time
-- [ ] **Sweep the no-trade band** (0.25% / 0.5% / 1% / 2%). Expected to recover
-      most of the 3.7% cost drag. Highest-impact item on this list.
-- [ ] **Sweep the exposure floor** (0.25 / 0.4 / 0.6). Three dampeners multiply
-      and compounded to 0.05 — five percent invested.
-- [ ] **Validate regime-gated shorts** against always-on (26 shorts were carried
-      on average through a 14-year bull market)
+- [x] **Prediction tape** — 3,431 days, 1.6M scores, 38.6 MB. Construction is
+      now tunable without retraining.
+- [x] **No-trade band swept.** 0.5% recovered +1.97 points against SPY.
+- [x] **Exposure floor swept.** 0.25 added +0.35.
+- [x] **Regime-gated shorts validated.** +2.06 points and turnover from 81% to
+      56% — carrying 26 permanent shorts through a bull market was expensive.
+- [x] **Deflated Sharpe applied to our own sweep.** E[max Sharpe] under no skill
+      across 11 trials is 0.198, so 1.20 is honestly 1.00. Returns are fat
+      tailed (kurtosis 7.02) and negatively skewed (-0.371), which is why
+      normality-based methods stay off the list.
+- [ ] **Test the horizon-matching hypothesis.** Monthly rebalancing was
+      justified by matching the 21-day label, and that argument is sound — but
+      it was found by sweeping, not derived first, which makes it post-hoc until
+      tested. Falsifiable: retrain with a 5-day label and weekly should become
+      optimal; a 63-day label should favour quarterly. If monthly wins
+      regardless of the label, the story was fitted to the number and we say so.
 - [ ] **Raise the tree cap, cut the learning rate.** Binding on five folds —
       2019 → 399, 2022 → 400, 2024 → 400. Current results are a floor.
 - [ ] **Clean re-run of the 3-way IC comparison** on the fixed prices, to see how
