@@ -48,6 +48,12 @@ import {
   technicalFeatures,
   type Bar,
 } from './technical';
+import {
+  FUNDAMENTAL_COLUMNS,
+  fundamentalFeatures,
+  type Facts,
+} from './fundamental';
+import { MACRO_COLUMNS, macroFeatures, type MacroData } from './macro';
 
 /** Trading days ahead the model is asked to predict. One month. */
 export const HORIZON = 21;
@@ -84,6 +90,15 @@ export type Panel = {
   rows: PanelRow[];
   /** Benchmark close per date index, for the backtest and the regime model. */
   benchmarkClose: number[];
+  /**
+   * How many leading columns get cross-sectionally ranked.
+   *
+   * Everything after this index is macro: identical across names on any given
+   * day, so ranking it would flatten it to a constant and silently delete it.
+   * Those columns pass through raw, which is what lets a tree put `vix > 28`
+   * above `beta_rank > 0.3` and express an interaction in two nodes.
+   */
+  rankableColumns: number;
 };
 
 /**
@@ -115,7 +130,22 @@ function forwardExcess(
   return out;
 }
 
-export function buildPanel(data: PriceData, horizon = HORIZON): Panel {
+export type PanelOptions = {
+  horizon?: number;
+  /**
+   * Per-symbol SEC facts. Omit to build a price-only panel.
+   *
+   * Kept optional so the two feature sets can be measured against each other on
+   * IDENTICAL folds — same dates, same embargo, same seed, one variable changed.
+   * Any other comparison is an opinion.
+   */
+  fundamentals?: Record<string, Facts>;
+  /** Rates, credit, volatility, commodities and the FOMC calendar. */
+  macro?: MacroData;
+};
+
+export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
+  const horizon = options.horizon ?? HORIZON;
   const bench = data.bars[data.benchmark];
   if (!bench?.length) throw new Error('no benchmark bars');
 
@@ -131,6 +161,14 @@ export function buildPanel(data: PriceData, horizon = HORIZON): Panel {
   const dateIndex = new Map(dates.map((d, i) => [d, i]));
   const benchmarkClose = bench.map((b) => b.c);
   const market = logReturns(bench);
+
+  /*
+    Computed ONCE, outside the per-name loop. Macro does not vary by company, so
+    recomputing it 500 times would be 500 identical passes over 4,207 dates.
+  */
+  const macroRows = options.macro
+    ? macroFeatures(options.macro, dates, benchmarkClose)
+    : null;
 
   const symbols: string[] = [];
   const industries: string[] = [];
@@ -157,6 +195,16 @@ export function buildPanel(data: PriceData, horizon = HORIZON): Panel {
     const features = technicalFeatures(bars, marketForName);
     const labels = forwardExcess(bars, at, benchmarkClose, horizon);
 
+    /*
+      Fundamentals are indexed by CALENDAR date; technicals by the name's own bar
+      index. They are different axes and mixing them up would silently pair a
+      company's Tuesday prices with someone else's Thursday filings. Each row is
+      assembled from `features[i]` and `funda[t]` explicitly.
+    */
+    const funda = options.fundamentals
+      ? fundamentalFeatures(options.fundamentals[entry.symbol] ?? {}, dates)
+      : null;
+
     const s = symbols.length;
     symbols.push(entry.symbol);
     industries.push(entry.industry);
@@ -164,15 +212,27 @@ export function buildPanel(data: PriceData, horizon = HORIZON): Panel {
     for (let t = 0; t < dates.length; t++) {
       const i = at[t];
       if (i < 0) continue;
-      const f = features[i];
+      const f = [
+        ...features[i],
+        ...(funda ? funda[t] : []),
+        ...(macroRows ? macroRows[t] : []),
+      ];
       /*
-        A row with no usable features is not a row. Requiring most of them
-        present drops the first year of every name's life, which is exactly
-        where the long-window features are undefined.
+        The completeness gate counts TECHNICAL columns only.
+
+        Requiring most features present drops the first year of every name's
+        life, which is where the long-window technicals are undefined — that is
+        the intent. Counting fundamentals in the same test would be a different
+        and wrong rule: a company that simply does not report inventory or R&D
+        is not a company with bad price data, and gating on the combined row
+        would silently delete every name with sparse filings. Missing
+        fundamentals are a fact about the company, and the trees handle them.
       */
       let known = 0;
-      for (const v of f) if (Number.isFinite(v)) known++;
-      if (known < f.length * 0.7) continue;
+      for (let k = 0; k < TECHNICAL_COLUMNS.length; k++) {
+        if (Number.isFinite(f[k])) known++;
+      }
+      if (known < TECHNICAL_COLUMNS.length * 0.7) continue;
       rows.push({ t, s, features: f, label: labels[t] });
     }
   }
@@ -181,9 +241,15 @@ export function buildPanel(data: PriceData, horizon = HORIZON): Panel {
     dates,
     symbols,
     industries,
-    columns: [...TECHNICAL_COLUMNS],
+    columns: [
+      ...TECHNICAL_COLUMNS,
+      ...(options.fundamentals ? FUNDAMENTAL_COLUMNS : []),
+      ...(options.macro ? MACRO_COLUMNS : []),
+    ],
     rows,
     benchmarkClose,
+    rankableColumns:
+      TECHNICAL_COLUMNS.length + (options.fundamentals ? FUNDAMENTAL_COLUMNS.length : 0),
   };
 }
 
@@ -215,7 +281,7 @@ export function rankNormalise(panel: Panel): void {
     list.push(row);
   }
 
-  const columnCount = panel.columns.length;
+  const columnCount = panel.rankableColumns;
 
   for (const list of byDate.values()) {
     const groups = new Map<string, PanelRow[]>();
@@ -234,7 +300,11 @@ export function rankNormalise(panel: Panel): void {
         down a learned missing-value branch instead.
       */
       if (group.length < 5) {
-        for (const row of group) row.features = new Array(columnCount).fill(NaN);
+        // Blank the ranked columns only. The macro tail is still valid — it was
+        // never a cross-sectional measurement and does not depend on the group.
+        for (const row of group) {
+          for (let c = 0; c < columnCount; c++) row.features[c] = NaN;
+        }
         continue;
       }
 
