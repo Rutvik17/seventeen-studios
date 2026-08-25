@@ -20,7 +20,8 @@
     "data:prices": "node scripts/fetch-prices.mjs",
     "train": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/train.mjs",
     "data:fundamentals": "node scripts/fetch-fundamentals.mjs",
-    "data:macro": "node scripts/fetch-macro.mjs"
+    "data:macro": "node scripts/fetch-macro.mjs",
+    "backtest": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/backtest.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
