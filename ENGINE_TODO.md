@@ -82,8 +82,28 @@ amount. It is the largest unmeasured risk to this result.
       tested. Falsifiable: retrain with a 5-day label and weekly should become
       optimal; a 63-day label should favour quarterly. If monthly wins
       regardless of the label, the story was fitted to the number and we say so.
-- [ ] **Raise the tree cap, cut the learning rate.** Binding on five folds —
-      2019 → 399, 2022 → 400, 2024 → 400. Current results are a floor.
+- [x] **Tree cap and learning rate — TESTED AND REJECTED.** Seven configurations
+      on the 2022 fold (400-2000 trees, rates 0.030-0.008, depths 4-8, a 4.4x
+      spread in runtime). Total spread in out-of-sample IC: **0.0030**. Given
+      1000 trees the model stops at 426 on its own, so the cap was binding by 26
+      rounds, not hundreds. **Capacity is not the constraint and the earlier
+      claim that results were "a floor" was wrong.**
+
+      The experiment found something more useful than it went looking for:
+      **Spearman rho between validation MSE and test IC is -0.036.** Our
+      selection criterion carries no information about out-of-sample
+      performance. The config with the best validation MSE had the second-worst
+      test IC — the textbook signature of fitting the validation split.
+
+      The cause is structural. Validation is the last 15% of training
+      CHRONOLOGICALLY, so on the 2022 fold it tunes on 2021 and then trades
+      2022. We select models on the wrong regime. This is the same disease as
+      macro helping in 2018/2020/2021 and hurting in 2022, and fundamentals
+      helping only in volatile years: **the model has no notion of which regime
+      it is in, and neither does the procedure that picks it.**
+
+      Consequence: CPCV and regime-conditional weighting move UP the list;
+      hyperparameter work moves off it.
 - [ ] **Clean re-run of the 3-way IC comparison** on the fixed prices, to see how
       much of the +0.0215 the illiquidity leak was doing
 
