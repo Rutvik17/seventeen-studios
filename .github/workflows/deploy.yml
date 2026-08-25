@@ -26,25 +26,29 @@ on:
   # computed at build time by `src/lib/time.ts` and freezes at the moment of
   # the build.
   #
-  # Market data is the reason this is DAILY rather than monthly: `prebuild`
-  # runs `scripts/fetch-market.mjs` for the risk desk and `alpha:data` for the
-  # factor panel. 22:30 UTC is after the US close and its settlement, so the
-  # fetch picks up a finished session rather than a partial one.
+  # Market data is the reason this is DAILY rather than monthly: the scheduled
+  # run refetches prices, SEC fundamentals and macro, and appends what cannot be
+  # re-fetched later to the archive. 22:30 UTC is after the US close and its
+  # settlement, so it picks up a finished session rather than a partial one.
   schedule:
     - cron: '30 22 * * 1-5'
   # Lets you publish a build by hand from the Actions tab.
   workflow_dispatch:
 
-# Exactly what actions/deploy-pages needs, and nothing more.
+# `contents: write` so the nightly run can push the archive back.
 #
-# This was `contents: write` for the intraday archive, which merged each run's
-# fifteen-minute bars into a committed file and pushed it back — the only way to
-# accumulate history behind Yahoo's 60-day wall. That strategy is gone and so is
-# the accumulator: the factor panel is rebuilt from five years of daily bars
-# every run, which Yahoo serves in full, so nothing needs remembering and the
-# build no longer writes to the repository at all.
+# Three of the four data sources destroy history. Yahoo purges delisted symbols
+# outright — eight were tested and all eight 404 — so a holding that gets
+# acquired takes its entire price history with it. The constituent list only
+# ever describes today, which is exactly why survivorship cannot be fixed
+# retroactively but can be fixed going forward. XBRL restatements overwrite.
+#
+# None of that is recoverable later, so the run writes what it saw to `archive/`
+# and commits it. The alternative is discovering in 2031 that the five years of
+# point-in-time index membership we could have had for 30 KB a week does not
+# exist.
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -57,7 +61,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Full history, because the archive step may have to rebase.
+      # `actions/checkout` defaults to a depth of 1, and `git pull --rebase` on a
+      # shallow clone fails — which would turn a routine race with another push
+      # into a lost day of archive.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -87,6 +97,59 @@ jobs:
           fi
 
       - run: npm ci
+
+      # The heavy fetch runs on a SCHEDULE, not on every push.
+      #
+      # Prices, fundamentals and macro are about 2,100 requests across Yahoo and
+      # the SEC — roughly eight minutes, and a volume of traffic worth spacing
+      # out rather than firing every time somebody edits a paragraph. Yahoo
+      # throttles by IP and GitHub runners share them.
+      #
+      # A push-triggered build skips this and uses whatever is committed, which
+      # is correct: the site renders from the archive and from published
+      # results, never from a live fetch.
+      - name: Refresh engine data
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: npm run data:all
+
+      # The archive only grows if somebody keeps it.
+      #
+      # "Refresh engine data" above has fetched today's prices, fundamentals and
+      # macro into `data/`, which is gitignored and thrown away with the runner.
+      # This promotes the parts that cannot be re-fetched later into `archive/`
+      # and commits them.
+      #
+      # `[skip ci]` matters: the push would otherwise retrigger this workflow and
+      # it would sit rebuilding itself.
+      - name: Keep the archive
+        if: >-
+          github.ref == 'refs/heads/main' &&
+          (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        run: |
+          set -euo pipefail
+          npm run archive
+
+          # `git diff --quiet` is the right test here rather than counting rows.
+          # The archive is append-only and idempotent — a run that fetched
+          # nothing new leaves every file byte-identical, so an empty diff
+          # genuinely means there was nothing to keep.
+          if git diff --quiet -- archive; then
+            echo "nothing new to keep"
+            exit 0
+          fi
+
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add archive
+          git commit -m "chore: extend the archive [skip ci]"
+
+          # Keeping the archive must never cost a deploy. If main moved while
+          # this build was running, rebase once and retry; if it still will not
+          # go, say so and carry on — today's rows are re-fetchable tomorrow and
+          # a published site is not.
+          git push || {
+            git pull --rebase --autostash origin main && git push
+          } || echo "::warning::archive push failed; the site still deploys"
 
       - name: Build static site
         env:
