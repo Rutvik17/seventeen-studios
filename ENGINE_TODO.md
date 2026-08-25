@@ -125,6 +125,54 @@ roughly +1.2% ahead. That makes turnover the headline problem, not prediction.
 
 ---
 
+## Mathematical programme
+
+Real methods with a specific problem each. Ordered so that nothing sophisticated
+gets built on top of something broken — maths multiplies an edge, it does not
+create one, and it cannot outrun a leak.
+
+- [ ] **Deflated Sharpe ratio** (Bailey & Lopez de Prado). Corrects for multiple
+      testing: sweep eleven configurations and the winner is flattered by
+      selection. There is a formula for how much. **Apply it to our own sweep
+      before believing the result** — this is the Markopolos discipline pointed
+      at ourselves rather than at somebody else's fund.
+- [ ] **Garleanu-Pedersen optimal trading.** With decaying alpha and quadratic
+      costs, the optimal policy is neither trade-to-target nor a no-trade band —
+      it is to move a constant fraction toward a weighted average of current and
+      future targets. Closed form, and it replaces the heuristic band directly.
+      The most applicable piece of real mathematics on this list, because
+      turnover is our measured problem.
+- [ ] **Random matrix theory for the covariance.** Marchenko-Pastur says which
+      eigenvalues of a sample covariance are indistinguishable from noise at a
+      given sample size. Estimating 500x500 from 250 observations is exactly
+      that regime. Ledoit-Wolf shrinkage is the blunt instrument; eigenvalue
+      clipping is the sharp one.
+- [ ] **Regime-conditional model averaging.** Macro helps in volatile years and
+      hurts in calm ones — that is a mixture-of-experts problem, not a feature
+      selection problem. Hidden Markov regime states, or Bayesian model
+      averaging where each family's weight is a function of the regime.
+- [ ] **Conformal prediction for confidence.** Distribution-free prediction
+      intervals with finite-sample coverage. Returns are not normal, so an
+      interval that assumes they are is decoration.
+- [ ] **Combinatorial purged cross-validation.** Our 21-day embargo is the
+      simple version; CPCV is the rigorous one and gives a distribution of
+      backtest outcomes rather than a single path.
+
+### Methods deliberately NOT adopted, and why
+
+Sophistication that hides an assumption is more dangerous than a simple method
+that exposes one. LTCM had two Nobel laureates. The Gaussian copula was elegant
+and assumed away tail correlation. Black-Scholes assumes lognormal returns in a
+market with fat tails.
+
+- **Gaussian copulas / normality anywhere it matters.** Equity returns have fat
+  tails and correlations that rise precisely when they are least welcome.
+- **Continuous-time stochastic calculus for selection.** Genuinely required for
+  derivatives pricing; the cross-sectional problem here is discrete and
+  statistical, and Ito would be costume rather than content.
+
+---
+
 ## Research questions
 
 Open problems, not tasks. Each needs thinking before it needs code.
