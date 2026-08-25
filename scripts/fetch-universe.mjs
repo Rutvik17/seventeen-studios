@@ -3,48 +3,105 @@
  *
  *   npm run alpha:data
  *
- * Fetches five years of daily bars for a universe of large-cap US stocks,
+ * Fetches the current S&P 500 constituents, five years of daily bars for each,
  * computes every factor at every month end, and writes what the model needs to
- * `src/content/alpha.json` — a few hundred kilobytes of numbers rather than the
- * five megabytes of prices they came from.
+ * `src/content/alpha.json` — a couple of megabytes of numbers rather than the
+ * ten megabytes of prices they came from.
+ *
+ * ---
+ *
+ * WHY THE UNIVERSE IS FETCHED RATHER THAN WRITTEN DOWN
+ *
+ * It used to be a hand-typed list of 256 names grouped into 45 industries I
+ * chose. That is an undisclosed active bet sitting underneath every number the
+ * model produces: some of the return is factor alpha and some of it is that I
+ * typed NVDA and did not type a retailer that later died, and nothing in the
+ * backtest separates those two.
+ *
+ * A universe defined by somebody else removes the author from the selection,
+ * which is the only thing that makes the comparison against SPY honest. It also
+ * stops being wrong the moment the index changes.
+ *
+ * ---
+ *
+ * SURVIVORSHIP BIAS, STATED PLAINLY AND STILL UNFIXED
+ *
+ * These are the companies in the index TODAY. Backtesting them over five years
+ * silently excludes everything that was in the index five years ago and then
+ * failed, was acquired, or was dropped.
+ *
+ * The fix would be point-in-time membership, and membership alone is free —
+ * Wikipedia carries dated additions and removals. Prices for the departed are
+ * not: SIVB, FRC, ATVI, XLNX, TWTR, CERN, ANSS and NLOK were all tested against
+ * the Yahoo chart API and all eight return 404. Yahoo purges delisted symbols
+ * outright.
+ *
+ * Reconstructing membership without those prices would be WORSE than this. It
+ * would look rigorous while still dropping every failure, because the failures
+ * are exactly the rows that cannot be filled. So the bias stays, disclosed, and
+ * it flatters the long side by an unknown amount.
  *
  * ---
  *
  * WHY THE PRICES ARE THROWN AWAY
  *
- * A hundred names of daily OHLCV is 5.3 MB, and the browser needs none of it.
- * What the model consumes is seven exposures and one return per stock per month:
- * about a hundredth of the size, and enough to re-run the ranking, the
- * covariance and the optimiser live when a slider moves.
- *
- * The prices are fetched, used, and discarded on every build. Only the panel is
- * committed.
- *
- * ---
- *
- * SURVIVORSHIP BIAS, STATED PLAINLY
- *
- * The universe below is a list of companies that are large and listed TODAY.
- * Backtesting it over five years silently excludes everything that was large
- * five years ago and then failed, was acquired, or fell out of the index — and
- * those are precisely the names a long-short model would have been short.
- *
- * The honest fix is a point-in-time constituent list, which is not free. So the
- * bias is disclosed on the page rather than papered over: it flatters the long
- * side, and the size of the flattery is unknown. Every published estimate puts
- * it at a meaningful fraction of a percent a year, not a rounding error.
+ * Five hundred names of daily OHLCV is about 10 MB and the browser needs none of
+ * it. What the model consumes is seven exposures and one return per stock per
+ * month. The prices are fetched, used, and discarded on every build; only the
+ * panel is committed.
  */
 
-import { mkdirSync, writeFileSync, statSync } from 'node:fs';
+import { mkdirSync, writeFileSync, statSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { FACTORS, exposures } from '../src/lib/factors.ts';
-import { UNIVERSE } from '../src/content/universe.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outFile = path.join(root, 'src', 'content', 'alpha.json');
 
+/*
+  The constituent list, as a plain CSV maintained by a bot.
+
+  Wikipedia is the usual source and it was tested first: the rendered HTML table
+  parsed ZERO rows, which is exactly the fragility you do not want in a build
+  that runs unattended every weekday. This is a CSV with a stable header and no
+  markup to break.
+*/
+const CONSTITUENTS =
+  'https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv';
+
+/*
+  How fine the industry buckets are allowed to get.
+
+  The factors are neutralised WITHIN these buckets, so the granularity decides
+  what the model is allowed to bet on. Rank a semiconductor against a utility on
+  twelve-month momentum and most of what the ranking measures is that
+  semiconductors ran and utilities did not — a sector call wearing a
+  stock-selection costume, already available for nothing in a sector ETF.
+
+  But a bucket needs a population to demean against, and GICS sub-industries are
+  far too fine for that: 127 groups over 503 names, median 3 names each, 72% of
+  them below five. A z-score inside a group of three is not neutralising
+  anything, it is ranking three stocks and calling it a factor.
+
+  So: keep the sub-industry where it can support itself, otherwise fall back to
+  the parent sector. Measured across thresholds, eight is the knee —
+
+      N    groups   median   under-8   kept at sub-industry
+      4       61        6        34          70%
+      8       29       13         1          39%
+     20       11       34         0           0%   (pure sector)
+
+  29 groups at a median of 13 keeps Semiconductors, Application Software and
+  Aerospace & Defense as their own populations while leaving exactly one thin
+  bucket. The old hand-made scheme was 45 groups of about six, which had the
+  sub-industry problem without anybody noticing.
+*/
+const MIN_BUCKET = 8;
+
+/** How many price requests are in flight at once. Politeness, not throughput. */
+const CONCURRENCY = 6;
 
 const NY = 'America/New_York';
 const dayFmt = new Intl.DateTimeFormat('en-CA', {
@@ -57,15 +114,78 @@ const round = (v, places = 4) => {
   return Math.round(v * f) / f;
 };
 
+const AGENT =
+  'Mozilla/5.0 (compatible; seventeen-studios-build/1.0; +https://github.com/Rutvik17/seventeen-studios)';
+
+/** RFC 4180 enough: quoted fields carry commas ("Saint Paul, Minnesota"). */
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let quoted = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else quoted = false;
+      } else field += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else if (c !== '\r') field += c;
+  }
+  if (field || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+async function constituents() {
+  const res = await fetch(CONSTITUENTS, { headers: { 'User-Agent': AGENT } });
+  if (!res.ok) throw new Error(`constituents: HTTP ${res.status}`);
+
+  const [header, ...rows] = parseCSV(await res.text());
+  const col = (name) => {
+    const i = header.indexOf(name);
+    if (i < 0) throw new Error(`constituents: no "${name}" column — the schema moved`);
+    return i;
+  };
+  const iSymbol = col('Symbol');
+  const iName = col('Security');
+  const iSector = col('GICS Sector');
+  const iSub = col('GICS Sub-Industry');
+
+  const listed = rows
+    .filter((r) => r[iSymbol])
+    .map((r) => ({
+      /*
+        Yahoo spells share classes with a hyphen where the index uses a dot:
+        BRK.B is BRK-B, BF.B is BF-B. Four names, and getting it wrong drops
+        them silently as failed fetches rather than loudly as an error.
+      */
+      symbol: r[iSymbol].trim().replace(/\./g, '-'),
+      name: r[iName].trim(),
+      sector: r[iSector].trim(),
+      sub: r[iSub].trim(),
+    }));
+
+  if (listed.length < 400) {
+    throw new Error(`constituents: only ${listed.length} rows — the source is wrong`);
+  }
+
+  const perSub = {};
+  for (const c of listed) perSub[c.sub] = (perSub[c.sub] ?? 0) + 1;
+
+  return listed.map((c) => ({
+    symbol: c.symbol,
+    name: c.name,
+    industry: perSub[c.sub] >= MIN_BUCKET ? c.sub : c.sector,
+  }));
+}
+
 async function bars(symbol) {
-  const url =
-    `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5y&interval=1d`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=5y&interval=1d`;
   const res = await fetch(url, {
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (compatible; seventeen-studios-build/1.0; +https://github.com/Rutvik17/seventeen-studios)',
-      Accept: 'application/json',
-    },
+    headers: { 'User-Agent': AGENT, Accept: 'application/json' },
   });
   if (!res.ok) throw new Error(`${symbol}: HTTP ${res.status}`);
 
@@ -103,22 +223,48 @@ function monthEnds(dates) {
   return [...last.values()].sort();
 }
 
-async function main() {
-  console.log(`  fetching ${UNIVERSE.length} names…`);
-  const series = new Map();
-  let failed = 0;
+/** Runs `worker` over `items`, at most `limit` at a time. */
+async function pool(items, limit, worker) {
+  let next = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      await worker(items[i], i);
+    }
+  });
+  await Promise.all(runners);
+}
 
-  for (const { symbol } of UNIVERSE) {
+async function main() {
+  const universe = await constituents();
+  const buckets = new Set(universe.map((u) => u.industry));
+  console.log(`  ${universe.length} constituents, ${buckets.size} industry buckets`);
+
+  const series = new Map();
+  const failures = [];
+  let done = 0;
+
+  await pool(universe, CONCURRENCY, async ({ symbol }) => {
     try {
       series.set(symbol, await bars(symbol));
     } catch (error) {
-      failed++;
-      console.log(`  ! ${symbol}: ${error.message}`);
+      failures.push(error.message);
     }
-  }
+    if (++done % 100 === 0) console.log(`  …${done}/${universe.length}`);
+  });
 
-  const symbols = UNIVERSE.filter((u) => series.has(u.symbol));
-  console.log(`  ${symbols.length} fetched, ${failed} failed`);
+  const symbols = universe.filter((u) => series.has(u.symbol));
+  console.log(`  ${symbols.length} fetched, ${failures.length} failed`);
+  for (const f of failures.slice(0, 10)) console.log(`  ! ${f}`);
+
+  /*
+    A universe that has quietly halved is not a smaller universe, it is a broken
+    fetch — a Yahoo rate limit or a schema change returns HTTP errors for most
+    names and the model would go on ranking whatever survived.
+  */
+  if (symbols.length < universe.length * 0.9) {
+    throw new Error(`only ${symbols.length} of ${universe.length} names fetched`);
+  }
 
   /*
     A shared calendar. Stocks halt and list on different days, so every series is
@@ -171,10 +317,10 @@ async function main() {
     /*
       Rows are ALIGNED TO `universe` ORDER, not labelled with a symbol.
 
-      Repeating a ticker string on every row costs eight characters times two
-      hundred and fifty names times forty-eight months — a tenth of the payload
-      spent restating what position already says. A name with too little history
-      that month is null rather than absent, so the index still lines up.
+      Repeating a ticker string on every row costs eight characters times five
+      hundred names times forty-eight months — a tenth of the payload spent
+      restating what position already says. A name with too little history that
+      month is null rather than absent, so the index still lines up.
     */
     let present = 0;
     const rows = symbols.map(({ symbol }) => {
@@ -208,7 +354,7 @@ async function main() {
 
   const out = {
     fetchedAt: new Date().toISOString(),
-    source: 'Yahoo Finance chart API, adjusted closes',
+    source: 'Yahoo Finance chart API, adjusted closes; S&P 500 constituents via datasets/s-and-p-500-companies',
     factors: FACTORS,
     universe: symbols,
     monthEnds: ends,
@@ -230,7 +376,31 @@ async function main() {
   console.log(`  wrote src/content/alpha.json (${kb} KB)`);
 }
 
+/*
+  A FAILED REFRESH MUST NOT COST A DEPLOY — but it must not be silent either.
+
+  This runs in `prebuild`, so throwing here takes the whole site down with it.
+  Five hundred requests from a shared GitHub runner IP is exactly the shape of
+  traffic Yahoo rate-limits, and a published site is worth more than a panel
+  that is one day fresher.
+
+  So: if a usable panel is already committed, keep it and warn loudly. The
+  `::warning::` prefix surfaces it in the Actions summary rather than burying it
+  in the log, because the failure mode this project has already hit once is a
+  data step that quietly no-ops forever while everything looks green.
+
+  If there is NO committed panel, there is nothing to fall back to and the build
+  should fail rather than ship a site with no model behind it.
+*/
 main().catch((error) => {
   console.error(`fetch-universe failed: ${error.message}`);
+
+  if (existsSync(outFile)) {
+    const age = Math.round((Date.now() - statSync(outFile).mtimeMs) / 86_400_000);
+    console.error(`::warning::alpha panel not refreshed (${error.message}); keeping the committed one, last written ${age}d ago`);
+    process.exit(0);
+  }
+
+  console.error('no committed panel to fall back to');
   process.exit(1);
 });
