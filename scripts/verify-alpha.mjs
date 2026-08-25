@@ -22,7 +22,7 @@ import { runAlpha, ALPHA } from '../src/lib/alpha.ts';
 import { DIRECTION, FACTORS } from '../src/lib/factors.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const data = JSON.parse(readFileSync(path.join(root, 'src', 'content', 'alpha.json'), 'utf8'));
+const data = JSON.parse(readFileSync(path.join(root, 'public', 'data', 'alpha.json'), 'utf8'));
 
 const input = {
   symbols: data.universe.map((u) => u.symbol),
@@ -78,19 +78,54 @@ const saved = { ...DIRECTION };
   these names over the others, which is the only part the model is responsible
   for.
 */
-const universe = [];
-for (let i = 1; i < data.monthEnds.length; i++) {
+/*
+  OVER THE MONTHS THE MODEL ACTUALLY HELD, AND NOT ONE MORE.
+
+  This looped over every month-end in the panel and it was wrong by nine points
+  a year. The model needs thirteen months of history before it can form a first
+  portfolio, so it trades 47 of the 60 months — and the thirteen it skips are
+  the 2022 bear market. Including them in the benchmark and not in the model
+  scored a bull-market strategy against a benchmark that had eaten a crash.
+
+  It reported +3.32% of excess. Measured over matching months the number is
+  −5.90%. The model does not beat its universe; it never did, and the error was
+  invisible because both figures were individually correct.
+
+  Any benchmark in this file is built from `base.months`, which is the model's
+  own record of what it held and when.
+*/
+const monthIndex = new Map(data.monthEnds.map((d, i) => [d, i]));
+
+const universeMove = (i) => {
   const moves = [];
   for (const symbol of input.symbols) {
     const a = data.closes[symbol]?.[i - 1];
     const b = data.closes[symbol]?.[i];
     if (a && b && a > 0) moves.push(b / a - 1);
   }
-  if (moves.length) moves.length && universe.push(moves.reduce((x, y) => x + y, 0) / moves.length);
-}
+  return moves.length ? moves.reduce((x, y) => x + y, 0) / moves.length : 0;
+};
+
+const reference = runAlpha(input, ALPHA);
+const universe = reference.months.map((m) => universeMove(monthIndex.get(m.held)));
 
 const annualise = (rs) => rs.reduce((p, v) => p * (1 + v), 1) ** (12 / rs.length) - 1;
 const benchmark = annualise(universe);
+
+/*
+  The model runs at a beta well below one, so the index is not the only control
+  it has to beat. Holding that same fraction of the index and the rest in cash
+  is free, carries the same market exposure, and is what the model has to add
+  value OVER. It currently does not.
+*/
+const beta = reference.months.reduce((s, m) => s + m.netBeta, 0) / reference.months.length;
+const scaled = annualise(universe.map((r) => r * beta));
+
+console.log(`\nover the ${universe.length} months the model held`);
+console.log(`  equal-weighted universe        ${pct(benchmark)}`);
+console.log(`  that universe at ${(beta * 100).toFixed(0)}% + cash    ${pct(scaled)}   <- same market exposure, free`);
+console.log(`  the model                      ${pct(reference.metrics.annualised)}`);
+console.log(`  the model's edge               ${pct(reference.metrics.annualised - scaled)}`);
 
 console.log(`\nEach factor alone, as EXCESS over the universe (${pct(benchmark)} a year)`);
 console.log('factor              sign  excess      sharpe  hit');
@@ -109,10 +144,11 @@ for (const factor of FACTORS) {
 for (const other of FACTORS) DIRECTION[other] = saved[other];
 
 const all = runAlpha(input, { ...ALPHA, costBps: 0 }).metrics;
-console.log(`${'all seven'.padEnd(19)}      ${'+' + pct(all.annualised - benchmark)}`);
+const allExcess = all.annualised - benchmark;
+console.log(`${'all seven'.padEnd(19)}      ${(allExcess >= 0 ? '+' : '') + pct(allExcess)}`);
 
 /* Neutrality is a claim the book makes about itself, so it is checked. */
-const base = runAlpha(input);
+const base = reference;
 const betas = base.months.map((m) => m.netBeta).sort((a, b) => a - b);
 const median = betas[Math.floor(betas.length / 2)];
 console.log(
