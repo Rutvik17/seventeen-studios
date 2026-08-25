@@ -1,0 +1,14 @@
+# The archive is DATA, and its line endings are load-bearing.
+#
+# Without this, git converts LF to CRLF on checkout under Windows. The archive's
+# idempotency check compares whole lines to decide what is already recorded, so
+# a stray carriage return makes every existing row look new — the appender would
+# duplicate the entire file on the next run, on a Windows checkout only, and
+# nothing about that failure announces itself.
+#
+# Committed data stays LF everywhere.
+archive/**/*.csv text eol=lf
+
+# Same reasoning for anything the build parses rather than a human edits.
+*.csv text eol=lf
+*.json text eol=lf
