@@ -23,7 +23,8 @@
     "data:macro": "node scripts/fetch-macro.mjs",
     "backtest": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/backtest.mjs",
     "archive": "node scripts/archive.mjs",
-    "data:all": "npm run data:prices && npm run data:fundamentals && npm run data:macro"
+    "data:all": "npm run data:prices && npm run data:fundamentals && npm run data:macro",
+    "predict": "node --experimental-strip-types --max-old-space-size=10240 --import ./scripts/alias-register.mjs scripts/predict.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
