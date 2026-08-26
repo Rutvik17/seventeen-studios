@@ -37,6 +37,16 @@ import { dirname, join } from 'node:path';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, '..', 'src', 'content', 'market.json');
 
+/*
+  The fitted model, committed rather than recomputed. See the note where it is
+  loaded: the notebook entry quotes this run's figures, so the run has to hold
+  still.
+*/
+const FROZEN_MODEL = join(HERE, '..', 'src', 'content', 'sentiment-model.json');
+
+/** `--fit` refits and overwrites the frozen model. Never set during a build. */
+const REFIT = process.argv.includes('--fit');
+
 const TICKERS = [
   { symbol: 'NVDA', name: 'NVIDIA' },
   { symbol: 'TSLA', name: 'Tesla' },
@@ -273,22 +283,54 @@ async function main() {
   }
 
   /*
-    Train the companion's sentiment model on the real series, then throw the
-    series away. This is the honest shape of a shipped model: fitting is
-    expensive and happens once here, and inference is a dot product cheap enough
-    to run on the microcontroller the board is designed around.
+    Load the companion's sentiment model. DO NOT FIT IT HERE.
+
+    This used to call `trainSentiment` on every build, and that was a bug with no
+    error message. The notebook entry on logistic regression is the write-up of
+    ONE training run and quotes eight figures from it — test accuracy, the base
+    rate, both row counts, the output span. Re-fitting on every build silently
+    replaced the model those figures describe, so the entry decayed a little
+    every time the data moved, and eventually inverted: it says the model scores
+    slightly WORSE than always guessing "up", and a refit made it score slightly
+    better.
+
+    Fitting is now a deliberate act — `npm run fit:sentiment` — which rewrites
+    the frozen model and then forces the entry's figures to be updated, because
+    `npm run claims` checks them against it.
+
+    Nothing about the panel gets staler for this. The weights were only ever
+    refit on data that barely moved; what the panel actually needs is TODAY'S
+    features scored, and that still happens below, every build.
   */
   let sentiment = null;
-  try {
+  if (REFIT) {
+    /*
+      The deliberate path: `npm run fit:sentiment`. Fits a new model, writes it
+      to the frozen file, and says plainly that the notebook now disagrees with
+      it — because it will, and `npm run claims` is about to fail until the
+      entry is updated to match. That failure is the feature.
+    */
     const seriesBySymbol = Object.fromEntries(assets.map((a) => [a.symbol, a._closes]));
-    sentiment = trainSentiment(seriesBySymbol);
+    sentiment = { fittedAt: new Date().toISOString().slice(0, 10), ...trainSentiment(seriesBySymbol) };
+    await writeFile(FROZEN_MODEL, `${JSON.stringify(sentiment, null, 2)}
+`);
     console.log(
-      `  sentiment: test ${(sentiment.test.accuracy * 100).toFixed(1)}% vs ` +
-        `base rate ${(sentiment.test.baseRate * 100).toFixed(1)}% ` +
-        `(n=${sentiment.test.n})`,
+      `  REFIT: test ${(sentiment.test.accuracy * 100).toFixed(1)}% vs base rate ` +
+        `${(sentiment.test.baseRate * 100).toFixed(1)}% (n=${sentiment.test.n})`,
     );
-  } catch (error) {
-    console.warn(`! sentiment training failed: ${error.message}`);
+    console.log('  ! the logistic-regression notebook entry quotes the OLD run.');
+    console.log('  ! update its figures, then `npm run claims` to confirm.');
+  } else {
+    try {
+      sentiment = JSON.parse(await readFile(FROZEN_MODEL, 'utf8'));
+      console.log(
+        `  sentiment: frozen model of ${sentiment.fittedAt} — test ` +
+          `${(sentiment.test.accuracy * 100).toFixed(1)}% vs base rate ` +
+          `${(sentiment.test.baseRate * 100).toFixed(1)}% (n=${sentiment.test.n})`,
+      );
+    } catch (error) {
+      console.warn(`! sentiment model unreadable: ${error.message}`);
+    }
   }
 
   /*

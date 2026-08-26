@@ -115,6 +115,9 @@ import { readFileSync } from 'node:fs';
 const market = JSON.parse(
   readFileSync(new URL('../src/content/market.json', import.meta.url), 'utf8'),
 );
+const frozenModel = JSON.parse(
+  readFileSync(new URL('../src/content/sentiment-model.json', import.meta.url), 'utf8'),
+);
 
 const n = market.assets.length;
 const w = 1 / n;
@@ -150,6 +153,24 @@ if (!model) {
   console.log('  FAIL sentiment model missing from market.json');
   failures += 1;
 } else {
+  /*
+    The shipped model must BE the frozen one.
+
+    The build used to re-fit on every run, which quietly replaced the model this
+    entry is a write-up of — every figure below described a training run that no
+    longer existed, and the prose inverted the first time the data moved far
+    enough. Fitting is now deliberate (`npm run fit:sentiment`); this claim is
+    what stops it creeping back into the build.
+  */
+  const pinned = ['bias', 'weights', 'mean', 'std', 'quantiles'].every(
+    (k) => JSON.stringify(model[k]) === JSON.stringify(frozenModel[k]),
+  );
+  assert(
+    'model: shipped weights are the frozen ones',
+    pinned && model.test.n === frozenModel.test.n,
+    `fitted ${frozenModel.fittedAt}`,
+  );
+
   // The entry's whole argument is that the model does NOT beat the base rate.
   // If a retrain ever flipped that, the prose would become wrong — so the claim
   // is asserted rather than assumed.
