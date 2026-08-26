@@ -415,9 +415,30 @@ code {
   padding-bottom: 0.2em;
   margin-bottom: -0.2em;
 }
+/*
+  NO `will-change` HERE, AND ITS ABSENCE IS THE FIX FOR A REAL BUG.
+
+  `will-change: transform` promotes an element to its own compositing layer and
+  keeps it there — permanently, for every split word on the site, whether or not
+  anything is animating. The spec is explicit that it is a temporary hint.
+
+  It is what hid the founder page's closing heading. That heading paints a
+  gradient clipped to its own glyphs (`background-clip: text`, transparent
+  fill), and WebKit will not paint a parent's clipped background through a
+  promoted descendant layer. The words were present, selectable and read aloud
+  by screen readers while rendering as nothing — "I can only see it if I
+  highlight it".
+
+  A JS fix on tween completion is not enough on its own: words belonging to an
+  instance whose tween never runs — held behind the preloader gate, or never
+  scrolled into view — would keep the hint forever, and those are exactly the
+  ones a visitor sees first.
+
+  GSAP promotes what it is animating anyway; it writes `translate3d` during a
+  tween, which is the same hint applied only while it is true.
+*/
 .word {
   display: inline-block;
-  will-change: transform;
 }
 
 /* ---------- Overlays: grain, cursor, progress --------------------- */

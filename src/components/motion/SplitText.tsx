@@ -80,6 +80,35 @@ export function SplitText({
         gsap.set(parts, { yPercent: 115, opacity: 0 });
       }
 
+      /*
+        DROP THE COMPOSITING HINT ONCE THE REVEAL IS OVER.
+
+        `.word` carries `will-change: transform`, which is the correct thing to
+        have DURING a tween and a permanent cost afterwards: it promotes every
+        word on the page to its own compositing layer, forever.
+
+        That is what hid the founder page's closing heading. The heading paints
+        a gradient clipped to its own text — `background-clip: text` with a
+        transparent fill — and WebKit does not paint a parent's clipped
+        background through a promoted descendant layer. The words were present,
+        selectable, read by screen readers, and completely invisible, which is
+        exactly what was reported: "I can only see it if I highlight it."
+
+        The residual identity transform goes too. `matrix(1,0,0,1,0,0)` is not
+        nothing — it still establishes a containing block and can hold the layer
+        open on its own.
+
+        Only for one-shot reveals. A scrubbed tween's transform IS a function of
+        scroll position and must stay live.
+      */
+      const settle = () => {
+        for (const part of parts) {
+          const node = part as HTMLElement;
+          node.style.willChange = 'auto';
+          node.style.transform = 'none';
+        }
+      };
+
       const to: gsap.TweenVars = {
         yPercent: 0,
         opacity: 1,
@@ -87,6 +116,7 @@ export function SplitText({
         ease: 'power4.out',
         stagger,
         delay,
+        onComplete: settle,
       };
 
       if (depth) to.rotationX = 0;
@@ -111,6 +141,9 @@ export function SplitText({
           scrub: 0.8,
         };
         to.delay = 0;
+        // A scrubbed transform is driven by scroll and never finished, so it
+        // keeps both the hint and the transform.
+        delete to.onComplete;
         gsap.to(parts, to);
         return;
       }
