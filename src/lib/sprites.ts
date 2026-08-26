@@ -41,6 +41,8 @@
  * it for a backdrop.
  */
 
+import { asset } from '@/lib/asset';
+
 /** Source frame size, and the panel's resolution. The same number, twice. */
 export const FRAME = 128;
 
@@ -153,9 +155,21 @@ export function animationFor(percentile: number, awake = true): Animation {
   return 'Dead';
 }
 
-/** Where the strip lives, as served by Next's static export. */
+/**
+ * Where the strip lives, as served by Next's static export.
+ *
+ * Through `asset()`, and that is not optional. This is written into an SVG
+ * `<image href>` by hand, and Next only rewrites `basePath` for its own
+ * emissions and for `next/link` / `next/image`. A bare `/sprites/...` resolves
+ * against the domain ROOT, which is wrong on a GitHub project page served from
+ * `/<repo>` — it 404s in production while working perfectly in dev, because dev
+ * has no base path to miss.
+ *
+ * This is the second time that has happened here; the first cost the founder
+ * portrait and the resume downloads. `verify-assets.mjs` now checks it.
+ */
 export function spriteSrc(character: Character, animation: Animation): string {
-  return `/sprites/${character}/${animation}.png`;
+  return asset(`/sprites/${character}/${animation}.png`);
 }
 
 /** One loop of an animation, in seconds — the duration a CSS step cycle needs. */
