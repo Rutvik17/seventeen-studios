@@ -43,9 +43,26 @@ export const OLED = {
   width: 128,
   height: 128,
 
-  /** Module outline, mm. */
+  /** Carrier PCB outline, mm. The whole part, tail and driver included. */
   moduleWidth: 33.8,
   moduleHeight: 40.0,
+
+  /*
+    The GLASS, mm — which is what you actually see.
+
+    The carrier is 40 mm tall but the panel is not: the bottom third is driver
+    IC and the flex tail, and on a real product that region is folded behind the
+    glass rather than presented on the front. Sizing the window to the carrier
+    is what left a 26 mm image floating in a 40 mm hole with a dead band under
+    it, which reads as a broken screen rather than as a screen.
+
+    So the window is cut to the glass and the carrier hides behind it. The glass
+    carries a small bezel around the active area, which every panel has, because
+    the sealing frit needs somewhere to live.
+  */
+  glassWidth: 30.0,
+  glassHeight: 29.2,
+
   /** Active area, mm. */
   mmWidth: 26.855,
   mmHeight: 25.864,
@@ -155,15 +172,15 @@ export function boostInputCurrentMa(
 
   Measured, not assumed: the companion scene was rendered at true 1:1 and its
   mean per-subpixel drive computed across all seven hours. Fuji at first light
-  is the most expensive at 27.0% — it has the brightest sky and the most snow.
+  is the most expensive at 27.1% — it has the brightest sky and the most snow.
 
   This matters because the earlier budget carried a flat 38 mA for the panel,
   chosen when the OLED showed a sparse monochrome face on black. Real artwork
-  lights far more of the field, and at FULL contrast this scene pulls 112.5 mA
+  lights far more of the field, and at FULL contrast this scene pulls 113.1 mA
   from the cell, which is 4.3 days rather than the 10.7 the notebook claims.
 
   So the artwork sets the brightness. Running at 34% contrast brings it back to
-  37.9 mA and the battery figure holds — and 34% on an OLED indoors is still
+  38.4 mA and the battery figure holds — and 34% on an OLED indoors is still
   perfectly legible, because the panel emits rather than reflects and its full
   scale is sized for direct sunlight.
 
@@ -171,7 +188,7 @@ export function boostInputCurrentMa(
   hardware, not the other way around, and it is written down here rather than
   discovered later on a bench.
 */
-export const SCENE_DRIVE = 0.27;
+export const SCENE_DRIVE = 0.271;
 
 /** Contrast the companion runs at, chosen so the panel meets its power budget. */
 export const PANEL_CONTRAST = 0.34;

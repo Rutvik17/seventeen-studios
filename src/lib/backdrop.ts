@@ -196,10 +196,15 @@ export const PALETTE = { star: '#ffeed4', petal: '#ffc2c8' } as const;
   character stands to the left of it.
 */
 export const FUJI = {
-  cx: 74,
+  cx: 62,
   peakY: 38,
   baseY: 98,
-  halfWidth: 54,
+  /*
+    Wide. Fuji is 3,776 m over a base roughly 40 km across, so the honest ratio
+    is about 1:10 and anything approaching a drawn triangle is far too steep.
+    Even at 74 this is a compression — but the earlier 54 read as a hill.
+  */
+  halfWidth: 74,
   /** Concave flanks. 1.0 would be a triangle; a stratovolcano is not one. */
   exponent: 1.42,
   /** The summit is a crater rim, not a point. */
@@ -373,4 +378,4 @@ export function petals(count = 8) {
 }
 
 /** The sun, just clear of the ridge and behind the mountain's right flank. */
-export const SUN = { cx: 100, cy: 84, r: 11 } as const;
+export const SUN = { cx: 104, cy: 80, r: 8 } as const;

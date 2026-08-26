@@ -301,10 +301,10 @@ export const entries: Entry[] = [
           { symbol: 't_mode', means: 'the fraction of time spent in that mode, between 0 and 1' },
         ],
         substituted:
-          '( 0.043 × 0.9145 ) + ( 240 × 0.0035 ) + ( 26 × 0.002 ) + ( 38.26 × 0.08 )',
-        result: '3.99 milliamps',
+          '( 0.043 × 0.9145 ) + ( 240 × 0.0035 ) + ( 26 × 0.002 ) + ( 38.40 × 0.08 )',
+        result: '4.00 milliamps',
         soWhat:
-          'Three shapes of draw, and the one you would not have guessed wins. The radio is rare and enormous — 240 mA for 0.35% of the time, contributing 0.84. Sleep is constant and almost nothing. The OLED is neither: 38.26 mA for 8% of the time contributes 3.06, more than everything else combined. A mode that is only occasionally on, at a merely moderate current, can still be the whole budget. That 38.26 is not a figure anyone chose. It is measured off the artwork: the companion scene was rendered at actual size and its mean per-subpixel drive came out at 27.0%, and an OLED draws in proportion to what it lights. At full contrast that is 112.5 mA and the battery lasts 4.3 days, so the panel runs at 34% instead. The picture set the brightness, and the brightness set the battery life.',
+          'Three shapes of draw, and the one you would not have guessed wins. The radio is rare and enormous — 240 mA for 0.35% of the time, contributing 0.84. Sleep is constant and almost nothing. The OLED is neither: 38.40 mA for 8% of the time contributes 3.07, more than everything else combined. A mode that is only occasionally on, at a merely moderate current, can still be the whole budget. That 38.40 is not a figure anyone chose. It is measured off the artwork: the companion scene was rendered at actual size and its mean per-subpixel drive came out at 27.1%, and an OLED draws in proportion to what it lights. At full contrast that is 112.9 mA and the battery lasts 4.3 days, so the panel runs at 34% instead. The picture set the brightness, and the brightness set the battery life.',
       },
       {
         type: 'equation',
@@ -316,10 +316,10 @@ export const entries: Entry[] = [
           { symbol: '0.85', means: 'a derate. A battery cannot be run flat: the voltage sags below what the regulator needs while there is still charge left, and the battery leaks a little on its own' },
           { symbol: '÷ 24', means: 'hours into days' },
         ],
-        substituted: '( 1200 × 0.85 ) ÷ 3.99 ÷ 24',
+        substituted: '( 1200 × 0.85 ) ÷ 4.00 ÷ 24',
         result: 'about 11 days',
         soWhat:
-          'Drop the 0.85 and you would claim 12.6 days. That is how most quoted battery lives get to be about a fifth too generous. And note what the companion cost: without its display this same board runs about 45 days. Deciding the device should have a face that moves shortened its life by a factor of four, and that is a product decision the arithmetic makes visible rather than an engineering detail.',
+          'Drop the 0.85 and you would claim 12.5 days. That is how most quoted battery lives get to be about a fifth too generous. And note what the companion cost: without its display this same board runs about 45 days. Deciding the device should have a face that moves shortened its life by a factor of four, and that is a product decision the arithmetic makes visible rather than an engineering detail.',
       },
 
       { type: 'h2', text: 'Why the display shows a face' },

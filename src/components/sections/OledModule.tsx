@@ -81,19 +81,18 @@ export type OledModuleProps = {
 */
 const WALL = 2;
 export const OLED_HOUSING = {
-  width: OLED.moduleWidth + WALL * 2,
-  height: OLED.moduleHeight + WALL * 2,
+  width: OLED.glassWidth + WALL * 2,
+  height: OLED.glassHeight + WALL * 2,
 };
 
 /*
-  The window is larger than the active area on purpose.
+  The window is slightly larger than the glass on purpose.
 
   If the smoked panel were cut to the pixels, its edge would land exactly where
   the image ends and you would see a frame — which is the one thing this
   construction exists to avoid. Oversizing it means the boundary falls on dead
   black in every direction, so there is no visible edge to find.
 */
-const WINDOW_MARGIN = 3.0;
 
 export function OledModule({ x, y, percentile, character, reduced = false }: OledModuleProps) {
   const w = OLED_HOUSING.width;
@@ -101,16 +100,16 @@ export function OledModule({ x, y, percentile, character, reduced = false }: Ole
 
   const windowX = x + WALL - 0.6;
   const windowY = y + WALL - 0.6;
-  const windowW = OLED.moduleWidth + 1.2;
-  const windowH = OLED.moduleHeight + 1.2;
+  const windowW = OLED.glassWidth + 1.2;
+  const windowH = OLED.glassHeight + 1.2;
 
   /*
-    The active area sits high in the module, not centred: the driver IC and the
-    FPC tail live along the bottom edge, which is why a 26 mm image sits in a
-    40 mm part. Centring it would be the tell that nobody has held one.
+    Centred in the GLASS, with the small bezel every panel has around its
+    active area. The driver IC and the flex tail are on the carrier behind,
+    which is why they take up no height here.
   */
-  const activeX = x + WALL + (OLED.moduleWidth - OLED.mmWidth) / 2;
-  const activeY = y + WALL + WINDOW_MARGIN;
+  const activeX = x + WALL + (OLED.glassWidth - OLED.mmWidth) / 2;
+  const activeY = y + WALL + (OLED.glassHeight - OLED.mmHeight) / 2;
 
   const animation = animationFor(percentile);
   const scene = sceneFor(animation);
@@ -129,9 +128,9 @@ export function OledModule({ x, y, percentile, character, reduced = false }: Ole
   const steps = Math.max(1, holds ? frames - 1 : frames);
   const duration = cycleSeconds(character, animation);
   const moon = scene.body?.kind === 'moon';
-  const bodyX = moon ? 96 : SUN.cx;
-  const bodyY = moon ? 32 : SUN.cy;
-  const bodyR = moon ? 13 : SUN.r;
+  const bodyX = moon ? 102 : SUN.cx;
+  const bodyY = moon ? 24 : SUN.cy;
+  const bodyR = moon ? 8 : SUN.r;
 
   // Keyed by what it draws, so a mood change replaces the keyframe rather than
   // animating the new strip against the old one's travel distance.
@@ -276,22 +275,13 @@ export function OledModule({ x, y, percentile, character, reduced = false }: Ole
           {scene.body && (
             <>
               <circle cx={bodyX} cy={bodyY} r={bodyR * 2.6} fill="url(#oled-halo)" />
-              <circle cx={bodyX} cy={bodyY} r={bodyR} fill={scene.body.fill} />
               {/*
-                The terminator, cut with the sky itself rather than with black —
-                the unlit limb of a moon is not darker than the sky behind it,
-                it is the sky. Painting it black would give the disc a hard edge
-                no telescope has ever seen.
+                A full disc. It was a crescent, cut by overlaying the sky on the
+                unlit limb — which is correct for a real moon and read on this
+                panel as an eclipse, because at 128 pixels beside a mountain
+                there is nothing to give the shape a scale.
               */}
-              {moon && (
-                <circle
-                  cx={bodyX + bodyR * 0.42}
-                  cy={bodyY - bodyR * 0.2}
-                  r={bodyR * 0.92}
-                  fill="url(#oled-sky)"
-                  opacity={0.92}
-                />
-              )}
+              <circle cx={bodyX} cy={bodyY} r={bodyR} fill={scene.body.fill} />
             </>
           )}
 
