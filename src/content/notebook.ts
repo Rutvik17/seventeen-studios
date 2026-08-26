@@ -272,7 +272,7 @@ export const entries: Entry[] = [
       },
       {
         type: 'p',
-        text: 'That is the whole reason this device can run for weeks on a small battery. A backlit screen spends its energy holding a picture; this one spends nothing until the picture is wrong.',
+        text: 'That is why the READOUT costs nothing to keep. A backlit screen spends its energy holding a picture; this one spends nothing until the picture is wrong. The device also carries a small OLED for the companion, and that one does spend energy every second it is lit — which is exactly why the numbers live on the e-paper and only the character lives on the screen that moves.',
       },
       {
         type: 'note',
@@ -301,10 +301,10 @@ export const entries: Entry[] = [
           { symbol: 't_mode', means: 'the fraction of time spent in that mode, between 0 and 1' },
         ],
         substituted:
-          '( 0.043 × 0.9945 ) + ( 240 × 0.0035 ) + ( 26 × 0.002 )',
-        result: '0.93 milliamps',
+          '( 0.043 × 0.9145 ) + ( 240 × 0.0035 ) + ( 26 × 0.002 ) + ( 38 × 0.08 )',
+        result: '3.97 milliamps',
         soWhat:
-          'The 240 mA radio contributes 0.84 of that — most of the total, from 0.35% of the time. Rare and enormous still wins over constant and tiny.',
+          'Three shapes of draw, and the one you would not have guessed wins. The radio is rare and enormous — 240 mA for 0.35% of the time, contributing 0.84. Sleep is constant and almost nothing. The OLED is neither: 38 mA for 8% of the time contributes 3.04, more than everything else combined. A mode that is only occasionally on, at a merely moderate current, can still be the whole budget.',
       },
       {
         type: 'equation',
@@ -316,10 +316,10 @@ export const entries: Entry[] = [
           { symbol: '0.85', means: 'a derate. A battery cannot be run flat: the voltage sags below what the regulator needs while there is still charge left, and the battery leaks a little on its own' },
           { symbol: '÷ 24', means: 'hours into days' },
         ],
-        substituted: '( 1200 × 0.85 ) ÷ 0.93 ÷ 24',
-        result: 'about 45 days',
+        substituted: '( 1200 × 0.85 ) ÷ 3.97 ÷ 24',
+        result: 'about 11 days',
         soWhat:
-          'Drop the 0.85 and you would claim 54 days. That is how most quoted battery lives get to be about a fifth too generous.',
+          'Drop the 0.85 and you would claim 12.6 days. That is how most quoted battery lives get to be about a fifth too generous. And note what the companion cost: without its display this same board runs about 45 days. Deciding the device should have a face that moves shortened its life by a factor of four, and that is a product decision the arithmetic makes visible rather than an engineering detail.',
       },
 
       { type: 'h2', text: 'Why the display shows a face' },
@@ -344,8 +344,9 @@ export const entries: Entry[] = [
         type: 'defs',
         items: [
           { term: 'ESP32-C3 dev board', description: 'Any of them. It has the module, the regulator, the USB socket and the button already on it — the first four things this lesson designed.' },
-          { term: '4.01in seven-colour e-paper', description: 'Waveshare make the common one, 640 x 400, with a driver board that speaks SPI.' },
-          { term: 'Six jumper wires', description: 'Power, ground, and the four display signals.' },
+          { term: '4.01in seven-colour e-paper', description: 'Waveshare make the common one, 640 x 400, with a driver board that speaks SPI. This holds the readout.' },
+          { term: '1.5in RGB OLED, SSD1351', description: '128 x 128, also SPI. This is the companion’s own display — e-paper cannot animate, so the face lives here. It needs a 16 V panel rail, which the breakout board generates for you.' },
+          { term: 'Nine jumper wires', description: 'Power, ground, and four signals for each display — they share the clock and data lines, so each panel needs only its own chip select.' },
         ],
       },
       {

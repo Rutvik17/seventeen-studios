@@ -1,5 +1,24 @@
 /**
- * The e-ink panel's specification.
+ * The e-ink panel's specification — ONE OF THE DEVICE'S TWO DISPLAYS.
+ *
+ * The board carries an ACeP e-paper panel and a small RGB OLED, and that is an
+ * engineering decision rather than an indulgence: neither part can do the
+ * other's job.
+ *
+ *   - this panel, a 4.01" seven-colour ACeP, holds the READOUT. It costs no
+ *     power at all to keep an image, so the price and the timestamp are free
+ *     between refreshes. It cannot animate — about thirty seconds per refresh,
+ *     flashing through the whole palette, with no partial-refresh mode.
+ *
+ *   - a 1.5" SSD1351 RGB OLED, specified in `lib/oled.ts`, carries the
+ *     COMPANION. It is emissive, addressable by window, and redraws a character
+ *     in 2.15 ms. It costs current every second it is lit — enough to take the
+ *     device from nineteen days on a charge to four and a half.
+ *
+ * Asking one panel to do both is what forces a compromise. e-paper cannot move;
+ * an OLED cannot hold a picture for a fortnight on a small cell. So the numbers
+ * live on the part that is free to keep them and the character lives on the
+ * part that can move, and each pays only for what it is good at.
  *
  * The companion's FACE used to live here and is now `lib/face.ts`. It grew from
  * a 16 x 16 bitmap of eyes and a mouth into a 24 x 24 composed from brows, eyes

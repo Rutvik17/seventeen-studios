@@ -115,12 +115,12 @@ export const boardActs = [
   {
     index: '04',
     title: 'Power',
-    caption: 'Regulated to 3.3 V. The crystal starts.',
+    caption: '3.3 V logic. 16 V for the OLED.',
   },
   {
     index: '05',
     title: 'Awake',
-    caption: 'A companion on e-ink, fed by live data.',
+    caption: 'A face on OLED. Numbers held on e-paper.',
   },
 ] as const;
 

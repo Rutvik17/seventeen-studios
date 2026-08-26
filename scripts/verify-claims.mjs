@@ -25,6 +25,8 @@
  * Run: node scripts/verify-claims.mjs   (also runs as part of `npm run verify`)
  */
 
+import { POWER_MODES, averageCurrentMa, batteryDays } from '../src/lib/board.ts';
+
 let failures = 0;
 
 /**
@@ -64,19 +66,30 @@ check('crystal: 18 pF pair gives C_L', (18 * 18) / (18 + 18) + 3, 12.0);
 
 /* ---------- power budget ---------- */
 
-const modes = [
-  { mA: 0.043, duty: 0.9945 },
-  { mA: 240, duty: 0.0035 },
-  { mA: 26, duty: 0.002 },
-];
-const duty = modes.reduce((s, m) => s + m.duty, 0);
+/*
+  IMPORTED FROM `lib/board.ts`, NOT RETYPED HERE.
+
+  This block used to hold its own copy of the power modes, and that is the exact
+  failure this whole file exists to catch — one number in two places drifts, and
+  a checker with a stale copy agrees enthusiastically with a stale paragraph.
+
+  It happened: the board gained a fourth mode when the OLED went on it, and this
+  file went on verifying a three-mode budget that no longer described anything.
+  Both agreed, both were wrong, and the run stayed green.
+
+  Importing the real table means adding a mode CANNOT leave the check behind.
+*/
+const duty = POWER_MODES.reduce((s, m) => s + m.dutyCycle, 0);
 check('power: duty cycles sum to 1', duty, 1.0, 1e-9);
 
-const avg = modes.reduce((s, m) => s + m.mA * m.duty, 0);
-check('power: average current (mA)', avg, 0.93);
+const avg = averageCurrentMa();
+check('power: average current (mA)', avg, 3.97, 0.01);
 check('power: radio contribution (mA)', 240 * 0.0035, 0.84);
-check('power: battery life derated (days)', (1200 * 0.85) / avg / 24, 45, 0.6);
-check('power: battery life undated (days)', 1200 / avg / 24, 54, 0.6);
+// The OLED is now the largest single contributor, which is the lesson's point.
+const oled = POWER_MODES.find((m) => /OLED/.test(m.name));
+check('power: OLED contribution (mA)', oled.milliamps * oled.dutyCycle, 3.04, 0.01);
+check('power: battery life derated (days)', batteryDays(1200, avg), 10.7, 0.1);
+check('power: battery life undated (days)', 1200 / avg / 24, 12.6, 0.1);
 
 /* ---------- credit risk, "What a lender is afraid of" ---------- */
 
