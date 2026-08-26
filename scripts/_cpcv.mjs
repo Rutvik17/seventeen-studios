@@ -21,6 +21,27 @@
  *    If IC varies systematically with regime, regime-conditional weighting is
  *    justified by measurement rather than by intuition. If it does not, the
  *    three findings were coincidence and we should stop building toward them.
+ *
+ *    ANSWERED: corr(IC, volatility) = 0.152, corr(IC, below 200d) = -0.091,
+ *    against a 5% critical value near 0.514 at n=15. Flat. The hypothesis is
+ *    dead and the three findings were coincidence.
+ *
+ * 3. IS THE DECAY REAL, OR IS IT BIAS DISSOLVING? Run 2 found skill
+ *    concentrated in the early sample — splits testing only 2010-2021 average
+ *    +0.0296 against +0.0108 for splits including 2021-2026.
+ *
+ *    Two explanations with opposite implications. Either the alpha is decaying,
+ *    or the early years are flattered because the universe is TODAY's 503 names
+ *    and only 266 of them were index members in 2010. The other 237 joined
+ *    later, because they grew.
+ *
+ *    POINT_IN_TIME=1 drops every row for a company before it actually joined —
+ *    20.2% of the panel. If the early advantage collapses, the decay was bias.
+ *    If it survives, the alpha is genuinely decaying and we need new signals.
+ *
+ *    This is a LOWER BOUND on the bias: it removes the additions but cannot
+ *    recover companies dropped from the index that later failed, because their
+ *    prices no longer exist anywhere free.
  */
 
 import { readFileSync, existsSync } from 'node:fs';
@@ -44,8 +65,69 @@ console.log('building panel…');
 const panel = buildPanel(prices, { fundamentals, macro });
 rankNormalise(panel);
 
-const rows = panel.rows.filter((r) => Number.isFinite(r.label));
+let rows = panel.rows.filter((r) => Number.isFinite(r.label));
 console.log(`  ${rows.length.toLocaleString()} labelled rows`);
+
+/*
+  POINT_IN_TIME=1 applies membership as of each row's own date.
+
+  This is the test that separates alpha decay from inclusion bias. Our universe
+  is today's 503 names, and only 266 of them were in the index in 2010 — the
+  other 237 were added later, BECAUSE they grew. Backtesting them from 2010
+  trades a portfolio selected with sixteen years of hindsight, and that hindsight
+  shrinks to nothing as the sample approaches the present.
+
+  So the early years should be systematically flattered, which is the same shape
+  as the decay we measured. Dropping every row for a company before it actually
+  joined the index removes the additions half of the bias. It does NOT recover
+  the companies that were dropped from the index and later failed — nothing free
+  can, since their prices are gone — so this is a lower bound on the effect.
+
+  If the early-period advantage collapses under this filter, the decay was
+  bias. If it survives, the alpha is genuinely decaying.
+*/
+if (process.env.POINT_IN_TIME === '1') {
+  const csv = await (await fetch(
+    'https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv',
+    { headers: { 'User-Agent': 'seventeen-studios research patelrutvik1702@gmail.com' } },
+  )).text();
+
+  const parse = (text) => {
+    const out = []; let row = []; let f = ''; let q = false;
+    // Compared by char CODE rather than by literal, because a newline inside a
+    // string literal is exactly what broke this file once already.
+    const LF = 10; const CR = 13; const QUOTE = 34; const COMMA = 44;
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i); const c = text[i];
+      if (q) {
+        if (code === QUOTE) { if (text.charCodeAt(i + 1) === QUOTE) { f += c; i++; } else q = false; }
+        else f += c;
+      }
+      else if (code === QUOTE) q = true;
+      else if (code === COMMA) { row.push(f); f = ''; }
+      else if (code === LF) { row.push(f); out.push(row); row = []; f = ''; }
+      else if (code !== CR) f += c;
+    }
+    if (f || row.length) { row.push(f); out.push(row); }
+    return out;
+  };
+  const [h, ...lines] = parse(csv);
+  const iSym = h.indexOf('Symbol'); const iAdd = h.indexOf('Date added');
+  const joined = new Map();
+  for (const l of lines) {
+    if (!l[iSym]) continue;
+    joined.set(l[iSym].trim().replace(/\./g, '-'), (l[iAdd] || '').slice(0, 10));
+  }
+
+  const before = rows.length;
+  rows = rows.filter((r) => {
+    const added = joined.get(panel.symbols[r.s]);
+    // No date means keep it — dropping on missing data would silently shrink
+    // the universe for a reason unrelated to membership.
+    return !added || added <= panel.dates[r.t];
+  });
+  console.log(`  POINT-IN-TIME membership: ${rows.length.toLocaleString()} rows (dropped ${(100 * (1 - rows.length / before)).toFixed(1)}%)`);
+}
 
 const splits = purgedSplits(rows.map((r) => r.t), { groups: 6, testGroups: 2, horizon: HORIZON, embargo: HORIZON });
 const summary = splitSummary(splits, rows.length);
