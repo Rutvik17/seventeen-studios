@@ -395,9 +395,19 @@ code {
      depth reveal. */
   transform-style: preserve-3d;
 }
+/*
+  No `will-change` here either, and for the same reason as `.word` below.
+  See the long note there.
+
+  This one matters MORE, not less: `chars` is SplitText's default mode, so this
+  rule reaches almost every split heading on the site while `.word` reaches only
+  the handful that ask for it. Fixing `.word` alone left the same latent bug —
+  a permanently promoted layer that a parent's `background-clip: text` cannot
+  paint through — everywhere else, and left every character on the site holding
+  a compositing layer it stopped needing the moment its tween finished.
+*/
 .char {
   display: inline-block;
-  will-change: transform;
 }
 .word-mask {
   display: inline-block;
