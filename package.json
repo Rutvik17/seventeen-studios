@@ -13,7 +13,7 @@
     "claims": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-claims.mjs",
     "verify": "npm run typecheck && npm run claims && npm run sprites",
     "drawing": "node scripts/verify-drawing.mjs",
-    "postbuild": "node scripts/verify-drawing.mjs && node scripts/verify-og.mjs",
+    "postbuild": "node scripts/verify-drawing.mjs && node scripts/verify-og.mjs && node scripts/verify-assets.mjs",
     "og": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/build-og.mjs",
     "alpha": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-alpha.mjs",
     "alpha:data": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/fetch-universe.mjs",
@@ -26,7 +26,8 @@
     "data:all": "npm run data:prices && npm run data:fundamentals && npm run data:macro",
     "predict": "node --experimental-strip-types --max-old-space-size=10240 --import ./scripts/alias-register.mjs scripts/predict.mjs",
     "fit:sentiment": "node scripts/fetch-market.mjs --fit",
-    "sprites": "node scripts/verify-sprites.mjs"
+    "sprites": "node scripts/verify-sprites.mjs",
+    "assets": "node scripts/verify-assets.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

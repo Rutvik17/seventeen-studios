@@ -39,6 +39,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { runAlpha, ALPHA, type AlphaInput } from '@/lib/alpha';
 import { asset } from '@/lib/asset';
 import { Reveal } from '@/components/motion/Reveal';
+import survivorship from '@/content/survivorship.json';
 
 const W = 760;
 const H = 300;
@@ -443,13 +444,31 @@ export function AlphaInstrument() {
       )}
 
       <p className="instrument__caveat">
-        These are the companies in the index <em>today</em>. Everything that was
-        in it five years ago and then failed, was acquired or was dropped is
-        missing, which flatters the result by an unknown amount. The honest fix is
-        point-in-time membership, and it is not available: prices for delisted
-        companies are gone — SIVB, FRC, ATVI, XLNX, TWTR, CERN, ANSS and NLOK all
-        return 404. Rebuilding the index without them would look rigorous while
-        still dropping every failure, so the bias is disclosed instead of hidden.
+        These are the companies in the index <em>today</em>, and that flatters
+        the result — measurably. Applying membership as of each row&rsquo;s own
+        date drops {(survivorship.rowsDroppedShare * 100).toFixed(1)}% of the
+        rows and cuts mean information coefficient by{' '}
+        {Math.abs(
+          Math.round(
+            ((survivorship.meanIC.pointInTime - survivorship.meanIC.biased) /
+              survivorship.meanIC.biased) *
+              100,
+          ),
+        )}
+        %, from +{survivorship.meanIC.biased.toFixed(4)} to +
+        {survivorship.meanIC.pointInTime.toFixed(4)} across{' '}
+        {survivorship.splits} purged cross-validation splits. The periods
+        carrying the most
+        hindsight lost the most skill — correlation{' '}
+        {survivorship.hindsightCorrelation.toFixed(2)} — so this is the
+        mechanism, not a coincidence.
+      </p>
+      <p className="instrument__caveat">
+        That is a <em>lower</em> bound. It removes companies that were not yet in
+        the index; it cannot recover the ones that were dropped and then failed,
+        because their prices are gone — SIVB, FRC, ATVI, XLNX, TWTR, CERN, ANSS
+        and NLOK all return 404. So the real bias is larger than the number
+        above, and the number above is already most of the edge.
       </p>
     </div>
   );

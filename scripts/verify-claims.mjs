@@ -118,6 +118,9 @@ const market = JSON.parse(
 const frozenModel = JSON.parse(
   readFileSync(new URL('../src/content/sentiment-model.json', import.meta.url), 'utf8'),
 );
+const survivorship = JSON.parse(
+  readFileSync(new URL('../src/content/survivorship.json', import.meta.url), 'utf8'),
+);
 
 const n = market.assets.length;
 const w = 1 / n;
@@ -153,6 +156,33 @@ if (!model) {
   console.log('  FAIL sentiment model missing from market.json');
   failures += 1;
 } else {
+  /*
+    The /lab caveat quotes the survivorship measurement: how far the mean
+    information coefficient falls once index membership is applied as of each
+    row's own date. The percentage it prints is DERIVED from the two stored
+    ICs, so the arithmetic has to hold — the caveat used to say the bias was
+    "an unknown amount", and replacing that with a number is only an
+    improvement if the number is checked.
+  */
+  const icDrop = ((survivorship.meanIC.pointInTime - survivorship.meanIC.biased) /
+    survivorship.meanIC.biased) * 100;
+  assert(
+    'survivorship: the quoted fall follows from the two ICs',
+    Math.abs(Math.round(icDrop)) === 69,
+    `${icDrop.toFixed(1)}% -> ${Math.abs(Math.round(icDrop))}%`,
+  );
+  assert(
+    'survivorship: point-in-time is the smaller number',
+    survivorship.meanIC.pointInTime < survivorship.meanIC.biased,
+    `+${survivorship.meanIC.pointInTime} vs +${survivorship.meanIC.biased}`,
+  );
+  assert(
+    'survivorship: fewer splits stay positive once membership is dated',
+    survivorship.positiveSplits.pointInTime < survivorship.positiveSplits.biased &&
+      survivorship.positiveSplits.biased <= survivorship.positiveSplits.of,
+    `${survivorship.positiveSplits.pointInTime}/${survivorship.positiveSplits.of} from ${survivorship.positiveSplits.biased}/${survivorship.positiveSplits.of}`,
+  );
+
   /*
     The shipped model must BE the frozen one.
 
