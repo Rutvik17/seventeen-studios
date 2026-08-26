@@ -211,6 +211,68 @@ market with fat tails.
 
 ---
 
+## Settled by measurement
+
+- [x] **Regime-conditional weighting — HYPOTHESIS REJECTED.** Fifteen CPCV
+      arrangements, each holding out a different mix of conditions.
+      corr(IC, market volatility) = **0.152**; corr(IC, share below the 200d) =
+      **-0.091**. At n=15 the 5% critical value is ~0.514, so neither is close.
+
+      The three findings that motivated it — macro helping in 2018/2020/2021 and
+      hurting in 2022, fundamentals helping only in volatile years, and model
+      selection failing on a regime break — were **coincidence**. Three
+      observations assembled into a story. The test was built to be able to say
+      that and it did.
+
+- [x] **CPCV built and structurally verified.** 15 splits, zero days on both
+      sides, zero training labels reaching a test group, closest approach 22
+      days (horizon + 1). Mean IC across arrangements **+0.0183**, sd 0.0147,
+      14 of 15 positive — a more honest statement of skill than one calendar cut.
+
+## THE FINDING THAT MATTERS: skill is concentrated in the early sample
+
+      period        mean IC (n=5 each)
+      ~2010-12         +0.0229
+      ~2012-15         +0.0160
+      ~2015-18         +0.0248
+      ~2018-21         +0.0305   peak
+      ~2021-23         +0.0092
+      ~2023-26         +0.0065   lowest
+
+      splits testing only 2010-2021   +0.0296
+      splits including 2021-2026      +0.0108
+      corr(period index, mean IC)     -0.550
+
+**The recent third carries 33% of the earlier skill**, and the only negative
+split in the whole set is the one testing 2021-2026 exclusively.
+
+Two explanations, opposite implications, not yet separated:
+
+1. **Alpha decay.** Momentum, low-volatility and liquidity effects have been
+   published for decades and traded hard. If so, the fix is NEW information.
+2. **Survivorship bias wearing off.** The universe is today's 503 names, so 2010
+   carries sixteen years of hindsight and 2025 carries one. The early years
+   should be systematically flattered, and what looks like decay may be the bias
+   dissolving. **If this is the cause, +0.0078 is the honest number and +0.0215
+   was never real.**
+
+- [ ] **Separate the two.** The archive's weekly membership snapshots cannot
+      help retroactively, but a partial test exists: restrict the universe to
+      names that were ALREADY in the index at the start of each test period,
+      using dated additions from Wikipedia. It does not recover the failures,
+      but it removes the additions, which is half the bias.
+- [ ] **Test recency weighting in training.** If relationships have changed,
+      sixteen years of equal-weighted history is dragging the model toward
+      regimes that no longer exist. Cheap to test: exponential sample weights,
+      or a shorter rolling training window.
+
+Both readings point the same way: **the headline IC overstates what this model
+would do tomorrow, and the way out is information the market has not already
+priced.** That moves the untouched data families from "nice to have" to the
+main event.
+
+---
+
 ## Research questions
 
 Open problems, not tasks. Each needs thinking before it needs code.
