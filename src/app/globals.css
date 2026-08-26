@@ -60,6 +60,16 @@
   --pcb-silk: #e8efe9;
   --pcb-body: #23262b;
   --pcb-bezel: #2b2e33;
+  /*
+    The OLED's emitters. Brighter and more saturated than the e-paper inks
+    beside them, and deliberately so: e-ink REFLECTS, so it can never be lighter
+    than the room it is in, while an OLED EMITS and is at its most convincing
+    when it is clearly brighter than the surface around it. Matching the two
+    palettes would make the emissive panel look like a printed sticker.
+  */
+  --pcb-oled-up: #56e39f;
+  --pcb-oled-down: #ff6b6b;
+  --pcb-oled-flat: #e6e3d8;
 
   /* The plane — Grasp's ground, defined here and applied only there. */
   --grid-unit: 24px;

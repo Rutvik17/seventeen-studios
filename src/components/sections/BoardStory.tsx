@@ -66,6 +66,7 @@ import {
   traceWidthMm,
 } from '@/lib/board';
 import { EinkPanel } from '@/components/sections/EinkPanel';
+import { OledModule, OLED_HOUSING } from '@/components/sections/OledModule';
 import { PANEL as PANEL_MODULE } from '@/lib/pixel';
 import { boardActs, hero } from '@/content/studio';
 import { assetBySymbol, market, sigmasFor } from '@/content/market';
@@ -98,10 +99,34 @@ const DISPLAY = {
   y: -76,
 };
 
+/*
+  The companion's own display, beside the board on the side J4 is on.
+
+  Not centred under the e-paper and not floating: it hangs off the bottom-right
+  because that is where its connector is, and a cable that has to cross the
+  whole board to reach a part sitting next to a different connector is the sort
+  of thing that gives a drawing away.
+*/
+const OLED_POS = {
+  x: BOARD.width + 12,
+  y: 10,
+  w: OLED_HOUSING.width,
+  h: OLED_HOUSING.height,
+};
+
+/*
+  Widened to make room for it, and widening is free here.
+
+  The stage is HEIGHT constrained in its container — the drawing's aspect is
+  portrait and the space it sits in is landscape — so adding width uses room
+  that was empty margin rather than shrinking anything. Checked before changing
+  it, because the opposite would have quietly made the whole demonstration
+  smaller to fit a part the size of a postage stamp.
+*/
 const VIEW = {
   x: -10,
   y: DISPLAY.y - 8,
-  w: BOARD.width + 20,
+  w: OLED_POS.x + OLED_POS.w + 14,
   h: BOARD.height + Math.abs(DISPLAY.y) + 20,
 };
 
@@ -147,6 +172,30 @@ const RIBBON = ribbon(
   7,
 );
 
+/*
+  The OLED's own cable, and it is a different cable.
+
+  Eight ways rather than twenty-four — the SSD1351 is 4-wire SPI plus three
+  supplies and a ground, where the e-paper's parallel-ish interface needs far
+  more — so the band is narrower and carries fewer conductors. Drawing both the
+  same width would say the two displays talk to the board the same way, and
+  they do not.
+
+  Horizontal control points, not vertical. The band is offset along the curve's
+  NORMAL, so it is perpendicular to the tangent everywhere including the ends;
+  leaving J4 horizontally is what makes the band vertical exactly where it meets
+  the connector's vertical edge. The e-paper's ribbon leaves vertically for the
+  same reason in the other axis.
+*/
+const OLED_RIBBON = ribbon(
+  [76.25, 46],                              // J4's right edge, on its centreline
+  [84, 46],                                 // straight out of the connector
+  [OLED_POS.x - 8, OLED_POS.y + OLED_POS.h * 0.62],
+  [OLED_POS.x, OLED_POS.y + OLED_POS.h * 0.62], // into the housing's left flank
+  3.0,
+  8,
+);
+
 const AVERAGE_MA = averageCurrentMa();
 const PEAK_MA = peakCurrentMa();
 const BATTERY_MAH = 1200;
@@ -189,6 +238,8 @@ export function BoardStory() {
         attached from the first frame it is visible.
       */
       gsap.set('[data-display-clip] rect', { attr: { y: DISPLAY.y + DISPLAY.h, height: 0 } });
+      gsap.set('[data-oled-ribbon-clip] rect', { attr: { x: 74, width: 0 } });
+      gsap.set('[data-oled-clip] rect', { attr: { y: OLED_POS.y - 2, height: 0 } });
       /*
         The cable is revealed by a CLIP rectangle that grows UPWARD from the
         connector, so the ribbon unrolls out of J2 toward the display.
@@ -286,7 +337,31 @@ export function BoardStory() {
           white several times and then settles, which is not a thing worth
           reproducing on a landing page. A clean fade is the honest abstraction.
         */
-        .from('[data-display]', { opacity: 0, duration: 0.28 }, 4.65);
+        .from('[data-display]', { opacity: 0, duration: 0.28 }, 4.65)
+        /*
+          The OLED's cable runs HORIZONTALLY out of J4, so its clip opens on
+          width where the e-paper's opens on height. Slightly after the big
+          panel: two displays coming up in the same frame reads as one event,
+          and the point of the act is that there are two.
+        */
+        .to(
+          '[data-oled-ribbon-clip] rect',
+          { attr: { width: OLED_POS.x + OLED_POS.w - 74 }, duration: 0.55, ease: 'power2.out' },
+          4.9,
+        )
+        .to(
+          '[data-oled-clip] rect',
+          { attr: { height: OLED_POS.h + 4 }, duration: 0.4, ease: 'power2.out' },
+          5.3,
+        )
+        /*
+          And this one DOES sweep up rather than fade. An OLED lights row by row
+          as the controller scans its commons — the opposite of the e-paper
+          beside it, which cannot show a partial state at all. The two displays
+          arriving differently is the whole argument of the act, made in motion
+          instead of in a caption.
+        */
+        .from('[data-oled]', { opacity: 0, duration: 0.22 }, 5.3);
 
       /*
         Current flow and the oscillator run on their own repeating tweens rather
@@ -463,6 +538,17 @@ export function BoardStory() {
                   <path key={i} d={d} className="board-story__ribbon-wire" />
                 ))}
               </g>
+              {/* The OLED's cable, revealed by its own clip so it unrolls out
+                  of J4 rather than appearing whole. */}
+              <g clipPath="url(#oled-ribbon-clip)">
+                <path d={OLED_RIBBON.outline} className="board-story__ribbon-body" />
+                {OLED_RIBBON.conductors.map((d, i) => (
+                  <path key={i} d={d} className="board-story__ribbon-wire" />
+                ))}
+              </g>
+              <clipPath id="oled-ribbon-clip" data-oled-ribbon-clip>
+                <rect x={74} y={OLED_POS.y - 2} width={0} height={OLED_POS.h + 8} />
+              </clipPath>
             </g>
 
             <g data-display clipPath="url(#display-clip)">
@@ -475,9 +561,20 @@ export function BoardStory() {
                 price={NVDA?.price ?? 0}
                 changePercent={NVDA_CHANGE}
                 sigmas={NVDA_SIGMAS}
-                percentile={NVDA_PERCENTILE}
                 asOf={NVDA?.asOf ?? ''}
                 stamp={market.fetchedAt}
+              />
+            </g>
+
+            <g data-oled clipPath="url(#oled-clip)">
+              <clipPath id="oled-clip" data-oled-clip>
+                <rect x={OLED_POS.x - 2} y={OLED_POS.y - 2} width={OLED_POS.w + 4} height={0} />
+              </clipPath>
+              <OledModule
+                x={OLED_POS.x}
+                y={OLED_POS.y}
+                percentile={NVDA_PERCENTILE}
+                ink={NVDA_SIGMAS > 0.25 ? 'var(--pcb-oled-up)' : NVDA_SIGMAS < -0.25 ? 'var(--pcb-oled-down)' : 'var(--pcb-oled-flat)'}
               />
             </g>
           </svg>

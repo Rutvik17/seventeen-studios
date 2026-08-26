@@ -3,9 +3,12 @@
 /**
  * The board's display: a real e-ink render, composed and shaded.
  *
- * Lays the face and the readout out on a 296 × 128 grid — the actual resolution
- * of the 2.9" three-colour panel this board is designed around — then hands the
- * bitmap to `renderEink` for the paper treatment.
+ * Lays the readout out on the panel's own pixel grid, then hands the bitmap to
+ * `renderEink` for the paper treatment.
+ *
+ * The FACE is not here. It moved to the OLED — e-paper cannot animate and this
+ * panel holds its image for nothing, so the numbers live here and the companion
+ * lives on the display that can move. See `OledModule.tsx`.
  *
  * ---
  *
@@ -34,7 +37,6 @@ import { useEffect, useState } from 'react';
 import { Bitmap, INK, type Ink } from '@/lib/pixelfont';
 import { site } from '@/content/studio';
 import { PANEL, inkFor } from '@/lib/pixel';
-import { FACE_SIZE, expressionFor, faceCells } from '@/lib/face';
 
 export type EinkPanelProps = {
   /** Placement in board millimetres. */
@@ -54,8 +56,6 @@ export type EinkPanelProps = {
    * render and in the first frame, so the markup is deterministic.
    */
   stamp: string;
-  /** Where the model sits in its own range, 0 to 1. Drives the expression. */
-  percentile: number;
 };
 
 /**
@@ -133,31 +133,25 @@ function compose(props: EinkPanelProps & { at?: number | null }): Bitmap {
   // A hairline under it, so the strip reads as chrome rather than as content.
   bmp.fillRect(24, 48, PANEL.width - 48, 1, INK.black);
 
-  /* ---- the face, left ---- */
   /*
-    The expression comes from the MODEL, not from today's move. It is where the
-    model's probability sits inside its own output distribution — the raw
-    probabilities span about two percentage points, so a threshold on them would
-    leave the companion permanently neutral.
+    ---- the readout, across the whole panel ----
 
-    The colour still comes from the move, because red-down/green-up is what a
-    reader already expects from a market screen. Mood from the model, sign from
-    the market.
+    THE FACE USED TO LIVE HERE AND HAS MOVED TO THE OLED.
+
+    It was drawn on the left and the figures were squeezed into what was left,
+    which was the right layout for a device with one display and the wrong one
+    for a device with two. E-paper holds an image for nothing and cannot animate;
+    the OLED can animate and costs current for every second it is lit. So the
+    numbers stay here, where they are free, and the companion moved to the panel
+    that can move — see `components/sections/OledModule.tsx`.
+
+    Giving the figures the full width is not tidying up after the move. It is
+    the point of the device: the panel is read from across a room, and the
+    largest thing on it should be the number, which is now roughly twice the
+    size it could be while sharing the glass with a face.
   */
   const TOP = 62;
-  const FACE = 10;
-  const faceX = 24;
-  const faceY = TOP + Math.round((PANEL.height - TOP - FACE_SIZE * FACE) / 2);
-  for (const cell of faceCells(expressionFor(props.percentile))) {
-    bmp.fillRect(faceX + cell.x * FACE, faceY + cell.y * FACE, FACE, FACE, moodInk);
-  }
-
-  /* ---- a rule between face and figures ---- */
-  const railX = faceX + FACE_SIZE * FACE + 28;
-  bmp.fillRect(railX, TOP + 16, 2, PANEL.height - TOP - 48, INK.black);
-
-  /* ---- the readout, right ---- */
-  const textX = railX + 32;
+  const textX = 24;
   /*
     Every line is drawn at the largest scale that FITS the remaining width,
     never at a scale chosen by eye. Measuring first removes the whole class of
@@ -218,7 +212,7 @@ export function EinkPanel(props: EinkPanelProps) {
           same bitmap as its own ghost would produce no residue at all, which
           defeats the point.
         */
-        const ghost = compose({ ...props, changePercent: 0, sigmas: 0, percentile: 0.5 });
+        const ghost = compose({ ...props, changePercent: 0, sigmas: 0 });
         // Scale 2 on a 640 x 400 panel is a 1280 x 800 render, which is more
         // than enough for the capsule texture to read at the size it appears.
         setHref(renderEink(compose({ ...props, at: now }), { scale: 2, ghost }));
@@ -234,7 +228,7 @@ export function EinkPanel(props: EinkPanelProps) {
     // minute. A full WebGL pass costs about twenty milliseconds and happens
     // sixty times an hour, which is nothing — and it is the only way to move
     // pixels inside an image that has already been rasterised.
-  }, [props.symbol, props.price, props.changePercent, props.sigmas, props.percentile, props.stamp, now]);
+  }, [props.symbol, props.price, props.changePercent, props.sigmas, props.stamp, now]);
 
   const { x, y, width, height } = props;
 
