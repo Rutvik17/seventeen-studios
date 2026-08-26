@@ -37,7 +37,6 @@
 
 import { OLED } from '@/lib/oled';
 import {
-  FRAME,
   FRAMES,
   HOLDS_LAST,
   animationFor,
@@ -45,6 +44,21 @@ import {
   spriteSrc,
   type Character,
 } from '@/lib/sprites';
+import {
+  HORIZON,
+  PALETTE,
+  PANEL,
+  RIDGE_MID,
+  RIDGE_NEAR,
+  SUN,
+  fujiPath,
+  petals,
+  ridgePath,
+  sceneFor,
+  snowPath,
+  stars,
+  toriiParts,
+} from '@/lib/backdrop';
 
 export type OledModuleProps = {
   /** Top-left of the HOUSING, in board millimetres. */
@@ -98,23 +112,26 @@ export function OledModule({ x, y, percentile, character, reduced = false }: Ole
   const activeX = x + WALL + (OLED.moduleWidth - OLED.mmWidth) / 2;
   const activeY = y + WALL + WINDOW_MARGIN;
 
-  /*
-    Millimetres per source pixel. Deliberately different on each axis: the
-    active area is 26.855 x 25.864 mm over a square 128 x 128 grid, so this
-    panel's pixels really are 3.8% wider than they are tall. Forcing them square
-    would be prettier and wrong.
-  */
-  const cellX = OLED.mmWidth / FRAME;
-  const cellY = OLED.mmHeight / FRAME;
-
   const animation = animationFor(percentile);
+  const scene = sceneFor(animation);
   const frames = FRAMES[character][animation];
   const holds = HOLDS_LAST.has(animation);
 
-  const stripWidth = frames * FRAME * cellX;
-  const travel = (holds ? frames - 1 : frames) * FRAME * cellX;
+  /*
+    Everything inside the panel is authored in PANEL PIXELS and drawn through a
+    nested viewBox, which is what lets the backdrop and the sprite share one
+    coordinate system. The nested svg is stretched to the active area with
+    preserveAspectRatio="none", and that stretch is the physical truth: the
+    active area is 26.855 x 25.864 mm over a square 128 x 128 grid, so this
+    panel's pixels really are 3.8% wider than they are tall.
+  */
+  const travel = (holds ? frames - 1 : frames) * PANEL;
   const steps = Math.max(1, holds ? frames - 1 : frames);
   const duration = cycleSeconds(character, animation);
+  const moon = scene.body?.kind === 'moon';
+  const bodyX = moon ? 96 : SUN.cx;
+  const bodyY = moon ? 32 : SUN.cy;
+  const bodyR = moon ? 13 : SUN.r;
 
   // Keyed by what it draws, so a mood change replaces the keyframe rather than
   // animating the new strip against the old one's travel distance.
@@ -168,6 +185,21 @@ export function OledModule({ x, y, percentile, character, reduced = false }: Ole
         <clipPath id="oled-active">
           <rect x={activeX} y={activeY} width={OLED.mmWidth} height={OLED.mmHeight} />
         </clipPath>
+        {/* The hour, top of the sky to the horizon. */}
+        <linearGradient id="oled-sky" x1="0" y1="0" x2="0" y2="1">
+          {scene.sky.map((stop, i) => (
+            <stop key={stop + i} offset={`${(i / (scene.sky.length - 1)) * 100}%`} stopColor={stop} />
+          ))}
+        </linearGradient>
+        {/*
+          The halo. Real, not decoration: a bright disc seen through atmosphere
+          scatters into the air around it, which is why the moon has a ring on a
+          humid night and none in thin mountain air.
+        */}
+        <radialGradient id="oled-halo">
+          <stop offset="0%" stopColor={scene.body?.glow ?? '#000000'} stopOpacity="0.55" />
+          <stop offset="100%" stopColor={scene.body?.glow ?? '#000000'} stopOpacity="0" />
+        </radialGradient>
       </defs>
 
       <style>{`
@@ -176,8 +208,17 @@ export function OledModule({ x, y, percentile, character, reduced = false }: Ole
           animation: ${anim} ${duration.toFixed(3)}s steps(${steps}) infinite;
           ${holds ? 'animation-iteration-count: 1; animation-fill-mode: forwards;' : ''}
         }
+        @keyframes oled-petal-drift {
+          from { transform: translate(0, 0); }
+          to { transform: translate(-${PANEL}px, ${PANEL * 0.55}px); }
+        }
+        .oled-petal {
+          animation-name: oled-petal-drift;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+        }
         @media (prefers-reduced-motion: reduce) {
-          .oled-strip-${character}-${animation} { animation: none; }
+          .oled-strip-${character}-${animation}, .oled-petal { animation: none; }
         }
       `}</style>
 
@@ -203,18 +244,106 @@ export function OledModule({ x, y, percentile, character, reduced = false }: Ole
         and stepped sideways — so exactly one frame is ever visible, and moving
         between frames costs a compositor transform rather than a repaint.
       */}
+      {/*
+        The picture. One nested viewBox holds the whole panel in PANEL PIXELS,
+        so the backdrop and the sprite are drawn on the same grid and cannot
+        drift apart when the housing geometry changes.
+      */}
       <g clipPath="url(#oled-active)" filter="url(#oled-bloom)">
-        <g className={reduced ? undefined : `oled-strip-${character}-${animation}`}>
-          <image
-            href={spriteSrc(character, animation)}
-            x={activeX}
-            y={activeY}
-            width={stripWidth}
-            height={OLED.mmHeight}
-            preserveAspectRatio="none"
-            style={{ imageRendering: 'pixelated' }}
-          />
-        </g>
+        <svg
+          x={activeX}
+          y={activeY}
+          width={OLED.mmWidth}
+          height={OLED.mmHeight}
+          viewBox={`0 0 ${PANEL} ${PANEL}`}
+          preserveAspectRatio="none"
+        >
+          <rect width={PANEL} height={PANEL} fill="url(#oled-sky)" />
+
+          {/* Stars, thinning out toward the light at the horizon. */}
+          {stars(scene.stars).map((star) => (
+            <rect
+              key={`${star.x}-${star.y}`}
+              x={star.x}
+              y={star.y}
+              width={star.r * 2}
+              height={star.r * 2}
+              fill={PALETTE.star}
+              opacity={star.opacity}
+            />
+          ))}
+
+          {scene.body && (
+            <>
+              <circle cx={bodyX} cy={bodyY} r={bodyR * 2.6} fill="url(#oled-halo)" />
+              <circle cx={bodyX} cy={bodyY} r={bodyR} fill={scene.body.fill} />
+              {/*
+                The terminator, cut with the sky itself rather than with black —
+                the unlit limb of a moon is not darker than the sky behind it,
+                it is the sky. Painting it black would give the disc a hard edge
+                no telescope has ever seen.
+              */}
+              {moon && (
+                <circle
+                  cx={bodyX + bodyR * 0.42}
+                  cy={bodyY - bodyR * 0.2}
+                  r={bodyR * 0.92}
+                  fill="url(#oled-sky)"
+                  opacity={0.92}
+                />
+              )}
+            </>
+          )}
+
+          <path d={fujiPath()} fill={scene.fuji} />
+          <path d={snowPath()} fill={scene.fujiSnow} />
+
+          <path d={ridgePath(RIDGE_MID, HORIZON.mid)} fill={scene.ridgeMid} />
+          {/* Mist settles in the valley, which is where cold air pools. */}
+          <rect x={0} y={HORIZON.mid - 4} width={PANEL} height={7} fill={scene.mist} opacity={0.2} />
+          <path d={ridgePath(RIDGE_NEAR, HORIZON.near)} fill={scene.ridgeNear} />
+          <rect x={0} y={HORIZON.near - 3} width={PANEL} height={6} fill={scene.mist} opacity={0.14} />
+
+          {toriiParts().map((part) => (
+            <rect
+              key={`${part.x}-${part.y}-${part.w}`}
+              x={part.x}
+              y={part.y}
+              width={part.w}
+              height={part.h}
+              fill={scene.torii}
+            />
+          ))}
+
+          <rect x={0} y={HORIZON.near} width={PANEL} height={PANEL - HORIZON.near} fill={scene.ground} />
+
+          {/* Blossom, each petal on its own pace so they never march in step. */}
+          {petals(scene.petals).map((petal, i) => (
+            <rect
+              key={`${petal.x}-${petal.y}`}
+              x={petal.x}
+              y={petal.y}
+              width={2}
+              height={2}
+              fill={PALETTE.petal}
+              opacity={0.75}
+              className={reduced ? undefined : 'oled-petal'}
+              style={reduced ? undefined : { animationDuration: `${petal.drift}s`, animationDelay: `${petal.delay}s` }}
+            />
+          ))}
+
+          <g className={reduced ? undefined : `oled-strip-${character}-${animation}`}>
+            <image
+              href={spriteSrc(character, animation)}
+              x={0}
+              y={0}
+              width={frames * PANEL}
+              height={PANEL}
+              preserveAspectRatio="none"
+              style={{ imageRendering: 'pixelated' }}
+            />
+          </g>
+        </svg>
       </g>
 
       {/* Specular sweep last, so it lies over the emitters like real glass. */}

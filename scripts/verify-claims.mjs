@@ -26,6 +26,7 @@
  */
 
 import { POWER_MODES, averageCurrentMa, batteryDays } from '../src/lib/board.ts';
+import { SCENE_DRIVE, PANEL_CONTRAST, boostInputCurrentMa } from '../src/lib/oled.ts';
 
 let failures = 0;
 
@@ -83,11 +84,20 @@ const duty = POWER_MODES.reduce((s, m) => s + m.dutyCycle, 0);
 check('power: duty cycles sum to 1', duty, 1.0, 1e-9);
 
 const avg = averageCurrentMa();
-check('power: average current (mA)', avg, 3.97, 0.01);
+check('power: average current (mA)', avg, 3.99, 0.01);
 check('power: radio contribution (mA)', 240 * 0.0035, 0.84);
 // The OLED is now the largest single contributor, which is the lesson's point.
 const oled = POWER_MODES.find((m) => /OLED/.test(m.name));
-check('power: OLED contribution (mA)', oled.milliamps * oled.dutyCycle, 3.04, 0.01);
+check('power: OLED contribution (mA)', oled.milliamps * oled.dutyCycle, 3.06, 0.01);
+/*
+  The companion's brightness is not a preference, it is what the power budget
+  allows given how much of the panel the artwork lights. Both halves are
+  asserted, because a claim that only checks the chosen value would still pass
+  if the constraint that forced it quietly went away.
+*/
+check('power: at full contrast the scene would blow the budget', boostInputCurrentMa(SCENE_DRIVE, 1), 112.5, 1);
+check('power: at the chosen contrast it fits', boostInputCurrentMa(SCENE_DRIVE * PANEL_CONTRAST, 1), 38.26, 0.05);
+
 check('power: battery life derated (days)', batteryDays(1200, avg), 10.7, 0.1);
 check('power: battery life undated (days)', 1200 / avg / 24, 12.6, 0.1);
 
