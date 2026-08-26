@@ -256,11 +256,32 @@ Two explanations, opposite implications, not yet separated:
    dissolving. **If this is the cause, +0.0078 is the honest number and +0.0215
    was never real.**
 
-- [ ] **Separate the two.** The archive's weekly membership snapshots cannot
-      help retroactively, but a partial test exists: restrict the universe to
-      names that were ALREADY in the index at the start of each test period,
-      using dated additions from Wikipedia. It does not recover the failures,
-      but it removes the additions, which is half the bias.
+- [x] **SEPARATED — and it was mostly BIAS.** Same 15 splits, membership applied
+      as of each row's own date (20.2% of rows dropped).
+
+      period      biased    point-in-time   change   % already members
+      ~2010-12   +0.0229      +0.0060        -74%          53%
+      ~2012-15   +0.0160      +0.0032        -80%          59%
+      ~2015-18   +0.0248      +0.0119        -52%          63%
+      ~2018-21   +0.0305      +0.0123        -60%          74%
+      ~2021-23   +0.0092      +0.0049        -47%          83%
+      ~2023-26   +0.0065      -0.0038       -159%          97%
+      overall    +0.0183      +0.0057        -69%
+      positive    14/15        11/15
+
+      **Mean IC falls 69%.** The mechanism is confirmed rather than assumed:
+      corr(IC lost, hindsight carried) = **0.544** — the periods trading the
+      most not-yet-members lost the most skill.
+
+      **+0.0057 is marginal.** Published equity models run 0.02-0.06; we are
+      below that range by a factor of three. The most recent period is NEGATIVE.
+
+      **The 22.40% vs SPY backtest is substantially fiction** — built on a model
+      with roughly three times the skill it actually has. The deflated Sharpe
+      correction applied to it was addressing the wrong problem.
+
+      Still a LOWER BOUND: removes additions, cannot recover companies dropped
+      from the index that later failed. The real bias is larger.
 - [ ] **Test recency weighting in training.** If relationships have changed,
       sixteen years of equal-weighted history is dragging the model toward
       regimes that no longer exist. Cheap to test: exponential sample weights,
