@@ -150,6 +150,37 @@ export function boostInputCurrentMa(
   return outMw / boostEfficiency(vin, OLED.vccTypical) / vin;
 }
 
+/*
+  THE PICTURE THE PANEL ACTUALLY SHOWS, AND WHAT IT COSTS.
+
+  Measured, not assumed: the companion scene was rendered at true 1:1 and its
+  mean per-subpixel drive computed across all seven hours. Fuji at first light
+  is the most expensive at 27.0% — it has the brightest sky and the most snow.
+
+  This matters because the earlier budget carried a flat 38 mA for the panel,
+  chosen when the OLED showed a sparse monochrome face on black. Real artwork
+  lights far more of the field, and at FULL contrast this scene pulls 112.5 mA
+  from the cell, which is 4.3 days rather than the 10.7 the notebook claims.
+
+  So the artwork sets the brightness. Running at 34% contrast brings it back to
+  37.9 mA and the battery figure holds — and 34% on an OLED indoors is still
+  perfectly legible, because the panel emits rather than reflects and its full
+  scale is sized for direct sunlight.
+
+  The honest shape of this is that a design constraint flows from the art to the
+  hardware, not the other way around, and it is written down here rather than
+  discovered later on a bench.
+*/
+export const SCENE_DRIVE = 0.27;
+
+/** Contrast the companion runs at, chosen so the panel meets its power budget. */
+export const PANEL_CONTRAST = 0.34;
+
+/** What the companion costs from the cell while it is awake and animating. */
+export function companionAwakeMa(): number {
+  return boostInputCurrentMa(SCENE_DRIVE * PANEL_CONTRAST, 1);
+}
+
 /**
  * The switch current limit is a real ceiling on brightness, not a formality.
  *

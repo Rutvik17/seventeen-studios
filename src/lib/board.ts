@@ -33,6 +33,8 @@
  * this away as decoration.
  */
 
+import { companionAwakeMa } from '@/lib/oled';
+
 /* ------------------------------------------------------------------ *
  * Board
  * ------------------------------------------------------------------ */
@@ -335,7 +337,7 @@ export const POWER_MODES: PowerMode[] = [
   { name: 'Deep sleep', milliamps: 0.043, dutyCycle: 0.9145 },
   { name: 'Wi-Fi wake + fetch', milliamps: 240, dutyCycle: 0.0035 },
   { name: 'E-ink refresh', milliamps: 26, dutyCycle: 0.002 },
-  { name: 'OLED companion, awake', milliamps: 38, dutyCycle: 0.08 },
+  { name: 'OLED companion, awake', milliamps: companionAwakeMa(), dutyCycle: 0.08 },
 ];
 
 export function averageCurrentMa(modes: PowerMode[] = POWER_MODES): number {
