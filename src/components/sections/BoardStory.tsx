@@ -67,6 +67,7 @@ import {
 } from '@/lib/board';
 import { EinkPanel } from '@/components/sections/EinkPanel';
 import { OledModule, OLED_HOUSING } from '@/components/sections/OledModule';
+import { characterFor } from '@/lib/sprites';
 import { PANEL as PANEL_MODULE } from '@/lib/pixel';
 import { boardActs, hero } from '@/content/studio';
 import { assetBySymbol, market, sigmasFor } from '@/content/market';
@@ -144,12 +145,22 @@ const NVDA = assetBySymbol('NVDA');
 const NVDA_CHANGE = NVDA?.changeDay ?? 0;
 const NVDA_SIGMAS = NVDA ? sigmasFor(NVDA, NVDA_CHANGE, market.tradingDays) : 0;
 /*
-  The face is driven by the sentiment model's reading, not by today's move — see
-  `lib/face.ts`. 0.5 is the neutral fallback for the case where training failed
-  and no model shipped, which must degrade to a blank expression rather than to
-  a permanently alarmed one.
+  The panel is driven by the sentiment model's reading, not by today's move —
+  see `lib/sprites.ts`. 0.5 is the neutral fallback for the case where training
+  failed and no model shipped, which must degrade to a resting pose rather than
+  to a permanently alarmed one.
 */
 const NVDA_PERCENTILE = NVDA?.sentiment?.percentile ?? 0.5;
+
+/*
+  WHICH character, as opposed to what it is doing: the feature currently
+  contributing most to the model's logit. Falls back to the brawler when no
+  model shipped, which is the same degradation the percentile makes.
+*/
+const NVDA_CHARACTER =
+  NVDA?.sentiment?.features && market.sentiment
+    ? characterFor(market.sentiment, NVDA.sentiment.features)
+    : 'Fighter';
 
 /*
   The cable, built as a real flat-flex: a band with seven conductors running down
@@ -574,7 +585,8 @@ export function BoardStory() {
                 x={OLED_POS.x}
                 y={OLED_POS.y}
                 percentile={NVDA_PERCENTILE}
-                ink={NVDA_SIGMAS > 0.25 ? 'var(--pcb-oled-up)' : NVDA_SIGMAS < -0.25 ? 'var(--pcb-oled-down)' : 'var(--pcb-oled-flat)'}
+                character={NVDA_CHARACTER}
+                reduced={reduced}
               />
             </g>
           </svg>

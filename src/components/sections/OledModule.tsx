@@ -22,20 +22,29 @@
  * board.
  *
  * ---
- * WHY SVG RECTS AND NOT A RASTERISED BITMAP
+ * WHY THE SPRITE IS AN IMAGE AND THE ANIMATION IS CSS
  *
- * The e-paper is drawn through a shader because e-ink has a look that has to be
- * simulated — matte, granular, never quite black, never quite white. An OLED has
- * none of that. It is an emitter behind glass: crisp edges, true black, and a
- * slight bloom where a bright pixel bleeds into its neighbours.
+ * The panel shows a 128 x 128 sprite and the source frames are 128 x 128, so a
+ * frame lands on the panel 1:1 with no resampling — see `lib/sprites.ts`, where
+ * that is checked rather than assumed.
  *
- * All three of those are cheaper and more accurate as vectors, so the pixels
- * are real rects and the bloom is a real Gaussian. Nothing is rasterised, so
- * nothing is resolution-dependent.
+ * The strip is drawn ONCE as a single `<image>` and stepped with a CSS
+ * keyframe. Nothing re-renders per frame: no React state, no timer, no
+ * requestAnimationFrame. An earlier version drove a sprite clock through React
+ * at 10fps, which re-rendered the entire board SVG ten times a second to move
+ * one element. `steps()` hands the whole job to the compositor.
  */
 
-import { FACE_SIZE, expressionFor, faceCells } from '@/lib/face';
 import { OLED } from '@/lib/oled';
+import {
+  FRAME,
+  FRAMES,
+  HOLDS_LAST,
+  animationFor,
+  cycleSeconds,
+  spriteSrc,
+  type Character,
+} from '@/lib/sprites';
 
 export type OledModuleProps = {
   /** Top-left of the HOUSING, in board millimetres. */
@@ -43,8 +52,10 @@ export type OledModuleProps = {
   y: number;
   /** Where the model's reading sits in its own output distribution, 0-1. */
   percentile: number;
-  /** The mood colour, matching the readout's convention. */
-  ink: string;
+  /** Which character the model's reasoning puts on the panel. */
+  character: Character;
+  /** Honour the visitor's motion preference: hold a single frame. */
+  reduced?: boolean;
 };
 
 /*
@@ -70,7 +81,7 @@ export const OLED_HOUSING = {
 */
 const WINDOW_MARGIN = 3.0;
 
-export function OledModule({ x, y, percentile, ink }: OledModuleProps) {
+export function OledModule({ x, y, percentile, character, reduced = false }: OledModuleProps) {
   const w = OLED_HOUSING.width;
   const h = OLED_HOUSING.height;
 
@@ -87,8 +98,27 @@ export function OledModule({ x, y, percentile, ink }: OledModuleProps) {
   const activeX = x + WALL + (OLED.moduleWidth - OLED.mmWidth) / 2;
   const activeY = y + WALL + WINDOW_MARGIN;
 
-  const cell = OLED.mmWidth / FACE_SIZE;
-  const cells = faceCells(expressionFor(percentile));
+  /*
+    Millimetres per source pixel. Deliberately different on each axis: the
+    active area is 26.855 x 25.864 mm over a square 128 x 128 grid, so this
+    panel's pixels really are 3.8% wider than they are tall. Forcing them square
+    would be prettier and wrong.
+  */
+  const cellX = OLED.mmWidth / FRAME;
+  const cellY = OLED.mmHeight / FRAME;
+
+  const animation = animationFor(percentile);
+  const frames = FRAMES[character][animation];
+  const holds = HOLDS_LAST.has(animation);
+
+  const stripWidth = frames * FRAME * cellX;
+  const travel = (holds ? frames - 1 : frames) * FRAME * cellX;
+  const steps = Math.max(1, holds ? frames - 1 : frames);
+  const duration = cycleSeconds(character, animation);
+
+  // Keyed by what it draws, so a mood change replaces the keyframe rather than
+  // animating the new strip against the old one's travel distance.
+  const anim = `oled-${character}-${animation}`;
 
   return (
     <g>
@@ -124,17 +154,32 @@ export function OledModule({ x, y, percentile, ink }: OledModuleProps) {
         {/*
           Bloom. A lit emitter behind acrylic scatters into its neighbours, which
           is why a photograph of an OLED never has perfectly hard pixel edges.
-          Kept small — 0.35 mm — because this is a cover pane a millimetre thick,
-          not a diffuser.
+          Taken from the image itself rather than tinted by a prop — the spill
+          is the panel's own light, so it is whatever the panel is showing.
         */}
         <filter id="oled-bloom" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="0.35" result="blur" />
+          <feGaussianBlur stdDeviation="0.28" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+        {/* The pixels the panel actually has. Everything outside is dead glass. */}
+        <clipPath id="oled-active">
+          <rect x={activeX} y={activeY} width={OLED.mmWidth} height={OLED.mmHeight} />
+        </clipPath>
       </defs>
+
+      <style>{`
+        @keyframes ${anim} { to { transform: translateX(-${travel.toFixed(4)}px); } }
+        .oled-strip-${character}-${animation} {
+          animation: ${anim} ${duration.toFixed(3)}s steps(${steps}) infinite;
+          ${holds ? 'animation-iteration-count: 1; animation-fill-mode: forwards;' : ''}
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .oled-strip-${character}-${animation} { animation: none; }
+        }
+      `}</style>
 
       {/* Shell, with a soft contact shadow so it sits ON the board. */}
       <rect x={x + 0.4} y={y + 0.7} width={w} height={h} rx={2.6} fill="#000" opacity="0.18" />
@@ -154,21 +199,22 @@ export function OledModule({ x, y, percentile, ink }: OledModuleProps) {
       <rect x={windowX} y={windowY} width={windowW} height={windowH} rx={1.4} fill="url(#oled-glass)" />
 
       {/*
-        The image. Only INKED cells are drawn — an off pixel is not painted at
-        all, which is exactly what the panel does, and it means the black of the
-        character is the black of the cover with nothing in between.
+        The image. One element for the whole strip, clipped to the active area
+        and stepped sideways — so exactly one frame is ever visible, and moving
+        between frames costs a compositor transform rather than a repaint.
       */}
-      <g filter="url(#oled-bloom)">
-        {cells.map((c) => (
-          <rect
-            key={`${c.x}-${c.y}`}
-            x={activeX + c.x * cell}
-            y={activeY + c.y * cell}
-            width={cell}
-            height={cell}
-            fill={ink}
+      <g clipPath="url(#oled-active)" filter="url(#oled-bloom)">
+        <g className={reduced ? undefined : `oled-strip-${character}-${animation}`}>
+          <image
+            href={spriteSrc(character, animation)}
+            x={activeX}
+            y={activeY}
+            width={stripWidth}
+            height={OLED.mmHeight}
+            preserveAspectRatio="none"
+            style={{ imageRendering: 'pixelated' }}
           />
-        ))}
+        </g>
       </g>
 
       {/* Specular sweep last, so it lies over the emitters like real glass. */}
