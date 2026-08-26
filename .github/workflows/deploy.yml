@@ -26,17 +26,27 @@ on:
   # computed at build time by `src/lib/time.ts` and freezes at the moment of
   # the build.
   #
-  # Market data is the reason this is DAILY rather than monthly: `prebuild`
-  # runs `scripts/fetch-market.mjs`, which pulls real closes for the risk desk.
-  # 22:30 UTC is after the US close and its settlement, so the fetch picks up a
-  # finished session rather than a partial one.
+  # Market data is the reason this is DAILY rather than monthly: the scheduled
+  # run refetches prices, SEC fundamentals and macro, and appends what cannot be
+  # re-fetched later to the archive. 22:30 UTC is after the US close and its
+  # settlement, so it picks up a finished session rather than a partial one.
   schedule:
     - cron: '30 22 * * 1-5'
   # Lets you publish a build by hand from the Actions tab.
   workflow_dispatch:
 
-# GITHUB_TOKEN permissions required by actions/deploy-pages, plus `write` so the
-# build can commit the intraday archive back — see "Keep the intraday archive".
+# `contents: write` so the nightly run can push the archive back.
+#
+# Three of the four data sources destroy history. Yahoo purges delisted symbols
+# outright — eight were tested and all eight 404 — so a holding that gets
+# acquired takes its entire price history with it. The constituent list only
+# ever describes today, which is exactly why survivorship cannot be fixed
+# retroactively but can be fixed going forward. XBRL restatements overwrite.
+#
+# None of that is recoverable later, so the run writes what it saw to `archive/`
+# and commits it. The alternative is discovering in 2031 that the five years of
+# point-in-time index membership we could have had for 30 KB a week does not
+# exist.
 permissions:
   contents: write
   pages: write
@@ -51,7 +61,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Full history, because the archive step may have to rebase.
+      # `actions/checkout` defaults to a depth of 1, and `git pull --rebase` on a
+      # shallow clone fails — which would turn a routine race with another push
+      # into a lost day of archive.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -82,89 +98,64 @@ jobs:
 
       - run: npm ci
 
-      - name: Build static site
-        env:
-          NEXT_PUBLIC_BASE_PATH: ${{ steps.paths.outputs.base_path }}
-          NEXT_PUBLIC_SITE_URL: ${{ steps.paths.outputs.site_url }}
-        run: npm run build
+      # The heavy fetch runs on a SCHEDULE, not on every push.
+      #
+      # Prices, fundamentals and macro are about 2,100 requests across Yahoo and
+      # the SEC — roughly eight minutes, and a volume of traffic worth spacing
+      # out rather than firing every time somebody edits a paragraph. Yahoo
+      # throttles by IP and GitHub runners share them.
+      #
+      # A push-triggered build skips this and uses whatever is committed, which
+      # is correct: the site renders from the archive and from published
+      # results, never from a live fetch.
+      - name: Refresh engine data
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: npm run data:all
 
-      # The intraday archive only grows if somebody keeps it.
+      # The archive only grows if somebody keeps it.
       #
-      # Yahoo serves 60 days of 15-minute bars and refuses older windows
-      # outright, so the history behind that wall cannot be fetched — but it can
-      # be REMEMBERED. `fetch-sweep.mjs` merges each run into the committed file
-      # rather than replacing it, so every weekday build adds the newest session
-      # and nothing that has scrolled past 60 days is ever lost.
+      # "Refresh engine data" above has fetched today's prices, fundamentals and
+      # macro into `data/`, which is gitignored and thrown away with the runner.
+      # This promotes the parts that cannot be re-fetched later into `archive/`
+      # and commits them.
       #
-      # Without this step the accumulator is thrown away with the runner and the
-      # sample is permanently stuck at whatever Yahoo will still serve. With it,
-      # the file grows by seven Mondays a week on its own.
-      #
-      # `[skip ci]` matters: the push would otherwise trigger this same workflow
-      # and it would sit there rebuilding itself.
-      - name: Keep the intraday archive
-        if: github.ref == 'refs/heads/main'
+      # `[skip ci]` matters: the push would otherwise retrigger this workflow and
+      # it would sit rebuilding itself.
+      - name: Keep the archive
+        if: >-
+          github.ref == 'refs/heads/main' &&
+          (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         run: |
           set -euo pipefail
+          npm run archive
 
-          # Compare SESSION COUNTS, not bytes. The payload carries a `fetchedAt`
-          # stamp that moves on every run, so a plain `git diff` is always dirty
-          # and would commit on every build for no reason.
-          grew=$(node -e '
-            const { execSync } = require("node:child_process");
-            const fs = require("node:fs");
-
-            const count = (json) => {
-              const d = JSON.parse(json);
-              return (d.tickers ?? []).reduce(
-                (s, t) => s + Object.keys(t.intraday ?? {}).length, 0);
-            };
-
-            const after = count(fs.readFileSync("src/content/sweep.json", "utf8"));
-
-            /*
-              A zero here means the payload no longer has the shape this reads,
-              not that there are no sessions — which is exactly what happened the
-              first time this ran: it counted a field that had been renamed, saw
-              0 against 0, reported "nothing new to keep" and would have gone on
-              saying that forever while the archive never grew. A silent no-op is
-              the worst outcome available to this step, so it is now a failure.
-            */
-            if (after === 0) {
-              console.error("archive: read 0 sessions — the payload shape changed");
-              process.exit(1);
-            }
-
-            let before = 0;
-            try {
-              before = count(execSync("git show HEAD:src/content/sweep.json",
-                { encoding: "utf8", maxBuffer: 64e6 }));
-            } catch {
-              // No committed file yet: everything is new.
-              before = -1;
-            }
-
-            console.error(`archive: ${before} -> ${after} sessions`);
-            process.stdout.write(after > before ? "yes" : "no");
-          ')
-
-          if [ "$grew" != "yes" ]; then
+          # `git diff --quiet` is the right test here rather than counting rows.
+          # The archive is append-only and idempotent — a run that fetched
+          # nothing new leaves every file byte-identical, so an empty diff
+          # genuinely means there was nothing to keep.
+          if git diff --quiet -- archive; then
             echo "nothing new to keep"
             exit 0
           fi
 
           git config user.name  'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/content/sweep.json
-          git commit -m 'chore: extend the intraday archive [skip ci]'
+          git add archive
+          git commit -m "chore: extend the archive [skip ci]"
 
           # Keeping the archive must never cost a deploy. If main moved while
           # this build was running, rebase once and retry; if it still will not
-          # go, say so and carry on — the sessions are re-fetchable tomorrow,
-          # and a published site is not.
+          # go, say so and carry on — today's rows are re-fetchable tomorrow and
+          # a published site is not.
           git push || {
             git pull --rebase --autostash origin main && git push
           } || echo "::warning::archive push failed; the site still deploys"
+
+      - name: Build static site
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.paths.outputs.base_path }}
+          NEXT_PUBLIC_SITE_URL: ${{ steps.paths.outputs.site_url }}
+        run: npm run build
 
       # `_next/` starts with an underscore, which Jekyll would strip.
       - name: Disable Jekyll processing

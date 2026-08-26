@@ -1,0 +1,233 @@
+/**
+ * Walk-forward training, and the only question worth answering first:
+ * does the model predict anything out of sample, and does SEC data help?
+ *
+ *   npm run train
+ *
+ * No portfolio, no trades, no equity curve. Those come later and every one of
+ * them can look wonderful on a model with no predictive power, because position
+ * sizing and risk control produce curves of their own. If the information
+ * coefficient is flat there is nothing to build on.
+ *
+ * ---
+ * THE EMBARGO, WHICH IS NOT OPTIONAL
+ *
+ * Each row is labelled with the return over the NEXT 21 trading days. A row
+ * dated one day before the test period opens is labelled with a return running
+ * 20 days INTO that test period. Training on it leaks the answer.
+ *
+ * So training stops HORIZON days before each fold. That gap is dead data,
+ * deliberately discarded, and skipping it is the most common reason an equity
+ * model reports a strong IC and then trades like noise.
+ *
+ * ---
+ * WHY BOTH FEATURE SETS RUN HERE RATHER THAN IN TWO SESSIONS
+ *
+ * The comparison is only meaningful on IDENTICAL folds — same dates, same
+ * embargo, same seed, same early-stopping rule, one variable changed. Running
+ * them separately and comparing remembered numbers is how a data family gets
+ * credited for a fold boundary that happened to move.
+ *
+ * ---
+ * WHAT AN IC OF 0.03 MEANS
+ *
+ * The rank correlation between prediction and outcome, measured across names
+ * within each day. It is not R-squared and the numbers look small: published
+ * equity models live between 0.02 and 0.06, and a consistent 0.03 spread across
+ * hundreds of names, rebalanced repeatedly, is a real edge. Single-name accuracy
+ * is the wrong intuition entirely.
+ */
+
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { buildPanel, rankNormalise, HORIZON } from '../src/lib/engine/panel.ts';
+import { train, predict, importances } from '../src/lib/engine/gbdt.ts';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const dataDir = path.join(root, 'data');
+
+console.log('\nloading prices…');
+const prices = JSON.parse(readFileSync(path.join(dataDir, 'prices.json'), 'utf8'));
+
+const fundamentalsPath = path.join(dataDir, 'fundamentals.json');
+const fundamentals = existsSync(fundamentalsPath)
+  ? JSON.parse(readFileSync(fundamentalsPath, 'utf8')).facts
+  : null;
+console.log(fundamentals
+  ? `  fundamentals available for ${Object.keys(fundamentals).length} companies`
+  : '  no fundamentals on disk — price-only run');
+
+const macroPath = path.join(dataDir, 'macro.json');
+const macro = existsSync(macroPath) ? JSON.parse(readFileSync(macroPath, 'utf8')) : null;
+console.log(macro
+  ? `  macro: ${Object.keys(macro.series).length} series, ${macro.fomc.length} FOMC meetings`
+  : '  no macro on disk');
+
+const mean = (xs) => xs.reduce((a, b) => a + b, 0) / (xs.length || 1);
+
+/** Spearman correlation between prediction and outcome, within each day. */
+function dailyIC(rows, preds) {
+  const byDate = new Map();
+  rows.forEach((r, i) => {
+    let g = byDate.get(r.t);
+    if (!g) byDate.set(r.t, (g = []));
+    g.push({ p: preds[i], y: r.label });
+  });
+
+  const ics = [];
+  for (const g of byDate.values()) {
+    if (g.length < 20) continue;
+    const rank = (key) => {
+      const order = g.map((v, i) => ({ i, v: v[key] })).sort((a, b) => a.v - b.v);
+      const out = new Array(g.length);
+      let i = 0;
+      while (i < order.length) {
+        let j = i;
+        while (j + 1 < order.length && order[j + 1].v === order[i].v) j++;
+        const avg = (i + j) / 2;
+        for (let k = i; k <= j; k++) out[order[k].i] = avg;
+        i = j + 1;
+      }
+      return out;
+    };
+    const a = rank('p');
+    const b = rank('y');
+    const n = g.length;
+    const m = (n - 1) / 2;
+    let cov = 0; let va = 0; let vb = 0;
+    for (let i = 0; i < n; i++) {
+      cov += (a[i] - m) * (b[i] - m);
+      va += (a[i] - m) ** 2;
+      vb += (b[i] - m) ** 2;
+    }
+    if (va > 0 && vb > 0) ics.push(cov / Math.sqrt(va * vb));
+  }
+  return ics;
+}
+
+function walkForward(panel, label) {
+  const year = (t) => Number(panel.dates[t].slice(0, 4));
+  const labelled = panel.rows.filter((r) => Number.isFinite(r.label));
+  const years = [...new Set(labelled.map((r) => year(r.t)))].sort().filter((y) => y >= 2013);
+
+  const perYear = [];
+  const allIC = [];
+  let lastModel = null;
+
+  for (const y of years) {
+    const testRows = labelled.filter((r) => year(r.t) === y);
+    if (testRows.length < 1000) continue;
+
+    const firstTestT = Math.min(...testRows.map((r) => r.t));
+    const trainRows = labelled.filter((r) => r.t < firstTestT - HORIZON);
+    if (trainRows.length < 20_000) continue;
+
+    // Validation is the tail of training, still strictly before the fold.
+    const cut = Math.floor(trainRows.length * 0.85);
+    const model = train(
+      trainRows.slice(0, cut).map((r) => r.features),
+      trainRows.slice(0, cut).map((r) => r.label),
+      panel.columns,
+      trainRows.slice(cut).map((r) => r.features),
+      trainRows.slice(cut).map((r) => r.label),
+    );
+    lastModel = model;
+
+    const ics = dailyIC(testRows, predict(model, testRows.map((r) => r.features)));
+    allIC.push(...ics);
+    perYear.push({ year: y, ic: mean(ics), days: ics.length, rounds: model.rounds });
+    process.stdout.write(`  ${label} ${y}\r`);
+  }
+
+  const m = mean(allIC);
+  const sd = Math.sqrt(mean(allIC.map((v) => (v - m) ** 2)));
+  return {
+    perYear,
+    mean: m,
+    t: sd > 0 ? (m / sd) * Math.sqrt(allIC.length) : 0,
+    hit: allIC.filter((v) => v > 0).length / (allIC.length || 1),
+    days: allIC.length,
+    positiveYears: perYear.filter((p) => p.ic > 0).length,
+    model: lastModel,
+  };
+}
+
+const runs = [];
+
+console.log('\nbuilding price-only panel…');
+let t0 = Date.now();
+const techPanel = buildPanel(prices);
+rankNormalise(techPanel);
+console.log(`  ${techPanel.rows.length.toLocaleString()} rows, ${techPanel.columns.length} features (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+runs.push({ name: 'technical only', result: walkForward(techPanel, 'technical') });
+
+if (fundamentals) {
+  console.log('\nbuilding price + fundamentals panel…');
+  t0 = Date.now();
+  const fullPanel = buildPanel(prices, { fundamentals });
+  rankNormalise(fullPanel);
+  console.log(`  ${fullPanel.rows.length.toLocaleString()} rows, ${fullPanel.columns.length} features (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+  runs.push({ name: '+ SEC fundamentals', result: walkForward(fullPanel, 'fundamental') });
+}
+
+if (fundamentals && macro) {
+  console.log('\nbuilding price + fundamentals + macro panel…');
+  t0 = Date.now();
+  const macroPanel = buildPanel(prices, { fundamentals, macro });
+  rankNormalise(macroPanel);
+  console.log(
+    `  ${macroPanel.rows.length.toLocaleString()} rows, ${macroPanel.columns.length} features` +
+    ` (${macroPanel.rankableColumns} ranked, ${macroPanel.columns.length - macroPanel.rankableColumns} raw macro)` +
+    ` (${((Date.now() - t0) / 1000).toFixed(1)}s)`,
+  );
+  runs.push({ name: '+ macro', result: walkForward(macroPanel, 'macro') });
+}
+
+console.log('\n\nyear-by-year IC\n');
+const header = ['year', ...runs.map((r) => r.name.padStart(18))].join('  ');
+console.log(header);
+console.log('-'.repeat(header.length));
+for (const { year } of runs[0].result.perYear) {
+  const cells = runs.map((r) => {
+    const row = r.result.perYear.find((p) => p.year === year);
+    const v = row ? row.ic : NaN;
+    return ((v >= 0 ? '+' : '') + v.toFixed(4)).padStart(18);
+  });
+  console.log([String(year), ...cells].join('  '));
+}
+console.log('-'.repeat(header.length));
+console.log(['mean', ...runs.map((r) => ((r.result.mean >= 0 ? '+' : '') + r.result.mean.toFixed(4)).padStart(18))].join('  '));
+console.log(['t-stat', ...runs.map((r) => r.result.t.toFixed(1).padStart(18))].join('  '));
+console.log(['hit', ...runs.map((r) => `${(r.result.hit * 100).toFixed(1)}%`.padStart(18))].join('  '));
+console.log(['yrs +', ...runs.map((r) => `${r.result.positiveYears}/${r.result.perYear.length}`.padStart(18))].join('  '));
+
+/*
+  Each data family's contribution is the step it adds, not the total.
+
+  Reported one at a time and cumulatively, because a family that lifts IC by
+  nothing has not earned its place in a nightly pipeline however interesting the
+  data is — and the honest way to find that out is to add it alone and look.
+*/
+console.log('\nwhat each data family adds');
+for (let i = 1; i < runs.length; i++) {
+  const step = runs[i].result.mean - runs[i - 1].result.mean;
+  const total = runs[i].result.mean - runs[0].result.mean;
+  console.log(
+    `  ${runs[i].name.padEnd(20)} ${(step >= 0 ? '+' : '') + step.toFixed(4)} on its own` +
+    `   ${(total >= 0 ? '+' : '') + total.toFixed(4)} cumulative` +
+    `   (${((total / Math.abs(runs[0].result.mean)) * 100).toFixed(0)}% vs price-only)`,
+  );
+}
+
+const best = runs.at(-1).result;
+if (best.model) {
+  console.log(`\nwhat the ${runs.at(-1).name} model used:`);
+  for (const { column, share } of importances(best.model).slice(0, 16)) {
+    console.log(`  ${column.padEnd(22)} ${(share * 100).toFixed(1).padStart(5)}%  ${'#'.repeat(Math.round(share * 110))}`);
+  }
+  mkdirSync(dataDir, { recursive: true });
+  writeFileSync(path.join(dataDir, 'model.json'), JSON.stringify(best.model));
+  console.log('\nwrote data/model.json');
+}

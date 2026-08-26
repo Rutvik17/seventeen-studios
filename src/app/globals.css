@@ -60,7 +60,6 @@
   --pcb-silk: #e8efe9;
   --pcb-body: #23262b;
   --pcb-bezel: #2b2e33;
-
   /* The plane — Grasp's ground, defined here and applied only there. */
   --grid-unit: 24px;
   --grid-line: rgba(20, 22, 26, 0.05);
@@ -395,9 +394,19 @@ code {
      depth reveal. */
   transform-style: preserve-3d;
 }
+/*
+  No `will-change` here either, and for the same reason as `.word` below.
+  See the long note there.
+
+  This one matters MORE, not less: `chars` is SplitText's default mode, so this
+  rule reaches almost every split heading on the site while `.word` reaches only
+  the handful that ask for it. Fixing `.word` alone left the same latent bug —
+  a permanently promoted layer that a parent's `background-clip: text` cannot
+  paint through — everywhere else, and left every character on the site holding
+  a compositing layer it stopped needing the moment its tween finished.
+*/
 .char {
   display: inline-block;
-  will-change: transform;
 }
 .word-mask {
   display: inline-block;
@@ -415,9 +424,30 @@ code {
   padding-bottom: 0.2em;
   margin-bottom: -0.2em;
 }
+/*
+  NO `will-change` HERE, AND ITS ABSENCE IS THE FIX FOR A REAL BUG.
+
+  `will-change: transform` promotes an element to its own compositing layer and
+  keeps it there — permanently, for every split word on the site, whether or not
+  anything is animating. The spec is explicit that it is a temporary hint.
+
+  It is what hid the founder page's closing heading. That heading paints a
+  gradient clipped to its own glyphs (`background-clip: text`, transparent
+  fill), and WebKit will not paint a parent's clipped background through a
+  promoted descendant layer. The words were present, selectable and read aloud
+  by screen readers while rendering as nothing — "I can only see it if I
+  highlight it".
+
+  A JS fix on tween completion is not enough on its own: words belonging to an
+  instance whose tween never runs — held behind the preloader gate, or never
+  scrolled into view — would keep the hint forever, and those are exactly the
+  ones a visitor sees first.
+
+  GSAP promotes what it is animating anyway; it writes `translate3d` during a
+  tween, which is the same hint applied only while it is true.
+*/
 .word {
   display: inline-block;
-  will-change: transform;
 }
 
 /* ---------- Overlays: grain, cursor, progress --------------------- */
@@ -2039,6 +2069,31 @@ html.no-js .exploded .exploded__svg {
   fill: var(--muted);
 }
 
+/*
+  AXIS LABELS ARE SIZED IN DEVICE PIXELS; THE PADDING THEY SIT IN IS NOT.
+
+  Every chart here is an SVG with a fixed viewBox and `width: 100%`, so it scales
+  to its container. A CSS font-size does NOT scale with it — `10px` means ten
+  device pixels at any container width, and the browser achieves that by
+  inflating the font in USER units as the SVG shrinks. Measured on a 500px
+  viewport: the SVG renders at scale 0.474 and the computed font-size is 26 user
+  units rather than 10.
+
+  The left padding is a plain user-unit constant, so it does not grow to match.
+  Past a certain width the labels run off the left edge and get cut: the risk
+  desk's "$1,000,000" rendered at x=-92 and showed as ",000", and the factor
+  desk's "1.00x" showed as "00x". Both had been shipping that way.
+
+  Scaling the font down with the SVG instead would fix the geometry and produce
+  five-pixel text nobody can read. Shrinking it a little on narrow screens keeps
+  it legible and brings it back inside the padding.
+*/
+@media (max-width: 720px) {
+  .instrument__axis {
+    font-size: 7px;
+  }
+}
+
 .instrument__axis--accent {
   fill: var(--fg);
 }
@@ -2086,6 +2141,206 @@ html.no-js .exploded .exploded__svg {
   font-size: 14px;
   color: var(--fg-dim);
   max-width: 78ch;
+}
+
+/* ==================================================================
+   THE MULTI-FACTOR DESK
+   ================================================================== */
+
+.alpha__grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.alpha__curve {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+/*
+  The benchmark is deliberately quieter than the model but not decorative — the
+  whole point of the chart is the GAP between them, so it has to be legible
+  enough to measure against rather than a background texture.
+*/
+.alpha__benchmark {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 1.25;
+  opacity: 0.42;
+  stroke-dasharray: 4 3;
+}
+
+.alpha__key {
+  display: inline-block;
+  width: 14px;
+  height: 2px;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+/*
+  The beta-matched line is the one the model actually has to beat, so it gets the
+  warning accent rather than another shade of grey — it is the control, not a
+  second benchmark, and it currently sits ABOVE the model.
+*/
+.alpha__matched {
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 1.5;
+}
+
+.alpha__key--model { background: var(--accent); }
+.alpha__key--bench { background: var(--fg); opacity: 0.42; }
+.alpha__key--matched { background: var(--accent-2); }
+
+.alpha__controls {
+  align-items: end;
+}
+
+.alpha__segments {
+  display: flex;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.alpha__segment {
+  flex: 1;
+  padding: 7px 4px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 140ms var(--ease-out), color 140ms var(--ease-out);
+}
+
+.alpha__segment:last-child { border-right: 0; }
+.alpha__segment:hover { background: var(--accent-soft); color: var(--fg); }
+
+.alpha__segment.is-on {
+  background: var(--accent);
+  color: #fff;
+}
+
+/*
+  The construction switch is the one control that changes the ANSWER rather than
+  a parameter, so it reads as a two-state switch rather than another segmented
+  row — the market-neutral side is coloured with the warning accent because
+  that is the setting that loses money.
+*/
+.alpha__switch {
+  display: flex;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  background: transparent;
+  padding: 0;
+}
+
+.alpha__switch span {
+  flex: 1;
+  padding: 7px 4px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--muted);
+  transition: background 140ms var(--ease-out), color 140ms var(--ease-out);
+}
+
+.alpha__switch span:first-child {
+  background: var(--accent);
+  color: #fff;
+}
+
+.alpha__switch.is-neutral span:first-child {
+  background: transparent;
+  color: var(--muted);
+}
+
+.alpha__switch.is-neutral span:last-child {
+  background: var(--accent-2);
+  color: #fff;
+}
+
+.alpha__book {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: clamp(20px, 3vw, 48px);
+  margin-top: calc(var(--grid-unit) * 1.5);
+  padding-top: calc(var(--grid-unit) * 1.2);
+  border-top: 1px solid var(--line);
+}
+
+.alpha__list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.alpha__list li {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr) 3.2rem;
+  align-items: center;
+  gap: 10px;
+}
+
+.alpha__symbol {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--fg);
+}
+
+/* Sector names are prose, not tickers, and need the room. */
+.alpha__symbol--wide {
+  grid-column: 1 / 2;
+  font-size: 11px;
+  color: var(--fg-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alpha__book .alpha__list li:has(.alpha__symbol--wide) {
+  grid-template-columns: 8.5rem minmax(0, 1fr) 3.2rem;
+}
+
+.alpha__bar {
+  display: block;
+  height: 6px;
+  background: var(--bg-sunk);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.alpha__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.alpha__weight {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 620px) {
+  .alpha__segment,
+  .alpha__switch span { font-size: 11px; padding: 8px 2px; }
+  .alpha__list li { grid-template-columns: 3rem minmax(0, 1fr) 3rem; }
+  .alpha__book .alpha__list li:has(.alpha__symbol--wide) {
+    grid-template-columns: 7rem minmax(0, 1fr) 3rem;
+  }
 }
 
 /* ==================================================================

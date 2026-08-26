@@ -104,6 +104,32 @@ export const COMPONENTS: Component[] = [
   { ref: 'R1', part: '10 kΩ', package: '0402', x: 27, y: 42, w: 1.0, h: 0.5, ohms: 10_000, step: 11 },
   { ref: 'R2', part: '5.1 kΩ', package: '0402', x: 13, y: 36, w: 1.0, h: 0.5, ohms: 5_100, step: 12 },
   { ref: 'R3', part: '5.1 kΩ', package: '0402', x: 13, y: 39, w: 1.0, h: 0.5, ohms: 5_100, step: 13 },
+
+  /*
+    ---- the OLED's 16 V boost stage ----
+
+    The e-paper needs nothing but 3V3; the OLED needs a 16 V panel rail, so this
+    whole section exists only because the companion moved onto its own display.
+    See `lib/oled.ts` for where each value comes from.
+
+    Kept together in the bottom-right corner and away from the crystal, because
+    a 1 MHz switcher with a 76.9% duty cycle is the noisiest thing on the board
+    and Y1 is the most sensitive. The switch node between U3 and L1 is the
+    aggressor — it swings the full 16 V in nanoseconds — so it is deliberately
+    the shortest trace here, which is a layout rule rather than a preference.
+  */
+  { ref: 'U3', part: 'TPS61040DBV', package: 'SOT-23-5', x: 52, y: 42, w: 2.9, h: 1.6, polarised: true, step: 14 },
+  { ref: 'L1', part: '10 µH', package: '2520', x: 46.5, y: 42, w: 2.5, h: 2.0, step: 15 },
+  { ref: 'D1', part: 'Schottky 30 V', package: 'SOD-323', x: 57, y: 42, w: 1.7, h: 1.25, polarised: true, step: 16 },
+  { ref: 'C5', part: '4.7 µF', package: '0603', x: 46.5, y: 46.5, w: 1.6, h: 0.8, picofarads: 4_700_000, step: 17 },
+  // 25 V rating on a 16 V rail: an X7R ceramic loses much of its capacitance
+  // under DC bias, so a part rated at the working voltage is not the part.
+  { ref: 'C6', part: '1 µF · 25 V', package: '0805', x: 61.5, y: 42, w: 2.0, h: 1.25, picofarads: 1_000_000, step: 18 },
+  // The feedback divider, solved from V_FB = 1.233 V and snapped to E12.
+  { ref: 'R4', part: '1.2 MΩ', package: '0402', x: 57, y: 46.5, w: 1.0, h: 0.5, ohms: 1_200_000, step: 19 },
+  { ref: 'R5', part: '100 kΩ', package: '0402', x: 60, y: 46.5, w: 1.0, h: 0.5, ohms: 100_000, step: 20 },
+  // Eight ways: VCC, VCI, VDDIO, GND, SCLK, SDIN, DC, CS/RST shared.
+  { ref: 'J4', part: 'FPC 8P 0.5 mm', package: 'FH12', x: 74, y: 46, w: 4.5, h: 6.0, step: 21 },
 ];
 
 /* ------------------------------------------------------------------ *
@@ -150,6 +176,38 @@ export const NETS: Net[] = [
   // Button (right edge 22.1) through the pull-up to the module.
   { id: 'boot', label: 'GPIO9 · BOOT', points: [[27.5, 42], [31, 42], [34, 35.3]], amps: 0.001, kind: 'signal', step: 11 },
   { id: 'gnd', label: 'GND', points: [[22.1, 46], [33, 46], [37, 35.3]], amps: 0.5, kind: 'ground', step: 12 },
+
+  /*
+    ---- the boost stage, and why it is routed the way it is ----
+
+    A boost converter is not a chip with an input and an output. The energy goes
+    VBAT -> L1 -> switch node -> D1 -> 16 V, and the switch node between them is
+    the one that matters: U3 pulls it to ground and releases it at 1 MHz, so it
+    swings the full sixteen volts in nanoseconds.
+
+    That node is therefore the SHORTEST trace on the board. A long one is an
+    antenna driven by the sharpest edges in the design, sitting on a two-layer
+    board with a 32.768 kHz crystal on it — which is why the whole stage is in
+    the far corner from Y1 rather than tucked in wherever it fitted.
+
+    Currents are the design maxima, not typical draw. `traceWidthMm` sizes copper
+    from these, and sizing it from the average would be the same error as sizing
+    a regulator from average current: the trace has to survive the peak.
+  */
+  // Cell into the inductor. 400 mA is the converter's own switch limit, which
+  // is the most this branch can ever carry.
+  { id: 'boost_in', label: 'VBAT · boost', points: [[22, 48], [40, 48], [45.25, 42]], amps: 0.4, kind: 'power', step: 13 },
+  // The switch node. Deliberately the shortest run here.
+  { id: 'boost_sw', label: 'SW · 1 MHz', points: [[47.75, 42], [50.55, 42]], amps: 0.4, kind: 'power', step: 14 },
+  { id: 'boost_d', label: 'SW · to D1', points: [[53.45, 42], [56.15, 42]], amps: 0.4, kind: 'power', step: 15 },
+  // 16 V out, through the reservoir cap, to the OLED connector. Only 77 mA at
+  // the very worst — the panel's entire segment budget.
+  { id: 'vcc16', label: 'V_CC · 16 V', points: [[57.85, 42], [62.5, 42], [68, 42], [71.75, 46]], amps: 0.077, kind: 'power', step: 16 },
+  // The feedback tap. Microamps, but it sets the output voltage, so it is kept
+  // away from the switch node it is trying to measure.
+  { id: 'boost_fb', label: 'FB · 1.233 V', points: [[57.5, 46.25], [55, 46.25], [52, 43.8]], amps: 0.001, kind: 'signal', step: 17 },
+  // The OLED's own SPI, separate chip select from the e-paper's.
+  { id: 'oled_cs', label: 'OLED_CS', points: [[40.6, 33], [64, 33], [71.75, 44]], amps: 0.01, kind: 'signal', step: 18 },
 ];
 
 /* ------------------------------------------------------------------ *
@@ -254,11 +312,30 @@ export type PowerMode = { name: string; milliamps: number; dutyCycle: number };
  * life and the peak is what sets the regulator and the trace width. Sizing a
  * battery off peak current is the standard mistake; sizing a regulator off
  * average current is the other one.
+ *
+ * ---
+ *
+ * THE OLED IS WHAT BREAKS THIS BUDGET, AND THE PAGE SHOULD SAY SO
+ *
+ * Every mode above the OLED's is measured in fractions of a percent of duty.
+ * The companion's display is not: it has to be LIT to be a companion, and an
+ * emissive panel costs current every second it is on.
+ *
+ * At 38 mA from the cell for a dark sprite — see `oled.ts` — running it
+ * continuously costs about forty times the entire rest of the device's average
+ * draw. That single fact is what turns a months-long battery life into an
+ * afternoon, and it is the reason the readout stays on e-paper: only the
+ * character needs to move, so only the character pays.
+ *
+ * The 8% duty is a motion-triggered wake rather than a guess. The companion
+ * animates when somebody is at the desk and sleeps otherwise, which is both how
+ * such a device would really behave and the only way the numbers close.
  */
 export const POWER_MODES: PowerMode[] = [
-  { name: 'Deep sleep', milliamps: 0.043, dutyCycle: 0.9945 },
+  { name: 'Deep sleep', milliamps: 0.043, dutyCycle: 0.9145 },
   { name: 'Wi-Fi wake + fetch', milliamps: 240, dutyCycle: 0.0035 },
   { name: 'E-ink refresh', milliamps: 26, dutyCycle: 0.002 },
+  { name: 'OLED companion, awake', milliamps: 38, dutyCycle: 0.08 },
 ];
 
 export function averageCurrentMa(modes: PowerMode[] = POWER_MODES): number {

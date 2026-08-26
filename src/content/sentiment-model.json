@@ -1,0 +1,82 @@
+{
+  "_comment": "FROZEN. Refit deliberately with: npm run fit:sentiment — see scripts/fit-sentiment.mjs. The notebook entry logistic-regression-on-market-returns quotes these figures; changing them without updating that entry will fail npm run claims.",
+  "fittedAt": "2026-08-22",
+  "kind": "logistic-regression",
+  "featureNames": [
+    "return_1d",
+    "momentum_5d",
+    "momentum_20d",
+    "vol_regime"
+  ],
+  "weights": [
+    0.01544,
+    -0.02632,
+    0.00023,
+    0.02162
+  ],
+  "bias": 0.05537,
+  "mean": [
+    0.03353,
+    0.07481,
+    0.18831,
+    -0.08025
+  ],
+  "std": [
+    1.01736,
+    0.99911,
+    0.98796,
+    0.33426
+  ],
+  "train": {
+    "accuracy": 0.5149,
+    "logLoss": 0.6926,
+    "baseRate": 0.5138,
+    "upShare": 0.5138,
+    "n": 1843
+  },
+  "test": {
+    "accuracy": 0.5272,
+    "logLoss": 0.6914,
+    "baseRate": 0.5322,
+    "upShare": 0.5322,
+    "n": 791
+  },
+  "calibration": [
+    {
+      "predicted": 0.5026,
+      "actual": 0.5409,
+      "n": 159
+    },
+    {
+      "predicted": 0.5084,
+      "actual": 0.4684,
+      "n": 158
+    },
+    {
+      "predicted": 0.5124,
+      "actual": 0.5443,
+      "n": 158
+    },
+    {
+      "predicted": 0.5174,
+      "actual": 0.538,
+      "n": 158
+    },
+    {
+      "predicted": 0.5256,
+      "actual": 0.5696,
+      "n": 158
+    }
+  ],
+  "quantiles": [
+    0.50357,
+    0.50651,
+    0.50906,
+    0.51106,
+    0.51326,
+    0.5154,
+    0.51804,
+    0.52082,
+    0.525
+  ]
+}

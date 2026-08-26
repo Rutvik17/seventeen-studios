@@ -100,7 +100,8 @@ src/
   lib/
     founder/               MODEL A — the GLB, the studio, the panel firmware
     board.ts               PCB geometry + IPC-2221A trace maths
-    pixel.ts               the e-ink companion sprite
+    pixel.ts               the e-paper readout panel
+    oled.ts                the companion display and its 16 V boost stage
     quant.ts               Monte Carlo, VaR, expected shortfall, Cholesky
     calculus.ts            central differences + exact derivatives
     physics.ts             springs, pendulums, two-bone IK, Verlet

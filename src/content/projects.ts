@@ -100,7 +100,7 @@ export const projects: Project[] = [
     slug: 'companion-device',
     index: '05',
     name: 'E-ink companion device',
-    line: 'An ESP32 board driving a seven-colour e-ink panel, showing market data as a face.',
+    line: 'An ESP32 board driving two displays — seven-colour e-paper for the numbers, a small OLED for the face that reads them.',
     metric: '0.93 mA average · 45 days on a 1200 mAh cell',
     status: 'Designing',
     stack: ['ESP32-C3', 'E-ink', 'KiCad', 'C++'],

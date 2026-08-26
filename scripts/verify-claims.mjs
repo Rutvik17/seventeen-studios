@@ -25,6 +25,8 @@
  * Run: node scripts/verify-claims.mjs   (also runs as part of `npm run verify`)
  */
 
+import { POWER_MODES, averageCurrentMa, batteryDays } from '../src/lib/board.ts';
+
 let failures = 0;
 
 /**
@@ -64,19 +66,30 @@ check('crystal: 18 pF pair gives C_L', (18 * 18) / (18 + 18) + 3, 12.0);
 
 /* ---------- power budget ---------- */
 
-const modes = [
-  { mA: 0.043, duty: 0.9945 },
-  { mA: 240, duty: 0.0035 },
-  { mA: 26, duty: 0.002 },
-];
-const duty = modes.reduce((s, m) => s + m.duty, 0);
+/*
+  IMPORTED FROM `lib/board.ts`, NOT RETYPED HERE.
+
+  This block used to hold its own copy of the power modes, and that is the exact
+  failure this whole file exists to catch — one number in two places drifts, and
+  a checker with a stale copy agrees enthusiastically with a stale paragraph.
+
+  It happened: the board gained a fourth mode when the OLED went on it, and this
+  file went on verifying a three-mode budget that no longer described anything.
+  Both agreed, both were wrong, and the run stayed green.
+
+  Importing the real table means adding a mode CANNOT leave the check behind.
+*/
+const duty = POWER_MODES.reduce((s, m) => s + m.dutyCycle, 0);
 check('power: duty cycles sum to 1', duty, 1.0, 1e-9);
 
-const avg = modes.reduce((s, m) => s + m.mA * m.duty, 0);
-check('power: average current (mA)', avg, 0.93);
+const avg = averageCurrentMa();
+check('power: average current (mA)', avg, 3.97, 0.01);
 check('power: radio contribution (mA)', 240 * 0.0035, 0.84);
-check('power: battery life derated (days)', (1200 * 0.85) / avg / 24, 45, 0.6);
-check('power: battery life undated (days)', 1200 / avg / 24, 54, 0.6);
+// The OLED is now the largest single contributor, which is the lesson's point.
+const oled = POWER_MODES.find((m) => /OLED/.test(m.name));
+check('power: OLED contribution (mA)', oled.milliamps * oled.dutyCycle, 3.04, 0.01);
+check('power: battery life derated (days)', batteryDays(1200, avg), 10.7, 0.1);
+check('power: battery life undated (days)', 1200 / avg / 24, 12.6, 0.1);
 
 /* ---------- credit risk, "What a lender is afraid of" ---------- */
 
@@ -101,6 +114,9 @@ check(
 import { readFileSync } from 'node:fs';
 const market = JSON.parse(
   readFileSync(new URL('../src/content/market.json', import.meta.url), 'utf8'),
+);
+const frozenModel = JSON.parse(
+  readFileSync(new URL('../src/content/sentiment-model.json', import.meta.url), 'utf8'),
 );
 
 const n = market.assets.length;
@@ -137,6 +153,24 @@ if (!model) {
   console.log('  FAIL sentiment model missing from market.json');
   failures += 1;
 } else {
+  /*
+    The shipped model must BE the frozen one.
+
+    The build used to re-fit on every run, which quietly replaced the model this
+    entry is a write-up of — every figure below described a training run that no
+    longer existed, and the prose inverted the first time the data moved far
+    enough. Fitting is now deliberate (`npm run fit:sentiment`); this claim is
+    what stops it creeping back into the build.
+  */
+  const pinned = ['bias', 'weights', 'mean', 'std', 'quantiles'].every(
+    (k) => JSON.stringify(model[k]) === JSON.stringify(frozenModel[k]),
+  );
+  assert(
+    'model: shipped weights are the frozen ones',
+    pinned && model.test.n === frozenModel.test.n,
+    `fitted ${frozenModel.fittedAt}`,
+  );
+
   // The entry's whole argument is that the model does NOT beat the base rate.
   // If a retrain ever flipped that, the prose would become wrong — so the claim
   // is asserted rather than assumed.

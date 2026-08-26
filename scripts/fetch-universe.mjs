@@ -5,7 +5,7 @@
  *
  * Fetches the current S&P 500 constituents, five years of daily bars for each,
  * computes every factor at every month end, and writes what the model needs to
- * `src/content/alpha.json` — a couple of megabytes of numbers rather than the
+ * `public/data/alpha.json` — a couple of megabytes of numbers rather than the
  * ten megabytes of prices they came from.
  *
  * ---
@@ -58,7 +58,7 @@ import { fileURLToPath } from 'node:url';
 import { FACTORS, exposures } from '../src/lib/factors.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const outFile = path.join(root, 'src', 'content', 'alpha.json');
+const outFile = path.join(root, 'public', 'data', 'alpha.json');
 
 /*
   The constituent list, as a plain CSV maintained by a bot.
@@ -373,7 +373,7 @@ async function main() {
   console.log(
     `  ${months.length} formation months, ${months.at(-1)?.rows.length ?? 0} names in the last one`,
   );
-  console.log(`  wrote src/content/alpha.json (${kb} KB)`);
+  console.log(`  wrote public/data/alpha.json (${kb} KB)`);
 }
 
 /*

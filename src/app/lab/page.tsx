@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { ogImage } from '@/lib/og';
 import { RiskInstrument } from '@/components/instruments/RiskInstrument';
 import { CreditInstrument } from '@/components/instruments/CreditInstrument';
-import { SweepInstrument } from '@/components/instruments/SweepInstrument';
+import { AlphaInstrument } from '@/components/instruments/AlphaInstrument';
 import { RigDemo } from '@/components/instruments/RigDemo';
 import { SplitText } from '@/components/motion/SplitText';
 import { Reveal } from '@/components/motion/Reveal';
@@ -17,7 +17,7 @@ import { Reveal } from '@/components/motion/Reveal';
   same list rather than separately.
 */
 const DESCRIPTION =
-  'Working instruments: a Monte Carlo value-at-risk desk on real market data, a credit model decomposing expected loss and capital, a liquidity-sweep backtest across the Magnificent Seven, and a character rig on springs and two-bone inverse kinematics.';
+  'Working instruments: a Monte Carlo value-at-risk desk on real market data, a credit model decomposing expected loss and capital, a multi-factor equity model ranking the S&P 500 against a walk-forward backtest, and a character rig on springs and two-bone inverse kinematics.';
 
 export const metadata: Metadata = {
   title: 'Lab',
@@ -73,12 +73,12 @@ export default function LabPage() {
         <CreditInstrument />
       </section>
 
-      <section className="lab__block" id="sweep">
+      <section className="lab__block" id="alpha">
         <h2 className="lab__title">
-          <span className="mono-label">03</span> Liquidity sweeps: testing a
-          strategy that says it knows why Monday moves
+          <span className="mono-label">03</span> Multi-factor equity: ranking 503
+          companies, and the benchmark that says it isn&rsquo;t working
         </h2>
-        <SweepInstrument />
+        <AlphaInstrument />
       </section>
 
       <section className="lab__block" id="companion">
