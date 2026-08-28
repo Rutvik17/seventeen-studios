@@ -220,15 +220,32 @@ export function BookAccount() {
           Holdings <span className="book__count">{data.currentBook.positions.length}</span>
         </h2>
         <p className="book__meta">
-          As at {data.currentBook.date} · {pct1(data.currentBook.net - 1)} net of the account invested
-          {live ? ' · live' : ''}
+          As at {data.currentBook.date} · largest position{' '}
+          {(Math.abs(data.currentBook.positions[0].weight) * 100).toFixed(2)}% of the account ·
+          bars are share of the account{live ? ' · live' : ''}
         </p>
-        <ol className="book__holdings">
+        {/*
+          `data-lenis-prevent` or this does not scroll. Lenis drives the page
+          with its own wheel handler, and without this attribute it swallows the
+          event and the list underneath never sees it — the same reason the menu
+          overlay carries one.
+        */}
+        <ol className="book__holdings" data-lenis-prevent>
           {data.currentBook.positions.map((p) => (
             <li key={p.symbol}>
               <span className="book__symbol">{p.symbol}</span>
+              {/*
+                The bar is the position's share of the WHOLE ACCOUNT, so the
+                track is 100%. It was scaled to the largest holding, which made
+                a near-equal-weight book look like it had a hierarchy: every bar
+                sat between 91% and 100% of the one above it and the picture
+                said "concentrated" where the numbers said the opposite.
+
+                Against the account the bars are short, and that is the finding:
+                97 names and nothing over 2.5%.
+              */}
               <span className="book__bar" aria-hidden>
-                <i style={{ width: `${Math.min(100, (Math.abs(p.weight) / Math.abs(data.currentBook.positions[0].weight)) * 100)}%` }} />
+                <i style={{ width: `${Math.min(100, Math.abs(p.weight) * 100)}%` }} />
               </span>
               <span className="book__weight">{(p.weight * 100).toFixed(2)}%</span>
               <span className="book__value">{money(p.weight * data.finalValue)}</span>
