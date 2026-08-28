@@ -68,6 +68,7 @@ import {
 import { EinkPanel } from '@/components/sections/EinkPanel';
 import { OledModule, OLED_HOUSING } from '@/components/sections/OledModule';
 import { characterFor } from '@/lib/sprites';
+import { useLiveQuote } from '@/lib/liveQuote';
 import { PANEL as PANEL_MODULE } from '@/lib/pixel';
 import { boardActs, hero } from '@/content/studio';
 import { assetBySymbol, market, sigmasFor } from '@/content/market';
@@ -216,6 +217,28 @@ export function BoardStory() {
   const stage = useRef<HTMLDivElement>(null);
   const [act, setAct] = useState(0);
   const [reduced, setReduced] = useState(false);
+
+  /*
+    The price between builds. Null until the fetch lands — and null again if it
+    never does — so every read below falls back to what the build baked in. The
+    figures derived from a full history (volatility, the sentiment model) are
+    NOT refreshed here: they need sixty sessions of returns, and recomputing
+    them from a single live print would be false precision.
+  */
+  const live = useLiveQuote('NVDA');
+  const nvdaPrice = live?.price ?? NVDA?.price ?? 0;
+  const nvdaChange = live?.changeDay ?? NVDA_CHANGE;
+  // Recomputed from whichever change is showing, so the move and its sigma
+  // figure can never describe different days.
+  const nvdaSigmas = NVDA ? sigmasFor(NVDA, nvdaChange, market.tradingDays) : 0;
+  const nvdaAsOf = live?.asOf?.slice(0, 10) ?? NVDA?.asOf ?? '';
+  const nvdaFigures = {
+    price: nvdaPrice,
+    change: nvdaChange,
+    sigmas: nvdaSigmas,
+    asOf: nvdaAsOf,
+    live: live !== null,
+  };
 
   useIsomorphicLayoutEffect(() => {
     const el = root.current;
@@ -569,11 +592,11 @@ export function BoardStory() {
                 width={DISPLAY.w}
                 height={DISPLAY.h}
                 symbol={NVDA?.symbol ?? 'NVDA'}
-                price={NVDA?.price ?? 0}
-                changePercent={NVDA_CHANGE}
-                sigmas={NVDA_SIGMAS}
-                asOf={NVDA?.asOf ?? ''}
-                stamp={market.fetchedAt}
+                price={nvdaPrice}
+                changePercent={nvdaChange}
+                sigmas={nvdaSigmas}
+                asOf={nvdaAsOf}
+                stamp={live?.fetchedAt || market.fetchedAt}
               />
             </g>
 
@@ -637,7 +660,7 @@ export function BoardStory() {
                     data-current={index === act ? '' : undefined}
                     aria-hidden={index === act ? undefined : true}
                   >
-                    <Working act={index} />
+                    <Working act={index} nvda={nvdaFigures} />
                   </div>
                 ))}
               </div>
@@ -801,7 +824,15 @@ function oscPath(): string {
  * screen, in the same register Grasp uses. An engineer reading this page can
  * check it.
  */
-function Working({ act }: { act: number }) {
+/*
+  The live figures are passed in rather than read again here. `Working` renders
+  inside the same page as the panel, so a second `useLiveQuote` would open a
+  second poll against the same file and could momentarily disagree with the
+  panel it is explaining.
+*/
+type LiveFigures = { price: number; change: number; sigmas: number; asOf: string; live: boolean };
+
+function Working({ act, nvda }: { act: number; nvda: LiveFigures }) {
   if (act === 2) {
     const w = traceWidthMm(0.5);
     return (
@@ -845,11 +876,12 @@ function Working({ act }: { act: number }) {
         <dd>
           {NVDA ? (
             <>
-              {NVDA.symbol} ${NVDA.price.toFixed(2)} · close {NVDA.asOf}
+              {NVDA.symbol} ${nvda.price.toFixed(2)} · {nvda.live ? 'live' : 'close'}{' '}
+              {nvda.asOf}
               <br />
-              {NVDA_CHANGE >= 0 ? '+' : ''}
-              {NVDA_CHANGE.toFixed(2)}% = {NVDA_SIGMAS >= 0 ? '+' : ''}
-              {NVDA_SIGMAS.toFixed(2)}σ of its own daily move
+              {nvda.change >= 0 ? '+' : ''}
+              {nvda.change.toFixed(2)}% = {nvda.sigmas >= 0 ? '+' : ''}
+              {nvda.sigmas.toFixed(2)}σ of its own daily move
               <br />
             </>
           ) : null}
