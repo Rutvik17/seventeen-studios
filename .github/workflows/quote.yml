@@ -1,0 +1,85 @@
+# The live price, every fifteen minutes, without rebuilding the site.
+#
+# WHY THIS IS NOT PART OF deploy.yml
+#
+# The site is a static export, so its numbers are baked at build time. The daily
+# build is the right place for everything derived from a full history — the
+# sentiment model, the correlations, the archive — but it is the wrong tool for
+# moving one price: two minutes of CI and a whole Pages deployment to change
+# four digits.
+#
+# This writes a small file to the `data` branch instead. Nothing is built and
+# nothing is deployed. The browser reads it directly from
+# raw.githubusercontent.com, which sends `Access-Control-Allow-Origin: *` and
+# caches for five minutes — so a fifteen-minute cadence lands comfortably inside
+# its own cache window, and the static build still carries a full copy as the
+# fallback for a failed fetch or an offline visitor.
+#
+# WHY THE `data` BRANCH
+#
+# ~36 commits every weekday. On `main` that would bury the actual history of the
+# project within a week; on its own branch it is invisible unless you look for
+# it, and `raw.githubusercontent.com` serves any branch equally well.
+name: Live quote
+
+on:
+  # US market hours are 13:30-20:00 UTC. The extra hour either side catches the
+  # pre-market print and the closing cross without running all night.
+  #
+  # GitHub does not promise punctuality on scheduled workflows — under load they
+  # are delayed, sometimes by more than the interval itself. Fifteen minutes is
+  # therefore the REQUEST, not a guarantee, and the page shows the timestamp it
+  # actually got rather than implying a freshness nobody can hold to.
+  schedule:
+    - cron: '*/15 13-21 * * 1-5'
+  workflow_dispatch:
+
+# Only the data branch is written. Nothing here can touch main or the site.
+permissions:
+  contents: write
+
+# A queued run is worthless once a newer one exists — it would publish a price
+# that is already stale. Let the newest win and drop the rest.
+concurrency:
+  group: live-quote
+  cancel-in-progress: true
+
+jobs:
+  quote:
+    runs-on: ubuntu-latest
+    steps:
+      # The scripts live on main; the file is published to `data`. Checking out
+      # main here and pushing to the other branch below keeps the two apart.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Fetch the quote
+        run: node scripts/fetch-quote.mjs
+
+      # A shallow clone of just the data branch, so this never has the working
+      # tree of main in a position to be committed by accident.
+      - name: Publish to the data branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch data \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" /tmp/data
+          cp quote.json /tmp/data/quote.json
+          cd /tmp/data
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Prices genuinely do not move outside a session. A no-op commit every
+          # fifteen minutes overnight would be noise standing in for freshness.
+          if git diff --quiet -- quote.json; then
+            echo "quote unchanged, nothing to publish"
+            exit 0
+          fi
+          git add quote.json
+          git commit -m "Live quote $(date -u '+%Y-%m-%d %H:%M UTC') [skip ci]"
+          git push origin data
