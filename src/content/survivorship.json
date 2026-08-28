@@ -1,19 +1,45 @@
 {
-  "_comment": "FROZEN measurement, not a recomputed one. The /lab caveat quotes these figures and `npm run claims` checks them, so changing a number here without updating that caveat fails the build. Re-measuring means re-running the point-in-time CPCV described in ENGINE_TODO.md and updating both together.",
-  "measuredAt": "2026-08-25",
-  "method": "15 CPCV arrangements, 21-day horizon, 21-day embargo, membership applied as of each row's own date",
-  "splits": 15,
-  "rowsDroppedShare": 0.202,
-  "meanIC": {
-    "biased": 0.0183,
-    "pointInTime": 0.0057
+  "_comment": "Two different questions, kept apart on purpose. `measured` is reproducible with npm run survivorship and is what the site quotes. `endToEnd` is an older run whose method was never committed; it is kept because it may still be right about a question this cannot answer.",
+  "measured": {
+    "question": "Of the skill we measured, how much came from scoring names that were not in the index at the time?",
+    "method": "Spearman IC of the shipped tape scores against 21-day excess return, daily, then the same scores restricted to dated index membership. The model is NOT retrained — only the evaluation universe changes.",
+    "reproducible": "npm run survivorship",
+    "measuredAt": "2026-08-28",
+    "membershipSource": "https://github.com/datasets/s-and-p-500-companies @ data/constituents.csv",
+    "snapshots": 110,
+    "membershipRange": [
+      "2012-12-27",
+      "2026-08-19"
+    ],
+    "days": 3410,
+    "rowsDroppedShare": 0.2211,
+    "meanIC": {
+      "all": 0.02142,
+      "members": 0.01851
+    },
+    "change": -0.136,
+    "daysPositive": {
+      "all": 0.5765,
+      "members": 0.5413
+    },
+    "isLowerBound": true,
+    "lowerBoundReason": "Dating membership removes companies that were not yet in the index. It cannot recover companies dropped after failing, because their prices were never fetched."
   },
-  "positiveSplits": {
-    "biased": 14,
-    "pointInTime": 11,
-    "of": 15
-  },
-  "hindsightCorrelation": 0.544,
-  "isLowerBound": true,
-  "lowerBoundReason": "Applying membership by date removes companies that were not yet in the index. It cannot recover companies that were dropped and then failed, because their price history is gone."
+  "endToEnd": {
+    "question": "If the whole thing had been BUILT point-in-time — trained as well as evaluated — what would it be worth?",
+    "method": "15 CPCV arrangements with membership applied per row. Retrains on the filtered data, so it carries the cost of 20% fewer training rows as well as the harder universe.",
+    "reproducible": false,
+    "note": "Recorded in ENGINE_TODO.md from a run whose script was never committed. It cannot be re-derived, so it is not quoted on the site. Answering it properly is a training job.",
+    "meanIC": {
+      "biased": 0.0183,
+      "pointInTime": 0.0057
+    },
+    "change": -0.69,
+    "rowsDroppedShare": 0.202,
+    "positiveSplits": {
+      "biased": 14,
+      "pointInTime": 11,
+      "of": 15
+    }
+  }
 }

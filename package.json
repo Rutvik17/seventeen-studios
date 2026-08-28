@@ -26,7 +26,9 @@
     "fit:sentiment": "node scripts/fetch-market.mjs --fit",
     "sprites": "node scripts/verify-sprites.mjs",
     "assets": "node scripts/verify-assets.mjs",
-    "instrument": "node scripts/build-instrument.mjs"
+    "instrument": "node scripts/build-instrument.mjs",
+    "membership": "node scripts/fetch-membership.mjs",
+    "survivorship": "node --max-old-space-size=8192 scripts/verify-survivorship.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

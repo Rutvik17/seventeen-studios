@@ -167,30 +167,34 @@ if (!model) {
   failures += 1;
 } else {
   /*
-    The /lab caveat quotes the survivorship measurement: how far the mean
-    information coefficient falls once index membership is applied as of each
-    row's own date. The percentage it prints is DERIVED from the two stored
-    ICs, so the arithmetic has to hold — the caveat used to say the bias was
-    "an unknown amount", and replacing that with a number is only an
-    improvement if the number is checked.
+    The site quotes the REPRODUCIBLE survivorship measurement, so the checks are
+    that its arithmetic holds and that it still says what the page says.
+
+    The older end-to-end figure is deliberately not asserted: its method was
+    never committed, so there is nothing to check it against. Recording that it
+    is unverifiable is more honest than testing it against itself.
   */
-  const icDrop = ((survivorship.meanIC.pointInTime - survivorship.meanIC.biased) /
-    survivorship.meanIC.biased) * 100;
+  const sv = survivorship.measured;
+  const svDrop = (sv.meanIC.members - sv.meanIC.all) / sv.meanIC.all;
   assert(
     'survivorship: the quoted fall follows from the two ICs',
-    Math.abs(Math.round(icDrop)) === 69,
-    `${icDrop.toFixed(1)}% -> ${Math.abs(Math.round(icDrop))}%`,
+    Math.abs(svDrop - sv.change) < 5e-3,
+    `${(svDrop * 100).toFixed(1)}% vs stored ${(sv.change * 100).toFixed(1)}%`,
   );
   assert(
-    'survivorship: point-in-time is the smaller number',
-    survivorship.meanIC.pointInTime < survivorship.meanIC.biased,
-    `+${survivorship.meanIC.pointInTime} vs +${survivorship.meanIC.biased}`,
+    'survivorship: dating membership does not help the model',
+    sv.meanIC.members < sv.meanIC.all,
+    `+${sv.meanIC.members} vs +${sv.meanIC.all}`,
   );
   assert(
-    'survivorship: fewer splits stay positive once membership is dated',
-    survivorship.positiveSplits.pointInTime < survivorship.positiveSplits.biased &&
-      survivorship.positiveSplits.biased <= survivorship.positiveSplits.of,
-    `${survivorship.positiveSplits.pointInTime}/${survivorship.positiveSplits.of} from ${survivorship.positiveSplits.biased}/${survivorship.positiveSplits.of}`,
+    'survivorship: membership covers the backtest',
+    sv.membershipRange[0] <= '2013-01-02' && sv.membershipRange[1] >= '2026-01-01',
+    `${sv.membershipRange[0]} to ${sv.membershipRange[1]}, ${sv.snapshots} snapshots`,
+  );
+  assert(
+    'survivorship: the unreproducible figure is marked as such',
+    survivorship.endToEnd.reproducible === false,
+    'endToEnd carries no script',
   );
 
   /*
