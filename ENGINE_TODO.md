@@ -215,6 +215,40 @@ amount. It is the largest unmeasured risk to this result.
       `maxNames` is now a real lever in `BOOK` so this stays one command away
       after any retrain.
 
+- [x] **The concentration curve holds point-in-time, and gets STEEPER.**
+      `npm run concentration -- --pointInTime`. Selection is gated to names that
+      were index members on the day; the model is not retrained.
+
+          names      biased          point-in-time
+                  annual  vs SPY    annual  vs SPY
+              8    14.6%   -0.2%      8.5%   -6.4%
+             12    14.4%   -0.4%      9.3%   -5.5%
+             15    17.5%   +2.7%     13.1%   -1.8%
+             20    21.3%   +6.4%     15.3%   +0.4%
+             25    23.1%   +8.3%     14.5%   -0.3%
+             50    20.8%   +5.9%     15.8%   +0.9%
+             75    21.6%   +6.7%     16.0%   +1.1%
+            all    22.4%   +7.6%     15.8%   +1.0%
+
+      Two findings, and the second is the bigger one.
+
+      **Concentration is worse, not better, once the universe is honest.** An
+      eight-name book loses to SPY by 6.4 points a year. The biased sweep's
+      "25 names is the peak" was itself an artifact — point-in-time the peak
+      moves out to 75 and the curve is close to monotonic in breadth.
+
+      **The whole edge is about one point a year, not seven and a half.**
+      $10,000 becomes **$73,933** point-in-time against SPY's $65,820, where the
+      biased run claimed $156,646. Sharpe 0.97 against SPY's 0.91, ahead in 8
+      years of 14 rather than 11.
+
+      Survivorship cost -13.6% of IC and roughly **87% of the excess return**.
+      Construction amplifies the bias, because the names that later joined the
+      index are exactly the ones that had already gone up.
+
+      `/book` now ships the point-in-time run and states the biased figure
+      beside it, since the gap is the most useful number here.
+
 - [ ] **Point-in-time RETRAIN.** The open half of the survivorship question:
       train on membership-filtered rows rather than only grading on them. This
       is what the -69% was reaching for and the only way to settle it.

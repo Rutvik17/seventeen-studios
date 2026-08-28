@@ -33,6 +33,8 @@ type Book = {
   spy: number[];
   drawdown: { curve: number[]; spy: number[] };
   metrics: { strategy: Metrics; spy: Metrics };
+  pointInTime?: boolean;
+  biased?: { finalValue: number; annual: number; sharpe: number } | null;
   byYear: Array<{ year: string; strategy: number; spy: number; excess: number; value: number; spyValue: number }>;
   currentBook: {
     date: string;
@@ -169,6 +171,13 @@ export function BookAccount() {
         <p className="book__against">
           The same {money(data.stake)} in SPY: <strong>{money(data.finalSpyValue)}</strong>
         </p>
+        {data.biased ? (
+          <p className="book__against">
+            Allowed to buy companies before they joined the index, the same model
+            claimed <strong>{money(data.biased.finalValue)}</strong>. That gap is
+            survivorship bias, priced.
+          </p>
+        ) : null}
       </header>
 
       <div className="book__ranges" role="group" aria-label="Chart range">
@@ -324,15 +333,15 @@ export function BookAccount() {
 
       <p className="book__note">
         A simulation, not an account anybody holds. {money(data.stake)} compounded through a
-        walk-forward backtest, monthly rebalancing, borrow and commission charged.
+        walk-forward backtest, monthly rebalancing, borrow and commission charged — and
+        restricted on every single day to companies that were actually in the index that day.
       </p>
       <p className="book__note">
-        <strong>The universe is today&rsquo;s index, so companies that failed are missing.</strong>{' '}
-        Scored only on names that were actually in the index that day — {measured.snapshots} membership
-        snapshots back to {measured.membershipRange[0].slice(0, 4)} — the model keeps{' '}
-        {(measured.meanIC.members * 1).toFixed(4)} of its {measured.meanIC.all.toFixed(4)} edge, so
-        about {icDrop}% of it was hindsight. That is a floor: delisted prices are gone, so the names
-        that failed outright cannot be put back.
+        <strong>What is still missing.</strong> Membership comes from{' '}
+        {measured.snapshots} snapshots back to {measured.membershipRange[0].slice(0, 4)}, which fixes
+        the companies that had not joined yet. It cannot fix the ones dropped after failing — their
+        prices were never fetched, so they are absent from both universes. Every figure here is
+        therefore still a little flattering, and the beat over SPY is small enough that it matters.
       </p>
     </div>
   );

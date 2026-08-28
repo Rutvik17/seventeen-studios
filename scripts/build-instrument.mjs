@@ -18,14 +18,28 @@
  *
  * Run: npm run instrument
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
 const ROOT = path.join(import.meta.dirname, '..');
-const IN = path.join(ROOT, 'data', 'backtest.json');
+/*
+  THE POINT-IN-TIME RUN IS THE ONE THAT SHIPS.
+
+  The biased run is read too, but only to state what it claimed. Its curve is
+  not drawn and its holdings are not listed: it is a book that could buy
+  companies before they were in the index, and putting that on an account page
+  would be showing a balance nobody could have had.
+
+  The gap between the two is kept because it is the most useful number here —
+  $156,646 against $73,933 is the cost of survivorship stated in the only unit
+  that means anything to a reader.
+*/
+const IN = path.join(ROOT, 'data', 'backtest-pit.json');
+const BIASED = path.join(ROOT, 'data', 'backtest.json');
 const OUT = path.join(ROOT, 'public', 'data', 'engine.json');
 
 const bt = JSON.parse(readFileSync(IN, 'utf8'));
+const biased = existsSync(BIASED) ? JSON.parse(readFileSync(BIASED, 'utf8')) : null;
 const { dates, curve, spyCurve, metrics, journal } = bt;
 
 const r4 = (v) => Math.round(v * 1e4) / 1e4;
@@ -201,8 +215,15 @@ const payload = {
   drawdown: sampledDd,
   metrics,
   stake: STAKE,
+  pointInTime: true,
   finalValue: money(curve[last]),
   finalSpyValue: money(spyCurve[last]),
+  /** What the same construction claimed on the survivorship-biased universe. */
+  biased: biased ? {
+    finalValue: money(biased.curve[biased.curve.length - 1]),
+    annual: r4(biased.metrics.strategy.annual),
+    sharpe: r4(biased.metrics.strategy.sharpe),
+  } : null,
   byYear,
   rebalances,
   currentBook,
@@ -220,6 +241,7 @@ const bytes = readFileSync(OUT).length;
 const wins = byYear.filter((y) => y.excess > 0).length;
 console.log(`instrument: ${sampled.dates.length} plotted points from ${dates.length} trading days`);
 console.log(`instrument: ${byYear.length} years, ${wins} ahead of SPY, ${rebalances.length} rebalances`);
-console.log(`instrument: $${STAKE.toLocaleString()} became $${money(curve[last]).toLocaleString()} (SPY $${money(spyCurve[last]).toLocaleString()})`);
+console.log(`instrument: point-in-time, $${STAKE.toLocaleString()} became $${money(curve[last]).toLocaleString()} (SPY $${money(spyCurve[last]).toLocaleString()})`);
+if (biased) console.log(`instrument: the biased universe claimed $${money(biased.curve[biased.curve.length - 1]).toLocaleString()}`);
 console.log(`instrument: current book ${currentBook.positions.length} names, ${persistent.length} held in 3+ years`);
 console.log(`instrument: wrote ${(bytes / 1024).toFixed(1)} KB to public/data/engine.json`);
