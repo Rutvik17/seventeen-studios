@@ -135,7 +135,12 @@ function archiveConstituents(prices) {
     One snapshot per day the archive runs, and the filename IS the timestamp.
 
     Cheap — about 30 KB — and the single highest-value row in this whole file.
-    Nothing else recovers point-in-time index membership, and every week without
+    This is not the ONLY way to recover point-in-time membership — the
+    constituents repository is a git repo, so reading its file at past commits
+    gives 110 states back to 2012, and `scripts/fetch-membership.mjs` does
+    exactly that. But that history is uneven, with one snapshot in 2017 and none
+    in 2019, and it is somebody else's repository to rewrite. This archive is
+    ours, weekly, and every week without
     a snapshot is a week permanently missing from a dataset that only gets more
     valuable with age.
   */

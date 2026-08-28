@@ -155,11 +155,8 @@ export function BookAccount() {
   const line = (values: number[]) =>
     values.map((v, i) => `${i ? 'L' : 'M'} ${view.x(i).toFixed(1)} ${view.y(v).toFixed(1)}`).join(' ');
 
-  const icDrop = Math.abs(
-    Math.round(
-      ((survivorship.meanIC.pointInTime - survivorship.meanIC.biased) / survivorship.meanIC.biased) * 100,
-    ),
-  );
+  const measured = survivorship.measured;
+  const icDrop = Math.abs(Math.round(measured.change * 100));
 
   return (
     <div className="book">
@@ -331,9 +328,11 @@ export function BookAccount() {
       </p>
       <p className="book__note">
         <strong>The universe is today&rsquo;s index, so companies that failed are missing.</strong>{' '}
-        Dating membership properly cuts the model&rsquo;s edge by {icDrop}%. The returns above are
-        real arithmetic on a model with about a third of the skill it appears to have — and that is a
-        floor, since delisted prices are gone for good.
+        Scored only on names that were actually in the index that day — {measured.snapshots} membership
+        snapshots back to {measured.membershipRange[0].slice(0, 4)} — the model keeps{' '}
+        {(measured.meanIC.members * 1).toFixed(4)} of its {measured.meanIC.all.toFixed(4)} edge, so
+        about {icDrop}% of it was hindsight. That is a floor: delisted prices are gone, so the names
+        that failed outright cannot be put back.
       </p>
     </div>
   );

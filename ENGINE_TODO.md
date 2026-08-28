@@ -14,19 +14,52 @@ Last updated: 2026-08-25
 
 ## Where it stands
 
-**The honest number first.** Everything below it is the biased measurement, kept
-because the comparison is the finding.
+**Point-in-time membership is recoverable after all, and it was measured.**
+
+Every note in this repo said historical S&P 500 membership could not be
+recovered and that the weekly `archive/constituents/` snapshots were the only
+fix, working forward from August 2026. That was wrong: the constituents list we
+already fetch lives in a git repository, and reading it at each commit gives
+**110 distinct membership states between 2012-12-27 and 2026-08-19** — the whole
+backtest, not the three years going forward.
+
+`npm run membership` builds it in twenty seconds. `npm run survivorship`
+measures against it in two.
 
 | | measured |
 |---|---|
-| **IC, point-in-time membership** | **+0.0057** — 11/15 splits positive, most recent period NEGATIVE |
-| Published equity models, for scale | 0.02 – 0.06 |
-| IC, survivorship-biased | +0.0183 — 14/15 positive |
-| Cost of the bias | **-69%**, corr(IC lost, hindsight carried) 0.544 |
+| IC, full universe | **+0.0214** |
+| IC, index members on the day | **+0.0185** |
+| Cost of the additions bias | **-13.6%** |
+| Name-days dropped by dating membership | 22.1% |
+| Days with positive IC | 57.7% -> 54.1% |
 
-We are a factor of three below the bottom of the published range, and that -69%
-is a LOWER BOUND: dating membership removes companies not yet in the index but
-cannot recover the ones dropped after failing, because their prices are gone.
+The full-universe figure reproduces the +0.0214 recorded independently below,
+which is the check that the IC computation is right.
+
+### The -69% was measuring something else
+
+An earlier run put the cost at **-69%** (+0.0183 -> +0.0057) and that number led
+this file for weeks. Its script was never committed, so it cannot be re-derived
+— but the difference is explicable rather than mysterious, and both numbers can
+be true:
+
+- **-13.6%** holds the model FIXED and changes only which names it is graded on.
+  It answers: of the skill we measured, how much came from scoring companies
+  that were not in the index yet?
+- **-69%** came from CPCV arrangements that also RETRAINED on the filtered data.
+  It answers: what would this be worth if it had been built point-in-time from
+  the start? That carries the cost of 20% fewer training rows on top.
+
+The second question is the one that matters for whether the strategy is real,
+and it is **still open** — it needs a retrain, which is exactly what the tape
+cannot shortcut. Until then the site quotes the reproducible number and says
+what it covers.
+
+**Both are floors.** Dating membership removes companies that had not joined
+yet; it cannot recover the ones dropped after failing, because their prices were
+never fetched. At 2013 only 279 of the index's 500 names exist in the tape at
+all, which is the bias made visible.
 
 ### The biased run, kept for comparison
 
@@ -141,6 +174,13 @@ amount. It is the largest unmeasured risk to this result.
 
       Consequence: CPCV and regime-conditional weighting move UP the list;
       hyperparameter work moves off it.
+- [x] **Survivorship measured reproducibly.** `scripts/fetch-membership.mjs`
+      recovers 110 membership states from the constituents repo's git history;
+      `scripts/verify-survivorship.mjs` scores the tape against them. -13.6% on
+      a fixed model. The end-to-end version needs a retrain and is open.
+- [ ] **Point-in-time RETRAIN.** The open half of the survivorship question:
+      train on membership-filtered rows rather than only grading on them. This
+      is what the -69% was reaching for and the only way to settle it.
 - [ ] **Clean re-run of the 3-way IC comparison** on the fixed prices, to see how
       much of the +0.0215 the illiquidity leak was doing
 
@@ -194,7 +234,7 @@ amount. It is the largest unmeasured risk to this result.
 - [ ] **Feature selection within families.** Fundamentals cost 0.0042 of IC when
       all 26 were admitted at once. Prune to the columns that individually earn
       their place rather than admitting or rejecting a family wholesale.
-- [x] **The instrument UI — BUILT.** `/lab` #04. Equity curve against SPY on a
+- [x] **The instrument UI — BUILT.** Its own page at `/book`, presented as a brokerage account. Equity curve against SPY on a
       log axis, drawdown view, the exact metrics, and fourteen calendar years
       with the excess column. Fed by `public/data/engine.json` (47 KB) built
       from `data/backtest.json` by `npm run instrument` — the tape is 38 MB and
