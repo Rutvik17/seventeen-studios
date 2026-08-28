@@ -240,6 +240,25 @@ function stats(series) {
 
 const sweep = process.argv.includes('--sweep');
 
+/*
+  A machine-readable mode, so a sweep can drive this without parsing a table
+  meant for a person. `--json` prints one object and writes nothing — the
+  concentration sweep runs ten of these and must not have each overwrite
+  data/backtest.json with its own variant.
+*/
+const asJson = process.argv.includes('--json');
+const flag = (name) => {
+  const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
+  if (!hit) return undefined;
+  const raw = hit.slice(name.length + 3);
+  return raw === 'Infinity' ? Infinity : Number(raw);
+};
+const bookOverrides = {};
+for (const key of ['maxNames', 'maxLong', 'maxShort', 'longThreshold', 'shortThreshold']) {
+  const v = flag(key);
+  if (v !== undefined) bookOverrides[key] = v;
+}
+
 if (sweep) {
   /*
     One variable at a time, against the same tape.
@@ -277,6 +296,32 @@ if (sweep) {
     );
   }
   console.log('\nturnover is per rebalance; multiply by 52 for weekly, 12 for monthly, 252 for daily');
+} else if (asJson) {
+  const r = run({ book: { ...BOOK, ...bookOverrides } });
+  const me = stats(r.curve);
+  const spy = stats(r.spyCurve);
+
+  const byYear = new Map();
+  dates.forEach((d, i) => {
+    const y = d.slice(0, 4);
+    if (!byYear.has(y)) byYear.set(y, { i0: i, i1: i });
+    byYear.get(y).i1 = i;
+  });
+  let ahead = 0;
+  for (const { i0, i1 } of byYear.values()) {
+    if (r.curve[i1] / r.curve[i0] > r.spyCurve[i1] / r.spyCurve[i0]) ahead += 1;
+  }
+
+  const held = r.journal.map((j) => j.longs + j.shorts);
+  console.log(JSON.stringify({
+    strategy: me,
+    spy,
+    years: byYear.size,
+    yearsAhead: ahead,
+    rebalances: r.journal.length,
+    avgHeld: Math.round(held.reduce((a, b) => a + b, 0) / held.length),
+    turnover: +r.turnover.toFixed(4),
+  }));
 } else {
   const r = run({});
   const me = stats(r.curve);

@@ -52,6 +52,17 @@ export type BookOptions = {
   costBps: number;
   /** Annual borrow cost charged on short positions, in basis points. */
   borrowBps: number;
+  /**
+   * Ceiling on the number of long positions. Infinity holds everything that
+   * clears the threshold.
+   *
+   * The threshold alone decides how SELECTIVE the book is in units of
+   * conviction, which is the statistically natural cut — but it does not decide
+   * how MANY names that turns out to be, and that number swings with how spread
+   * the day's scores happen to be. This makes the count an explicit choice
+   * rather than a consequence of one.
+   */
+  maxNames: number;
 };
 
 export const BOOK: BookOptions = {
@@ -63,6 +74,7 @@ export const BOOK: BookOptions = {
   maxNet: 1.0,
   costBps: 10,
   borrowBps: 50,
+  maxNames: Infinity,
 };
 
 export type Candidate = {
@@ -126,6 +138,30 @@ export function buildTargets(
       return { symbol: c.symbol, weight: long ? raw : -raw, score: c.score, conviction };
     })
     .filter((t): t is Target => t !== null);
+
+  if (!sized.length) return [];
+
+  /*
+    CONCENTRATION.
+
+    Keep the highest-conviction names and drop the tail. This runs AFTER sizing
+    and before the gross normalisation below, so the survivors are rescaled to
+    the same total exposure — cutting the book from ninety names to fifteen
+    makes each of the fifteen larger rather than leaving the account in cash.
+
+    Longs and shorts are capped separately. A single ceiling would let a day
+    with many good longs crowd out every short, which changes what the book IS
+    rather than how concentrated it is.
+  */
+  if (Number.isFinite(options.maxNames)) {
+    const byConviction = (a: Target, b: Target) => Math.abs(b.weight) - Math.abs(a.weight);
+    const longs = sized.filter((t) => t.weight > 0).sort(byConviction).slice(0, options.maxNames);
+    // Shorts get a third of the budget, matching their smaller cap and higher bar.
+    const shortRoom = Math.max(1, Math.round(options.maxNames / 3));
+    const shorts = sized.filter((t) => t.weight < 0).sort(byConviction).slice(0, shortRoom);
+    sized.length = 0;
+    sized.push(...longs, ...shorts);
+  }
 
   if (!sized.length) return [];
 

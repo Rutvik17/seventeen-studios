@@ -178,6 +178,43 @@ amount. It is the largest unmeasured risk to this result.
       recovers 110 membership states from the constituents repo's git history;
       `scripts/verify-survivorship.mjs` scores the tape against them. -13.6% on
       a fixed model. The end-to-end version needs a retrain and is open.
+- [x] **Concentration swept — AND THE CONCENTRATED BOOK LOSES.** `npm run
+      concentration`, ten configurations, ten seconds, no retrain.
+
+          names   annual   Sharpe    maxDD   vs SPY   yrs ahead
+              8    14.6%     0.80    34.2%    -0.2%      6/14
+             12    14.4%     0.81    32.8%    -0.4%      6/14
+             15    17.5%     0.92    30.7%    +2.7%      9/14
+             20    21.3%     1.09    28.1%    +6.4%     10/14
+             25    23.1%     1.16    26.6%    +8.3%     10/14
+             30    22.3%     1.14    26.4%    +7.5%     10/14
+             50    20.8%     1.10    26.6%    +5.9%     11/14
+             75    21.6%     1.16    24.3%    +6.7%     12/14
+            all    22.4%     1.20    22.5%    +7.6%     11/14
+
+      **An eight-name book does not beat the index.** It returns 14.6% against
+      SPY's 14.8%, with a WORSE drawdown, and it is ahead in six years of
+      fourteen. Twelve names is the same. The tail the concentration argument
+      wants to cut is carrying the result.
+
+      **25 names is the return peak** (+8.3% over SPY, against +7.6% for the
+      full book) but pays for it: Sharpe 1.16 against 1.20 and a drawdown four
+      points deeper. Risk-adjusted, the diversified book is still the best one
+      here.
+
+      The reason is the IC. At +0.019 the model's ranking is right slightly more
+      often than chance, so the top eight names are not reliably the best eight
+      — they are the eight with the highest scores, which at that IC is mostly
+      noise. Grinold's IR ~ IC x sqrt(breadth) is the same statement: a thin
+      edge NEEDS breadth, and concentration is a bet on conviction this model
+      does not have.
+
+      **So concentration is downstream of signal quality, not a free choice.**
+      The way to earn a fifteen-name book is a better IC, which is the argument
+      for the unbuilt data families rather than for re-weighting what exists.
+      `maxNames` is now a real lever in `BOOK` so this stays one command away
+      after any retrain.
+
 - [ ] **Point-in-time RETRAIN.** The open half of the survivorship question:
       train on membership-filtered rows rather than only grading on them. This
       is what the -69% was reaching for and the only way to settle it.
