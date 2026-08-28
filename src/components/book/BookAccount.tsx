@@ -41,8 +41,10 @@ type Book = {
     exposure: number;
     gross: number;
     net: number;
-    positions: Array<{ symbol: string; weight: number }>;
+    positions: Array<{ symbol: string; weight: number; entry: number | null; price: number; since: string; ret: number | null }>;
   };
+  closed?: Array<{ symbol: string; opened: string; closed: string; entry: number; exit: number; ret: number; value: number }>;
+  closedStats?: { count: number; winners: number; winRate: number; bestPct: number; worstPct: number } | null;
   byYearHoldings: Array<{ year: string; distinct: number; top: Array<{ symbol: string; weight: number }> }>;
   persistent: Array<{ symbol: string; years: number }>;
   rebalances: Array<{ date: string; exposure: number; reason: string; longs: number; shorts: number; net: number; turnover: number }>;
@@ -226,9 +228,9 @@ export function BookAccount() {
           Holdings <span className="book__count">{data.currentBook.positions.length}</span>
         </h2>
         <p className="book__meta">
-          As at {data.currentBook.date} · largest position{' '}
-          {(Math.abs(data.currentBook.positions[0].weight) * 100).toFixed(2)}% of the account ·
-          bars are share of the account{live ? ' · live' : ''}
+          As at {data.currentBook.date} · bought &rarr; now, and the return on each ·
+          largest position {(Math.abs(data.currentBook.positions[0].weight) * 100).toFixed(2)}% of
+          the account{live ? ' · live' : ''}
         </p>
         {/*
           `data-lenis-prevent` or this does not scroll. Lenis drives the page
@@ -240,6 +242,14 @@ export function BookAccount() {
           {data.currentBook.positions.map((p) => (
             <li key={p.symbol}>
               <span className="book__symbol">{p.symbol}</span>
+              <span className="book__basis">
+                {p.entry ? `$${p.entry.toFixed(2)}` : '—'}
+                <em>&rarr;</em>
+                ${p.price.toFixed(2)}
+              </span>
+              <span className="book__ret" data-sign={(p.ret ?? 0) >= 0 ? 'up' : 'down'}>
+                {p.ret === null ? '' : pct1(p.ret)}
+              </span>
               {/*
                 The bar is the position's share of the WHOLE ACCOUNT, so the
                 track is 100%. It was scaled to the largest holding, which made
@@ -313,6 +323,31 @@ export function BookAccount() {
           </tbody>
         </table>
       </section>
+
+      {data.closed?.length ? (
+        <section className="book__section">
+          <h2 className="book__heading">
+            Closed <span className="book__count">{data.closedStats?.count.toLocaleString()}</span>
+          </h2>
+          <p className="book__meta">
+            {data.closedStats
+              ? `${(data.closedStats.winRate * 100).toFixed(0)}% closed above their entry · best ${pct1(data.closedStats.bestPct)}, worst ${pct1(data.closedStats.worstPct)} · most recent first`
+              : 'most recent first'}
+          </p>
+          <ol className="book__holdings" data-lenis-prevent>
+            {data.closed.map((c) => (
+              <li key={`${c.symbol}-${c.closed}`}>
+                <span className="book__symbol">{c.symbol}</span>
+                <span className="book__basis">
+                  ${c.entry.toFixed(2)}<em>&rarr;</em>${c.exit.toFixed(2)}
+                </span>
+                <span className="book__ret" data-sign={c.ret >= 0 ? 'up' : 'down'}>{pct1(c.ret)}</span>
+                <span className="book__value">{c.opened} &ndash; {c.closed}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
 
       <section className="book__section">
         <h2 className="book__heading">Activity</h2>

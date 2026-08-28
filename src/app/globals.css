@@ -5469,7 +5469,7 @@ html.no-js .exploded .exploded__svg {
 
 .book__holdings li {
   display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr) 4rem 6rem;
+  grid-template-columns: 4.2rem 9.5rem 4rem minmax(0, 1fr) 3.6rem 6rem;
   align-items: center;
   gap: 12px;
   padding: 7px 0;
@@ -5495,6 +5495,22 @@ html.no-js .exploded .exploded__svg {
   background: var(--accent);
   opacity: 0.55;
 }
+
+/* Bought -> now, as one unit so the arrow never wraps away from its prices. */
+.book__basis {
+  color: var(--fg-dim);
+  white-space: nowrap;
+}
+
+.book__basis em {
+  font-style: normal;
+  color: var(--muted);
+  margin: 0 0.35em;
+}
+
+.book__ret { text-align: right; }
+.book__ret[data-sign='up'] { color: var(--up, #2f7d4f); }
+.book__ret[data-sign='down'] { color: var(--down, #b04141); }
 
 .book__weight,
 .book__value { text-align: right; }
@@ -5584,8 +5600,15 @@ html.no-js .exploded .exploded__svg {
 }
 
 @media (max-width: 620px) {
-  .book__holdings li { grid-template-columns: 4rem minmax(0, 1fr) 3.4rem; }
-  .book__holdings .book__value { display: none; }
+  /*
+    Narrow screens keep symbol, basis and return — the three that make it a
+    statement. The bar and the dollar value are the first to go, because a bar
+    needs width to mean anything and the value is recoverable from the weight.
+  */
+  .book__holdings li { grid-template-columns: 3.6rem minmax(0, 1fr) 3.4rem; }
+  .book__holdings .book__value,
+  .book__holdings .book__bar,
+  .book__holdings .book__weight { display: none; }
   .book__activity li { grid-template-columns: 1fr; gap: 2px; }
   .book__tag { justify-self: start; }
 }
