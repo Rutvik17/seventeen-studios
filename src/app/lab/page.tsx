@@ -3,6 +3,7 @@ import { ogImage } from '@/lib/og';
 import { RiskInstrument } from '@/components/instruments/RiskInstrument';
 import { CreditInstrument } from '@/components/instruments/CreditInstrument';
 import { AlphaInstrument } from '@/components/instruments/AlphaInstrument';
+import { EngineInstrument } from '@/components/instruments/EngineInstrument';
 import { RigDemo } from '@/components/instruments/RigDemo';
 import { SplitText } from '@/components/motion/SplitText';
 import { Reveal } from '@/components/motion/Reveal';
@@ -17,7 +18,7 @@ import { Reveal } from '@/components/motion/Reveal';
   same list rather than separately.
 */
 const DESCRIPTION =
-  'Working instruments: a Monte Carlo value-at-risk desk on real market data, a credit model decomposing expected loss and capital, a multi-factor equity model ranking the S&P 500 against a walk-forward backtest, and a character rig on springs and two-bone inverse kinematics.';
+  'Working instruments: a Monte Carlo value-at-risk desk on real market data, a credit model decomposing expected loss and capital, a multi-factor equity model ranking the S&P 500 against a walk-forward backtest, fourteen years of a gradient-boosted book with its survivorship bias measured, and a character rig on springs and two-bone inverse kinematics.';
 
 export const metadata: Metadata = {
   title: 'Lab',
@@ -55,8 +56,11 @@ export default function LabPage() {
         </SplitText>
         <Reveal className="page-head__lead">
           <p>
-            A Monte Carlo risk desk, a credit model, a strategy backtest and a
-            physics rig. Move the inputs — everything recomputes in your browser.
+            A Monte Carlo risk desk, a credit model, a factor ranker, fourteen
+            years of a traded book and a physics rig. Move the inputs — most of
+            it recomputes in your browser. The backtest does not: it is 3,431
+            days across 500 names, which is a machine&rsquo;s job, so it arrives
+            precomputed and says so.
           </p>
         </Reveal>
       </header>
@@ -81,9 +85,17 @@ export default function LabPage() {
         <AlphaInstrument />
       </section>
 
+      <section className="lab__block" id="engine">
+        <h2 className="lab__title">
+          <span className="mono-label">04</span> The book that traded it, and the
+          bias that flattered it
+        </h2>
+        <EngineInstrument />
+      </section>
+
       <section className="lab__block" id="companion">
         <h2 className="lab__title">
-          <span className="mono-label">04</span> Character rig: springs,
+          <span className="mono-label">05</span> Character rig: springs,
           pendulum and inverse kinematics
         </h2>
         <RigDemo />

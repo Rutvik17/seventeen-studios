@@ -2098,6 +2098,50 @@ html.no-js .exploded .exploded__svg {
   fill: var(--fg);
 }
 
+/*
+  The engine's year-by-year.
+
+  Numbers are tabular-figure and right-aligned so the decimal points line up in
+  a column: a reader comparing fourteen years is scanning down, and ragged
+  decimals make that a re-read every row. The excess column is the only one
+  carrying colour, because it is the only one where the sign is the point.
+*/
+.engine__years {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: clamp(12px, 1.1vw, 14px);
+  font-variant-numeric: tabular-nums;
+}
+
+.engine__years th,
+.engine__years td {
+  padding: 0.34rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+
+.engine__years thead th {
+  color: var(--muted);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.82em;
+}
+
+.engine__years tbody th,
+.engine__years thead th:first-child {
+  text-align: left;
+}
+
+.engine__years tbody th {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.engine__years td[data-sign='up'] { color: var(--up, #2f7d4f); }
+.engine__years td[data-sign='down'] { color: var(--down, #b04141); }
+
 .instrument__readout {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
