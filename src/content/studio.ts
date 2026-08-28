@@ -71,6 +71,7 @@ export const site = {
 export const nav = [
   { label: 'Notebook', href: '/notebook/' },
   { label: 'Lab', href: '/lab/' },
+  { label: 'Book', href: '/book/' },
   { label: 'Grasp', href: '/products/grasp/' },
   { label: 'Founder', href: '/founder/' },
   { label: 'Contact', href: '/start/' },

@@ -191,7 +191,22 @@ function run(options) {
 
     const longs = [...held.values()].filter((v) => v > 0).length;
     const shorts = [...held.values()].filter((v) => v < 0).length;
+
+    /*
+      The BOOK itself, not just how many names were in it.
+
+      Recorded as weights of equity at the moment of the rebalance, sorted
+      largest first. The journal used to carry only counts, which answers "how
+      concentrated" and not "in what" — and the second question is the one
+      anybody actually asks of a strategy.
+    */
+    const positions = [...held.entries()]
+      .filter(([, v]) => v !== 0)
+      .map(([s, v]) => [symbols[s], +(v / equity).toFixed(5)])
+      .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+
     journal.push({
+      positions,
       date: dates[t],
       exposure: +exposure.toFixed(3),
       reason: state.reason,
