@@ -27,7 +27,8 @@
     "predict": "node --experimental-strip-types --max-old-space-size=10240 --import ./scripts/alias-register.mjs scripts/predict.mjs",
     "fit:sentiment": "node scripts/fetch-market.mjs --fit",
     "sprites": "node scripts/verify-sprites.mjs",
-    "assets": "node scripts/verify-assets.mjs"
+    "assets": "node scripts/verify-assets.mjs",
+    "instrument": "node scripts/build-instrument.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

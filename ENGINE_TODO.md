@@ -14,8 +14,45 @@ Last updated: 2026-08-25
 
 ## Where it stands
 
+**The honest number first.** Everything below it is the biased measurement, kept
+because the comparison is the finding.
+
 | | measured |
 |---|---|
+| **IC, point-in-time membership** | **+0.0057** — 11/15 splits positive, most recent period NEGATIVE |
+| Published equity models, for scale | 0.02 – 0.06 |
+| IC, survivorship-biased | +0.0183 — 14/15 positive |
+| Cost of the bias | **-69%**, corr(IC lost, hindsight carried) 0.544 |
+
+We are a factor of three below the bottom of the published range, and that -69%
+is a LOWER BOUND: dating membership removes companies not yet in the index but
+cannot recover the ones dropped after failing, because their prices are gone.
+
+### The biased run, kept for comparison
+
+| | measured |
+|---|---|
+| Out-of-sample IC, price-only | +0.0215, t 12.2, 12/14 years positive |
+| Out-of-sample IC, + fundamentals | +0.0173 (worse) |
+| Out-of-sample IC, + fundamentals + macro | +0.0214 (tie with price-only) |
+| Backtest vs SPY | 22.40% vs 14.85% |
+| Sharpe | 1.20 vs 0.91 (deflates to ~1.00 after selection) |
+| Max drawdown | 22.51% vs SPY 33.72% |
+| Years beating SPY | 11 of 14 |
+| 2018 | +7.36% while SPY was -5.25% |
+
+**Read the block above as fiction, not as a result.** It was built on a model
+with roughly three times the skill it actually has. It is shown on `/lab` with
+that correction directly under the headline rather than in a footnote, and it is
+kept here for the same reason: the gap between the two tables is the most useful
+thing this project has measured.
+
+Construction, not prediction, was the problem in the biased run. Three fixes
+moved it from -2.92% to +1.46% against SPY with the model untouched; monthly
+rebalancing took it to +7.55%. Whether any of that survives on the honest signal
+is untested.
+
+---|---|
 | Out-of-sample IC, price-only | **+0.0215**, t 12.2, 12/14 years positive |
 | Out-of-sample IC, + fundamentals | +0.0173 (worse) |
 | Out-of-sample IC, + fundamentals + macro | +0.0214 (tie with price-only) |
@@ -157,18 +194,15 @@ amount. It is the largest unmeasured risk to this result.
 - [ ] **Feature selection within families.** Fundamentals cost 0.0042 of IC when
       all 26 were admitted at once. Prune to the columns that individually earn
       their place rather than admitting or rejecting a family wholesale.
-- [ ] **The instrument UI.** Nothing exists for the new engine. Equity curve vs
-      SPY, current holdings and weights, the trade journal, feature importances.
-      Last, once there is a result worth rendering.
+- [x] **The instrument UI — BUILT.** `/lab` #04. Equity curve against SPY on a
+      log axis, drawdown view, the exact metrics, and fourteen calendar years
+      with the excess column. Fed by `public/data/engine.json` (47 KB) built
+      from `data/backtest.json` by `npm run instrument` — the tape is 38 MB and
+      the backtest half a megabyte, so neither ships.
 
----
-
-## Mathematical programme
-
-Real methods with a specific problem each. Ordered so that nothing sophisticated
-gets built on top of something broken — maths multiplies an edge, it does not
-create one, and it cannot outrun a leak.
-
+      The survivorship correction sits DIRECTLY UNDER the headline metrics
+      rather than at the foot of the page. A reader who stops after 22.40%
+      should still stop with the truth.
 - [ ] **Deflated Sharpe ratio** (Bailey & Lopez de Prado). Corrects for multiple
       testing: sweep eleven configurations and the winner is flattered by
       selection. There is a formula for how much. **Apply it to our own sweep
