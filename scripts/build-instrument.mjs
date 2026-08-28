@@ -31,6 +31,17 @@ const { dates, curve, spyCurve, metrics, journal } = bt;
 const r4 = (v) => Math.round(v * 1e4) / 1e4;
 
 /*
+  A stake, so the curve has a unit.
+
+  "14.66x" is a ratio and reads as a claim; "$10,000 became $146,646" is a
+  quantity and reads as a result. It is the same number — the curve is a growth
+  multiple and this only ever multiplies it — but one of them a reader can feel
+  and the other they have to convert.
+*/
+const STAKE = 10_000;
+const money = (multiple) => Math.round(STAKE * multiple);
+
+/*
   Weekly for DRAWING only. 3,431 points is more than any chart can resolve and
   five times the bytes; every number quoted anywhere on the page comes from the
   daily series below, never from this.
@@ -91,11 +102,23 @@ function years(series) {
 }
 const yearsStrategy = years(curve);
 const yearsSpy = years(spyCurve);
+/** The multiple at each year's last close, so a value can be stamped on it. */
+function yearEndMultiples(series) {
+  const seen = new Map();
+  for (let i = 0; i < dates.length; i++) seen.set(dates[i].slice(0, 4), series[i]);
+  return seen;
+}
+const endStrategy = yearEndMultiples(curve);
+const endSpy = yearEndMultiples(spyCurve);
+
 const byYear = yearsStrategy.map(([y, s], i) => ({
   year: y,
   strategy: s,
   spy: yearsSpy[i][1],
   excess: r4(s - yearsSpy[i][1]),
+  // Compounded, not summed: the value carried into the next year.
+  value: money(endStrategy.get(y)),
+  spyValue: money(endSpy.get(y)),
 }));
 
 /*
@@ -112,6 +135,60 @@ const rebalances = journal.map((j) => ({
   turnover: r4(j.turnover),
 }));
 
+/*
+  WHAT WAS ACTUALLY HELD.
+
+  The journal answers how concentrated the book was; this answers in what,
+  which is the question anybody actually asks of a strategy. Two views:
+
+  CURRENT is the last rebalance in full, because a book you cannot see the
+  whole of is a claim rather than a record.
+
+  BY YEAR is the ten largest by AVERAGE weight across that year's rebalances,
+  not by weight on any single day. A name that was 4% once and absent the rest
+  of the year did not characterise the year, and picking the peak would let it
+  claim that it did.
+*/
+const current = journal[journal.length - 1];
+const currentBook = {
+  date: current.date,
+  exposure: r4(current.exposure),
+  gross: r4(current.gross),
+  net: r4(current.net),
+  positions: current.positions.map(([symbol, weight]) => ({ symbol, weight: r4(weight) })),
+};
+
+const heldByYear = new Map();
+for (const j of journal) {
+  const y = j.date.slice(0, 4);
+  if (!heldByYear.has(y)) heldByYear.set(y, { sums: new Map(), rebalances: 0 });
+  const bucket = heldByYear.get(y);
+  bucket.rebalances += 1;
+  for (const [symbol, weight] of j.positions) {
+    bucket.sums.set(symbol, (bucket.sums.get(symbol) ?? 0) + weight);
+  }
+}
+
+const byYearHoldings = [...heldByYear.entries()].map(([year, { sums, rebalances: n }]) => {
+  const ranked = [...sums.entries()]
+    .map(([symbol, total]) => ({ symbol, weight: r4(total / n) }))
+    .sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight));
+  return { year, distinct: sums.size, top: ranked.slice(0, 10) };
+});
+
+/** Every name the book ever touched, and how many years it appeared in. */
+const appearances = new Map();
+for (const { year, top } of byYearHoldings) {
+  for (const { symbol } of top) {
+    appearances.set(symbol, (appearances.get(symbol) ?? 0) + 1);
+  }
+}
+const persistent = [...appearances.entries()]
+  .filter(([, years]) => years >= 3)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 12)
+  .map(([symbol, years]) => ({ symbol, years }));
+
 const payload = {
   generatedAt: new Date().toISOString(),
   backtestGeneratedAt: bt.generatedAt,
@@ -123,8 +200,14 @@ const payload = {
   ...sampled,
   drawdown: sampledDd,
   metrics,
+  stake: STAKE,
+  finalValue: money(curve[last]),
+  finalSpyValue: money(spyCurve[last]),
   byYear,
   rebalances,
+  currentBook,
+  byYearHoldings,
+  persistent,
   turnover: {
     mean: r4(rebalances.reduce((s, r) => s + r.turnover, 0) / rebalances.length),
     count: rebalances.length,
@@ -137,4 +220,6 @@ const bytes = readFileSync(OUT).length;
 const wins = byYear.filter((y) => y.excess > 0).length;
 console.log(`instrument: ${sampled.dates.length} plotted points from ${dates.length} trading days`);
 console.log(`instrument: ${byYear.length} years, ${wins} ahead of SPY, ${rebalances.length} rebalances`);
+console.log(`instrument: $${STAKE.toLocaleString()} became $${money(curve[last]).toLocaleString()} (SPY $${money(spyCurve[last]).toLocaleString()})`);
+console.log(`instrument: current book ${currentBook.positions.length} names, ${persistent.length} held in 3+ years`);
 console.log(`instrument: wrote ${(bytes / 1024).toFixed(1)} KB to public/data/engine.json`);

@@ -13,7 +13,7 @@ const base = (process.env.NEXT_PUBLIC_SITE_URL || 'https://seventeenstudios.co')
 );
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = ['', '/notebook', '/lab', '/founder', '/products', '/grasp', '/start'].map((route) => ({
+  const staticRoutes = ['', '/notebook', '/lab', '/book', '/founder', '/products', '/grasp', '/start'].map((route) => ({
     url: `${base}${route}/`,
     lastModified: new Date(),
     changeFrequency: 'monthly' as const,

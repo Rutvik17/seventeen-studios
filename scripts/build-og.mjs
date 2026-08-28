@@ -820,6 +820,14 @@ function cards() {
       footRight: 'WebGL · React Three Fiber',
     },
     {
+      file: 'book',
+      label: 'Portfolio',
+      title: 'The Book',
+      standfirst: 'A model picks the positions. $10,000 compounded through fourteen years, and every name it holds.',
+      plate: 'curve',
+      footRight: '14 years · 164 rebalances',
+    },
+    {
       file: 'lab',
       label: 'Lab',
       title: 'Working instruments',
