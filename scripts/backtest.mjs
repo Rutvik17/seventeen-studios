@@ -102,6 +102,21 @@ function run(options) {
 
   /* Position VALUES, not weights. They drift with price between rebalances. */
   let held = new Map();
+
+  /*
+    COST BASIS, kept alongside the book rather than derived from it afterwards.
+
+    The book works in dollar VALUES that drift with price, which is right for
+    performance but says nothing about what was paid. An account statement has
+    to answer "bought at what?" — so every trade is also converted to a share
+    count at the traded price and folded into a running average.
+
+    Reconstructing this from the trade list later would be possible and wrong:
+    the trade list is capped at 4,000 rows, so the early history is missing and
+    any basis computed from it would silently start mid-position.
+  */
+  const lots = new Map();   // symbol -> { qty, cost, opened }
+  const closed = [];        // positions that went to zero, with their P&L
   let cash = 1;
   let equity = 1;
   let peak = 1;
@@ -206,6 +221,52 @@ function run(options) {
       if (to === 0) held.delete(s);
       else held.set(s, to);
 
+      /*
+        The same trade in shares, folded into the lot.
+
+        Signs work for both directions: selling a long at above its average and
+        covering a short at below its average both come out positive, because
+        the realised term is `-dq * (price - avg)` and dq flips with the side.
+      */
+      const price = close[t][s];
+      const dq = delta / price;
+      const lot = lots.get(s) ?? { qty: 0, cost: 0, opened: dates[t] };
+      if (lot.qty === 0) lot.opened = dates[t];
+
+      if (lot.qty !== 0 && Math.sign(dq) !== Math.sign(lot.qty)) {
+        const avg = lot.cost / lot.qty;
+        // Never close more than is held; the remainder opens the other way.
+        const reduce = Math.abs(dq) <= Math.abs(lot.qty) ? dq : -lot.qty;
+        const gain = -reduce * (price - avg);
+        lot.qty += reduce;
+        lot.cost += reduce * avg;
+
+        if (Math.abs(lot.qty) < 1e-9) {
+          closed.push({
+            symbol: symbols[s], opened: lot.opened, closed: dates[t],
+            entry: +avg.toFixed(4), exit: +price.toFixed(4),
+            /*
+              In EQUITY UNITS, not dollars — the book starts at 1 and compounds,
+              so a whole position is around 0.02 and rounding this to cents made
+              every gain read as zero. The account page multiplies by the stake.
+            */
+            gain: +gain.toFixed(8),
+            weight: +(Math.abs(reduce * price) / equity).toFixed(6),
+            gainPct: +((price / avg - 1) * Math.sign(reduce === 0 ? 1 : -reduce)).toFixed(5),
+          });
+          lot.qty = 0; lot.cost = 0;
+        }
+
+        const rest = dq - reduce;
+        if (rest !== 0) { lot.qty += rest; lot.cost += rest * price; lot.opened = dates[t]; }
+      } else {
+        lot.qty += dq;
+        lot.cost += dq * price;
+      }
+
+      if (Math.abs(lot.qty) < 1e-9) lots.delete(s);
+      else lots.set(s, lot);
+
       if (trades.length < 4000) {
         trades.push({
           date: dates[t], symbol: symbols[s],
@@ -234,8 +295,19 @@ function run(options) {
     */
     const positions = [...held.entries()]
       .filter(([, v]) => v !== 0)
-      .map(([s, v]) => [symbols[s], +(v / equity).toFixed(5)])
-      .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+      .map(([s, v]) => {
+        const lot = lots.get(s);
+        const price = close[t][s];
+        const avg = lot && lot.qty ? lot.cost / lot.qty : null;
+        return {
+          symbol: symbols[s],
+          weight: +(v / equity).toFixed(5),
+          entry: avg ? +avg.toFixed(4) : null,
+          price: +price.toFixed(4),
+          since: lot ? lot.opened : dates[t],
+        };
+      })
+      .sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight));
 
     journal.push({
       positions,
@@ -250,7 +322,7 @@ function run(options) {
     });
   }
 
-  return { curve, spyCurve, journal, trades, rebalances: journal.length, turnover: tradedTotal / (journal.length || 1) };
+  return { curve, spyCurve, journal, trades, closed, rebalances: journal.length, turnover: tradedTotal / (journal.length || 1) };
 }
 
 function stats(series) {
@@ -401,7 +473,7 @@ if (sweep) {
     start: dates[0], end: dates.at(-1),
     dates, curve: r.curve.map((v) => +v.toFixed(6)), spyCurve: r.spyCurve.map((v) => +v.toFixed(6)),
     metrics: { strategy: me, spy },
-    journal: r.journal, trades: r.trades,
+    journal: r.journal, trades: r.trades, closed: r.closed,
   }));
   console.log(`
 wrote data/backtest${pointInTime ? '-pit' : ''}.json`);

@@ -169,7 +169,15 @@ const currentBook = {
   exposure: r4(current.exposure),
   gross: r4(current.gross),
   net: r4(current.net),
-  positions: current.positions.map(([symbol, weight]) => ({ symbol, weight: r4(weight) })),
+  positions: current.positions.map((p) => ({
+    symbol: p.symbol,
+    weight: r4(p.weight),
+    entry: p.entry,
+    price: p.price,
+    since: p.since,
+    /* Return on the position itself, which is what "up 22%" means to a holder. */
+    ret: p.entry ? r4(p.price / p.entry - 1) : null,
+  })),
 };
 
 const heldByYear = new Map();
@@ -178,8 +186,8 @@ for (const j of journal) {
   if (!heldByYear.has(y)) heldByYear.set(y, { sums: new Map(), rebalances: 0 });
   const bucket = heldByYear.get(y);
   bucket.rebalances += 1;
-  for (const [symbol, weight] of j.positions) {
-    bucket.sums.set(symbol, (bucket.sums.get(symbol) ?? 0) + weight);
+  for (const p of j.positions) {
+    bucket.sums.set(p.symbol, (bucket.sums.get(p.symbol) ?? 0) + p.weight);
   }
 }
 
@@ -229,6 +237,36 @@ const payload = {
   currentBook,
   byYearHoldings,
   persistent,
+  /*
+    CLOSED POSITIONS, most recent first.
+
+    An account statement is not just what is held — it is what was done. Entry,
+    exit and the return on each is the part a reader can actually check, and it
+    is the part every backtest chart leaves out.
+  */
+  closed: (bt.closed ?? [])
+    .slice(-60).reverse()
+    .map((c) => ({
+      symbol: c.symbol,
+      opened: c.opened,
+      closed: c.closed,
+      entry: c.entry,
+      exit: c.exit,
+      ret: r4(c.gainPct),
+      value: money(c.gain),
+    })),
+  closedStats: (() => {
+    const all = bt.closed ?? [];
+    if (!all.length) return null;
+    const wins = all.filter((c) => c.gainPct > 0).length;
+    return {
+      count: all.length,
+      winners: wins,
+      winRate: r4(wins / all.length),
+      bestPct: r4(Math.max(...all.map((c) => c.gainPct))),
+      worstPct: r4(Math.min(...all.map((c) => c.gainPct))),
+    };
+  })(),
   turnover: {
     mean: r4(rebalances.reduce((s, r) => s + r.turnover, 0) / rebalances.length),
     count: rebalances.length,
@@ -243,5 +281,9 @@ console.log(`instrument: ${sampled.dates.length} plotted points from ${dates.len
 console.log(`instrument: ${byYear.length} years, ${wins} ahead of SPY, ${rebalances.length} rebalances`);
 console.log(`instrument: point-in-time, $${STAKE.toLocaleString()} became $${money(curve[last]).toLocaleString()} (SPY $${money(spyCurve[last]).toLocaleString()})`);
 if (biased) console.log(`instrument: the biased universe claimed $${money(biased.curve[biased.curve.length - 1]).toLocaleString()}`);
+if (bt.closed?.length) {
+  const w = bt.closed.filter((c) => c.gainPct > 0).length;
+  console.log(`instrument: ${bt.closed.length.toLocaleString()} closed positions, ${(w / bt.closed.length * 100).toFixed(0)}% winners`);
+}
 console.log(`instrument: current book ${currentBook.positions.length} names, ${persistent.length} held in 3+ years`);
 console.log(`instrument: wrote ${(bytes / 1024).toFixed(1)} KB to public/data/engine.json`);
