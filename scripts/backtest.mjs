@@ -33,7 +33,7 @@
  * position a distance the model cannot resolve.
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -44,6 +44,34 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dataDir = path.join(root, 'data');
 
 const tape = JSON.parse(readFileSync(path.join(dataDir, 'tape.json'), 'utf8'));
+
+/*
+  POINT-IN-TIME MEMBERSHIP, optional.
+
+  With `--pointInTime` a name is only a candidate on days it was actually in the
+  index, using the 110 states recovered from the constituents repository's git
+  history. Without it the book may hold anything in today's universe on any
+  past day, which is the survivorship bias every figure here carries.
+
+  This gates SELECTION, not training. The scores are whatever the model already
+  said; the book simply cannot buy what it could not have bought.
+*/
+const pointInTime = process.argv.includes('--pointInTime');
+let memberAt = null;
+if (pointInTime) {
+  const file = path.join(dataDir, 'membership.json');
+  if (!existsSync(file)) {
+    console.error('backtest: --pointInTime needs data/membership.json — run `npm run membership`');
+    process.exit(1);
+  }
+  const snaps = JSON.parse(readFileSync(file, 'utf8')).snapshots;
+  memberAt = [];
+  let cursor = -1;
+  for (const d of tape.dates) {
+    while (cursor + 1 < snaps.length && snaps[cursor + 1].date <= d) cursor += 1;
+    memberAt.push(cursor < 0 ? null : (snaps[cursor].set ??= new Set(snaps[cursor].symbols)));
+  }
+}
 const { symbols, dates, scores, volatility, close, market } = tape;
 
 const pct = (v) => `${(v * 100).toFixed(2)}%`;
@@ -130,10 +158,14 @@ function run(options) {
     */
     const exposure = Math.max(exposureFloor, state.exposure);
 
+    const members = memberAt ? memberAt[t] : null;
+
     const candidates = [];
     for (let s = 0; s < symbols.length; s++) {
       const score = scores[t][s];
       if (score == null) continue;
+      // Could the book have owned this on this day?
+      if (members && !members.has(symbols[s])) continue;
       candidates.push({ symbol: s, score, volatility: volatility[t][s] ?? NaN });
     }
     if (candidates.length < 50) continue;
@@ -359,12 +391,18 @@ if (sweep) {
   console.log(`\ncurrent book — ${last.date}: ${last.longs} long, ${last.shorts} short, gross ${last.gross}, net ${last.net}, exposure ${last.exposure}`);
 
   mkdirSync(dataDir, { recursive: true });
-  writeFileSync(path.join(dataDir, 'backtest.json'), JSON.stringify({
+  /*
+    The two universes are written side by side, never over each other. The
+    point-in-time run is the honest one and the biased run is kept because the
+    DIFFERENCE between them is the most useful number this project has.
+  */
+  writeFileSync(path.join(dataDir, pointInTime ? 'backtest-pit.json' : 'backtest.json'), JSON.stringify({
     generatedAt: new Date().toISOString(),
     start: dates[0], end: dates.at(-1),
     dates, curve: r.curve.map((v) => +v.toFixed(6)), spyCurve: r.spyCurve.map((v) => +v.toFixed(6)),
     metrics: { strategy: me, spy },
     journal: r.journal, trades: r.trades,
   }));
-  console.log('\nwrote data/backtest.json');
+  console.log(`
+wrote data/backtest${pointInTime ? '-pit' : ''}.json`);
 }

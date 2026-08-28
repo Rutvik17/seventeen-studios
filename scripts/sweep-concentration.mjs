@@ -42,6 +42,16 @@ const ROOT = path.join(import.meta.dirname, '..');
 const COUNTS = [8, 12, 15, 20, 25, 30, 40, 50, 75, Infinity];
 const capFor = (n) => (Number.isFinite(n) ? Math.min(0.22, Math.max(0.04, 2.4 / n)) : 0.04);
 
+/*
+  Both universes, side by side.
+
+  The biased curve was swept first and its SHAPE was the finding — that eight
+  names lose and twenty-five peak. But every row of it was inflated by
+  survivorship, and a curve can keep its shape or lose it under a correction.
+  Running both is the only way to know which.
+*/
+const PIT = process.argv.includes('--pointInTime');
+
 const rows = [];
 for (const n of COUNTS) {
   const res = spawnSync(
@@ -54,6 +64,7 @@ for (const n of COUNTS) {
       '--json',
       `--maxNames=${n}`,
       `--maxLong=${capFor(n)}`,
+      ...(PIT ? ['--pointInTime'] : []),
     ],
     { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
   );
@@ -76,6 +87,7 @@ const pct = (v) => `${(v * 100).toFixed(1)}%`;
 const spy = rows[0].spy;
 
 console.log('');
+console.log(`  universe: ${PIT ? 'POINT-IN-TIME index membership' : 'the index as it stands today (survivorship-biased)'}`);
 console.log(`  SPY over the same window: ${pct(spy.annual)} a year, Sharpe ${spy.sharpe.toFixed(2)}, worst drawdown ${pct(spy.maxDrawdown)}`);
 console.log('');
 console.log('  names   cap    held   annual    vol   Sharpe    maxDD   vs SPY   yrs ahead');
@@ -98,7 +110,7 @@ console.log(`  best return : ${name(byReturn[0])} at ${pct(byReturn[0].strategy.
 console.log('');
 
 writeFileSync(
-  path.join(ROOT, 'data', 'concentration.json'),
+  path.join(ROOT, 'data', PIT ? 'concentration-pit.json' : 'concentration.json'),
   `${JSON.stringify({ sweptAt: new Date().toISOString(), spy, rows }, null, 2)}\n`,
 );
-console.log('concentration: wrote data/concentration.json');
+console.log(`concentration: wrote data/concentration${PIT ? '-pit' : ''}.json`);
