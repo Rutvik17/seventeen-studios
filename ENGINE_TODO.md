@@ -259,10 +259,43 @@ amount. It is the largest unmeasured risk to this result.
 
 ## Data families not yet built
 
-- [ ] **13F institutional flows.** Ownership change per stock — who is
-      accumulating, who is exiting. Parse verified against NVDA's own filing.
-      The fetch is the hard part: thousands of institutions file quarterly and
-      it must be aggregated *by holding*, not by filer.
+- [x] **13F institutional flows — FETCHED.** `npm run 13f`. 53 quarters,
+      2013q2 to mid-2026, in 3m25s. 1.3 MB.
+
+      The fetch was called the hard part because thousands of institutions file
+      quarterly and it has to be aggregated by HOLDING rather than by filer. The
+      SEC already does that: one ZIP per quarter with every filer's positions in
+      a single 378 MB INFOTABLE.tsv. The hard part was finding the URL. Read
+      with a 90-line ZIP reader (`scripts/_zip.mjs`) rather than a dependency.
+
+      **The join is on issuer NAME, because CUSIP-to-ticker is licensed.** 484
+      of 503 match (96.2%); anything that does not match cleanly is DROPPED,
+      because a missing quarter is a null the model handles and a wrong CUSIP is
+      a lie about who owns a company.
+
+      Two bugs found by checking the numbers rather than trusting them:
+
+      **AON was Amazon and APA was Alphabet.** A-O-N is a subsequence of AMAZON
+      and A-P-A of ALPHABET, and the abbreviation rule that correctly joins
+      MATLS to MATERIALS has nothing to anchor it on a single-token name. Caught
+      because AON showed $891B of institutional ownership against a $65B market
+      cap. Single-token names now require an exact match, and coverage went UP
+      (455 to 481 names) because the collisions stopped clobbering real entries.
+
+      **VALUE is not comparable across the history.** The SEC switched from
+      thousands to whole dollars, and the implied price per share reconciles on
+      neither side. So features come from SHARES and HOLDERS — plain counts,
+      unit-free, and a more direct statement of accumulation than a dollar total.
+
+      Coverage rises with time: 353 names in 2013q2, 481 in 2026. Note that
+      institutional shares can exceed shares outstanding, because 13F
+      double-counts positions where managers share discretion.
+
+- [ ] **13F features.** The data is fetched; nothing consumes it yet. Quarterly
+      holder count and share count, forward-filled to daily with a 45-day
+      reporting lag, then quarter-over-quarter change. The LAG IS THE WHOLE
+      GAME: a 13F for the quarter ending March is public in mid-May, so using it
+      before then is look-ahead of exactly the kind this project keeps finding.
 - [ ] **Form 4 insider transactions.** Buy/sell clusters, net insider buying,
       officer vs director weighting. Partially verified — owner and title parse
       cleanly; the transaction amounts sit in a nested `<value>` path, and the

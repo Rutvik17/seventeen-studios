@@ -29,7 +29,8 @@
     "instrument": "node scripts/build-instrument.mjs",
     "membership": "node scripts/fetch-membership.mjs",
     "survivorship": "node --max-old-space-size=8192 scripts/verify-survivorship.mjs",
-    "concentration": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/sweep-concentration.mjs"
+    "concentration": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/sweep-concentration.mjs",
+    "13f": "node --max-old-space-size=8192 scripts/fetch-13f.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
