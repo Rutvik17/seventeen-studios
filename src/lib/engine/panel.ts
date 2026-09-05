@@ -178,6 +178,15 @@ export type PanelOptions = {
    * 2.02 goes out the day results are announced.
    */
   language?: Release[];
+  /**
+   * Index membership snapshots, oldest first, for point-in-time TRAINING.
+   *
+   * Without this a name that joined in 2021 contributes rows from 2013, and
+   * those rows are a sample of companies selected for having done well enough
+   * to be added. That is the survivorship bias arriving through the training
+   * set rather than through the book.
+   */
+  membership?: Array<{ date: string; symbols: string[] }>;
   /** Rates, credit, volatility, commodities and the FOMC calendar. */
   macro?: MacroData;
 };
@@ -207,6 +216,31 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
   const macroRows = options.macro
     ? macroFeatures(options.macro, dates, benchmarkClose)
     : null;
+
+  /*
+    Membership as a date-indexed lookup, carried forward between snapshots.
+    Built once here rather than per name: the walk is over 3,400 dates and 500
+    companies, and rebuilding the index inside that loop would be 500 passes
+    over the same 110 snapshots.
+  */
+  let memberOn: ((date: string, symbol: string) => boolean) | null = null;
+  if (options.membership?.length) {
+    const snaps = [...options.membership].sort((a, b) => (a.date < b.date ? -1 : 1));
+    const sets = snaps.map((s) => new Set(s.symbols));
+    const at = new Int32Array(dates.length).fill(-1);
+    let cursor = -1;
+    for (let k = 0; k < dates.length; k++) {
+      while (cursor + 1 < snaps.length && snaps[cursor + 1].date <= dates[k]) cursor += 1;
+      at[k] = cursor;
+    }
+    const byDate = new Map(dates.map((d, k) => [d, at[k]]));
+    memberOn = (date: string, symbol: string) => {
+      const k = byDate.get(date) ?? -1;
+      // Before the first snapshot nothing is known, so nothing is excluded —
+      // guessing membership would be worse than admitting the gap.
+      return k < 0 ? true : sets[k].has(symbol);
+    };
+  }
 
   const symbols: string[] = [];
   const industries: string[] = [];
@@ -303,6 +337,23 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
         if (Number.isFinite(f[k])) known++;
       }
       if (known < TECHNICAL_COLUMNS.length * 0.7) continue;
+
+      /*
+        POINT-IN-TIME MEMBERSHIP, AT TRAINING TIME.
+
+        The backtest can already gate SELECTION on membership, which answers
+        "could the book have bought this". This answers the harder half: could
+        the model have LEARNED from it. A name that joined the index in 2021
+        contributes rows from 2013 otherwise, and those rows are a sample of
+        companies selected for having done well enough to be added — which is
+        the survivorship bias, arriving through the training set rather than
+        through the book.
+
+        Measured on selection alone the bias cost 87% of the excess return.
+        This is the part that was still unmeasured.
+      */
+      if (memberOn && !memberOn(dates[t], entry.symbol)) continue;
+
       rows.push({ t, s, features: f, label: labels[t] });
     }
   }
