@@ -336,11 +336,41 @@ amount. It is the largest unmeasured risk to this result.
 - [ ] **Retrain with 13F.** The panel builds the columns; the shipped model was
       trained without them. Until a retrain, the features are reachable and
       unused.
-- [ ] **Form 4 insider transactions.** Buy/sell clusters, net insider buying,
-      officer vs director weighting. Partially verified — owner and title parse
-      cleanly; the transaction amounts sit in a nested `<value>` path, and the
-      first filing sampled had no transaction block at all, so sampling several
-      is required.
+- [x] **Form 4 insider transactions — FETCHED, FEATURED, WIRED.** `npm run
+      form4`. 573,474 symbol-days, 2012 to 2026, in 53 seconds. The nested XML
+      the note worried about was never needed: the SEC publishes bulk
+      Form 3/4/5 datasets as TSV, and `SUBMISSION.tsv` carries
+      ISSUERTRADINGSYMBOL and FILING_DATE — so no CUSIP join, no fuzzy matching,
+      and availability is a fact in the file rather than a statute to compute.
+
+      **Most transactions are not decisions.** The most common code is F, shares
+      withheld to pay tax on a vesting grant (27,002 in one quarter), then A,
+      the grant itself (24,635). Neither is a view about anything. Only P and S
+      are open-market trades with the insider's own money, and only those are
+      kept — counting the rest would make "insider activity" a measure of how a
+      company structures compensation.
+
+      **Counts, not dollars.** The value distribution is violently heavy-tailed:
+      median $343k, p99 $99M, max $7.6bn. The extremes are real — a 10% holder
+      exiting an acquired company — but they are facts about ownership
+      structure, and a tree splitting on raw value would spend its capacity
+      there. Distinct filer counts are bounded and comparable.
+
+      Two bugs caught by looking at the output: a filer reported a purchase at
+      **$24,035,774 per share**, which came out as a $2.4 quadrillion buy;
+      and seniority was being summed per TRANSACTION rather than per filing, so
+      one executive selling in fourteen tranches looked like fourteen sellers.
+
+      **The role ladder had to be sharpened.** Weighting every officer at 1.0
+      made the weighted column identical to `buyers - sellers` on 89% of rows.
+      CEO/CFO now sit above other officers, which is the distinction the
+      literature actually supports, and the collapse fell to 20%.
+
+- [x] **Panel builds all four families.** 35 columns, 1.9M rows, 12 seconds.
+      72.4% of rows carry 13F, 68.8% carry insider activity. `npm run
+      form4:verify` proves the join: a rolling count may only move when a filing
+      ARRIVES or AGES OUT, and a simulated 3-day look-ahead produces 114
+      failures.
 - [ ] **Earnings text / NLP.** Verified available: 20,665 chars of NVDA's
       release plus 162 KB of CFO commentary, on EDGAR as 8-K item 2.02
       exhibits — the same text companies put on their IR site, uniformly, with

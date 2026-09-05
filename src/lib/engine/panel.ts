@@ -59,6 +59,11 @@ import {
   institutionalRows,
   type Quarter,
 } from './institutional';
+import {
+  INSIDER_COLUMNS,
+  insiderRows,
+  type InsiderEvent,
+} from './insider';
 
 /** Trading days ahead the model is asked to predict. One month. */
 export const HORIZON = 21;
@@ -154,6 +159,13 @@ export type PanelOptions = {
    * result would have been invisible had they been mandatory.
    */
   institutional?: Quarter[];
+  /**
+   * Insider transactions, one entry per symbol-day of Form 4 filings.
+   *
+   * The freshest family here by a wide margin: a 13F is 45 days stale before it
+   * may be used, a Form 4 is due within two business days of the trade.
+   */
+  insider?: InsiderEvent[];
   /** Rates, credit, volatility, commodities and the FOMC calendar. */
   macro?: MacroData;
 };
@@ -229,6 +241,16 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
       ? institutionalRows(options.institutional, entry.symbol, dates)
       : null;
 
+    /*
+      Insider activity, on the calendar axis and needing no lag of its own: the
+      events are already keyed by FILING date, which is when the market could
+      see them. The 63-day window then only ever contains filings that had
+      already arrived.
+    */
+    const ins = options.insider
+      ? insiderRows(options.insider, entry.symbol, dates)
+      : null;
+
     const s = symbols.length;
     symbols.push(entry.symbol);
     industries.push(entry.industry);
@@ -240,6 +262,7 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
         ...features[i],
         ...(funda ? funda[t] : []),
         ...(inst ? inst[t] : []),
+        ...(ins ? ins[t] : []),
         ...(macroRows ? macroRows[t] : []),
       ];
       /*
@@ -270,6 +293,7 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
       ...TECHNICAL_COLUMNS,
       ...(options.fundamentals ? FUNDAMENTAL_COLUMNS : []),
       ...(options.institutional ? INSTITUTIONAL_COLUMNS : []),
+      ...(options.insider ? INSIDER_COLUMNS : []),
       ...(options.macro ? MACRO_COLUMNS : []),
     ],
     rows,
@@ -285,7 +309,8 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
     rankableColumns:
       TECHNICAL_COLUMNS.length
       + (options.fundamentals ? FUNDAMENTAL_COLUMNS.length : 0)
-      + (options.institutional ? INSTITUTIONAL_COLUMNS.length : 0),
+      + (options.institutional ? INSTITUTIONAL_COLUMNS.length : 0)
+      + (options.insider ? INSIDER_COLUMNS.length : 0),
   };
 }
 
