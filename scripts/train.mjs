@@ -288,13 +288,48 @@ for (let i = 1; i < runs.length; i++) {
   );
 }
 
-const best = runs.at(-1).result;
-if (best.model) {
-  console.log(`\nwhat the ${runs.at(-1).name} model used:`);
-  for (const { column, share } of importances(best.model).slice(0, 16)) {
+/*
+  THE COMPARISON IS SAVED, NOT JUST PRINTED.
+
+  This run costs about six hours. Its actual product is the table above — which
+  family helped and by how much — and until now that existed only in whatever
+  terminal happened to be open. A result nobody can re-read is a result nobody
+  can check, which is the same failure as the -69% survivorship figure whose
+  script was never committed.
+*/
+mkdirSync(dataDir, { recursive: true });
+writeFileSync(path.join(dataDir, 'training.json'), `${JSON.stringify({
+  trainedAt: new Date().toISOString(),
+  horizon: HORIZON,
+  runs: runs.map((r) => ({
+    name: r.name,
+    meanIC: +r.result.mean.toFixed(5),
+    t: +r.result.t.toFixed(2),
+    hitRate: +r.result.hit.toFixed(4),
+    days: r.result.days,
+    positiveYears: r.result.positiveYears,
+    years: r.result.perYear.length,
+    perYear: r.result.perYear.map((p) => ({ year: p.year, ic: +p.ic.toFixed(5), days: p.days, rounds: p.rounds })),
+  })),
+}, null, 2)}\n`);
+console.log('\nwrote data/training.json');
+
+/*
+  THE SHIPPED MODEL IS THE BEST ONE, MEASURED.
+
+  This used to take `runs.at(-1)` — the last configuration to finish, which is
+  an ordering accident rather than a result. If adding a family HURTS, shipping
+  it because it ran last is exactly the mistake this whole comparison exists to
+  prevent.
+*/
+const best = [...runs].sort((a, b) => b.result.mean - a.result.mean)[0];
+console.log(`\nbest by mean IC: ${best.name} at ${best.result.mean >= 0 ? '+' : ''}${best.result.mean.toFixed(4)}`);
+
+if (best.result.model) {
+  console.log(`\nwhat the ${best.name} model used:`);
+  for (const { column, share } of importances(best.result.model).slice(0, 16)) {
     console.log(`  ${column.padEnd(22)} ${(share * 100).toFixed(1).padStart(5)}%  ${'#'.repeat(Math.round(share * 110))}`);
   }
-  mkdirSync(dataDir, { recursive: true });
-  writeFileSync(path.join(dataDir, 'model.json'), JSON.stringify(best.model));
+  writeFileSync(path.join(dataDir, 'model.json'), JSON.stringify(best.result.model));
   console.log('\nwrote data/model.json');
 }
