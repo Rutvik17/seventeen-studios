@@ -401,10 +401,40 @@ amount. It is the largest unmeasured risk to this result.
       exhibits — the same text companies put on their IR site, uniformly, with
       filing timestamps. Features: guidance direction, tone shift versus the
       same company's prior release, hedging language.
-- [ ] **The circular-financing graph.** Both inputs verified — NVDA's 13F shows
-      $63.4B in Intel / SpaceX / CoreWeave / Coherent / Synopsys, and full-text
-      search returns 71 CoreWeave mentions in 10-Ks. The most distinctive thing
-      in the spec and the least standard.
+- [x] **The circular-financing graph — BUILT.** `npm run circular`. 174 stakes
+      held by 21 non-financial S&P 500 companies, from their own 13F filings.
+
+          NVDA -> INTEL CORP              $17.40B
+          AMZN -> RIVIAN AUTOMOTIVE        $5.50B
+          NVDA -> COREWEAVE INC            $5.40B
+          UBER -> Grab Holdings            $4.64B
+          NVDA -> SYNOPSYS INC             $4.18B
+          WMT  -> SYMBOTIC INC             $1.69B
+
+      Exactly the structure the spec described: a chip maker holding equity in
+      its customers and suppliers, a retailer holding its warehouse automator,
+      a ride company holding its self-driving partner.
+
+      **A separate pass over the same files.** `fetch-13f.mjs` sums across every
+      manager and throws the filer away, which is right for an ownership feature
+      and useless here — this needs the opposite projection, keyed by FILER.
+
+      **Financials are excluded by SECTOR, not by name.** The first attempt used
+      a name pattern and the top of the result was BlackRock, State Street and
+      Morgan Stanley — all three are index members AND among the largest asset
+      managers on earth, and no name rule separates them from operating
+      companies without catching real ones.
+
+      Four features in `circular.ts`: how much a company holds, and how much of
+      it is held by other corporates. Held-by needed the token join from 13F —
+      an exact match found 1 edge of 174, because "INTEL CORP" and "Intel" are
+      not equal, and Intel is the largest edge in the graph.
+
+- [ ] **Make the circular graph point-in-time.** It is built from recent
+      quarters and applied to all history, so it says NVIDIA held CoreWeave in
+      2015. Quarantined behind its own flag for that reason and NOT in the panel
+      by default. The honest version rebuilds the graph per quarter — the
+      fetcher can already do it; it is 53 quarters of downloads.
 - [x] **Election / political calendar — BUILT.** Three macro columns:
       `days_to_election`, `days_since_election`, `election_year`. Computed from
       the constitutional rule — the Tuesday after the first Monday in November,
