@@ -450,12 +450,34 @@ amount. It is the largest unmeasured risk to this result.
       should still stop with the truth.
 - [x] **Deflated Sharpe ratio — DONE**, see "Now". E[max Sharpe] under no skill
       across 11 trials is 0.198, so the swept 1.20 is honestly 1.00.
-- [ ] **Garleanu-Pedersen optimal trading.** With decaying alpha and quadratic
-      costs, the optimal policy is neither trade-to-target nor a no-trade band —
-      it is to move a constant fraction toward a weighted average of current and
-      future targets. Closed form, and it replaces the heuristic band directly.
-      The most applicable piece of real mathematics on this list, because
-      turnover is our measured problem.
+- [x] **Garleanu-Pedersen — BUILT AND TESTED. The band wins.**
+      `src/lib/engine/trading.ts`, `--optimalTrading`.
+
+      The closed form is right and verified at both limits: free trading gives a
+      rate of 1.000, ruinous cost gives 0.003, a permanent signal aims at the
+      target itself and a vanishing one aims at nothing. A position converges on
+      the AIM rather than the target, exactly as the paper says.
+
+      Measured against the band, point-in-time:
+
+          policy          annual  Sharpe   maxDD   return/maxDD  turnover
+          band             15.8%    0.97   19.1%          0.83      1.05
+          GP decay 0.85    14.6%    0.99   23.1%          0.63      0.84
+          GP decay 0.35     7.3%    1.00   12.2%          0.63      0.38
+
+      **It buys 0.02 of Sharpe and costs 0.20 of return per unit of drawdown.**
+      Turnover falls by up to 64%, which is what it was chosen for, but the
+      turnover was not the binding constraint the tracker assumed.
+
+      Two things the sweep exposed. **Decay behaves as a leverage dial, not a
+      policy**: Sharpe is pinned at 1.00 across the whole range while return
+      scales linearly with it. And partial adjustment **never fully closes a
+      position**, so the book holds 356 names against the band's 95 — the tail
+      is a long list of fractions the model no longer likes, and closing
+      instantly is the one thing GP is designed to avoid.
+
+      Kept behind a flag rather than deleted: it is the correct policy for a
+      book whose costs actually bind, and this one's do not.
 - [ ] **Random matrix theory for the covariance.** Marchenko-Pastur says which
       eigenvalues of a sample covariance are indistinguishable from noise at a
       given sample size. Estimating 500x500 from 250 observations is exactly

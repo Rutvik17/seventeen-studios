@@ -38,6 +38,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { buildTargets, BOOK } from '../src/lib/engine/book.ts';
+import { TRADING, tradingRate, aimWeight } from '../src/lib/engine/trading.ts';
 import { exposureFor, REGIME } from '../src/lib/engine/regime.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -94,6 +95,13 @@ function run(options) {
     */
     rebalanceEvery = 21,
     band = 0.005,
+    /*
+      Garleanu-Pedersen instead of the band. Off by default so the two can be
+      measured against each other on identical folds — the band is worth about
+      two points a year and has to be beaten, not assumed obsolete.
+    */
+    optimalTrading = false,
+    decay = TRADING.decay,
     exposureFloor = 0.25,
     shortsRequireRiskOff = true,
     book = BOOK,
@@ -205,15 +213,29 @@ function run(options) {
     const names = new Set([...held.keys(), ...want.keys()]);
     for (const s of names) {
       const from = held.get(s) ?? 0;
-      const to = want.get(s) ?? 0;
-      const delta = to - from;
+      let to = want.get(s) ?? 0;
+      let delta = to - from;
 
       /*
         THE BAND. Leave it alone unless the gap is worth paying for. Applied to
         the DELTA as a fraction of the book, so it scales with account size
         rather than with the position.
       */
-      if (Math.abs(delta) / equity < band) continue;
+      /*
+        THE BAND, or the closed form that replaces it.
+
+        The band leaves a position alone unless the gap is worth paying for.
+        Garleanu-Pedersen instead moves a constant fraction toward an AIM that
+        discounts the target for decay — every gap is closed partially, small
+        ones included, which is the case a band ignores entirely.
+      */
+      if (optimalTrading) {
+        const rate = tradingRate({ ...TRADING, decay });
+        const aim = to * aimWeight({ ...TRADING, decay });
+        to = from + rate * (aim - from);
+        delta = to - from;
+        if (Math.abs(delta) / equity < 1e-5) continue;
+      } else if (Math.abs(delta) / equity < band) continue;
       if (!(close[t][s] > 0)) continue;
 
       traded += Math.abs(delta);
@@ -417,6 +439,9 @@ if (sweep) {
   if (bandFlag !== undefined) runOpts.band = bandFlag;
   const floorFlag = flag('exposureFloor');
   if (floorFlag !== undefined) runOpts.exposureFloor = floorFlag;
+  if (process.argv.includes('--optimalTrading')) runOpts.optimalTrading = true;
+  const decayFlag = flag('decay');
+  if (decayFlag !== undefined) runOpts.decay = decayFlag;
   const r = run(runOpts);
   const me = stats(r.curve);
   const spy = stats(r.spyCurve);
