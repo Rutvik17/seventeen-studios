@@ -463,9 +463,20 @@ amount. It is the largest unmeasured risk to this result.
 ## System pieces
 
 
-- [ ] **Confidence estimates.** The model emits point predictions only. Sizing
-      "small when unsure" is currently rhetoric. Needs ensemble variance across
-      seeds, or quantile objectives.
+- [x] **Confidence estimates — DONE, via conformal rather than an ensemble.**
+      Ensemble variance would need a retrain AND measures the wrong thing: seeds
+      disagreeing describes the fitting procedure's instability, not how far the
+      answer lands from the truth. A model can be perfectly stable across seeds
+      and reliably wrong.
+
+      Conformal asks the honest question — how far was the realised return from
+      the score, recently — and needs nothing but the predictions already on the
+      tape. `confidenceMultiplier` turns the interval width into a sizing
+      factor, scaled against the median width rather than a hardcoded constant.
+
+- [ ] **Wire confidence into sizing.** The multiplier exists and `book.ts` does
+      not use it. It is the step that makes "small when unsure" real rather than
+      available.
 - [ ] **Feature selection within families.** Fundamentals cost 0.0042 of IC when
       all 26 were admitted at once. Prune to the columns that individually earn
       their place rather than admitting or rejecting a family wholesale.
@@ -517,9 +528,26 @@ amount. It is the largest unmeasured risk to this result.
       hurts in calm ones — that is a mixture-of-experts problem, not a feature
       selection problem. Hidden Markov regime states, or Bayesian model
       averaging where each family's weight is a function of the regime.
-- [ ] **Conformal prediction for confidence.** Distribution-free prediction
-      intervals with finite-sample coverage. Returns are not normal, so an
-      interval that assumes they are is decoration.
+- [x] **Conformal prediction — BUILT AND ITS COVERAGE MEASURED.**
+      `src/lib/engine/conformal.ts`, `npm run conformal`.
+
+          alpha   nominal   measured    width       n
+           0.50       50%      51.3%    4.24%   21,729
+           0.20       80%      81.7%    8.65%   21,729
+           0.10       90%      90.8%   11.93%   21,729
+           0.05       95%      95.3%   15.43%   21,729
+
+      **Coverage holds at every level**, on out-of-sample days, with no
+      distributional assumption used anywhere. The slight over-coverage is the
+      finite-sample correction erring conservative, which is the direction it is
+      supposed to err in.
+
+      Split conformal done honestly: calibrate on days whose outcome was already
+      known, test on a later day, and end calibration at least one horizon
+      before the test day or the outcome leaks into its own interval.
+
+      The check tolerates over-coverage and fails under-coverage, deliberately —
+      an interval narrower than it claims is a confidence estimate that lies.
 - [x] **Combinatorial purged cross-validation — DONE.** `src/lib/engine/cpcv.ts`,
       15 splits, purging in both directions, zero days on both sides.
 
