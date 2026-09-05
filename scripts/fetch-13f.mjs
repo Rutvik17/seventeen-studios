@@ -89,14 +89,61 @@ function universe() {
 /* ------------------------------------------------------------------ parsing */
 
 /**
- * One quarter's INFOTABLE, aggregated by CUSIP.
+ * Which report period each accession belongs to, and when it was filed.
  *
- * Walked as bytes rather than turned into a string: a quarter is 378 MB of TSV
- * and building that as one JavaScript string is close to the engine's limit for
- * no benefit.
+ * THE ZIP LABEL IS NOT THE PERIOD. `01mar2026-31may2026` is the window in which
+ * filings were RECEIVED, and that window contains 7,360 filings for the quarter
+ * ending 31 March plus 282 late ones reporting quarters as old as 2022. Keying
+ * a quarter by the file it arrived in would smear four years of positions into
+ * one bucket and date them all wrong.
+ *
+ * Older files use `2013q2`, which is also a receipt window — its largest period
+ * is 31-MAR-2013. Both schemes are handled by ignoring the label entirely and
+ * reading PERIODOFREPORT per submission.
  */
-function aggregate(buf) {
-  const byCusip = new Map();
+function submissions(buf) {
+  const map = new Map();
+  let start = 0;
+  let header = true;
+  let cols = [];
+
+  for (let i = 0; i < buf.length; i++) {
+    if (buf[i] !== 0x0a) continue;
+    const line = buf.toString('utf8', start, i).replace(/\r$/, '');
+    start = i + 1;
+    if (header) { cols = line.split('	'); header = false; continue; }
+
+    const f = line.split('	');
+    const accession = f[cols.indexOf('ACCESSION_NUMBER')];
+    const period = f[cols.indexOf('PERIODOFREPORT')];
+    const filed = f[cols.indexOf('FILING_DATE')];
+    if (accession && period) map.set(accession, { period, filed });
+  }
+  return map;
+}
+
+/** `31-MAR-2026` to `2026-03-31`. */
+const MONTH3 = { JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06',
+  JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12' };
+function isoDate(sec) {
+  const m = /^(\d{2})-([A-Z]{3})-(\d{4})$/.exec((sec ?? '').trim().toUpperCase());
+  return m ? `${m[3]}-${MONTH3[m[2]]}-${m[1]}` : null;
+}
+
+/**
+ * One file's INFOTABLE, aggregated by REPORT PERIOD and then by CUSIP.
+ *
+ * Two maps deep because one file is not one quarter: the March-to-May 2026
+ * dataset carries 7,360 filings for the quarter ending 31 March and 282 late
+ * ones reporting quarters as far back as 2022. Flattening them would smear four
+ * years of positions into a single bucket and date every one of them wrong.
+ *
+ * Walked as bytes rather than turned into a string: a file is 378 MB of TSV and
+ * building that as one JavaScript string is close to the engine's limit for no
+ * benefit.
+ */
+function aggregate(buf, subs) {
+  const byPeriod = new Map();
   let start = 0;
   let header = true;
 
@@ -110,6 +157,9 @@ function aggregate(buf) {
     // PUTCALL is set for options. An option position is not ownership.
     if (f[9]) continue;
 
+    const sub = subs.get(f[0]);
+    if (!sub) continue;
+
     const cusip = f[4];
     const value = Number(f[6]);
     const shares = Number(f[7]);
@@ -117,13 +167,18 @@ function aggregate(buf) {
     // SSHPRNAMTTYPE distinguishes shares from principal amount on debt.
     if (f[8] && f[8] !== 'SH') continue;
 
-    const e = byCusip.get(cusip) ?? { name: f[2], value: 0, shares: 0, holders: 0 };
+    let byCusip = byPeriod.get(sub.period);
+    if (!byCusip) { byCusip = new Map(); byPeriod.set(sub.period, byCusip); }
+
+    const e = byCusip.get(cusip) ?? { name: f[2], value: 0, shares: 0, holders: 0, filed: sub.filed };
     e.value += value;
     if (Number.isFinite(shares)) e.shares += shares;
     e.holders += 1;
+    // The LAST filing to arrive for this period: the day the picture completed.
+    if (sub.filed > e.filed) e.filed = sub.filed;
     byCusip.set(cusip, e);
   }
-  return byCusip;
+  return byPeriod;
 }
 
 /* --------------------------------------------------------------- the fetch */
@@ -177,9 +232,9 @@ for (const link of order) {
   if (!res.ok) { console.warn(`  ! ${label}: HTTP ${res.status}`); continue; }
   const zip = Buffer.from(await res.arrayBuffer());
 
-  let byCusip;
+  let byPeriod;
   try {
-    byCusip = aggregate(extract(zip, 'INFOTABLE.tsv'));
+    byPeriod = aggregate(extract(zip, 'INFOTABLE.tsv'), submissions(extract(zip, 'SUBMISSION.tsv')));
   } catch (error) {
     console.warn(`  ! ${label}: ${error.message}`);
     continue;
@@ -191,8 +246,11 @@ for (const link of order) {
     matching against the newest list gives the best join and applies it
     consistently across the whole history.
   */
+  /* The period this file is mostly about — the rest are late filings. */
+  const dominant = [...byPeriod.entries()].sort((a, b) => b[1].size - a[1].size)[0];
+
   if (!mapping) {
-    const candidates = [...byCusip.entries()].map(([cusip, e]) => ({ cusip, name: e.name, value: e.value, t: tokens(e.name) }));
+    const candidates = [...dominant[1].entries()].map(([cusip, e]) => ({ cusip, name: e.name, value: e.value, t: tokens(e.name) }));
     mapping = new Map();
     let matched = 0;
     const names = universe();
@@ -227,37 +285,77 @@ for (const link of order) {
       // Every token of our name must be accounted for. Anything less is dropped.
       if (bestScore >= 0.999 && best) { mapping.set(best.cusip, u.symbol); matched += 1; }
     }
-    console.log(`13f: CUSIP map built from ${label} — ${matched}/${names.length} names matched (${(matched / names.length * 100).toFixed(1)}%)`);
+    console.log(`13f: CUSIP map built from ${isoDate(dominant[0])} — ${matched}/${names.length} names matched (${(matched / names.length * 100).toFixed(1)}%)`);
   }
 
-  const holdings = {};
-  for (const [cusip, e] of byCusip) {
-    const symbol = mapping.get(cusip);
-    if (!symbol) continue;
-    /*
-      VALUE IS NOT COMPARABLE ACROSS THE HISTORY and is kept only for reference.
+  /*
+    Every period in the file is kept, not just the dominant one. A late filing
+    for an old quarter is still information about that quarter, and dropping it
+    would make the history depend on which file it happened to arrive in.
+  */
+  const periods = [];
+  for (const [rawPeriod, byCusip] of byPeriod) {
+    const period = isoDate(rawPeriod);
+    if (!period) continue;
 
-      The SEC changed 13F from reporting thousands to whole dollars, and the
-      implied price per share does not reconcile against actual prices on either
-      side of that change. Rather than guess a scale factor, features are built
-      from SHARES and HOLDERS — both plain counts, both unit-free, and both a
-      more direct statement of who is accumulating than a dollar total is.
-    */
-    holdings[symbol] = { value: e.value, shares: e.shares, holders: e.holders };
+    const holdings = {};
+    let filed = '';
+
+    for (const [cusip, e] of byCusip) {
+      const symbol = mapping.get(cusip);
+      if (!symbol) continue;
+      /*
+        VALUE IS NOT COMPARABLE ACROSS THE HISTORY and is kept only for
+        reference.
+
+        The SEC changed 13F from reporting thousands to whole dollars, and the
+        implied price per share reconciles against actual prices on neither side
+        of that change. Rather than guess a scale factor, features are built
+        from SHARES and HOLDERS — both plain counts, both unit-free, and both a
+        more direct statement of who is accumulating than a dollar total is.
+      */
+      holdings[symbol] = { value: e.value, shares: e.shares, holders: e.holders };
+      if (e.filed > filed) filed = e.filed;
+    }
+
+    const count = Object.keys(holdings).length;
+    // A handful of names is a straggler filing, not a picture of the quarter.
+    if (count < 50) continue;
+    periods.push({ period, filed: isoDate(filed), names: count, holdings });
   }
 
-  const record = { quarter: label, names: Object.keys(holdings).length, holdings };
+  const record = { file: label, periods };
   writeFileSync(cache, `${JSON.stringify(record)}\n`);
   quarters.push(record);
-  console.log(`  ${label}  ${record.names} of our names, ${byCusip.size.toLocaleString()} CUSIPs in the filing`);
+
+  const main = periods.find((p) => p.period === isoDate(dominant[0]));
+  console.log(`  ${label}  ${periods.length} period(s), main ${main?.period ?? '?'} with ${main?.names ?? 0} names`);
 }
 
-quarters.sort((a, b) => startsOn(a.quarter) - startsOn(b.quarter));
+/*
+  One record per REPORT PERIOD, not per file.
+
+  A period appears in several files: most filers land in the window after the
+  quarter, and stragglers arrive for years afterwards. The fullest version wins,
+  and its `filed` date is the latest arrival in it — the day that picture was
+  actually complete, which is what any lag has to be measured from.
+*/
+const periodIndex = new Map();
+for (const file of quarters) {
+  for (const p of file.periods ?? []) {
+    const existing = periodIndex.get(p.period);
+    if (!existing || p.names > existing.names) periodIndex.set(p.period, p);
+  }
+}
+
+const merged = [...periodIndex.values()].sort((a, b) => (a.period < b.period ? -1 : 1));
 writeFileSync(OUT, `${JSON.stringify({
   fetchedAt: new Date().toISOString(),
   source: INDEX,
-  quarters,
+  note: 'Keyed by PERIODOFREPORT. `filed` is the LAST straggler for that period and is NOT an availability date — some arrive years late. Use the statutory 45-day deadline instead; see available13f() in src/lib/engine/institutional.ts.',
+  quarters: merged,
 })}\n`);
 
 const bytes = readFileSync(OUT).length;
-console.log(`13f: ${quarters.length} quarters, ${(bytes / 1048576).toFixed(1)} MB to data/13f.json`);
+console.log(`13f: ${merged.length} report periods, ${merged[0]?.period} to ${merged.at(-1)?.period}`);
+console.log(`13f: ${(bytes / 1048576).toFixed(1)} MB to data/13f.json`);

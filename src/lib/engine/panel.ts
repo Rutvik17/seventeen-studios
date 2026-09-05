@@ -54,6 +54,11 @@ import {
   type Facts,
 } from './fundamental';
 import { MACRO_COLUMNS, macroFeatures, type MacroData } from './macro';
+import {
+  INSTITUTIONAL_COLUMNS,
+  institutionalRows,
+  type Quarter,
+} from './institutional';
 
 /** Trading days ahead the model is asked to predict. One month. */
 export const HORIZON = 21;
@@ -140,6 +145,15 @@ export type PanelOptions = {
    * Any other comparison is an opinion.
    */
   fundamentals?: Record<string, Facts>;
+  /**
+   * Institutional ownership, one entry per 13F report period.
+   *
+   * Optional for the same reason as the others: the only way to know whether a
+   * family carries information is to build the panel twice and change nothing
+   * else. Fundamentals cost 0.0042 of IC when that was done to them, and that
+   * result would have been invisible had they been mandatory.
+   */
+  institutional?: Quarter[];
   /** Rates, credit, volatility, commodities and the FOMC calendar. */
   macro?: MacroData;
 };
@@ -205,6 +219,16 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
       ? fundamentalFeatures(options.fundamentals[entry.symbol] ?? {}, dates)
       : null;
 
+    /*
+      Ownership, on the calendar axis like fundamentals — and lagged by the same
+      principle. See `institutional.ts`: a 13F for the quarter ending March is
+      not public until mid-May, so the walk only advances onto a quarter whose
+      statutory deadline has passed.
+    */
+    const inst = options.institutional
+      ? institutionalRows(options.institutional, entry.symbol, dates)
+      : null;
+
     const s = symbols.length;
     symbols.push(entry.symbol);
     industries.push(entry.industry);
@@ -215,6 +239,7 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
       const f = [
         ...features[i],
         ...(funda ? funda[t] : []),
+        ...(inst ? inst[t] : []),
         ...(macroRows ? macroRows[t] : []),
       ];
       /*
@@ -244,12 +269,23 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
     columns: [
       ...TECHNICAL_COLUMNS,
       ...(options.fundamentals ? FUNDAMENTAL_COLUMNS : []),
+      ...(options.institutional ? INSTITUTIONAL_COLUMNS : []),
       ...(options.macro ? MACRO_COLUMNS : []),
     ],
     rows,
     benchmarkClose,
+    /*
+      Institutional features ARE rankable and macro still is not.
+
+      Ownership change varies across names on the same day, so ranking it
+      cross-sectionally is meaningful — "in the top decile of managers arriving"
+      is a real statement. Macro is one number shared by every name, so ranking
+      it would flatten it to a constant.
+    */
     rankableColumns:
-      TECHNICAL_COLUMNS.length + (options.fundamentals ? FUNDAMENTAL_COLUMNS.length : 0),
+      TECHNICAL_COLUMNS.length
+      + (options.fundamentals ? FUNDAMENTAL_COLUMNS.length : 0)
+      + (options.institutional ? INSTITUTIONAL_COLUMNS.length : 0),
   };
 }
 

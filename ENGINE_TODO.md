@@ -291,11 +291,51 @@ amount. It is the largest unmeasured risk to this result.
       institutional shares can exceed shares outstanding, because 13F
       double-counts positions where managers share discretion.
 
-- [ ] **13F features.** The data is fetched; nothing consumes it yet. Quarterly
-      holder count and share count, forward-filled to daily with a 45-day
-      reporting lag, then quarter-over-quarter change. The LAG IS THE WHOLE
-      GAME: a 13F for the quarter ending March is public in mid-May, so using it
-      before then is look-ahead of exactly the kind this project keeps finding.
+- [x] **13F re-keyed by REPORT PERIOD, and seven features written.**
+
+      **The ZIP label was never the quarter.** `01mar2026-31may2026` is the
+      window in which filings were RECEIVED — and that one file carries 41
+      distinct report periods: 7,360 filings for the quarter ending 31 March
+      plus stragglers reporting quarters as far back as 2022. Keying by file
+      would have smeared four years of positions into one bucket and dated every
+      one of them wrong. Now keyed on `PERIODOFREPORT` per submission: **53
+      periods in window, 2013-03-31 to 2026-03-31**, every quarter-end month
+      correct, coverage rising 351 to 483 names.
+
+      **Availability is the statutory deadline, not the observed filing date.**
+      The first instinct was to use the last filing received for a period. That
+      is wrong by a mile: amendments for the quarter ending June 2024 arrived in
+      May 2026, a lag of **698 days**, so waiting for the last one means the
+      quarter never becomes usable. 17 CFR 240.13f-1 gives managers 45 days, so
+      that is the rule — conservative in the right direction, since most filers
+      land before it. Verified: on 1 April the newest usable quarter is
+      December's; March's only opens on 15 May.
+
+      Features in `src/lib/engine/institutional.ts`, all ratios so a mega-cap
+      held by 10,000 managers and a mid-cap held by 400 are on one scale:
+      holder change (1q, 2q, acceleration), share change (1q, 2q, acceleration),
+      and crowding — shares per manager, which separates "the same crowd buying
+      more" from "more managers each buying less".
+
+- [x] **13F wired into the panel, and the join proved leak-free.**
+      `options.institutional` builds seven columns alongside the fundamentals,
+      on the calendar axis and rankable — ownership change varies across names
+      on a given day, so ranking it cross-sectionally means something, where
+      ranking macro would flatten it to a constant.
+
+      `npm run 13f:verify` walks 5 symbols x 7 columns over 181 days and finds
+      every date a value MOVES. All 56 land on a statutory availability date.
+
+      **The first version of that test was worthless and said PASS.** It
+      compared the change dates against `available13f()` — the function it was
+      meant to be testing — so setting the lag to zero made the features leak by
+      45 days and the test still passed, because both sides moved together. The
+      expectation is now restated independently from 17 CFR 240.13f-1, and the
+      same sabotage now fails on 53 periods with the disagreement named.
+
+- [ ] **Retrain with 13F.** The panel builds the columns; the shipped model was
+      trained without them. Until a retrain, the features are reachable and
+      unused.
 - [ ] **Form 4 insider transactions.** Buy/sell clusters, net insider buying,
       officer vs director weighting. Partially verified — owner and title parse
       cleanly; the transaction amounts sit in a nested `<value>` path, and the
