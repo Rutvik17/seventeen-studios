@@ -146,12 +146,37 @@ amount. It is the largest unmeasured risk to this result.
       across 11 trials is 0.198, so 1.20 is honestly 1.00. Returns are fat
       tailed (kurtosis 7.02) and negatively skewed (-0.371), which is why
       normality-based methods stay off the list.
-- [ ] **Test the horizon-matching hypothesis.** Monthly rebalancing was
-      justified by matching the 21-day label, and that argument is sound — but
-      it was found by sweeping, not derived first, which makes it post-hoc until
-      tested. Falsifiable: retrain with a 5-day label and weekly should become
-      optimal; a 63-day label should favour quarterly. If monthly wins
-      regardless of the label, the story was fitted to the number and we say so.
+- [x] **Horizon-matching — CONFIRMED, on both universes.** `npm run cadence`,
+      20 configurations of cadence x no-trade band, no retraining.
+
+          cadence      best band   annual   Sharpe   vs SPY   (point-in-time)
+          monthly           1.0%    17.7%     1.01    +2.9%
+          weekly            2.0%    13.9%     0.87    -0.9%
+          fortnightly       2.0%    14.5%     0.86    -0.4%
+          daily             2.0%    14.5%     0.82    -0.3%
+          quarterly         0.0%    12.3%     0.64    -2.6%
+
+      **Monthly wins and is the only cadence that beats SPY at all.** The
+      ranking is IDENTICAL on the survivorship-biased universe, which matters:
+      the concentration sweep's biased answer inverted point-in-time, and this
+      one does not.
+
+      It is not "slower is better" — quarterly is the worst of the five. It is
+      specifically 21 days, which is the label the model was trained on. The
+      original justification was found by sweeping and therefore post-hoc; it
+      now survives a test designed to break it.
+
+      Sweeping cadence at a fixed band would have answered the wrong question.
+      Daily with a wide band and monthly with none are different strategies, not
+      one strategy at two speeds — daily needs a 2% band to be tolerable at all
+      and still loses.
+
+- [x] **Daily monitoring — ANSWERED by the same sweep, and it is worse.** Daily
+      rebalancing returns 3.9% with no band and 14.5% with a wide one, against
+      monthly's 17.7%. The band cannot rescue it: reacting to a 21-day forecast
+      every day is churn, and the cost shows up as Sharpe rather than as
+      turnover, which is the part that would have been missed by looking at
+      trading costs alone.
 - [x] **Tree cap and learning rate — TESTED AND REJECTED.** Seven configurations
       on the 2022 fold (400-2000 trees, rates 0.030-0.008, depths 4-8, a 4.4x
       spread in runtime). Total spread in out-of-sample IC: **0.0030**. Given
@@ -380,8 +405,17 @@ amount. It is the largest unmeasured risk to this result.
       $63.4B in Intel / SpaceX / CoreWeave / Coherent / Synopsys, and full-text
       search returns 71 CoreWeave mentions in 10-Ks. The most distinctive thing
       in the spec and the least standard.
-- [ ] **Election / political calendar.** Trivial — midterms and presidentials
-      are a fixed known list, same treatment as FOMC proximity.
+- [x] **Election / political calendar — BUILT.** Three macro columns:
+      `days_to_election`, `days_since_election`, `election_year`. Computed from
+      the constitutional rule — the Tuesday after the first Monday in November,
+      every even year — rather than fetched, so there is no source to go stale
+      and no revision to leak. Verified against 2016-11-08, 2020-11-03 and
+      2024-11-05.
+
+      The OUTCOME is deliberately absent. Who won, and whether government came
+      out unified, would be the obvious next column and cannot be built: knowing
+      it on any date before the election is precisely the leak this project
+      keeps finding. Proximity is knowable in advance; the result is not.
 
 ### Blocked
 
@@ -398,10 +432,7 @@ amount. It is the largest unmeasured risk to this result.
 
 ## System pieces
 
-- [ ] **Daily monitoring with threshold rebalancing.** The band is implemented;
-      the daily-vs-weekly comparison is not run. Compute is not the constraint —
-      training is annual and prediction is milliseconds. Costs and signal decay
-      are.
+
 - [ ] **Confidence estimates.** The model emits point predictions only. Sizing
       "small when unsure" is currently rhetoric. Needs ensemble variance across
       seeds, or quantile objectives.
@@ -417,11 +448,8 @@ amount. It is the largest unmeasured risk to this result.
       The survivorship correction sits DIRECTLY UNDER the headline metrics
       rather than at the foot of the page. A reader who stops after 22.40%
       should still stop with the truth.
-- [ ] **Deflated Sharpe ratio** (Bailey & Lopez de Prado). Corrects for multiple
-      testing: sweep eleven configurations and the winner is flattered by
-      selection. There is a formula for how much. **Apply it to our own sweep
-      before believing the result** — this is the Markopolos discipline pointed
-      at ourselves rather than at somebody else's fund.
+- [x] **Deflated Sharpe ratio — DONE**, see "Now". E[max Sharpe] under no skill
+      across 11 trials is 0.198, so the swept 1.20 is honestly 1.00.
 - [ ] **Garleanu-Pedersen optimal trading.** With decaying alpha and quadratic
       costs, the optimal policy is neither trade-to-target nor a no-trade band —
       it is to move a constant fraction toward a weighted average of current and
@@ -440,9 +468,8 @@ amount. It is the largest unmeasured risk to this result.
 - [ ] **Conformal prediction for confidence.** Distribution-free prediction
       intervals with finite-sample coverage. Returns are not normal, so an
       interval that assumes they are is decoration.
-- [ ] **Combinatorial purged cross-validation.** Our 21-day embargo is the
-      simple version; CPCV is the rigorous one and gives a distribution of
-      backtest outcomes rather than a single path.
+- [x] **Combinatorial purged cross-validation — DONE.** `src/lib/engine/cpcv.ts`,
+      15 splits, purging in both directions, zero days on both sides.
 
 ### Methods deliberately NOT adopted, and why
 

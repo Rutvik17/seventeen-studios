@@ -297,13 +297,22 @@ function run(options) {
       .filter(([, v]) => v !== 0)
       .map(([s, v]) => {
         const lot = lots.get(s);
+        /*
+          A name can be HELD on a day it did not print — a halt, or a gap in the
+          source. The position is real and still marked at its last known value;
+          only the quote is missing, so the price is reported as null rather
+          than crashing the run.
+
+          Surfaced by the daily cadence sweep, where every trading day is a
+          rebalance and these gaps stop being skippable.
+        */
         const price = close[t][s];
         const avg = lot && lot.qty ? lot.cost / lot.qty : null;
         return {
           symbol: symbols[s],
           weight: +(v / equity).toFixed(5),
           entry: avg ? +avg.toFixed(4) : null,
-          price: +price.toFixed(4),
+          price: price > 0 ? +price.toFixed(4) : null,
           since: lot ? lot.opened : dates[t],
         };
       })
@@ -401,7 +410,14 @@ if (sweep) {
   }
   console.log('\nturnover is per rebalance; multiply by 52 for weekly, 12 for monthly, 252 for daily');
 } else if (asJson) {
-  const r = run({ book: { ...BOOK, ...bookOverrides } });
+  const runOpts = { book: { ...BOOK, ...bookOverrides } };
+  const every = flag('rebalanceEvery');
+  if (every !== undefined) runOpts.rebalanceEvery = every;
+  const bandFlag = flag('band');
+  if (bandFlag !== undefined) runOpts.band = bandFlag;
+  const floorFlag = flag('exposureFloor');
+  if (floorFlag !== undefined) runOpts.exposureFloor = floorFlag;
+  const r = run(runOpts);
   const me = stats(r.curve);
   const spy = stats(r.spyCurve);
 

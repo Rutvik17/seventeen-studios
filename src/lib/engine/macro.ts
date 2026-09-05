@@ -56,6 +56,7 @@ export const MACRO_COLUMNS = [
   'spy_vs_200d', 'spy_vol_21', 'spy_drawdown',
   // Scheduled event proximity. Published in advance, therefore fair.
   'days_to_fomc', 'days_since_fomc', 'fomc_blackout',
+  'days_to_election', 'days_since_election', 'election_year',
 ] as const;
 
 /** Most recent value at or before `date`, walking a sorted key list. */
@@ -202,6 +203,57 @@ export function macroFeatures(
     blackout.push(Number.isFinite(to) && to <= 10 && to >= 0 ? 1 : 0);
   }
 
+  /*
+    THE POLITICAL CALENDAR.
+
+    Federal elections are the one macro event with a date fixed by law rather
+    than by a committee: the Tuesday after the first Monday in November, every
+    even year. So this is COMPUTED, not fetched — there is no source to go
+    stale and no revision to leak.
+
+    It earns a place for the same reason FOMC proximity does. The weeks before
+    a federal election are a measurably different tape: policy risk is priced,
+    positioning is defensive, and sector dispersion widens on which
+    administration is expected. None of that is visible in price or volatility
+    features, which see only the result.
+
+    WHAT IS NOT HERE IS THE OUTCOME. Who won, and whether government came out
+    unified, would be the obvious next column and it cannot be built: knowing it
+    on any date before the election is precisely the leak this project keeps
+    finding. Proximity is knowable in advance; the result is not.
+  */
+  const electionDay = (year: number): string => {
+    // First Monday in November, then the next day.
+    const first = new Date(Date.UTC(year, 10, 1));
+    const offsetToMonday = (8 - first.getUTCDay()) % 7;
+    const monday = new Date(Date.UTC(year, 10, 1 + offsetToMonday));
+    monday.setUTCDate(monday.getUTCDate() + 1);
+    return monday.toISOString().slice(0, 10);
+  };
+
+  const firstYear = Number(dates[0].slice(0, 4)) - 4;
+  const lastYear = Number(dates[dates.length - 1].slice(0, 4)) + 4;
+  const elections: string[] = [];
+  for (let y = firstYear; y <= lastYear; y++) {
+    if (y % 2 === 0) elections.push(electionDay(y));
+  }
+  elections.sort();
+
+  const daysToElection: number[] = [];
+  const daysSinceElection: number[] = [];
+  const electionYear: number[] = [];
+  let e = 0;
+  for (const d of dates) {
+    while (e < elections.length && elections[e] < d) e++;
+    const next = elections[e];
+    const prev = e > 0 ? elections[e - 1] : null;
+    const day = 86_400_000;
+    daysToElection.push(next ? Math.round((new Date(next).getTime() - new Date(d).getTime()) / day) : NaN);
+    daysSinceElection.push(prev ? Math.round((new Date(d).getTime() - new Date(prev).getTime()) / day) : NaN);
+    // Presidential years are the ones divisible by four; midterms are the rest.
+    electionYear.push(Number(d.slice(0, 4)) % 4 === 0 ? 1 : 0);
+  }
+
   const columns = [
     y10, y10Chg,
     y10.map((v, i) => (Number.isFinite(v) && Number.isFinite(y2[i]) ? v - y2[i] : NaN)),
@@ -213,6 +265,7 @@ export function macroFeatures(
     copperGold, cgChg, oilChg, dollarChg,
     spyVs200, spyVol, spyDrawdown,
     daysToFomc, daysSinceFomc, blackout,
+    daysToElection, daysSinceElection, electionYear,
   ];
 
   if (columns.length !== MACRO_COLUMNS.length) {

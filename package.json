@@ -33,7 +33,8 @@
     "13f": "node --max-old-space-size=8192 scripts/fetch-13f.mjs",
     "13f:verify": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-13f.mjs",
     "form4": "node --max-old-space-size=8192 scripts/fetch-form4.mjs",
-    "form4:verify": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-form4.mjs"
+    "form4:verify": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-form4.mjs",
+    "cadence": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/sweep-cadence.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
