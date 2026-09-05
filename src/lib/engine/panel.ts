@@ -64,6 +64,11 @@ import {
   insiderRows,
   type InsiderEvent,
 } from './insider';
+import {
+  LANGUAGE_COLUMNS,
+  languageRows,
+  type Release,
+} from './language';
 
 /** Trading days ahead the model is asked to predict. One month. */
 export const HORIZON = 21;
@@ -166,6 +171,13 @@ export type PanelOptions = {
    * may be used, a Form 4 is due within two business days of the trade.
    */
   insider?: InsiderEvent[];
+  /**
+   * Earnings press releases, as text.
+   *
+   * The only family whose filing date IS its availability date: an 8-K item
+   * 2.02 goes out the day results are announced.
+   */
+  language?: Release[];
   /** Rates, credit, volatility, commodities and the FOMC calendar. */
   macro?: MacroData;
 };
@@ -251,6 +263,15 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
       ? insiderRows(options.insider, entry.symbol, dates)
       : null;
 
+    /*
+      What the company said about its own quarter. No lag is added and none is
+      needed — the 8-K is filed the day results are announced, so its filing
+      date is its availability date. Unusual here, and worth stating.
+    */
+    const lang = options.language
+      ? languageRows(options.language, entry.symbol, dates)
+      : null;
+
     const s = symbols.length;
     symbols.push(entry.symbol);
     industries.push(entry.industry);
@@ -263,6 +284,7 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
         ...(funda ? funda[t] : []),
         ...(inst ? inst[t] : []),
         ...(ins ? ins[t] : []),
+        ...(lang ? lang[t] : []),
         ...(macroRows ? macroRows[t] : []),
       ];
       /*
@@ -294,6 +316,7 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
       ...(options.fundamentals ? FUNDAMENTAL_COLUMNS : []),
       ...(options.institutional ? INSTITUTIONAL_COLUMNS : []),
       ...(options.insider ? INSIDER_COLUMNS : []),
+      ...(options.language ? LANGUAGE_COLUMNS : []),
       ...(options.macro ? MACRO_COLUMNS : []),
     ],
     rows,
@@ -310,7 +333,8 @@ export function buildPanel(data: PriceData, options: PanelOptions = {}): Panel {
       TECHNICAL_COLUMNS.length
       + (options.fundamentals ? FUNDAMENTAL_COLUMNS.length : 0)
       + (options.institutional ? INSTITUTIONAL_COLUMNS.length : 0)
-      + (options.insider ? INSIDER_COLUMNS.length : 0),
+      + (options.insider ? INSIDER_COLUMNS.length : 0)
+      + (options.language ? LANGUAGE_COLUMNS.length : 0),
   };
 }
 
