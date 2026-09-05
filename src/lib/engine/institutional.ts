@@ -139,3 +139,55 @@ export function availabilityIndex(quarters: Quarter[]): Array<{ from: string; at
     .map((q, at) => ({ from: available13f(q.period), at }))
     .sort((a, b) => (a.from < b.from ? -1 : 1));
 }
+
+/**
+ * One symbol's features on every calendar date, availability-respecting.
+ *
+ * Same shape and same discipline as `fundamentalFeatures`: a pointer walks
+ * forward with the calendar and only ever advances onto a quarter whose
+ * statutory deadline has passed. Dates before the first available quarter are
+ * all NaN, which the trees route down a learned branch rather than treating as
+ * zero.
+ *
+ * The result is STALE BY CONSTRUCTION — for most of a quarter the model is
+ * looking at ownership up to four and a half months old. That is not a defect,
+ * it is what a real participant sees.
+ */
+export function institutionalRows(
+  quarters: Quarter[],
+  symbol: string,
+  dates: string[],
+): number[][] {
+  const blank = INSTITUTIONAL_COLUMNS.map(() => NaN);
+
+  /*
+    Only quarters where this symbol actually appears, in period order. A name
+    absent from a quarter is a genuine gap — it was not held by anyone filing,
+    or its CUSIP did not match — and skipping it keeps "previous quarter" the
+    previous quarter WITH DATA rather than a hole that silently becomes a
+    two-quarter change labelled as one.
+  */
+  const mine = quarters
+    .filter((q) => q.holdings[symbol])
+    .sort((a, b) => (a.period < b.period ? -1 : 1))
+    .map((q) => ({ available: available13f(q.period), ...q.holdings[symbol] }));
+
+  if (!mine.length) return dates.map(() => blank.slice());
+
+  const out: number[][] = [];
+  let cursor = -1;
+
+  for (const date of dates) {
+    while (cursor + 1 < mine.length && mine[cursor + 1].available <= date) cursor += 1;
+    if (cursor < 0) { out.push(blank.slice()); continue; }
+
+    const f = institutionalFeatures({
+      now: mine[cursor],
+      prev: mine[cursor - 1],
+      prev2: mine[cursor - 2],
+      prev3: mine[cursor - 3],
+    });
+    out.push(INSTITUTIONAL_COLUMNS.map((c) => f[c]));
+  }
+  return out;
+}

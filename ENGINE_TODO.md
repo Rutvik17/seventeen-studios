@@ -317,9 +317,25 @@ amount. It is the largest unmeasured risk to this result.
       and crowding — shares per manager, which separates "the same crowd buying
       more" from "more managers each buying less".
 
-- [ ] **Wire 13F into the panel.** The features exist and are tested against
-      real quarters; `panel.ts` does not build them yet. That is the step that
-      makes them reachable by a retrain.
+- [x] **13F wired into the panel, and the join proved leak-free.**
+      `options.institutional` builds seven columns alongside the fundamentals,
+      on the calendar axis and rankable — ownership change varies across names
+      on a given day, so ranking it cross-sectionally means something, where
+      ranking macro would flatten it to a constant.
+
+      `npm run 13f:verify` walks 5 symbols x 7 columns over 181 days and finds
+      every date a value MOVES. All 56 land on a statutory availability date.
+
+      **The first version of that test was worthless and said PASS.** It
+      compared the change dates against `available13f()` — the function it was
+      meant to be testing — so setting the lag to zero made the features leak by
+      45 days and the test still passed, because both sides moved together. The
+      expectation is now restated independently from 17 CFR 240.13f-1, and the
+      same sabotage now fails on 53 periods with the disagreement named.
+
+- [ ] **Retrain with 13F.** The panel builds the columns; the shipped model was
+      trained without them. Until a retrain, the features are reachable and
+      unused.
 - [ ] **Form 4 insider transactions.** Buy/sell clusters, net insider buying,
       officer vs director weighting. Partially verified — owner and title parse
       cleanly; the transaction amounts sit in a nested `<value>` path, and the
