@@ -11,7 +11,7 @@
     "market": "node scripts/fetch-market.mjs",
     "prebuild": "node scripts/fetch-market.mjs",
     "claims": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-claims.mjs",
-    "verify": "npm run typecheck && npm run claims && npm run sprites && npm run 13f:verify && npm run form4:verify && npm run conformal && npm run covariance",
+    "verify": "npm run typecheck && npm run claims && npm run sprites && npm run 13f:verify && npm run form4:verify && npm run conformal && npm run earnings:verify && npm run covariance",
     "drawing": "node scripts/verify-drawing.mjs",
     "postbuild": "node scripts/verify-drawing.mjs && node scripts/verify-og.mjs && node scripts/verify-assets.mjs",
     "og": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/build-og.mjs",
@@ -37,7 +37,9 @@
     "cadence": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/sweep-cadence.mjs",
     "circular": "node --max-old-space-size=8192 scripts/fetch-circular.mjs",
     "conformal": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-conformal.mjs",
-    "covariance": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/verify-covariance.mjs"
+    "covariance": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/verify-covariance.mjs",
+    "earnings": "node --max-old-space-size=8192 scripts/fetch-earnings.mjs",
+    "earnings:verify": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-earnings.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

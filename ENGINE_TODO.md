@@ -396,11 +396,40 @@ amount. It is the largest unmeasured risk to this result.
       form4:verify` proves the join: a rolling count may only move when a filing
       ARRIVES or AGES OUT, and a simulated 3-day look-ahead produces 114
       failures.
-- [ ] **Earnings text / NLP.** Verified available: 20,665 chars of NVDA's
-      release plus 162 KB of CFO commentary, on EDGAR as 8-K item 2.02
-      exhibits — the same text companies put on their IR site, uniformly, with
-      filing timestamps. Features: guidance direction, tone shift versus the
-      same company's prior release, hedging language.
+- [x] **Earnings text / NLP — FETCHED, FEATURED, WIRED, PROVED.**
+      `npm run earnings`, `npm run earnings:verify`.
+
+      8-K item 2.02, exhibit EX-99.1 — the press release itself, filed the day
+      results are announced. Found through the per-company submissions API
+      rather than the full-text index: the index is 58 MB a quarter and mostly
+      other forms, where the API tags item 2.02 directly and reaches back to
+      1998.
+
+      **The only family whose filing date IS its availability date.** A 13F
+      needs a statutory deadline and a 10-Q needs a published-by check; an 8-K
+      goes out when the market sees it. That is worth stating rather than
+      leaving as an absence, because a lag that needs nothing done to it is the
+      one most likely to be got wrong.
+
+      **A dictionary, not a language model.** Loughran-McDonald showed general
+      sentiment lists are actively wrong on financial text — "liability",
+      "vice" and "crude" are negative in a standard lexicon and neutral in a
+      filing. An LLM would read these better and would also be a black box in a
+      project whose argument is that every number shows its working.
+
+      **Every feature is a COMPARISON against the same company's last release.**
+      Absolute tone is mostly house style: some firms write "outstanding" every
+      quarter. What might carry information is that the tone MOVED.
+
+      Seven columns: tone, tone change, hedging, hedging change, guidance
+      direction, length change, days since. Hedging is its own axis rather than
+      a negative word — "may" and "could" say nothing about direction and
+      everything about confidence.
+
+      Sanity: 3M's tone climbs monotonically from -10.58 in mid-2023 to +2.05 in
+      2026, which is the restructuring years recovering, visible in the
+      language. `earnings:verify` proves the join — a feature may only move on a
+      filing date — and a simulated five-day look-ahead produces 60 failures.
 - [x] **The circular-financing graph — BUILT.** `npm run circular`. 174 stakes
       held by 21 non-financial S&P 500 companies, from their own 13F filings.
 
