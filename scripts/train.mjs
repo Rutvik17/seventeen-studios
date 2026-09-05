@@ -65,6 +65,32 @@ console.log(macro
   ? `  macro: ${Object.keys(macro.series).length} series, ${macro.fomc.length} FOMC meetings`
   : '  no macro on disk');
 
+/*
+  The three SEC families, each optional for the same reason the others are: the
+  only way to know whether one carries information is to build the panel twice
+  and change nothing else. Fundamentals cost 0.0042 of IC when that was done to
+  them, and that result would have been invisible had they been mandatory.
+
+  A missing file is not an error. A machine that has not run `npm run 13f` yet
+  should still be able to train the price model.
+*/
+function optional(file, pick) {
+  const at = path.join(dataDir, file);
+  if (!existsSync(at)) return null;
+  return pick(JSON.parse(readFileSync(at, 'utf8')));
+}
+
+const institutional = optional('13f.json', (j) => j.quarters
+  .filter((q) => q.period >= '2013-01-01' && q.period <= '2026-12-31'));
+const insider = optional('form4.json', (j) => j.events);
+const language = optional('earnings.json', (j) => j.releases);
+const membership = optional('membership.json', (j) => j.snapshots);
+
+console.log(institutional ? `  13F: ${institutional.length} report periods` : '  no 13F on disk');
+console.log(insider ? `  Form 4: ${insider.length.toLocaleString()} filing-days` : '  no Form 4 on disk');
+console.log(membership ? `  membership: ${membership.length} index snapshots` : '  no membership on disk');
+console.log(language ? `  earnings: ${language.length.toLocaleString()} scored releases` : '  no earnings on disk');
+
 const mean = (xs) => xs.reduce((a, b) => a + b, 0) / (xs.length || 1);
 
 /** Spearman correlation between prediction and outcome, within each day. */
@@ -183,6 +209,47 @@ if (fundamentals && macro) {
     ` (${((Date.now() - t0) / 1000).toFixed(1)}s)`,
   );
   runs.push({ name: '+ macro', result: walkForward(macroPanel, 'macro') });
+}
+
+/*
+  THE THREE SEC FAMILIES, ADDED ONE AT A TIME.
+
+  Each is built on TECHNICAL ONLY rather than stacked on the previous run, and
+  that is deliberate. Fundamentals cost 0.0042 of IC and macro was a wash, so
+  stacking the new families on top of them would measure the new signal through
+  two known-neutral filters and blame any shortfall on the wrong thing.
+
+  Against the price-only baseline the comparison is clean: same rows, same
+  folds, same seed, one family added.
+*/
+const additions = [
+  ['+ 13F ownership', { institutional }],
+  ['+ Form 4 insiders', { insider }],
+  ['+ earnings language', { language }],
+  ['+ all three SEC', { institutional, insider, language }],
+  /*
+    THE OPEN HALF OF THE SURVIVORSHIP QUESTION.
+
+    Selection was gated in the backtest and cost 87% of the excess return.
+    This gates TRAINING: a name only contributes rows for days it was actually
+    in the index, which drops 18.8% of them. Everything else is identical, so
+    the difference is the bias arriving through the training set.
+  */
+  ['point-in-time training', { membership }],
+  ['point-in-time + all SEC', { membership, institutional, insider, language }],
+];
+
+for (const [name, extra] of additions) {
+  if (!Object.values(extra).every(Boolean)) continue;
+  console.log(`\nbuilding price ${name}…`);
+  t0 = Date.now();
+  const panel = buildPanel(prices, extra);
+  rankNormalise(panel);
+  console.log(
+    `  ${panel.rows.length.toLocaleString()} rows, ${panel.columns.length} features` +
+    ` (${((Date.now() - t0) / 1000).toFixed(1)}s)`,
+  );
+  runs.push({ name, result: walkForward(panel, name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()) });
 }
 
 console.log('\n\nyear-by-year IC\n');

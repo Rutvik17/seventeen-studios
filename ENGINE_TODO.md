@@ -274,7 +274,37 @@ amount. It is the largest unmeasured risk to this result.
       `/book` now ships the point-in-time run and states the biased figure
       beside it, since the gap is the most useful number here.
 
-- [ ] **Point-in-time RETRAIN.** The open half of the survivorship question:
+- [x] **THE RUN IS WIRED AND READY.** `npm run train` now builds eight panels
+      rather than three, and the three that matter did not exist before:
+
+          technical only              baseline
+          + SEC fundamentals          known: -0.0042
+          + macro                     known: a wash
+          + 13F ownership             NEW
+          + Form 4 insiders           NEW
+          + earnings language         NEW
+          + all three SEC             NEW
+          point-in-time training      NEW — the open survivorship half
+          point-in-time + all SEC     NEW — both at once
+
+      **The panel can now gate TRAINING on membership**, which it could not
+      before. The backtest gated selection and that cost 87% of the excess
+      return; this drops the 18.8% of rows belonging to names that were not
+      index members on the day — close to the 20.2% the earlier CPCV run
+      reported, which is a useful independent cross-check.
+
+      **Each SEC family is added to the PRICE baseline, not stacked.**
+      Fundamentals cost IC and macro was a wash, so stacking on top of them
+      would measure new signal through two known-neutral filters and blame any
+      shortfall on the wrong thing.
+
+      **MEASURED COST OF THE RUN: about 6.5 hours, not 90 minutes.** One fold on
+      the full point-in-time panel — 1.24M training rows, 42 features — takes
+      212 seconds and stops at 258 rounds. Fourteen years across eight configs
+      is 112 folds. The early years train on less data so that is an upper
+      bound, but it is the right number to plan around.
+
+- [ ] **Point-in-time RETRAIN.**- [ ] **Point-in-time RETRAIN.** The open half of the survivorship question:
       train on membership-filtered rows rather than only grading on them. This
       is what the -69% was reaching for and the only way to settle it.
 - [ ] **Clean re-run of the 3-way IC comparison** on the fixed prices, to see how
