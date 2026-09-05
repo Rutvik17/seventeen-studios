@@ -291,11 +291,35 @@ amount. It is the largest unmeasured risk to this result.
       institutional shares can exceed shares outstanding, because 13F
       double-counts positions where managers share discretion.
 
-- [ ] **13F features.** The data is fetched; nothing consumes it yet. Quarterly
-      holder count and share count, forward-filled to daily with a 45-day
-      reporting lag, then quarter-over-quarter change. The LAG IS THE WHOLE
-      GAME: a 13F for the quarter ending March is public in mid-May, so using it
-      before then is look-ahead of exactly the kind this project keeps finding.
+- [x] **13F re-keyed by REPORT PERIOD, and seven features written.**
+
+      **The ZIP label was never the quarter.** `01mar2026-31may2026` is the
+      window in which filings were RECEIVED — and that one file carries 41
+      distinct report periods: 7,360 filings for the quarter ending 31 March
+      plus stragglers reporting quarters as far back as 2022. Keying by file
+      would have smeared four years of positions into one bucket and dated every
+      one of them wrong. Now keyed on `PERIODOFREPORT` per submission: **53
+      periods in window, 2013-03-31 to 2026-03-31**, every quarter-end month
+      correct, coverage rising 351 to 483 names.
+
+      **Availability is the statutory deadline, not the observed filing date.**
+      The first instinct was to use the last filing received for a period. That
+      is wrong by a mile: amendments for the quarter ending June 2024 arrived in
+      May 2026, a lag of **698 days**, so waiting for the last one means the
+      quarter never becomes usable. 17 CFR 240.13f-1 gives managers 45 days, so
+      that is the rule — conservative in the right direction, since most filers
+      land before it. Verified: on 1 April the newest usable quarter is
+      December's; March's only opens on 15 May.
+
+      Features in `src/lib/engine/institutional.ts`, all ratios so a mega-cap
+      held by 10,000 managers and a mid-cap held by 400 are on one scale:
+      holder change (1q, 2q, acceleration), share change (1q, 2q, acceleration),
+      and crowding — shares per manager, which separates "the same crowd buying
+      more" from "more managers each buying less".
+
+- [ ] **Wire 13F into the panel.** The features exist and are tested against
+      real quarters; `panel.ts` does not build them yet. That is the step that
+      makes them reachable by a retrain.
 - [ ] **Form 4 insider transactions.** Buy/sell clusters, net insider buying,
       officer vs director weighting. Partially verified — owner and title parse
       cleanly; the transaction amounts sit in a nested `<value>` path, and the
