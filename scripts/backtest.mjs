@@ -39,6 +39,7 @@ import { fileURLToPath } from 'node:url';
 
 import { buildTargets, BOOK } from '../src/lib/engine/book.ts';
 import { TRADING, tradingRate, aimWeight } from '../src/lib/engine/trading.ts';
+import { conformalWidth, confidenceMultiplier } from '../src/lib/engine/conformal.ts';
 import { exposureFor, REGIME } from '../src/lib/engine/regime.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -100,6 +101,7 @@ function run(options) {
       measured against each other on identical folds — the band is worth about
       two points a year and has to be beaten, not assumed obsolete.
     */
+    useConfidence = false,
     optimalTrading = false,
     decay = TRADING.decay,
     exposureFloor = 0.25,
@@ -107,6 +109,9 @@ function run(options) {
     book = BOOK,
     regime = REGIME,
   } = options;
+
+  /* The label horizon. Residuals are only usable this many days after the fact. */
+  const HORIZON = 21;
 
   /* Position VALUES, not weights. They drift with price between rebalances. */
   let held = new Map();
@@ -135,6 +140,8 @@ function run(options) {
   const journal = [];
   const trades = [];
   let tradedTotal = 0;
+  /* Conformal widths seen so far — the scale the confidence multiplier uses. */
+  const widthHistory = [];
 
   for (let t = 0; t < dates.length; t++) {
     /*
@@ -179,7 +186,46 @@ function run(options) {
       a market compounding at 14.85%. Each dampener was defensible; their
       product was not, and nothing in the design said so.
     */
-    const exposure = Math.max(exposureFloor, state.exposure);
+    let exposure = Math.max(exposureFloor, state.exposure);
+
+    /*
+      CONFIDENCE, AND WHY IT SCALES THE BOOK RATHER THAN A POSITION.
+
+      The conformal width says how far the model's scores have recently landed
+      from what happened. That is a statement about the MODEL over this stretch
+      of tape, not about any one name — so it belongs at exposure, where "the
+      model has been unreliable lately, carry less" is the whole content of it.
+
+      THE WINDOW ONLY USES OUTCOMES ALREADY KNOWN. A residual needs its forward
+      return to have happened, so nothing newer than `t - horizon` may be
+      counted. Getting that wrong would let the book size up on days the model
+      was about to be right, which is the most flattering leak available here.
+    */
+    if (useConfidence) {
+      const residuals = [];
+      const from = Math.max(0, t - 252 - HORIZON);
+      for (let d = from; d + HORIZON <= t - 1; d += 5) {
+        const m = market[d + HORIZON].close / market[d].close - 1;
+        // Every seventh name: the quantile is stable long before the full
+        // cross-section, and this runs on every rebalance.
+        for (let s = 0; s < symbols.length; s += 7) {
+          const sc = scores[d][s];
+          if (sc == null) continue;
+          const p0 = close[d][s];
+          const p1 = close[d + HORIZON][s];
+          if (!(p0 > 0) || !(p1 > 0)) continue;
+          residuals.push(p1 / p0 - 1 - m - sc);
+        }
+      }
+      const width = conformalWidth(residuals, 0.1);
+      if (Number.isFinite(width)) {
+        widthHistory.push(width);
+        // Median of what has been seen SO FAR, never the whole sample: the
+        // scale has to be knowable on the day it is used.
+        const sorted = [...widthHistory].sort((a, b) => a - b);
+        exposure *= confidenceMultiplier(width, sorted[Math.floor(sorted.length / 2)]);
+      }
+    }
 
     const members = memberAt ? memberAt[t] : null;
 
@@ -440,6 +486,7 @@ if (sweep) {
   const floorFlag = flag('exposureFloor');
   if (floorFlag !== undefined) runOpts.exposureFloor = floorFlag;
   if (process.argv.includes('--optimalTrading')) runOpts.optimalTrading = true;
+  if (process.argv.includes('--useConfidence')) runOpts.useConfidence = true;
   const decayFlag = flag('decay');
   if (decayFlag !== undefined) runOpts.decay = decayFlag;
   const r = run(runOpts);
