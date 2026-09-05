@@ -124,6 +124,14 @@ const links = [...new Set(
 
 /* Newest first: the structure now is what matters, not its history. */
 const MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+const MONTH3 = { JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06',
+  JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12' };
+/** `31-MAR-2026` to `2026-03-31`, so periods sort and compare as dates. */
+function isoDate(sec) {
+  const m = /^(\d{2})-([A-Z]{3})-(\d{4})$/.exec((sec ?? '').trim().toUpperCase());
+  return m ? `${m[3]}-${MONTH3[m[2]]}-${m[1]}` : null;
+}
+
 const startsOn = (file) => {
   const yq = file.match(/^(\d{4})q(\d)/);
   if (yq) return Number(yq[1]) * 12 + (Number(yq[2]) - 1) * 3;
@@ -166,10 +174,11 @@ for (const link of links.slice(0, QUARTERS)) {
     const value = Number(t.VALUE);
     if (!Number.isFinite(value) || value <= 0) continue;
 
-    const key = `${from.symbol}|${t.NAMEOFISSUER}`;
+    /* Keyed by PERIOD too: the graph is a time series, not a snapshot. */
+    const key = `${isoDate(from.period) ?? from.period}|${from.symbol}|${t.NAMEOFISSUER}`;
     const e = edges.get(key) ?? {
       from: from.symbol, fromName: from.name, filer: from.filer,
-      to: t.NAMEOFISSUER, cusip: t.CUSIP, value: 0, period: from.period,
+      to: t.NAMEOFISSUER, cusip: t.CUSIP, value: 0, period: isoDate(from.period) ?? from.period,
     };
     e.value += value;
     if (from.period > e.period) e.period = from.period;
