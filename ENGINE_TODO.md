@@ -474,9 +474,29 @@ amount. It is the largest unmeasured risk to this result.
       tape. `confidenceMultiplier` turns the interval width into a sizing
       factor, scaled against the median width rather than a hardcoded constant.
 
-- [ ] **Wire confidence into sizing.** The multiplier exists and `book.ts` does
-      not use it. It is the step that makes "small when unsure" real rather than
-      available.
+- [x] **Confidence wired into sizing — AND IT MAKES THINGS WORSE.**
+      `--useConfidence`, point-in-time:
+
+          baseline          15.83%   Sharpe 0.97   maxDD 19.1%   ret/DD 0.83
+          with confidence   13.45%   Sharpe 0.93   maxDD 18.2%   ret/DD 0.74
+
+      It buys 0.9 points of drawdown and costs 2.4 points of return.
+
+      **The mechanism is visible and it is the interesting part.** The conformal
+      width runs 9.1% to 16.3% across the sample, so the multiplier only ever
+      cuts — 0.73 at its most cautious, 1.00 the rest of the time. And it is
+      widest in 2020-12, 2021-03 and 2020-09.
+
+      Those are the strongest months in the sample. The model was least
+      *precise* exactly when returns were largest, because a violent tape widens
+      every residual — so "small when unsure" sizes DOWN into the recovery. The
+      width is measuring volatility, not unreliability, and at a 21-day horizon
+      the two are hard to separate.
+
+      Kept behind a flag rather than deleted. The interval itself is sound and
+      its coverage is verified; it is the mapping from width to size that does
+      not hold, and a version conditioned on regime rather than raw width is a
+      different experiment rather than a fix to this one.
 - [ ] **Feature selection within families.** Fundamentals cost 0.0042 of IC when
       all 26 were admitted at once. Prune to the columns that individually earn
       their place rather than admitting or rejecting a family wholesale.
@@ -519,11 +539,32 @@ amount. It is the largest unmeasured risk to this result.
 
       Kept behind a flag rather than deleted: it is the correct policy for a
       book whose costs actually bind, and this one's do not.
-- [ ] **Random matrix theory for the covariance.** Marchenko-Pastur says which
-      eigenvalues of a sample covariance are indistinguishable from noise at a
-      given sample size. Estimating 500x500 from 250 observations is exactly
-      that regime. Ledoit-Wolf shrinkage is the blunt instrument; eigenvalue
-      clipping is the sharp one.
+- [x] **Random matrix theory — MEASURED, and the answer is a warning.**
+      `src/lib/engine/covariance.ts`, `npm run covariance`.
+
+      Validated against theory first: on pure Gaussian noise the spectrum falls
+      inside the Marchenko-Pastur band with nothing above it. Without that step
+      every number below would be unfalsifiable.
+
+          T      N   ratio    noise band   signal   share of variance
+        250    100    0.40   [0.14, 2.66]       6               42.8%
+        250    200    0.80   [0.01, 3.59]       8               45.6%
+        500    200    0.40   [0.14, 2.66]       8               48.8%
+       1000    300    0.30   [0.20, 2.40]      13               51.9%
+
+      **At 250 observations of 100 names, six eigenvalues carry 42.8% of the
+      variance and the other 94 directions are indistinguishable from noise.**
+      Even at 1000 observations it is 13 of 300 and barely half the variance.
+
+      So a full covariance here is roughly half signal. Every method that wants
+      one — portfolio optimisation, the vector form of Gârleanu-Pedersen, risk
+      parity — is fitting that noise unless it clips the spectrum first, and the
+      book's inverse-volatility sizing avoids the problem by using only the
+      diagonal.
+
+      That is why this was built with no consumer. It is not an improvement to
+      the book; it is the measurement that says what a covariance-based method
+      would be standing on.
 - [ ] **Regime-conditional model averaging.** Macro helps in volatile years and
       hurts in calm ones — that is a mixture-of-experts problem, not a feature
       selection problem. Hidden Markov regime states, or Bayesian model
