@@ -11,7 +11,7 @@
     "market": "node scripts/fetch-market.mjs",
     "prebuild": "node scripts/fetch-market.mjs",
     "claims": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-claims.mjs",
-    "verify": "npm run typecheck && npm run claims && npm run sprites && npm run 13f:verify",
+    "verify": "npm run typecheck && npm run claims && npm run sprites && npm run 13f:verify && npm run form4:verify",
     "drawing": "node scripts/verify-drawing.mjs",
     "postbuild": "node scripts/verify-drawing.mjs && node scripts/verify-og.mjs && node scripts/verify-assets.mjs",
     "og": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/build-og.mjs",
@@ -31,7 +31,9 @@
     "survivorship": "node --max-old-space-size=8192 scripts/verify-survivorship.mjs",
     "concentration": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/sweep-concentration.mjs",
     "13f": "node --max-old-space-size=8192 scripts/fetch-13f.mjs",
-    "13f:verify": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-13f.mjs"
+    "13f:verify": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-13f.mjs",
+    "form4": "node --max-old-space-size=8192 scripts/fetch-form4.mjs",
+    "form4:verify": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-form4.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
