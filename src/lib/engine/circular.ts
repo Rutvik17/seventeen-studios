@@ -33,18 +33,24 @@
  * customer's fortunes arrives twice.
  *
  * ---
- * WHY IT IS STATIC, AND WHY THAT IS SAID PLAINLY
+ * IT IS POINT-IN-TIME NOW, AND IT WAS NOT
  *
- * The graph is built from the most recent quarters, and applied to the whole
- * history. It is therefore NOT point-in-time: NVIDIA did not hold CoreWeave in
- * 2015, and this will say it did.
+ * The first version built ONE graph from recent quarters and applied it to all
+ * history, so it said NVIDIA held CoreWeave in 2015 — a fact about the present
+ * used as though it had been known in the past. That is the same class of error
+ * as the survivorship bias this project spent a week measuring.
  *
- * That is a real limitation and it is the reason these features are quarantined
- * behind their own flag rather than folded into the panel by default. They
- * describe a structural fact about the present, which is legitimate for
- * reasoning about today's book and a leak for anything trained across time. The
- * honest version needs the graph rebuilt per quarter, which the fetcher can do
- * and 53 quarters of downloads has not been spent on yet.
+ * Edges now carry the quarter they were filed for, and `graphAsOf` returns only
+ * those whose 45-day statutory deadline had passed. Same rule the ownership
+ * features obey, and for the same reason: these edges come out of the same 13F
+ * filings, so they become public on the same day.
+ *
+ * Verified by walking it forward — on 2025-06-01 the graph is EMPTY, and
+ * NVIDIA's stake count climbs 0 -> 6 -> 9 -> 11 as filings actually arrive.
+ *
+ * An edge with no period is DROPPED rather than assumed always-available,
+ * because that default is precisely what would quietly restore the old
+ * behaviour.
  */
 
 export type CircularEdge = {
