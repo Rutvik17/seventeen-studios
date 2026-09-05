@@ -38,6 +38,7 @@
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import { tone, hedging, guidance } from '../src/lib/engine/language.ts';
 
 const ROOT = path.join(import.meta.dirname, '..');
 const DIR = path.join(ROOT, 'data', 'earnings');
@@ -176,12 +177,34 @@ for (const [i, company] of targets.entries()) {
   }
 }
 
+/*
+  THE SHIPPED FILE HOLDS SCORES, NOT TEXT.
+
+  14,065 releases are 658 MB of prose, and `JSON.stringify` on that throws
+  RangeError before it finishes — V8 cannot build a string that long. That was
+  the first version's failure and it was the right failure to have: the features
+  need seven numbers per release, not the words they came from.
+
+  The raw text stays cached per company in `data/earnings/`, so changing the
+  dictionary means re-scoring rather than re-fetching 658 MB.
+*/
 all.sort((a, b) => (a.date < b.date ? -1 : 1));
+const scored = all.map((r) => ({
+  symbol: r.symbol,
+  date: r.date,
+  tone: +tone(r.release).toFixed(3),
+  hedging: +hedging(r.release).toFixed(3),
+  guidance: guidance(r.release),
+  length: r.release.length,
+  hasCommentary: Boolean(r.commentary),
+}));
+
 writeFileSync(OUT, `${JSON.stringify({
   fetchedAt: new Date().toISOString(),
   source: 'EDGAR 8-K item 2.02, exhibit EX-99.1',
   from: FROM,
-  releases: all,
+  note: 'Scores, not text. The prose is cached per company in data/earnings/ — re-score from there if the dictionary changes.',
+  releases: scored,
 })}\n`);
 
 const bytes = readFileSync(OUT).length;

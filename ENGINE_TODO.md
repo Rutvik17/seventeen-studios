@@ -430,6 +430,18 @@ amount. It is the largest unmeasured risk to this result.
       2026, which is the restructuring years recovering, visible in the
       language. `earnings:verify` proves the join — a feature may only move on a
       filing date — and a simulated five-day look-ahead produces 60 failures.
+
+      **14,065 releases from 484 companies, and the file holds SCORES not text.**
+      The prose is 658 MB, which `JSON.stringify` cannot even serialise — it
+      throws RangeError before finishing. That was the first version's failure
+      and the right one to have: the features need seven numbers per release,
+      not the words. The text stays cached per company, so changing the
+      dictionary means re-scoring rather than re-fetching.
+
+- [x] **The panel builds all five families.** 42 columns, 1.9M rows, 14 seconds.
+      Coverage: 72.4% carry 13F, 68.8% insider activity, 45.1% earnings
+      language — the last is lower because the release fetch goes back eight
+      years and the panel starts in 2013.
 - [x] **The circular-financing graph — BUILT.** `npm run circular`. 174 stakes
       held by 21 non-financial S&P 500 companies, from their own 13F filings.
 

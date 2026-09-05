@@ -38,7 +38,7 @@
     "circular": "node --max-old-space-size=8192 scripts/fetch-circular.mjs",
     "conformal": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-conformal.mjs",
     "covariance": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/verify-covariance.mjs",
-    "earnings": "node --max-old-space-size=8192 scripts/fetch-earnings.mjs",
+    "earnings": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/fetch-earnings.mjs",
     "earnings:verify": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-earnings.mjs"
   },
   "dependencies": {

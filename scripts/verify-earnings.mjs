@@ -21,7 +21,7 @@
  */
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { languageRows, LANGUAGE_COLUMNS, tone, hedging } from '../src/lib/engine/language.ts';
+import { languageRows, LANGUAGE_COLUMNS } from '../src/lib/engine/language.ts';
 
 const ROOT = path.join(import.meta.dirname, '..');
 const FILE = path.join(ROOT, 'data', 'earnings.json');
@@ -96,9 +96,9 @@ console.log('earnings: PASS — every move lands on a filing date');
   for every release would pass the leak test perfectly and carry no information
   — the failure mode where the words never match and everything reads zero.
 */
-const tones = releases.map((r) => tone(r.release));
+const tones = releases.map((r) => r.tone);
 const spread = Math.max(...tones) - Math.min(...tones);
-const hedges = releases.map((r) => hedging(r.release));
+const hedges = releases.map((r) => r.hedging);
 console.log(`earnings: tone spans ${Math.min(...tones).toFixed(1)} to ${Math.max(...tones).toFixed(1)}, ` +
   `hedging ${Math.min(...hedges).toFixed(1)} to ${Math.max(...hedges).toFixed(1)}`);
 

@@ -30,12 +30,22 @@
  * the tone is positive, but that it moved.
  */
 
+/**
+ * A scored release.
+ *
+ * The shipped file holds SCORES rather than prose: 14,065 releases are 658 MB
+ * of text, which JSON.stringify cannot even serialise. Scoring happens at fetch
+ * time and the raw text stays cached per company, so changing the dictionary
+ * means re-scoring rather than re-fetching.
+ */
 export type Release = {
   symbol: string;
   /** Filing date. The 8-K goes out the day results are announced. */
   date: string;
-  release: string;
-  commentary?: string | null;
+  tone: number;
+  hedging: number;
+  guidance: number;
+  length: number;
 };
 
 /*
@@ -164,10 +174,10 @@ export function languageRows(
     .sort((a, b) => (a.date < b.date ? -1 : 1))
     .map((r) => ({
       date: r.date,
-      tone: tone(r.release),
-      hedging: hedging(r.release),
-      guidance: guidance(r.release),
-      length: r.release.length,
+      tone: r.tone,
+      hedging: r.hedging,
+      guidance: r.guidance,
+      length: r.length,
     }));
 
   if (!mine.length) return dates.map(() => blank.slice());
