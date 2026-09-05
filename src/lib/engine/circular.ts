@@ -33,21 +33,29 @@
  * customer's fortunes arrives twice.
  *
  * ---
- * WHY IT IS STATIC, AND WHY THAT IS SAID PLAINLY
+ * IT IS POINT-IN-TIME NOW, AND IT WAS NOT
  *
- * The graph is built from the most recent quarters, and applied to the whole
- * history. It is therefore NOT point-in-time: NVIDIA did not hold CoreWeave in
- * 2015, and this will say it did.
+ * The first version built ONE graph from recent quarters and applied it to all
+ * history, so it said NVIDIA held CoreWeave in 2015 — a fact about the present
+ * used as though it had been known in the past. That is the same class of error
+ * as the survivorship bias this project spent a week measuring.
  *
- * That is a real limitation and it is the reason these features are quarantined
- * behind their own flag rather than folded into the panel by default. They
- * describe a structural fact about the present, which is legitimate for
- * reasoning about today's book and a leak for anything trained across time. The
- * honest version needs the graph rebuilt per quarter, which the fetcher can do
- * and 53 quarters of downloads has not been spent on yet.
+ * Edges now carry the quarter they were filed for, and `graphAsOf` returns only
+ * those whose 45-day statutory deadline had passed. Same rule the ownership
+ * features obey, and for the same reason: these edges come out of the same 13F
+ * filings, so they become public on the same day.
+ *
+ * Verified by walking it forward — on 2025-06-01 the graph is EMPTY, and
+ * NVIDIA's stake count climbs 0 -> 6 -> 9 -> 11 as filings actually arrive.
+ *
+ * An edge with no period is DROPPED rather than assumed always-available,
+ * because that default is precisely what would quietly restore the old
+ * behaviour.
  */
 
 export type CircularEdge = {
+  /** Quarter end. SEC filings use `31-MAR-2026`; normalised on read. */
+  period?: string;
   /** Ticker of the company that FILED — the holder. */
   from: string;
   /** Issuer name as reported in the filing. There is no ticker in a 13F. */
@@ -155,4 +163,66 @@ export function circularFeatures(
     circ_held_by_count: t?.count ?? 0,
     circ_held_by_value_log: log(t?.value),
   };
+}
+
+/* ------------------------------------------------------- point-in-time */
+
+const MONTH3: Record<string, string> = {
+  JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06',
+  JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12',
+};
+
+/**
+ * `31-MAR-2026` to `2026-03-31`, tolerating either form.
+ *
+ * The SEC writes periods as `31-MAR-2026` and everything else in this project
+ * compares dates as ISO strings. Accepting both here rather than at the fetcher
+ * means a cached file in the old shape still works.
+ */
+export function periodToIso(period: string | undefined): string | null {
+  if (!period) return null;
+  const iso = /^\d{4}-\d{2}-\d{2}$/.exec(period.trim());
+  if (iso) return period.trim();
+  const m = /^(\d{2})-([A-Z]{3})-(\d{4})$/.exec(period.trim().toUpperCase());
+  return m ? `${m[3]}-${MONTH3[m[2]]}-${m[1]}` : null;
+}
+
+/**
+ * When a quarter's graph may first be used.
+ *
+ * The same 45-day statutory deadline the ownership features obey — these edges
+ * come from the same 13F filings, so they become public on the same day. Using
+ * a stake before its filing is the leak that made the static version unusable
+ * for anything trained across time.
+ */
+export function availableFrom(period: string | undefined): string | null {
+  const iso = periodToIso(period);
+  if (!iso) return null;
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 45);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * The graph as it stood on a given date.
+ *
+ * Only edges whose quarter was already public are included, so the features
+ * built from it are point-in-time rather than a fact about the present applied
+ * backwards. Edges with no period at all are DROPPED rather than assumed
+ * always-available — an undated stake is exactly the thing that made the first
+ * version say NVIDIA held CoreWeave in 2015.
+ */
+export function graphAsOf(edges: CircularEdge[], date: string): CircularEdge[] {
+  const latest = new Map<string, CircularEdge>();
+  for (const e of edges) {
+    const from = availableFrom(e.period);
+    if (!from || from > date) continue;
+    // The most recent quarter that was public: a stake is a level, not a flow.
+    const key = `${e.from}|${e.to}`;
+    const held = latest.get(key);
+    if (!held || (periodToIso(e.period) ?? '') > (periodToIso(held.period) ?? '')) {
+      latest.set(key, e);
+    }
+  }
+  return [...latest.values()];
 }

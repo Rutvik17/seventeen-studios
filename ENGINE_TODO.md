@@ -430,11 +430,24 @@ amount. It is the largest unmeasured risk to this result.
       an exact match found 1 edge of 174, because "INTEL CORP" and "Intel" are
       not equal, and Intel is the largest edge in the graph.
 
-- [ ] **Make the circular graph point-in-time.** It is built from recent
-      quarters and applied to all history, so it says NVIDIA held CoreWeave in
-      2015. Quarantined behind its own flag for that reason and NOT in the panel
-      by default. The honest version rebuilds the graph per quarter — the
-      fetcher can already do it; it is 53 quarters of downloads.
+- [x] **The circular graph is point-in-time.** Edges carry the quarter they
+      were filed for, and `graphAsOf(date)` returns only those whose 45-day
+      statutory deadline had passed — the same rule the ownership features obey,
+      because the edges come from the same filings.
+
+      Verified by walking it forward:
+
+          2025-06-01     0 edges   NVDA holds 0
+          2025-11-20   139 edges   NVDA holds 6
+          2026-02-20   164 edges   NVDA holds 9
+          2026-06-01   200 edges   NVDA holds 11
+
+      Empty in June because nothing had been filed yet. The stake count grows as
+      filings arrive rather than appearing fully formed in 2013, which is what
+      the static version did.
+
+      An edge with no period is DROPPED rather than assumed always-available —
+      that default is what would quietly restore the old behaviour.
 - [x] **Election / political calendar — BUILT.** Three macro columns:
       `days_to_election`, `days_since_election`, `election_year`. Computed from
       the constitutional rule — the Tuesday after the first Monday in November,
@@ -565,10 +578,22 @@ amount. It is the largest unmeasured risk to this result.
       That is why this was built with no consumer. It is not an improvement to
       the book; it is the measurement that says what a covariance-based method
       would be standing on.
-- [ ] **Regime-conditional model averaging.** Macro helps in volatile years and
-      hurts in calm ones — that is a mixture-of-experts problem, not a feature
-      selection problem. Hidden Markov regime states, or Bayesian model
-      averaging where each family's weight is a function of the regime.
+- [x] **Regime-conditional model averaging — NOT BUILT, and deliberately.**
+      This item and "Regime-conditional weighting" below are the same hypothesis
+      written twice, and the hypothesis was tested and rejected.
+
+      Its whole premise is that macro helps in volatile years and hurts in calm
+      ones. Measured across fifteen CPCV arrangements: corr(IC, market
+      volatility) = **0.152**, corr(IC, share below the 200-day) = **-0.091**,
+      against a 5% critical value of ~0.514 at n=15. Neither is close.
+
+      Building a mixture-of-experts on top of that would be fitting a switch to
+      a dependence that is not there — an HMM will always find states, and
+      giving each family a regime-dependent weight will always improve the fit
+      in-sample. The measurement exists precisely so that stops being tempting.
+
+      Reopening this needs new evidence of regime dependence, not a better
+      method for exploiting the evidence we checked and did not find.
 - [x] **Conformal prediction — BUILT AND ITS COVERAGE MEASURED.**
       `src/lib/engine/conformal.ts`, `npm run conformal`.
 
