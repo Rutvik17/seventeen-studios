@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { asset } from '@/lib/asset';
 import { contactHref, CONTACT_LABEL } from '@/lib/contact';
 
 /**
@@ -62,8 +63,15 @@ export function ContactLink({
     el.href = contactHref(subject);
   }, [subject]);
 
+  /*
+    asset() on a ROUTE, unusually, and for the same reason it is used on files:
+    this href is written by hand rather than by next/link, so nothing rewrites
+    basePath for it. Before hydration replaces it with the mailto, a bare
+    "/start/" resolves against the domain root and 404s — on twenty-one pages,
+    which is every page carrying a contact link.
+  */
   return (
-    <a ref={ref} href="/start/" className={className} {...rest}>
+    <a ref={ref} href={asset('/start/')} className={className} {...rest}>
       {children ?? CONTACT_LABEL}
     </a>
   );

@@ -87,7 +87,26 @@ for (const file of pages) {
     // Skip anything that is not a path to a file we shipped.
     if (!url.startsWith('/')) continue;                 // relative, anchor, or bare
     if (url.startsWith('//')) continue;                 // protocol-relative
-    if (!path.extname(url)) continue;                   // a route, not a file
+
+    /*
+      ROUTES ARE CHECKED FOR THE PREFIX, THEN SKIPPED.
+
+      This used to `continue` on anything without a file extension, which meant
+      it only ever looked at assets. A hand-written `<a href="/book/method/">`
+      has no extension, so it sailed past — and on a project page that resolves
+      against the domain ROOT and 404s.
+
+      That is the same missing-prefix bug this script was written to catch,
+      arriving through a route instead of an asset. The extension test now
+      happens AFTER the prefix test rather than before it.
+    */
+    if (!path.extname(url)) {
+      if (BASE && !url.startsWith(`${BASE}/`) && url !== BASE) {
+        if (!unprefixed.has(url)) unprefixed.set(url, new Set());
+        unprefixed.get(url).add(page);
+      }
+      continue;
+    }
 
     /*
       Decode before touching the filesystem. Next emits dynamic-route chunks

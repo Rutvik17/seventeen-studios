@@ -16,6 +16,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { asset } from '@/lib/asset';
+import { TransitionLink } from '@/components/Transition';
 import survivorship from '@/content/survivorship.json';
 
 type Metrics = { total: number; annual: number; vol: number; sharpe: number; maxDrawdown: number };
@@ -366,13 +367,6 @@ export function BookAccount() {
         </ol>
       </section>
 
-      <p className="book__note">
-        <a href="/book/method/">
-          How this is built &mdash; and the four construction methods that were
-          implemented, measured, and switched off
-        </a>
-        .
-      </p>
 
       <p className="book__note">
         A simulation, not an account anybody holds. {money(data.stake)} compounded through a
