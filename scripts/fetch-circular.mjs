@@ -5,11 +5,11 @@
  * ---
  * THE QUESTION
  *
- * NVIDIA's own 13F reports billions of dollars of stock in Intel, CoreWeave,
- * Coherent and Synopsys — companies that are also its customers or suppliers.
- * That is a real structure and a distinctive one: a chip maker funding the
- * businesses that buy its chips. Revenue that returns as an equity stake, and
- * an equity stake that funds the next order.
+ * NVIDIA's own 13F reports tens of billions of dollars of stock in Intel,
+ * CoreWeave, Coherent and Synopsys — companies that are also its customers or
+ * suppliers. That is a real structure and a distinctive one: a chip maker
+ * funding the businesses that buy its chips. Revenue that returns as an equity
+ * stake, and an equity stake that funds the next order.
  *
  * It is not fraud and nobody claims it is. It IS a reason to think a company's
  * reported growth and its balance sheet are less independent than they look —
@@ -17,33 +17,46 @@
  * see, because it is a fact about the GRAPH rather than about either node.
  *
  * ---
- * WHY THIS IS A SEPARATE PASS OVER THE SAME FILES
+ * WHY THIS READS EDGAR DIRECTLY AND NOT THE BULK 13F DATASETS
  *
- * `fetch-13f.mjs` answers "who owns this stock", so it sums across every
- * manager and throws the filer away. That is right for an ownership feature and
- * useless here: this needs the opposite projection, keyed by FILER, and only
- * for filers that are themselves in the index.
+ * It used to read the quarterly bulk zips, which is the obvious source and is
+ * a full quarter behind. The SEC publishes those files well after the filing
+ * window closes: in September 2026 the newest was `01mar2026-31may2026`, whose
+ * latest reportable period is 31 March. The individual filings do not lag —
+ * they are on EDGAR the day they are filed.
  *
- * The overwhelming majority of 13F filers are asset managers — Vanguard,
- * BlackRock, a thousand hedge funds — and their holdings are portfolio
- * construction rather than industrial strategy. Those are excluded by
- * construction: a filer only counts if it is an S&P 500 OPERATING company, and
- * an operating company holding equity in another operating company is the
- * unusual thing this is looking for.
+ * That gap was not cosmetic. Between March and June 2026 Alphabet's 13F went
+ * from no position in SpaceX to $94.18B of it, its largest holding by a factor
+ * of eighty, and NVIDIA's went to $20.98B. Neither is anywhere in the bulk
+ * file, so a page built on it was not slightly out of date — it was missing
+ * the single biggest thing in the dataset.
  *
- * Run: node scripts/fetch-circular.mjs   (uses the cached 13F zips where present)
+ * So: enumerate every operating member of the index, ask EDGAR what each one
+ * filed, and read the filings.
+ *
+ * ---
+ * WHY IT ENUMERATES RATHER THAN LOOKING FOR ANYTHING
+ *
+ * Nothing here knows what a SpaceX is. The completeness comes from asking
+ * every company in the universe what it holds and recording whatever comes
+ * back. A named exception would fix the one case somebody noticed and leave
+ * the next one to be noticed by somebody else. The run prints its own
+ * coverage — members, filers, periods, tables — so a gap is visible rather
+ * than assumed away.
+ *
+ * Run: node scripts/fetch-circular.mjs [--periods=4]
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import path from 'node:path';
-import { extract } from './_zip.mjs';
 
 const ROOT = path.join(import.meta.dirname, '..');
 const OUT = path.join(ROOT, 'data', 'circular.json');
-const INDEX = 'https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets';
+const CACHE = path.join(ROOT, 'data', 'cache', 'edgar');
 const UA = { 'User-Agent': 'seventeen-studios-research/1.0 (patelrutvik1702@gmail.com)' };
 
-/* Only recent quarters: the graph is a structural fact, not a time series. */
-const QUARTERS = Number((process.argv.find((a) => a.startsWith('--quarters=')) ?? '').slice(11)) || 4;
+/* How many report periods back to keep. The graph is a structure, but a stake
+   with no previous quarter cannot be shown moving. */
+const PERIODS = Number((process.argv.find((a) => a.startsWith('--periods=')) ?? '').slice(10)) || 4;
 
 /*
   FINANCIALS ARE EXCLUDED BY SECTOR, NOT BY NAME.
@@ -76,132 +89,249 @@ function universe() {
     const sector = r.match(/,"([^"]+)","[^"]*"\s*$/);
     if (m) out.push({ symbol: m[1], cik: m[2].replace(/^0+/, ''), name: m[3], sector: sector ? sector[1] : '' });
   }
-  return out;
+  return { snapshot: latest.replace('.csv', ''), members: out };
 }
 
-function rows(buf, wanted) {
-  const out = [];
-  let start = 0;
-  let cols = null;
-  for (let i = 0; i < buf.length; i++) {
-    if (buf[i] !== 0x0a) continue;
-    const line = buf.toString('utf8', start, i);
-    start = i + 1;
-    if (!cols) {
-      const header = line.replace(/\r$/, '').split('\t');
-      cols = wanted.map((w) => header.indexOf(w));
-      if (cols.some((c) => c < 0)) throw new Error(`missing column in ${wanted.join(',')}`);
-      continue;
+/* ------------------------------------------------------------------ EDGAR */
+
+/*
+  The SEC asks for no more than ten requests a second and a User-Agent that
+  identifies the caller. Both are honoured: no request is issued within 120ms
+  of the previous one, so the whole run is serial and polite rather than fast
+  and blocked.
+*/
+let lastCall = 0;
+async function polite(url, { json = true } = {}) {
+  const wait = 120 - (Date.now() - lastCall);
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  lastCall = Date.now();
+  const res = await fetch(url, { headers: UA });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return json ? res.json() : res.text();
+}
+
+/*
+  Submissions are cached on disk. A company's filing list changes only when it
+  files, so a re-run should not spend 450 requests learning that 429 of them
+  still do not file a 13F.
+*/
+async function submissions(cik) {
+  mkdirSync(CACHE, { recursive: true });
+  const at = path.join(CACHE, `sub-${cik}.json`);
+  if (existsSync(at)) {
+    const cached = JSON.parse(readFileSync(at, 'utf8'));
+    if (Date.now() - Date.parse(cached.cachedAt) < 6 * 3600e3) return cached.body;
+  }
+  const body = await polite(`https://data.sec.gov/submissions/CIK${String(cik).padStart(10, '0')}.json`);
+  writeFileSync(at, JSON.stringify({ cachedAt: new Date().toISOString(), body }));
+  return body;
+}
+
+/**
+ * The 13F-HR filings a company has on file, newest period first.
+ *
+ * An amendment supersedes: 13F-HR/A carries the same reportDate as the filing
+ * it corrects, so the newest FILING for a period wins and the original is
+ * dropped. Notices (13F-NT) report that holdings appear on someone else's
+ * filing and carry no table of their own.
+ */
+function reports(sub) {
+  const r = sub?.filings?.recent;
+  if (!r?.form) return [];
+  const best = new Map();
+  for (let i = 0; i < r.form.length; i++) {
+    if (!r.form[i].startsWith('13F-HR')) continue;
+    const period = r.reportDate[i];
+    const cur = best.get(period);
+    if (!cur || r.filingDate[i] > cur.filed) {
+      best.set(period, {
+        period,
+        filed: r.filingDate[i],
+        form: r.form[i],
+        accession: r.accessionNumber[i].replace(/-/g, ''),
+      });
     }
-    const f = line.split('\t');
-    const rec = {};
-    wanted.forEach((w, k) => { rec[w] = f[cols[k]]; });
-    out.push(rec);
+  }
+  return [...best.values()].sort((a, b) => (a.period < b.period ? 1 : -1));
+}
+
+/**
+ * The holdings table inside one filing.
+ *
+ * The document is not always called `information_table.xml` — filers name it
+ * what they like — so it is chosen from the filing's own index by elimination
+ * rather than by a guessed filename.
+ */
+async function holdings(cik, accession) {
+  const base = `https://www.sec.gov/Archives/edgar/data/${cik}/${accession}`;
+  const index = await polite(`${base}/index.json`);
+  const files = index.directory.item.map((i) => i.name);
+  const table =
+    files.find((f) => /information[_-]?table.*\.xml$/i.test(f))
+    ?? files.find((f) => /\.xml$/i.test(f) && !/primary[_-]?doc/i.test(f));
+  if (!table) return [];
+
+  const xml = await polite(`${base}/${table}`, { json: false });
+  const field = (block, tag) => {
+    const m = block.match(new RegExp(`<(?:\\w+:)?${tag}>([^<]*)<`));
+    return m ? m[1].trim() : '';
+  };
+
+  const out = [];
+  for (const [, block] of xml.matchAll(/<(?:\w+:)?infoTable>([\s\S]*?)<\/(?:\w+:)?infoTable>/g)) {
+    /* An option is a hedge or a financing structure, not a stake in a company. */
+    if (field(block, 'putCall')) continue;
+    const value = Number(field(block, 'value'));
+    if (!Number.isFinite(value) || value <= 0) continue;
+    out.push({
+      name: field(block, 'nameOfIssuer'),
+      cusip: field(block, 'cusip'),
+      value,
+      shares: Number(field(block, 'sshPrnamt')) || 0,
+    });
   }
   return out;
 }
 
-const names = universe();
-/*
-  CIK is the join, not the name.
+/* ---------------------------------------------------------------- the run */
 
-  The constituent list carries each company's SEC identifier, and so does every
-  13F cover page. Matching on CIK is exact where matching on name would repeat
-  the Aon-is-Amazon problem — and here a false match would invent a financial
-  relationship between two companies, which is a considerably worse thing to get
-  wrong than an ownership count.
-*/
-const operating = names.filter((n) => n.cik && n.sector !== EXCLUDED_SECTOR);
-const byCik = new Map(operating.map((n) => [n.cik, n]));
-console.log(`circular: ${byCik.size} non-financial index members with a CIK, of ${names.length}`);
+/** `2026-03-31` to `31-MAR-2026` — the shape the engine features already parse. */
+const MONTH3 = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const secDate = (iso) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? '');
+  return m ? `${m[3]}-${MONTH3[Number(m[2]) - 1]}-${m[1]}` : iso;
+};
 
-const page = await fetch(INDEX, { headers: UA });
-if (!page.ok) throw new Error(`index: HTTP ${page.status}`);
-const links = [...new Set(
-  [...(await page.text()).matchAll(/href="(\/files\/structureddata\/data\/form-13f-data-sets\/[^"]+\.zip)"/g)]
-    .map((m) => m[1]),
-)];
+const { snapshot, members } = universe();
+const operating = members.filter((n) => n.cik && n.sector !== EXCLUDED_SECTOR);
+console.log(`circular: ${operating.length} non-financial members of the ${snapshot} index, of ${members.length}`);
+console.log('circular: asking EDGAR what each one filed…');
 
-/* Newest first: the structure now is what matters, not its history. */
-const MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
-const MONTH3 = { JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06',
-  JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12' };
-/** `31-MAR-2026` to `2026-03-31`, so periods sort and compare as dates. */
-function isoDate(sec) {
-  const m = /^(\d{2})-([A-Z]{3})-(\d{4})$/.exec((sec ?? '').trim().toUpperCase());
-  return m ? `${m[3]}-${MONTH3[m[2]]}-${m[1]}` : null;
+const filers = [];
+let asked = 0;
+for (const member of operating) {
+  asked += 1;
+  if (asked % 100 === 0) console.log(`  …${asked}/${operating.length}`);
+  let sub;
+  try {
+    sub = await submissions(member.cik);
+  } catch (err) {
+    console.warn(`  ! ${member.symbol}: ${err.message}`);
+    continue;
+  }
+  const filings = reports(sub);
+  if (filings.length) filers.push({ member, filer: sub.name ?? member.name, filings });
 }
 
-const startsOn = (file) => {
-  const yq = file.match(/^(\d{4})q(\d)/);
-  if (yq) return Number(yq[1]) * 12 + (Number(yq[2]) - 1) * 3;
-  const r = file.match(/^\d{2}([a-z]{3})(\d{4})-/);
-  return r ? Number(r[2]) * 12 + MONTHS[r[1]] : -Infinity;
-};
-links.sort((a, b) => startsOn(path.basename(b)) - startsOn(path.basename(a)));
+/*
+  ONE FILER PER COMPANY, NOT PER TICKER.
+
+  A company with two share classes sits in the index twice — Alphabet as GOOG
+  and GOOGL — and both rows carry the same CIK, so both resolve to the same
+  13F and the same holdings get recorded twice. Left in, Alphabet's $94.18B
+  stake in SpaceX appeared as two $94.18B stakes and the graph's total was
+  overstated by the size of its largest company.
+
+  The filing belongs to the CIK. The lower ticker is kept because it has to be
+  one of them and that is a rule rather than a preference; the others are
+  recorded as aliases so the collapse is visible in the output.
+*/
+const byCik = new Map();
+for (const f of filers.sort((a, b) => (a.member.symbol < b.member.symbol ? -1 : 1))) {
+  const cur = byCik.get(f.member.cik);
+  if (cur) cur.aliases.push(f.member.symbol);
+  else byCik.set(f.member.cik, { ...f, aliases: [] });
+}
+const unique = [...byCik.values()];
+const collapsed = unique.filter((f) => f.aliases.length);
+
+console.log(`circular: ${filers.length} of them file a 13F at all`);
+if (collapsed.length) {
+  console.log(`circular: ${collapsed.length} collapsed to one filer per company — `
+    + collapsed.map((f) => `${f.member.symbol} absorbs ${f.aliases.join(', ')}`).join('; '));
+}
+console.log('');
 
 const edges = new Map();
-let scanned = 0;
+const periods = new Set();
+let tables = 0;
 
-for (const link of links.slice(0, QUARTERS)) {
-  const label = path.basename(link).replace('_form13f.zip', '');
-  const res = await fetch(`https://www.sec.gov${link}`, { headers: UA });
-  if (!res.ok) { console.warn(`  ! ${label}: HTTP ${res.status}`); continue; }
-  const zip = Buffer.from(await res.arrayBuffer());
+for (const { member, filer, filings, aliases } of unique) {
+  const seen = [];
+  for (const f of filings.slice(0, PERIODS)) {
+    let rows;
+    try {
+      rows = await holdings(member.cik, f.accession);
+    } catch (err) {
+      console.warn(`  ! ${member.symbol} ${f.period}: ${err.message}`);
+      continue;
+    }
+    tables += 1;
+    periods.add(f.period);
 
-  const cover = rows(extract(zip, 'COVERPAGE.tsv'), ['ACCESSION_NUMBER', 'FILINGMANAGER_NAME']);
-  const subs = rows(extract(zip, 'SUBMISSION.tsv'), ['ACCESSION_NUMBER', 'CIK', 'PERIODOFREPORT']);
-
-  /* Accessions filed BY an index member that is not an asset manager. */
-  const operators = new Map();
-  const nameOf = new Map(cover.map((c) => [c.ACCESSION_NUMBER, c.FILINGMANAGER_NAME]));
-  for (const s of subs) {
-    const member = byCik.get((s.CIK ?? '').replace(/^0+/, ''));
-    if (!member) continue;
-    const filer = nameOf.get(s.ACCESSION_NUMBER) ?? '';
-    operators.set(s.ACCESSION_NUMBER, { ...member, filer, period: s.PERIODOFREPORT });
+    for (const h of rows) {
+      /*
+        Keyed by CUSIP, not by issuer name: the same security is spelled
+        differently by different filers and sometimes by the same filer across
+        quarters. Summed, because one filer may list a holding on several rows
+        for several managers, and those are one position.
+      */
+      const key = `${f.period}|${member.symbol}|${h.cusip}`;
+      const e = edges.get(key) ?? {
+        from: member.symbol,
+        fromName: member.name,
+        /* Other tickers of the same company, so a reader searching GOOGL finds it. */
+        alsoTrades: aliases,
+        filer,
+        to: h.name,
+        cusip: h.cusip,
+        value: 0,
+        shares: 0,
+        period: secDate(f.period),
+        periodIso: f.period,
+        filed: f.filed,
+        amended: f.form.includes('/A'),
+      };
+      e.value += h.value;
+      e.shares += h.shares;
+      edges.set(key, e);
+    }
+    seen.push(`${f.period}${f.form.includes('/A') ? '*' : ''}:${rows.length}`);
   }
-
-  if (!operators.size) { console.log(`  ${label}  no operating-company filers`); continue; }
-
-  const info = rows(extract(zip, 'INFOTABLE.tsv'),
-    ['ACCESSION_NUMBER', 'NAMEOFISSUER', 'CUSIP', 'VALUE', 'SSHPRNAMT', 'PUTCALL']);
-
-  for (const t of info) {
-    const from = operators.get(t.ACCESSION_NUMBER);
-    if (!from) continue;
-    if (t.PUTCALL) continue; // an option is a hedge, not a stake
-    const value = Number(t.VALUE);
-    if (!Number.isFinite(value) || value <= 0) continue;
-
-    /* Keyed by PERIOD too: the graph is a time series, not a snapshot. */
-    const key = `${isoDate(from.period) ?? from.period}|${from.symbol}|${t.NAMEOFISSUER}`;
-    const e = edges.get(key) ?? {
-      from: from.symbol, fromName: from.name, filer: from.filer,
-      to: t.NAMEOFISSUER, cusip: t.CUSIP, value: 0, period: isoDate(from.period) ?? from.period,
-    };
-    e.value += value;
-    if (from.period > e.period) e.period = from.period;
-    edges.set(key, e);
+  if (seen.length) {
+    const label = aliases.length ? `${member.symbol}/${aliases.join('/')}` : member.symbol;
+    console.log(`  ${label.padEnd(11)} ${filer.slice(0, 30).padEnd(32)} ${seen.join('  ')}`);
   }
-
-  scanned += 1;
-  console.log(`  ${label}  ${operators.size} operating-company filings`);
 }
 
 const list = [...edges.values()].sort((a, b) => b.value - a.value);
+const newest = [...periods].sort().pop() ?? null;
+const inNewest = list.filter((e) => e.periodIso === newest);
+
 mkdirSync(path.dirname(OUT), { recursive: true });
 writeFileSync(OUT, `${JSON.stringify({
   fetchedAt: new Date().toISOString(),
-  source: INDEX,
-  quartersScanned: scanned,
-  note: 'Equity stakes held BY non-financial S&P 500 companies, from their own 13F filings. Financials are excluded by SECTOR: a fund holding securities is doing its job, and no name rule separates BlackRock from an operating company without catching real ones too.',
+  source: 'EDGAR 13F-HR filings, read per filer',
+  universe: snapshot,
+  operatingMembers: operating.length,
+  filersFound: unique.length,
+  tickersFiling: filers.length,
+  periods: [...periods].sort(),
+  latestPeriod: newest,
+  note:
+    'Equity stakes held BY non-financial S&P 500 companies, from their own 13F-HR filings on EDGAR. '
+    + 'Read per filer rather than from the quarterly bulk datasets, which lag a full period. '
+    + 'Financials are excluded by SECTOR: a fund holding securities is doing its job, and no name rule '
+    + 'separates BlackRock from an operating company without catching real ones too. Options are excluded — '
+    + 'a put or a call is not a stake. Amendments supersede the filing they correct.',
   edges: list,
 })}\n`);
 
-console.log('');
-console.log(`circular: ${list.length} stakes held by ${new Set(list.map((e) => e.from)).size} operating companies`);
-for (const e of list.slice(0, 12)) {
-  console.log(`  ${e.from.padEnd(6)} -> ${e.to.slice(0, 34).padEnd(34)} $${(e.value / 1e9).toFixed(2)}B`);
+console.log(`\ncircular: ${tables} information tables read across ${periods.size} periods`);
+console.log(`circular: ${list.length} stakes total, ${inNewest.length} of them at ${newest}`);
+console.log(`circular: newest period is $${(inNewest.reduce((s, e) => s + e.value, 0) / 1e9).toFixed(1)}B across ${new Set(inNewest.map((e) => e.from)).size} companies`);
+console.log(`\ncircular: largest at ${newest}`);
+for (const e of inNewest.slice(0, 14)) {
+  console.log(`  ${e.from.padEnd(6)} -> ${e.to.slice(0, 36).padEnd(38)} $${(e.value / 1e9).toFixed(2)}B`);
 }
-console.log(`circular: wrote data/circular.json`);
+console.log('\ncircular: wrote data/circular.json');

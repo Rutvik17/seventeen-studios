@@ -66,6 +66,17 @@ const CONCEPTS = [
   { role: 'grossProfit', kind: 'duration', tags: ['GrossProfit'] },
   { role: 'operatingIncome', kind: 'duration', tags: ['OperatingIncomeLoss'] },
   { role: 'netIncome', kind: 'duration', tags: ['NetIncomeLoss'] },
+  /*
+    EPS AS REPORTED, not net income divided by a share count.
+
+    The share count here is `CommonStockSharesOutstanding`, a cover-page tag
+    filers update irregularly — for some names the newest value is two years
+    older than the newest income figure, and dividing one by the other produces
+    a number that is wrong and looks fine. Diluted EPS is the figure the company
+    itself struck, on the share base it actually used, and it is the number a
+    reader has seen quoted everywhere else.
+  */
+  { role: 'eps', kind: 'duration', unit: 'USD-per-shares', tags: ['EarningsPerShareDiluted', 'EarningsPerShareBasicAndDiluted'] },
   { role: 'rnd', kind: 'duration', tags: ['ResearchAndDevelopmentExpense'] },
   // The user's thesis lives here: capex is where a company puts its conviction.
   { role: 'capex', kind: 'duration', tags: ['PaymentsToAcquirePropertyPlantAndEquipment', 'PaymentsToAcquireProductiveAssets'] },

@@ -136,6 +136,41 @@ amount. It is the largest unmeasured risk to this result.
 
 ## Now
 
+- [x] **The nine-panel retrain — RUN, and every added family LOST.** `npm run
+      train`, 2026-09-05, 1.92M rows, 21-day horizon, walk-forward with the
+      21-day embargo. Mean IC across folds:
+
+          panel                       mean IC    vs technical
+          technical only              0.02157       —
+          + macro                     0.01943    -0.00214
+          + earnings language         0.01788    -0.00369
+          + SEC fundamentals          0.01745    -0.00412
+          + 13F ownership             0.01471    -0.00686
+          + all three SEC             0.01385    -0.00772
+          + Form 4 insiders           0.01337    -0.00820
+          point-in-time training      0.01186    -0.00971
+          point-in-time + all SEC     0.00002    -0.02155
+
+      **Technical alone is the best panel and it is not close.** Every family
+      that took real work to build — 13F ownership, Form 4 insiders, earnings
+      language — costs IC when admitted, and admitting all three costs more
+      than any one of them alone. This settles "Retrain with 13F" and the SEC
+      half of "Point-in-time RETRAIN" in the same run, both negative.
+
+      The last row is the one to sit with: trained on point-in-time rows AND
+      given every SEC family, mean IC is 0.00002, which is no skill at all.
+      Two honest corrections applied together take the model to nothing.
+
+      What this does NOT establish: that the features are worthless. It
+      establishes that 42 columns on 1.9M rows with this tree configuration
+      cannot use them — a capacity and selection result, not a data result.
+      "Feature selection within families" is now the live question rather than
+      a tidy-up, and it is the one thing that could rescue any of this.
+
+      The shipped model is unchanged: `train.mjs` picks the best panel by mean
+      IC, and the best panel is the one already in production.
+
+
 - [x] **Prediction tape** — 3,431 days, 1.6M scores, 38.6 MB. Construction is
       now tunable without retraining.
 - [x] **No-trade band swept.** 0.5% recovered +1.97 points against SPY.

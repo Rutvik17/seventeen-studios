@@ -5,8 +5,22 @@
  *
  * The account above is the result. This is the evidence underneath it: for the
  * names actually held, what their own officers did with their own money, what
- * institutions did with the position last quarter, what the company said about
- * its results, and — where it exists — who it owns.
+ * institutions did with the position last quarter, what the company reported
+ * for its last quarter, and what it owns of other companies.
+ *
+ * ---
+ * WHY OWNERSHIP IS TWO SECTIONS AND NOT ONE
+ *
+ * It was one, called "who owns whom", and that put Ventas owning a hospital
+ * operator beside NVIDIA owning CoreWeave as though they were the same kind of
+ * fact. They are not: the second is a financing loop, where the investor is
+ * also the supplier and the money comes back as revenue.
+ *
+ * A 13F cannot tell them apart — it establishes the stake and says nothing
+ * about whether the two companies trade. So the split is evidenced rather than
+ * inferred: a stake is called circular only where a filing describes a
+ * commercial relationship between the two, and the sentence is quoted with a
+ * link to the document.
  *
  * ---
  * WHY EVERY SECTION IS FILTERED TO THE BOOK
@@ -39,23 +53,33 @@ type Buying = {
 };
 type Selling = { symbol: string; sellFilings: number; sellValue: number; last: string; weight: number };
 type Flow = { symbol: string; holders: number; change: number; weight: number };
-type Language = {
+type Reported = {
   symbol: string;
-  date: string;
-  tone: number;
-  change: number | null;
-  hedging: number;
+  filed: string;
+  quarter: string;
+  revenue: number | null;
+  revenueGrowth: number | null;
+  eps: number | null;
+  epsPrior: number | null;
   guidance: number;
   weight: number;
 };
-type Edge = {
+type Evidence = {
+  quote: string;
+  filer: string;
+  form: string;
+  filed: string;
+  url: string;
+  direction: 'investee' | 'investor';
+};
+type Stake = {
   from: string;
   fromName: string;
   to: string;
+  ticker: string | null;
   billions: number;
   change: number | null;
-  period: string;
-  inBook: boolean;
+  evidence: Evidence | null;
 };
 
 type Data = {
@@ -72,13 +96,43 @@ type Data = {
     excluded: number;
     floor: number;
   };
-  language: { positive: Language[]; negative: Language[]; raised: number; lowered: number };
-  circular: { heldStakes: Edge[]; graph: Edge[]; totalEdges: number; holders: number; latestPeriod: string };
+  reported: {
+    growing: Reported[];
+    shrinking: Reported[];
+    covered: number;
+    withGrowth: number;
+    raised: number;
+    lowered: number;
+  };
+  stakes: {
+    period: string;
+    prior: string | null;
+    list: Stake[];
+    total: number;
+    holders: number;
+    billions: number;
+  };
+  circular: {
+    period: string;
+    prior: string | null;
+    list: Stake[];
+    total: number;
+    holders: number;
+    billions: number;
+    considered: number;
+    resolved: number;
+    floor: number;
+    tail: number;
+    tailBillions: number;
+  };
 };
 
 const money = (v: number) =>
   v >= 1e9 ? `$${(v / 1e9).toFixed(1)}B` : v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : `$${Math.round(v / 1e3)}k`;
 const pct = (v: number) => `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`;
+/* EPS is small and signed, so it keeps its cents and its minus sign. */
+const dollars = (v: number) => `${v < 0 ? '-' : ''}$${Math.abs(v).toFixed(2)}`;
+const billions = (v: number) => `$${v.toFixed(2)}B`;
 const filings = (n: number) => `${n} filing${n === 1 ? '' : 's'}`;
 
 /*
@@ -238,83 +292,183 @@ export function Signals() {
       </section>
 
       <section className="book__section">
-        <h2 className="book__heading">What the companies said</h2>
+        <h2 className="book__heading">What they reported</h2>
         <p className="book__meta">
-          Tone of the last earnings release, scored off the 8-K itself — the one
-          filing with no lag at all, since it goes up the day results are
-          announced. {data.language.raised} of the book raised guidance in it
-          and {data.language.lowered} lowered it. The change column compares
-          against the same company&rsquo;s previous release, because absolute
-          tone is mostly house style: some firms write &ldquo;outstanding&rdquo;
-          every quarter, so the move is the part that carries information.
+          The last quarter each company has actually announced: revenue and
+          diluted earnings per share out of its own XBRL filing, against the
+          same quarter a year earlier. {data.reported.raised} of the book raised
+          guidance in the release and {data.reported.lowered} lowered it, which
+          is the one thing only the 8-K knows. {data.reported.covered} of the{' '}
+          {data.bookSize} names have reported a quarter,{' '}
+          {data.reported.withGrowth} of them with a comparable quarter a year
+          before. Ranked by revenue growth, best and worst.
         </p>
-        <table className="book__table signals__table">
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Filed</th>
-              <th scope="col">Tone</th>
-              <th scope="col">vs last</th>
-              <th scope="col">Hedging</th>
-              <th scope="col">Guidance</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...data.language.positive, ...data.language.negative].map((r) => (
-              <tr key={r.symbol}>
-                <th scope="row">{r.symbol}</th>
-                <td className="signals__dim">{r.date}</td>
-                <td data-sign={r.tone >= 0 ? 'up' : 'down'}>{r.tone.toFixed(1)}</td>
-                <td data-sign={r.change !== null && r.change >= 0 ? 'up' : 'down'}>
-                  {r.change === null ? '—' : `${r.change >= 0 ? '+' : ''}${r.change.toFixed(1)}`}
-                </td>
-                <td className="signals__dim">{r.hedging.toFixed(1)}</td>
-                <td data-sign={r.guidance > 0 ? 'up' : r.guidance < 0 ? 'down' : undefined}>
-                  {r.guidance > 0 ? 'raised' : r.guidance < 0 ? 'lowered' : '—'}
-                </td>
+        <div className="signals__scroll" data-lenis-prevent>
+          <table className="book__table signals__table">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Quarter</th>
+                <th scope="col">Revenue</th>
+                <th scope="col">vs year</th>
+                <th scope="col">EPS</th>
+                <th scope="col">year ago</th>
+                <th scope="col">Guidance</th>
+                <th scope="col">Announced</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {[...data.reported.growing, ...data.reported.shrinking].map((r) => (
+                <tr key={r.symbol}>
+                  <th scope="row">{r.symbol}</th>
+                  <td className="signals__dim">{r.quarter}</td>
+                  <td>{r.revenue === null ? '—' : money(r.revenue)}</td>
+                  <td data-sign={(r.revenueGrowth ?? 0) >= 0 ? 'up' : 'down'}>
+                    {r.revenueGrowth === null ? '—' : pct(r.revenueGrowth)}
+                  </td>
+                  <td data-sign={(r.eps ?? 0) >= 0 ? 'up' : 'down'}>
+                    {r.eps === null ? '—' : dollars(r.eps)}
+                  </td>
+                  <td className="signals__dim">
+                    {r.epsPrior === null ? '—' : dollars(r.epsPrior)}
+                  </td>
+                  <td data-sign={r.guidance > 0 ? 'up' : r.guidance < 0 ? 'down' : undefined}>
+                    {r.guidance > 0 ? 'raised' : r.guidance < 0 ? 'lowered' : '—'}
+                  </td>
+                  <td className="signals__dim">{r.filed}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <p className="book__meta">
-          Tone is the count of positive words less negative ones, per thousand,
-          against the Loughran-McDonald finance dictionaries — which exist
-          because the general-English ones get this wrong: &ldquo;liability&rdquo;,
-          &ldquo;capital&rdquo; and &ldquo;crude&rdquo; are all negative in a
-          general lexicon and all neutral in a filing. Hedging counts the
-          uncertainty words in the same way.
+          EPS is the diluted figure as the company struck it, never net income
+          divided by a share count — the share-count tag on a cover page is
+          updated irregularly, and for some names the newest one is two years
+          older than the newest income figure, so dividing gives a number that
+          is wrong and looks entirely reasonable.
         </p>
       </section>
 
-      <CircularGraph circular={data.circular} />
+      <Circular circular={data.circular} />
+      <EquityStakes stakes={data.stakes} />
+
 
       <p className="book__note">
         Every figure on this page is out of a filing, and every filing is free:
         Form 4 within two business days, 13F 45 days after the quarter, the 8-K
-        the same day. None of it is a data subscription, and none of it is a
-        forecast — it is what has already been reported, joined to what the
+        the same day results are announced, and the revenue and EPS out of the
+        XBRL that accompanies the quarterly report. The 13F holdings are read
+        per company from EDGAR rather than from the SEC&rsquo;s quarterly bulk
+        files, which run a full period behind — at the time of writing the
+        newest bulk file stopped a quarter short of the largest position in the
+        whole dataset. None of this is a subscription and none of it is a
+        forecast: it is what has already been reported, joined to what the
         account is currently carrying.
       </p>
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ graph */
+/* ------------------------------------------------- circular financing */
 
 /*
-  WHO OWNS WHOM, DRAWN RATHER THAN LISTED.
+  THE LOOP, WITH THE SENTENCE THAT ESTABLISHES IT.
 
-  A list of "NVDA -> Intel, $9.48B" is a table of eighteen rows and reads as
-  eighteen unrelated facts. The thing worth seeing is the SHAPE: that four
-  companies account for most of the money, that the stakes point at customers
-  and suppliers, and that at least one target is itself a holder — Nvidia owns
-  $9.5B of Intel, and Intel owns $343M of Mobileye. That is the whole reason
-  the feature exists and it is invisible in a list.
+  A 13F proves the stake and nothing else. Whether the two companies also trade
+  with each other — which is the whole of what makes a stake "circular" — is
+  not in that filing and cannot be inferred from it. Every rule considered was
+  a proxy that would have been wrong: same sector catches Gilead and Arcus, a
+  real licensing loop, and also catches Merck's ordinary biotech portfolio.
+
+  So nothing is classified here. A pair appears in this section only because
+  one of the two companies said so in a filing, and the sentence that says it
+  is printed with a link to the document. A reader who does not believe it can
+  go and read it.
+*/
+function Circular({ circular }: { circular: Data['circular'] }) {
+  if (!circular.list.length) return null;
+
+  return (
+    <section className="book__section">
+      <h2 className="book__heading">
+        Circular financing <span className="book__count">{circular.total} pairs</span>
+      </h2>
+      <p className="book__meta">
+        Money that leaves as an investment and comes back as revenue: the
+        investor is also the investee&rsquo;s supplier or its customer. Of the{' '}
+        {circular.considered} stakes held at {quarter(circular.period)},{' '}
+        {circular.total} have a filing describing a commercial relationship
+        between the two companies &mdash; {billions(circular.billions)} of the
+        total. The rest are equity stakes and nothing more, which is all a 13F
+        establishes.
+        {circular.tail > 0 ? (
+          <>
+            {' '}Shown here are the {circular.list.length} worth more than $
+            {(circular.floor * 1000).toFixed(0)}M, which is{' '}
+            {((1 - circular.tailBillions / circular.billions) * 100).toFixed(1)}%
+            of the money; the other {circular.tail} are real and disclosed and
+            come to {billions(circular.tailBillions)} between them.
+          </>
+        ) : null}
+      </p>
+
+      <ol className="circ">
+        {circular.list.map((s) => (
+          <li key={`${s.from}-${s.to}`} className="circ__pair">
+            <div className="circ__flow">
+              <span className="circ__from">{s.from}</span>
+              <span className="circ__arrow" aria-hidden>
+                <i />
+                <b>{billions(s.billions)}</b>
+              </span>
+              <span className="circ__to">
+                {s.to}
+                {s.ticker ? <em className="circ__ticker">{s.ticker}</em> : null}
+              </span>
+              {s.change !== null ? (
+                <span className="circ__change" data-sign={s.change >= 0 ? 'up' : 'down'}>
+                  {pct(s.change)} on the quarter
+                </span>
+              ) : null}
+            </div>
+            <blockquote className="circ__quote">
+              <p>&ldquo;{s.evidence?.quote}&rdquo;</p>
+              <footer>
+                <a href={s.evidence?.url} target="_blank" rel="noreferrer noopener">
+                  {s.evidence?.filer} &middot; {s.evidence?.form} filed {s.evidence?.filed}
+                </a>
+                {/*
+                  Which side said it matters. A supplier naming its customer is
+                  the stronger claim, because customer concentration is a
+                  disclosure the company is required to make; an investor
+                  describing its own investee is the weaker one.
+                */}
+                <span className="circ__side">
+                  {s.evidence?.direction === 'investee' ? 'the investee' : 'the investor'} disclosed it
+                </span>
+              </footer>
+            </blockquote>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------- equity stakes */
+
+/*
+  EVERYTHING ELSE, DRAWN RATHER THAN LISTED.
+
+  A list of "GOOG -> CME Group, $0.77B" rows reads as a set of unrelated facts.
+  The thing worth seeing is the SHAPE: that a handful of companies account for
+  most of the money, and where it points.
 
   Bipartite because the data is: holders on the left, what they hold on the
   right, one row per stake. A force layout would look more like a network
-  diagram and be harder to read every single value off, which is the trade the
-  wrong way round.
+  diagram and be harder to read every value off, which is the trade the wrong
+  way round.
 */
 
 const W = 780;
@@ -330,25 +484,17 @@ const X_HOLDER = 128;
 const X_TARGET = 430;
 const X_AMOUNT = W - 76;
 
-function CircularGraph({ circular }: { circular: Data['circular'] }) {
-  const edges = circular.graph;
-  if (!edges.length) return null;
-
-  /*
-    A target that is also a holder is the circular part made literal. Matched on
-    the holder's own display name against the tidied issuer name, so it comes
-    out of the data rather than a hand-written list of companies to look for.
-  */
-  const holderByName = new Map(edges.map((e) => [e.fromName, e.from]));
+function EquityStakes({ stakes }: { stakes: Data['stakes'] }) {
+  const list = stakes.list;
+  if (!list.length) return null;
 
   /* Holders ordered by money committed, their stakes ordered the same way. */
   const totals = new Map<string, number>();
-  for (const e of edges) totals.set(e.from, (totals.get(e.from) ?? 0) + e.billions);
+  for (const e of list) totals.set(e.from, (totals.get(e.from) ?? 0) + e.billions);
   const holders = [...totals.keys()].sort((a, b) => (totals.get(b) ?? 0) - (totals.get(a) ?? 0));
 
   const ordered = holders.flatMap((h) =>
-    edges.filter((e) => e.from === h).sort((a, b) => b.billions - a.billions),
-  );
+    list.filter((e) => e.from === h).sort((a, b) => b.billions - a.billions));
 
   const y = (i: number) => PAD_Y + i * ROW + ROW / 2;
   const H = PAD_Y * 2 + ordered.length * ROW;
@@ -357,32 +503,30 @@ function CircularGraph({ circular }: { circular: Data['circular'] }) {
   const holderY = new Map(
     holders.map((h) => {
       const rows = ordered.flatMap((e, i) => (e.from === h ? [i] : []));
-      return [h, rows.reduce((s, i) => s + y(i), 0) / rows.length];
+      return [h, rows.reduce((t, i) => t + y(i), 0) / rows.length];
     }),
   );
 
-  const max = Math.max(...edges.map((e) => e.billions));
+  const max = Math.max(...list.map((e) => e.billions));
   /*
-    Square-rooted, so a $9.5B stake is about five times the stroke of a $340M
-    one rather than twenty-eight times it. Linear width would render the small
-    end as a hairline and the page would show four stakes instead of eighteen.
+    Square-rooted, so the smallest stake is about a fifth of the stroke of the
+    largest rather than a thirtieth of it. Linear width would render the small
+    end as a hairline and the page would show four stakes instead of twenty.
   */
   const width = (v: number) => 1.2 + Math.sqrt(v / max) * 7;
 
   return (
     <section className="book__section">
       <h2 className="book__heading">
-        Who owns whom <span className="book__count">{circular.totalEdges} stakes</span>
+        Equity stakes <span className="book__count">{stakes.total} stakes</span>
       </h2>
       <p className="book__meta">
-        Index members that are not banks, filing 13F because they hold equity in
-        other listed companies: a chip maker holding its own customers, a
-        retailer holding its warehouse automator, a drug company holding the
-        biotechs whose trials it is paying for. Revenue that comes back as a
-        stake, and a stake that funds the next order.{' '}
-        {circular.holders} companies file this way. Largest {ordered.length} as
-        at {quarter(circular.latestPeriod)}, with the move since the quarter
-        before.
+        Index members that are not banks, filing a 13F because they hold equity
+        in other listed companies. These are the ones where no filing describes
+        a trade between the two &mdash; ordinary corporate investment, as far as
+        the record shows: {billions(stakes.billions)} across {stakes.holders}{' '}
+        companies at {quarter(stakes.period)}. Largest {ordered.length}, with
+        the move since {quarter(stakes.prior)}.
       </p>
 
       <figure className="signals__figure">
@@ -391,10 +535,16 @@ function CircularGraph({ circular }: { circular: Data['circular'] }) {
           reader who cannot see the labels needs telling before the scroll, not
           after five hundred pixels of unexplained lines.
         */}
-        <p className="signals__hint">Scroll the diagram sideways for the names and the amounts →</p>
+        <p className="signals__hint">Scroll the diagram sideways for the names and the amounts &rarr;</p>
         <div className="signals__scroll" data-lenis-prevent>
-          <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label="Stakes held by index members in other listed companies">
-            <title>Who owns whom</title>
+          <svg
+            viewBox={`0 0 ${W} ${H}`}
+            width={W}
+            height={H}
+            role="img"
+            aria-label="Equity stakes held by index members in other listed companies"
+          >
+            <title>Equity stakes</title>
 
             {ordered.map((e, i) => {
               const y1 = holderY.get(e.from) ?? y(i);
@@ -404,7 +554,6 @@ function CircularGraph({ circular }: { circular: Data['circular'] }) {
                 <path
                   key={`${e.from}-${e.to}`}
                   className="signals__link"
-                  data-book={e.inBook ? 'true' : undefined}
                   d={`M ${X_HOLDER} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${X_TARGET} ${y2}`}
                   strokeWidth={width(e.billions)}
                 />
@@ -413,48 +562,38 @@ function CircularGraph({ circular }: { circular: Data['circular'] }) {
 
             {holders.map((h) => {
               const hy = holderY.get(h) ?? 0;
-              const inBook = ordered.some((e) => e.from === h && e.inBook);
               return (
                 <g key={h}>
-                  <text className="signals__node" data-book={inBook ? 'true' : undefined} x={X_HOLDER - 12} y={hy + 4} textAnchor="end">
-                    {h}
-                  </text>
-                  <circle className="signals__dot" data-book={inBook ? 'true' : undefined} cx={X_HOLDER} cy={hy} r={3.5} />
+                  <text className="signals__node" x={X_HOLDER - 12} y={hy + 4} textAnchor="end">{h}</text>
+                  <circle className="signals__dot" cx={X_HOLDER} cy={hy} r={3.5} />
                 </g>
               );
             })}
 
-            {ordered.map((e, i) => {
-              const alsoHolder = holderByName.get(e.to);
-              return (
-                <g key={`t-${e.from}-${e.to}`}>
-                  <circle className="signals__dot" cx={X_TARGET} cy={y(i)} r={3} />
-                  <text className="signals__target" x={X_TARGET + 12} y={y(i) + 4}>
-                    {e.to}
-                    {alsoHolder ? <tspan className="signals__loop"> ↑ also a holder</tspan> : null}
-                  </text>
-                  <text className="signals__amount" x={X_AMOUNT} y={y(i) + 4} textAnchor="end">
-                    ${e.billions.toFixed(2)}B
-                  </text>
-                  <text
-                    className="signals__move"
-                    data-sign={e.change === null ? undefined : e.change >= 0 ? 'up' : 'down'}
-                    x={W - 8}
-                    y={y(i) + 4}
-                    textAnchor="end"
-                  >
-                    {e.change === null ? '—' : pct(e.change)}
-                  </text>
-                </g>
-              );
-            })}
+            {ordered.map((e, i) => (
+              <g key={`t-${e.from}-${e.to}`}>
+                <circle className="signals__dot" cx={X_TARGET} cy={y(i)} r={3} />
+                <text className="signals__target" x={X_TARGET + 12} y={y(i) + 4}>{e.to}</text>
+                <text className="signals__amount" x={X_AMOUNT} y={y(i) + 4} textAnchor="end">
+                  {billions(e.billions)}
+                </text>
+                <text
+                  className="signals__move"
+                  data-sign={e.change === null ? undefined : e.change >= 0 ? 'up' : 'down'}
+                  x={W - 8}
+                  y={y(i) + 4}
+                  textAnchor="end"
+                >
+                  {e.change === null ? '—' : pct(e.change)}
+                </text>
+              </g>
+            ))}
           </svg>
         </div>
         <figcaption className="book__meta">
           Thickness is the size of the stake, square-rooted so the small ones
-          stay visible. Blue is a holder the account is currently in. A dash in
-          the last column means the stake has no earlier quarter in the three
-          scanned, not that it is new.
+          stay visible. A dash in the last column means the stake has no earlier
+          quarter on file, not that it is new.
         </figcaption>
       </figure>
     </section>
