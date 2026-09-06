@@ -5614,142 +5614,211 @@ html.no-js .exploded .exploded__svg {
 }
 
 /* ==================================================================
-   THE METHOD PAGE
+   THE FILINGS
 
-   Reuses the book's table and section rules; only what is genuinely
-   new lives here. The rejected verdicts get the most visual weight
-   on the page, which is deliberate — they are the harder result.
+   The evidence under the account: insider trades, institutional
+   flow, earnings tone, and the ownership graph. Reuses the book's
+   section, table and note rules; only what is genuinely new is here.
    ================================================================== */
 
-.method__families {
-  list-style: none;
-  margin: calc(var(--grid-unit) * 0.9) 0 0;
-  padding: 0;
+/*
+  Two columns where the comparison IS the content — bought against sold,
+  arriving against leaving. They collapse to one at the width where a
+  four-column row inside a half-width column starts wrapping.
+*/
+.signals__split {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-  gap: calc(var(--grid-unit) * 0.9);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+  gap: calc(var(--grid-unit) * 1.2);
+  margin-top: calc(var(--grid-unit) * 0.9);
 }
 
-.method__families li {
-  padding: calc(var(--grid-unit) * 0.8);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-}
-
-.method__family-head {
+.signals__sub {
+  font-size: 13px;
+  font-weight: 500;
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.method__family-name { font-weight: 500; }
-
-.method__count {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.method__detail {
-  margin-top: 6px;
-  font-size: 14px;
-  color: var(--fg-dim);
-}
-
-.method__meta {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-  font-size: 12.5px;
-}
-
-.method__meta > div {
-  display: grid;
-  grid-template-columns: 4rem minmax(0, 1fr);
   gap: 8px;
-  padding: 2px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line-strong);
 }
 
-.method__meta dt {
-  color: var(--muted);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.signals__sub[data-sign='up'] { color: var(--up, #2f7d4f); }
+.signals__sub[data-sign='down'] { color: var(--down, #b04141); }
+
+.signals__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-.method__meta dd { color: var(--fg-dim); }
-
-.method__verdict {
-  margin-top: calc(var(--grid-unit) * 1.2);
-  padding-left: calc(var(--grid-unit) * 0.8);
-  border-left: 2px solid var(--line);
-}
-
-.method__verdict h3 {
-  font-size: clamp(15px, 1.5vw, 18px);
-}
-
-.method__claim {
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 14px;
-  font-style: italic;
-}
-
-/*
-  The verdict line carries the colour, not the whole block. A rejection is a
-  result rather than a warning, and washing the panel red would read as an
-  error state.
-*/
-.method__result {
-  margin-top: 8px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.method__result[data-kind='rejected'] { color: var(--down, #b04141); }
-.method__result[data-kind='confirmed'] { color: var(--up, #2f7d4f); }
-
-.method__table {
-  margin-top: 10px;
-  border-collapse: collapse;
+.signals__rows li {
+  display: grid;
+  grid-template-columns: 4.6rem 4.4rem minmax(0, 1fr) 5.4rem;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
 }
 
-.method__table th,
-.method__table td {
-  padding: 4px 14px 4px 0;
-  text-align: left;
-  font-weight: 400;
+/* Flow rows carry no date, so the fact column takes the space back. */
+.signals__rows--flow li { grid-template-columns: 4.6rem 4.4rem minmax(0, 1fr); }
+
+.signals__symbol {
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.method__table th { color: var(--muted); }
-.method__table td[data-sign='up'] { color: var(--up, #2f7d4f); }
-.method__table td[data-sign='down'] { color: var(--down, #b04141); }
+/*
+  The short badge. A filing means the opposite thing when the account is on the
+  other side of it, so the side has to be on the row rather than inferred.
+*/
+.signals__side {
+  font-style: normal;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  margin-left: 0.4em;
+  vertical-align: 0.1em;
+}
 
-.method__why {
-  margin-top: 10px;
-  font-size: 14px;
+.signals__value { text-align: right; }
+.signals__value[data-sign='up'] { color: var(--up, #2f7d4f); }
+.signals__value[data-sign='down'] { color: var(--down, #b04141); }
+
+.signals__fact {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signals__when {
   color: var(--fg-dim);
-  max-width: 62ch;
+  text-align: right;
 }
 
-.method__guards td { font-size: 12.5px; }
-.method__guards th[scope='row'] { white-space: nowrap; }
-.method__target { color: var(--fg-dim); }
+.signals__table td:first-of-type { white-space: nowrap; }
+.signals__dim { color: var(--muted); }
+
+/* ---------------------------------------------------------- the graph */
+
+.signals__figure {
+  margin: calc(var(--grid-unit) * 1.1) 0 0;
+}
+
+/*
+  THE DIAGRAM SCROLLS SIDEWAYS RATHER THAN SHRINKING.
+
+  Scaling an 780px-wide SVG into a 340px phone leaves the labels at about five
+  pixels, which is a picture of a diagram rather than a diagram. Fixed width
+  inside a scroller keeps every value readable at every screen size, and the
+  vertical axis — which is where the information is — needs no horizontal room
+  to be understood.
+*/
+.signals__scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+/*
+  Scales UP to the column on a wide screen and stops at its natural size on a
+  narrow one, where the scroller takes over. A fixed 780 left a strip of empty
+  page beside it on desktop; a plain 100% shrank the labels to five pixels on a
+  phone. Both, in the order the widths allow.
+*/
+.signals__scroll svg {
+  display: block;
+  width: 100%;
+  min-width: 780px;
+  height: auto;
+}
+
+/* Only true where the diagram is wider than its scroller. */
+.signals__hint { display: none; }
+
+.signals__figure > .signals__hint {
+  margin: 0 0 8px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+
+.signals__link {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.signals__link[data-book='true'] {
+  stroke: var(--accent);
+  opacity: 0.42;
+}
+
+.signals__dot { fill: var(--muted); }
+.signals__dot[data-book='true'] { fill: var(--accent); }
+
+.signals__node,
+.signals__target,
+.signals__amount,
+.signals__move {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.signals__node {
+  font-size: 12px;
+  font-weight: 500;
+  fill: var(--fg);
+}
+
+.signals__node[data-book='true'] { fill: var(--accent); }
+
+.signals__target {
+  font-size: 12px;
+  fill: var(--fg-dim);
+}
+
+/* The one thing on the diagram that is a finding rather than a label. */
+.signals__loop {
+  font-size: 10px;
+  fill: var(--accent-2);
+}
+
+.signals__amount {
+  font-size: 12px;
+  fill: var(--fg);
+}
+
+.signals__move {
+  font-size: 11px;
+  fill: var(--muted);
+}
+
+.signals__move[data-sign='up'] { fill: var(--up, #2f7d4f); }
+.signals__move[data-sign='down'] { fill: var(--down, #b04141); }
 
 @media (max-width: 620px) {
-  .method__guards thead { display: none; }
-  .method__guards tr {
-    display: grid;
-    gap: 2px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--line);
+  /*
+    The date is the first thing to go: it is the least of the four and the
+    only one the row reads fine without.
+  */
+  .signals__rows li { grid-template-columns: 4.4rem 4.2rem minmax(0, 1fr); }
+  .signals__when { display: none; }
+
+  /*
+    A diagram running off the edge with its labels on the far side reads as a
+    broken diagram unless the reader is told it moves.
+  */
+  .signals__hint {
+    display: block;
+    color: var(--accent);
   }
-  .method__guards th,
-  .method__guards td { padding: 0; border: 0; text-align: left; }
 }

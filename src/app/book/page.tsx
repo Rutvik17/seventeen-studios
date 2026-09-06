@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import { ogImage } from '@/lib/og';
 import { BookAccount } from '@/components/book/BookAccount';
+import { Signals } from '@/components/book/Signals';
 import { SplitText } from '@/components/motion/SplitText';
 import { Reveal } from '@/components/motion/Reveal';
 
 const DESCRIPTION =
-  'A trading account run by a gradient-boosted model: $10,000 compounded through fourteen years of the S&P 500, every position it holds now, every year it held them, and the survivorship bias measured rather than waved at.';
+  'A trading account run by a gradient-boosted model: $10,000 compounded through fourteen years of the S&P 500, every position it holds now, every year it held them, and the SEC filings underneath each one — insider trades, institutional flow, earnings tone, and who owns whom.';
 
 export const metadata: Metadata = {
   title: 'The Book',
@@ -27,6 +28,15 @@ export const metadata: Metadata = {
  * "The book" is what a desk calls the set of positions it is carrying. The name
  * is the jargon rather than a description because the page is the thing itself,
  * not an explanation of it.
+ *
+ * ---
+ * WHY THE FILINGS ARE ON THIS PAGE AND NOT THEIR OWN
+ *
+ * They only mean anything next to the positions. An officer buying his own
+ * company is a fact; an officer buying a company this account is currently
+ * short is a fact with an argument in it, and the argument is only visible if
+ * the holdings are on the same page. Filed the other way round, the reader has
+ * to hold eighty-seven tickers in their head across a navigation.
  */
 export default function BookPage() {
   return (
@@ -46,6 +56,7 @@ export default function BookPage() {
       </header>
 
       <BookAccount />
+      <Signals />
     </div>
   );
 }
