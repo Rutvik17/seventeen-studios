@@ -13,7 +13,7 @@
 # The panels do not depend on each other. Each is a walk-forward over the same
 # folds with one family added, built on the price-only baseline rather than
 # stacked on the panel before it. So they run in parallel and the wall clock is
-# the slowest panel — about half an hour — instead of the sum of all nine.
+# the slowest panel — about half an hour — instead of the sum of all ten.
 #
 # A single job would also sit uncomfortably close to GitHub's six-hour limit,
 # and losing hour four to a flaky download would cost the whole run. Split, a
@@ -41,7 +41,7 @@ on:
         type: boolean
         default: true
       panels:
-        description: 'Comma-separated slugs, or blank for all nine'
+        description: 'Comma-separated slugs, or blank for all ten'
         type: string
         default: ''
 
@@ -130,7 +130,7 @@ jobs:
           if [ -n "${{ inputs.panels }}" ]; then
             LIST=$(echo '${{ inputs.panels }}' | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | jq -R . | jq -sc .)
           else
-            LIST='["technical","fundamental","macro","13f-ownership","form-4-insiders","earnings-language","all-three-sec","point-in-time-training","point-in-time-all-sec"]'
+            LIST='["technical","fundamental","macro","13f-ownership","form-4-insiders","earnings-language","all-three-sec","point-in-time-training","point-in-time-all-sec","selected"]'
           fi
           echo "panels=$LIST" >> "$GITHUB_OUTPUT"
           echo "running: $LIST"

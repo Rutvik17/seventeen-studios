@@ -18,6 +18,8 @@
     "data:prices": "node scripts/fetch-prices.mjs",
     "train": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/train.mjs",
     "train:merge": "node scripts/merge-training.mjs",
+    "features": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/feature-ic.mjs",
+    "drive": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-drive.mjs",
     "data:fundamentals": "node scripts/fetch-fundamentals.mjs",
     "data:macro": "node scripts/fetch-macro.mjs",
     "backtest": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/backtest.mjs",

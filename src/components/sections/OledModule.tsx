@@ -35,6 +35,8 @@
  * one element. `steps()` hands the whole job to the compositor.
  */
 
+import { useEffect, useState } from 'react';
+
 import { OLED } from '@/lib/oled';
 import {
   FRAMES,
@@ -55,6 +57,8 @@ import {
   petals,
   ridgePath,
   sceneFor,
+  timeOfDayAt,
+  type TimeOfDay,
   snowPath,
   stars,
   toriiParts,
@@ -112,7 +116,29 @@ export function OledModule({ x, y, percentile, character, reduced = false }: Ole
   const activeY = y + WALL + (OLED.glassHeight - OLED.mmHeight) / 2;
 
   const animation = animationFor(percentile);
-  const scene = sceneFor(animation);
+
+  /*
+    THE SKY COMES FROM THE CLOCK, AND THE CLOCK HAS TO BE THE VIEWER'S.
+
+    The site is a static export, so anything read from `new Date()` during
+    render is frozen at BUILD time — which is the whole reason the backdrop
+    never changed. It has to be read after mount, in the browser, in whatever
+    timezone the person is actually in.
+
+    `night` is the server-rendered default rather than the current hour,
+    because the prerender and the first client render have to agree or React
+    replaces the panel on hydration. The real hour arrives a frame later.
+  */
+  const [time, setTime] = useState<TimeOfDay>('night');
+  useEffect(() => {
+    const read = () => setTime(timeOfDayAt(new Date()));
+    read();
+    /* A page left open should cross into the evening on its own. */
+    const id = setInterval(read, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const scene = sceneFor(time);
   const frames = FRAMES[character][animation];
   const holds = HOLDS_LAST.has(animation);
 
