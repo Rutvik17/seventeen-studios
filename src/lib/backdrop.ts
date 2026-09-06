@@ -43,7 +43,7 @@
 /** The panel, and the sprite frames, are both this. */
 export const PANEL = 128;
 
-import type { Animation } from '@/lib/sprites';
+export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
 
 export type Scene = {
   /** Zenith to horizon, four stops. */
@@ -63,11 +63,11 @@ export type Scene = {
 };
 
 /*
-  Six hours of the same mountain.
+  FOUR HOURS OF THE SAME MOUNTAIN.
 
-  Deliberately NOT six tints of one picture. Dawn is warm and low contrast, the
-  moonlit sky is cold and clear, the storm is nearly monochrome with a bruised
-  horizon. If they differed only in hue the panel would be showing decoration
+  Deliberately NOT four tints of one picture. Morning is warm and low contrast,
+  the afternoon is hazy and almost colourless, dusk goes violet, night is cold
+  and clear. If they differed only in hue the panel would be showing decoration
   rather than a time of day.
 
   Every one keeps a BRIGHT BAND AT THE HORIZON, and that is a legibility
@@ -76,13 +76,33 @@ export type Scene = {
   occupies. A uniformly dark sky would swallow the silhouette that makes pixel
   art readable at all.
 
-  Keyed by ANIMATION rather than by the percentile directly, so the hour and the
-  pose come from a single call to `animationFor`. Reading the thresholds twice
-  is how a panel ends up showing a victory pose against a storm.
+  ---
+  KEYED BY THE CLOCK, WHICH IT WAS NOT BEFORE
+
+  These used to be keyed by the sprite's ANIMATION, so the sky came from the
+  model's reading of NVDA. That reading is stable for weeks at a time, which
+  meant the panel showed one sky for weeks at a time — the backdrop was
+  technically dynamic and observably frozen.
+
+  The hour is the thing that actually moves. The pose still comes from the
+  model, so the panel says two things at once instead of one thing twice.
+
+  ---
+  NONE OF THEM MAY BE BRIGHTER THAN THE MORNING
+
+  `oled.ts` sets SCENE_DRIVE to 0.271 — the mean per-subpixel drive of the
+  brightest scene, measured off the rendered artwork — and the whole battery
+  figure descends from it: at full contrast that scene pulls 113 mA and lasts
+  4.3 days, so the panel runs at 34% and lasts 10.7. A brighter sky here would
+  not break a test, it would quietly make the notebook's battery life wrong.
+
+  So there is no blazing noon. The afternoon is hazy and high-contrast at the
+  horizon rather than bright everywhere, which is both the honest OLED design
+  and the reason the claim still holds. Measured with `npm run drive`.
 */
-const SCENES: Record<Animation, Scene> = {
-  // Conviction, on the offensive. First light behind the mountain.
-  Attack_1: {
+const SKIES: Record<TimeOfDay, Scene> = {
+  // First light behind the mountain, warm and still.
+  morning: {
     sky: ['#241546', '#5b3168', '#b8566a', '#ffd9a0'],
     body: { kind: 'sun', fill: '#fff4d6', glow: '#ffb877' },
     fuji: '#6d4470',
@@ -95,22 +115,27 @@ const SCENES: Record<Animation, Scene> = {
     stars: 6,
     petals: 8,
   },
-  // Running. Clear, cold, moonlit — moving rather than triumphant.
-  Run: {
-    sky: ['#070f26', '#153053', '#2f6285', '#9fd0dc'],
-    body: { kind: 'moon', fill: '#f4faff', glow: '#8fc4e0' },
-    fuji: '#2c4a6b',
-    fujiSnow: '#d8e6f2',
-    ridgeMid: '#1a2f47',
-    ridgeNear: '#0d1a2b',
-    ground: '#060c15',
-    torii: '#0a1420',
-    mist: '#bcd9e8',
-    stars: 26,
-    petals: 6,
+  /*
+    Haze rather than daylight. The sun is up and behind the mountain, the sky
+    has lost its colour to humidity, and the zenith stays dark — which is what
+    keeps this under the morning's drive while still reading as the middle of
+    the day.
+  */
+  afternoon: {
+    sky: ['#161f34', '#31445c', '#657a8c', '#bdb29c'],
+    body: { kind: 'sun', fill: '#e4d8bd', glow: '#b3a07c' },
+    fuji: '#42536a',
+    fujiSnow: '#c8cfd6',
+    ridgeMid: '#263446',
+    ridgeNear: '#151d28',
+    ground: '#0b0f16',
+    torii: '#10151c',
+    mist: '#b0aa9c',
+    stars: 0,
+    petals: 10,
   },
-  // Walking. Dusk: neither one thing nor the other, which is the point.
-  Walk: {
+  // Dusk: neither one thing nor the other, which is the point.
+  evening: {
     sky: ['#141a2e', '#2d3550', '#5a5570', '#c2a68f'],
     body: { kind: 'moon', fill: '#e6ebf5', glow: '#8b8fa8' },
     fuji: '#413f5c',
@@ -118,41 +143,13 @@ const SCENES: Record<Animation, Scene> = {
     ridgeMid: '#26263c',
     ridgeNear: '#141527',
     ground: '#0a0a14',
-    stars: 12,
     torii: '#100f1c',
     mist: '#b9aeb0',
+    stars: 12,
     petals: 4,
   },
-  // Guarded. Overcast — the moon is up there and you cannot see it.
-  Shield: {
-    sky: ['#1a1d26', '#31353f', '#5c606a', '#b6b2ad'],
-    body: null,
-    fuji: '#3a3b46',
-    fujiSnow: '#b8b7bd',
-    ridgeMid: '#24262e',
-    ridgeNear: '#14151a',
-    ground: '#0b0b0f',
-    torii: '#0f1014',
-    mist: '#9a9694',
-    stars: 0,
-    petals: 2,
-  },
-  // Hurt. Storm: almost monochrome, horizon bruised.
-  Hurt: {
-    sky: ['#100b12', '#2a1822', '#5c2530', '#c05a45'],
-    body: null,
-    fuji: '#2e1c26',
-    fujiSnow: '#8f7c82',
-    ridgeMid: '#1c1017',
-    ridgeNear: '#0f080c',
-    ground: '#070406',
-    torii: '#0a0508',
-    mist: '#6b3a38',
-    stars: 0,
-    petals: 0,
-  },
-  // At rest. A clear night, quiet and unhurried.
-  Idle: {
+  // A clear night, quiet and unhurried.
+  night: {
     sky: ['#0a1024', '#1b2b47', '#3f5a72', '#b9c9c8'],
     body: { kind: 'moon', fill: '#eef5ff', glow: '#7fa2c0' },
     fuji: '#33445e',
@@ -165,24 +162,29 @@ const SCENES: Record<Animation, Scene> = {
     stars: 22,
     petals: 5,
   },
-  // Down. Deep night, almost nothing lit.
-  Dead: {
-    sky: ['#03050c', '#0a1120', '#152540', '#41627f'],
-    body: { kind: 'moon', fill: '#cfdcee', glow: '#3b5573' },
-    fuji: '#131f30',
-    fujiSnow: '#8497ad',
-    ridgeMid: '#0c1420',
-    ridgeNear: '#070c14',
-    ground: '#03050a',
-    torii: '#05080e',
-    mist: '#2a3c50',
-    stars: 30,
-    petals: 0,
-  },
 };
 
-export function sceneFor(animation: Animation): Scene {
-  return SCENES[animation] ?? SCENES.Walk;
+export const TIMES_OF_DAY = ['morning', 'afternoon', 'evening', 'night'] as const;
+
+/*
+  WHERE THE BANDS FALL.
+
+  Sunrise and sunset move by an hour and a half over a year and by far more with
+  latitude, and the panel has no idea where it is being looked at. So these are
+  the ordinary human names for parts of the day rather than an ephemeris: the
+  point is that the sky changes while somebody is watching, not that it is
+  astronomically correct in Reykjavik.
+*/
+export function timeOfDayAt(date: Date): TimeOfDay {
+  const h = date.getHours();
+  if (h >= 5 && h < 11) return 'morning';
+  if (h >= 11 && h < 17) return 'afternoon';
+  if (h >= 17 && h < 21) return 'evening';
+  return 'night';
+}
+
+export function sceneFor(time: TimeOfDay): Scene {
+  return SKIES[time] ?? SKIES.night;
 }
 
 export const PALETTE = { star: '#ffeed4', petal: '#ffc2c8' } as const;

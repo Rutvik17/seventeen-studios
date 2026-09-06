@@ -170,9 +170,17 @@ export function boostInputCurrentMa(
 /*
   THE PICTURE THE PANEL ACTUALLY SHOWS, AND WHAT IT COSTS.
 
-  Measured, not assumed: the companion scene was rendered at true 1:1 and its
-  mean per-subpixel drive computed across all seven hours. Fuji at first light
-  is the most expensive at 27.1% — it has the brightest sky and the most snow.
+  Measured, not assumed: the companion scene is rendered at true 1:1 and its
+  mean per-subpixel drive computed for every sky. Fuji at first light is the
+  most expensive at 27.1% — it has the brightest sky and the most snow.
+
+  `npm run drive` now does that measurement rather than a person doing it once.
+  The skies were rekeyed from the model's reading to the hour, which replaced
+  seven of them with four, and a re-measure put first light at 26.9% — 0.2
+  points off the hand figure this constant was set from, which is as close as
+  two independent measurements of the same artwork get. The script fails if any
+  sky ever exceeds it, because this number is a CEILING: the battery figure
+  below holds only while nothing is brighter than the scene it was taken from.
 
   This matters because the earlier budget carried a flat 38 mA for the panel,
   chosen when the OLED showed a sparse monochrome face on black. Real artwork
