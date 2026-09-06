@@ -180,53 +180,33 @@ function walkForward(panel, label) {
   };
 }
 
-const runs = [];
-
-console.log('\nbuilding price-only panel…');
-let t0 = Date.now();
-const techPanel = buildPanel(prices);
-rankNormalise(techPanel);
-console.log(`  ${techPanel.rows.length.toLocaleString()} rows, ${techPanel.columns.length} features (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
-runs.push({ name: 'technical only', result: walkForward(techPanel, 'technical') });
-
-if (fundamentals) {
-  console.log('\nbuilding price + fundamentals panel…');
-  t0 = Date.now();
-  const fullPanel = buildPanel(prices, { fundamentals });
-  rankNormalise(fullPanel);
-  console.log(`  ${fullPanel.rows.length.toLocaleString()} rows, ${fullPanel.columns.length} features (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
-  runs.push({ name: '+ SEC fundamentals', result: walkForward(fullPanel, 'fundamental') });
-}
-
-if (fundamentals && macro) {
-  console.log('\nbuilding price + fundamentals + macro panel…');
-  t0 = Date.now();
-  const macroPanel = buildPanel(prices, { fundamentals, macro });
-  rankNormalise(macroPanel);
-  console.log(
-    `  ${macroPanel.rows.length.toLocaleString()} rows, ${macroPanel.columns.length} features` +
-    ` (${macroPanel.rankableColumns} ranked, ${macroPanel.columns.length - macroPanel.rankableColumns} raw macro)` +
-    ` (${((Date.now() - t0) / 1000).toFixed(1)}s)`,
-  );
-  runs.push({ name: '+ macro', result: walkForward(macroPanel, 'macro') });
-}
-
 /*
-  THE THREE SEC FAMILIES, ADDED ONE AT A TIME.
+  EVERY PANEL IN ONE LIST, SO ONE OF THEM CAN BE RUN ALONE.
 
-  Each is built on TECHNICAL ONLY rather than stacked on the previous run, and
-  that is deliberate. Fundamentals cost 0.0042 of IC and macro was a wash, so
-  stacking the new families on top of them would measure the new signal through
-  two known-neutral filters and blame any shortfall on the wrong thing.
+  These were three inline blocks and an `additions` array, which was fine while
+  the run happened on one machine in one sitting. It takes about four hours,
+  and that is too long to hold a laptop hostage — so the run has to be able to
+  happen in CI, where the sane shape is one job per panel, in parallel, each
+  finishing in about half an hour. `--only=<slug>` is what makes that possible.
 
-  Against the price-only baseline the comparison is clean: same rows, same
-  folds, same seed, one family added.
+  Nothing about the comparison changes. Every panel is still built on TECHNICAL
+  ONLY rather than stacked on the one before it, and that is deliberate:
+  fundamentals cost 0.0042 of IC and macro was a wash, so stacking a new family
+  on top of them would measure the new signal through two known-neutral filters
+  and blame any shortfall on the wrong thing. Against the price-only baseline
+  the comparison is clean — same rows, same folds, same seed, one family added.
+
+  TECHNICAL MUST STAY FIRST. The comparison table reads `runs[0]` as the
+  baseline every other panel is scored against.
 */
-const additions = [
-  ['+ 13F ownership', { institutional }],
-  ['+ Form 4 insiders', { insider }],
-  ['+ earnings language', { language }],
-  ['+ all three SEC', { institutional, insider, language }],
+const PANELS = [
+  { slug: 'technical', name: 'technical only', extra: {} },
+  { slug: 'fundamental', name: '+ SEC fundamentals', extra: { fundamentals } },
+  { slug: 'macro', name: '+ macro', extra: { fundamentals, macro } },
+  { slug: '13f-ownership', name: '+ 13F ownership', extra: { institutional } },
+  { slug: 'form-4-insiders', name: '+ Form 4 insiders', extra: { insider } },
+  { slug: 'earnings-language', name: '+ earnings language', extra: { language } },
+  { slug: 'all-three-sec', name: '+ all three SEC', extra: { institutional, insider, language } },
   /*
     THE OPEN HALF OF THE SURVIVORSHIP QUESTION.
 
@@ -235,21 +215,86 @@ const additions = [
     in the index, which drops 18.8% of them. Everything else is identical, so
     the difference is the bias arriving through the training set.
   */
-  ['point-in-time training', { membership }],
-  ['point-in-time + all SEC', { membership, institutional, insider, language }],
+  { slug: 'point-in-time-training', name: 'point-in-time training', extra: { membership } },
+  {
+    slug: 'point-in-time-all-sec',
+    name: 'point-in-time + all SEC',
+    extra: { membership, institutional, insider, language },
+  },
 ];
 
-for (const [name, extra] of additions) {
-  if (!Object.values(extra).every(Boolean)) continue;
-  console.log(`\nbuilding price ${name}…`);
-  t0 = Date.now();
-  const panel = buildPanel(prices, extra);
-  rankNormalise(panel);
+const ONLY = (process.argv.find((a) => a.startsWith('--only=')) ?? '').slice(7);
+const wanted = ONLY ? PANELS.filter((p) => p.slug === ONLY) : PANELS;
+if (ONLY && !wanted.length) {
+  console.error(`train: no panel called "${ONLY}". Panels: ${PANELS.map((p) => p.slug).join(', ')}`);
+  process.exit(1);
+}
+
+/* One shape for a finished panel, so a partial and a full run agree. */
+const summarise = (run) => ({
+  slug: run.slug,
+  name: run.name,
+  /* Stamped per panel: split across nine jobs there is no single "the run". */
+  trainedAt: new Date().toISOString(),
+  meanIC: +run.result.mean.toFixed(5),
+  t: +run.result.t.toFixed(2),
+  hitRate: +run.result.hit.toFixed(4),
+  days: run.result.days,
+  positiveYears: run.result.positiveYears,
+  years: run.result.perYear.length,
+  perYear: run.result.perYear.map((y) => ({
+    year: y.year, ic: +y.ic.toFixed(5), days: y.days, rounds: y.rounds,
+  })),
+});
+
+const runs = [];
+for (const panel of wanted) {
+  /*
+    A family with no file on disk is skipped rather than fatal, for the same
+    reason `optional()` exists: a machine that has not run `npm run 13f` should
+    still be able to train the price model.
+  */
+  if (!Object.values(panel.extra).every(Boolean)) {
+    console.log(`\nskipping ${panel.name} — its data is not on disk`);
+    continue;
+  }
+
+  console.log(`\nbuilding ${panel.name}…`);
+  const t0 = Date.now();
+  const built = buildPanel(prices, panel.extra);
+  rankNormalise(built);
+  const rawColumns = built.columns.length - (built.rankableColumns ?? built.columns.length);
   console.log(
-    `  ${panel.rows.length.toLocaleString()} rows, ${panel.columns.length} features` +
-    ` (${((Date.now() - t0) / 1000).toFixed(1)}s)`,
+    `  ${built.rows.length.toLocaleString()} rows, ${built.columns.length} features`
+    + (rawColumns > 0 ? ` (${built.rankableColumns} ranked, ${rawColumns} raw macro)` : '')
+    + ` (${((Date.now() - t0) / 1000).toFixed(1)}s)`,
   );
-  runs.push({ name, result: walkForward(panel, name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()) });
+  runs.push({ ...panel, result: walkForward(built, panel.slug) });
+}
+
+/*
+  A SINGLE PANEL WRITES ITS OWN FILE AND STOPS.
+
+  There is no comparison to print from one run and no model to choose between,
+  so it saves what it found — including the fitted model, because the merge
+  step has to be able to ship the winner without refitting anything — and
+  leaves the table to `npm run train:merge`.
+*/
+if (ONLY) {
+  const [run] = runs;
+  if (!run) {
+    console.error(`train: ${ONLY} needs data that is not on disk`);
+    process.exit(1);
+  }
+  const partials = path.join(dataDir, 'partials');
+  mkdirSync(partials, { recursive: true });
+  writeFileSync(
+    path.join(partials, `${run.slug}.json`),
+    `${JSON.stringify({ ...summarise(run), model: run.result.model ?? null })}\n`,
+  );
+  const ic = run.result.mean;
+  console.log(`\nwrote data/partials/${run.slug}.json — mean IC ${ic >= 0 ? '+' : ''}${ic.toFixed(5)}`);
+  process.exit(0);
 }
 
 console.log('\n\nyear-by-year IC\n');
@@ -301,16 +346,7 @@ mkdirSync(dataDir, { recursive: true });
 writeFileSync(path.join(dataDir, 'training.json'), `${JSON.stringify({
   trainedAt: new Date().toISOString(),
   horizon: HORIZON,
-  runs: runs.map((r) => ({
-    name: r.name,
-    meanIC: +r.result.mean.toFixed(5),
-    t: +r.result.t.toFixed(2),
-    hitRate: +r.result.hit.toFixed(4),
-    days: r.result.days,
-    positiveYears: r.result.positiveYears,
-    years: r.result.perYear.length,
-    perYear: r.result.perYear.map((p) => ({ year: p.year, ic: +p.ic.toFixed(5), days: p.days, rounds: p.rounds })),
-  })),
+  runs: runs.map(summarise),
 }, null, 2)}\n`);
 console.log('\nwrote data/training.json');
 
