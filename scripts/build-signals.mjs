@@ -4,8 +4,10 @@
  *
  * The account page shows positions and returns. This is the layer underneath:
  * for every name in the book, what institutions did with it last quarter, what
- * its own officers did with their own money, what the company said about its
- * quarter, and — where it exists — who it owns.
+ * its own officers did with their own money, what the company reported for its
+ * last quarter, and what it owns of other listed companies — split into
+ * ordinary equity stakes and the ones a filing describes as a trading
+ * relationship too.
  *
  * ---
  * WHY IT IS JOINED TO THE BOOK RATHER THAN LISTED SEPARATELY
@@ -40,6 +42,8 @@ const form4 = read('form4.json');
 const thirteenF = read('13f.json');
 const earnings = read('earnings.json');
 const circular = read('circular.json');
+const evidence = read('circular-evidence.json');
+const fundamentals = read('fundamentals.json');
 
 const book = backtest.journal.at(-1);
 const asOf = book.date;
@@ -170,91 +174,151 @@ const flows = [...held.keys()]
   .filter(Boolean)
   .sort((a, b) => b.change - a.change);
 
-/* -------------------------------------------------------- what they said */
-
-const byName = new Map();
-for (const r of earnings.releases) {
-  if (!held.has(r.symbol)) continue;
-  const cur = byName.get(r.symbol);
-  if (!cur || r.date > cur.date) byName.set(r.symbol, r);
-}
+/* --------------------------------------------------- what they reported */
 
 /*
-  Tone against the SAME company's previous release, not against the market.
-  Absolute tone is mostly house style — some firms write "outstanding" every
-  quarter — so the move is the part that might mean something.
+  REVENUE AND EPS, NOT A WORD COUNT.
+
+  This section used to show "tone" — positive words less negative ones per
+  thousand, off the Loughran-McDonald finance dictionaries. That is a real
+  measure and it is a sensible model FEATURE, but it is a strange thing to put
+  in front of a reader of an account: nobody reads an earnings release to find
+  out how cheerful it was. They read it for revenue, earnings per share, and
+  what the company said about next quarter.
+
+  So the 8-K supplies the two things only it knows — the date results were
+  announced, and whether guidance moved — and the numbers come from the
+  company's own XBRL filing.
+
+  EPS is the DILUTED figure as reported, never net income divided by a share
+  count. `CommonStockSharesOutstanding` is a cover-page tag filers update
+  irregularly, and for some names the newest share count is two years older
+  than the newest income figure; dividing one by the other gives a number that
+  is wrong and looks entirely reasonable.
 */
-const priorByName = new Map();
+
+/* The 8-K, for the announcement date and the guidance direction. */
+const releaseByName = new Map();
 for (const r of earnings.releases) {
   if (!held.has(r.symbol)) continue;
-  const latestForName = byName.get(r.symbol);
-  if (!latestForName || r.date >= latestForName.date) continue;
-  const cur = priorByName.get(r.symbol);
-  if (!cur || r.date > cur.date) priorByName.set(r.symbol, r);
+  const cur = releaseByName.get(r.symbol);
+  if (!cur || r.date > cur.date) releaseByName.set(r.symbol, r);
 }
 
-const language = [...byName.values()]
-  .map((r) => {
-    const prior = priorByName.get(r.symbol);
-    return {
-      symbol: r.symbol,
-      date: r.date,
-      tone: r4(r.tone),
-      change: prior ? r4(r.tone - prior.tone) : null,
-      hedging: r4(r.hedging),
-      guidance: r.guidance,
-      weight: r4(held.get(r.symbol)?.weight ?? 0),
-    };
-  })
-  .sort((a, b) => b.tone - a.tone);
-
-/* ------------------------------------------------------- who owns whom */
+const DAY = 864e5;
+const days = (a, b) => Math.round((Date.parse(a) - Date.parse(b)) / DAY);
 
 /*
-  ONE EDGE PER RELATIONSHIP, AT ITS LATEST PERIOD.
+  The quarter a release is ABOUT, matched by date rather than assumed.
 
-  circular.json is a row per stake per quarter, and three quarters are in
-  range. Sorting the raw rows by value therefore ranked the same relationship
-  three times: Uber's stake in Grab took the top three places on the list,
-  reading as three separate holdings when it is one holding measured on three
-  dates. Collapse to the newest quarter per (holder, security) and the previous
-  quarter becomes the useful thing instead — what the stake did.
+  A company announces results some weeks after the quarter closes — never
+  before it closes, and rarely more than four months after. The XBRL fact whose
+  period end falls in that window is the one the 8-K is reporting, and taking
+  the newest fact instead would sometimes take a quarter the company has not
+  announced yet.
 */
-const MONTHS = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
-const periodOrder = (p) => {
-  const [, mon, year] = p.split('-');
-  return Number(year) * 12 + MONTHS[mon.toUpperCase()];
+const reportedAt = (facts, releaseDate) => {
+  let best = null;
+  for (const f of facts ?? []) {
+    const gap = days(releaseDate, f.end);
+    if (gap < 0 || gap > 120) continue;
+    if (!best || f.end > best.end) best = f;
+  }
+  return best;
 };
+
+/* The same quarter a year earlier, within a fortnight either side — fiscal
+   calendars shift by a few days from year to year. */
+const yearBefore = (facts, end) => {
+  const target = Date.parse(end) - 365 * DAY;
+  let best = null;
+  for (const f of facts ?? []) {
+    const off = Math.abs(Date.parse(f.end) - target);
+    if (off > 20 * DAY) continue;
+    if (!best || off < Math.abs(Date.parse(best.end) - target)) best = f;
+  }
+  return best;
+};
+
+const growth = (now, then) =>
+  Number.isFinite(now) && Number.isFinite(then) && then > 0 ? r4(now / then - 1) : null;
+
+const reported = [];
+for (const [symbol, release] of releaseByName) {
+  const facts = fundamentals.facts[symbol];
+  if (!facts) continue;
+
+  const rev = reportedAt(facts.revenue, release.date);
+  const eps = reportedAt(facts.eps, release.date);
+  if (!rev && !eps) continue;
+
+  const quarter = rev?.end ?? eps?.end;
+  const revPrior = rev ? yearBefore(facts.revenue, rev.end) : null;
+  const epsPrior = eps ? yearBefore(facts.eps, eps.end) : null;
+
+  reported.push({
+    symbol,
+    filed: release.date,
+    quarter,
+    revenue: rev ? Math.round(rev.val) : null,
+    revenueGrowth: rev && revPrior ? growth(rev.val, revPrior.val) : null,
+    eps: eps ? r4(eps.val) : null,
+    epsPrior: epsPrior ? r4(epsPrior.val) : null,
+    guidance: release.guidance,
+    weight: r4(held.get(symbol)?.weight ?? 0),
+  });
+}
+
+/*
+  Ranked on revenue growth, which is the one column every company has and the
+  one that is comparable across them. EPS is the more meaningful number and the
+  less comparable one — a single charge can put it negative at a company whose
+  business did not change.
+*/
+const withGrowth = reported.filter((r) => r.revenueGrowth !== null)
+  .sort((a, b) => b.revenueGrowth - a.revenueGrowth);
+
+/* ------------------------------------------- stakes, and which are circular */
+
+/*
+  TWO DIFFERENT QUESTIONS, SO TWO SECTIONS.
+
+  These were one list called "who owns whom", and that conflated two things a
+  reader would not want conflated. Ventas owning a hospital operator is
+  ordinary corporate investment. NVIDIA owning CoreWeave, which buys NVIDIA
+  GPUs with NVIDIA's money, is a financing loop — the same money appearing as
+  an investment on one side and as revenue on the other.
+
+  A 13F cannot tell those apart: it establishes the stake and says nothing
+  about whether the two companies trade. So the split is not inferred here.
+  `fetch-circular-evidence.mjs` searches both companies' filings for a sentence
+  describing a commercial relationship, and a stake is called circular only
+  where such a sentence exists — quoted, dated and linked. Everything else
+  stays an equity stake, which is all the filing ever established.
+*/
 
 /*
   The issuer name as filed, tidied only where it is shouted. 13F has no house
   style — "INTEL CORP" sits beside "Grab Holdings Limited" in the same file —
   so an all-caps name is title-cased and a name that already carries its own
-  capitals is left exactly as its filer wrote it. Corporate suffixes go because
-  they are noise in a diagram, not because they are wrong.
+  capitals is left exactly as its filer wrote it.
+
+  Title-casing has one trap and it is acronyms: a blanket lowercase turns CME
+  GROUP into "Cme" and AST SPACEMOBILE into "Ast". Tokens of three letters or
+  fewer keep their capitals, which is the shape an acronym has and a word this
+  short almost never does. "Group" and "Holdings" are NOT stripped for the same
+  reason — CME Group without the Group is not a company anybody recognises.
 */
 const SUFFIX = /[,\s]+(inc|incorporated|corp|corporation|co|ltd|limited|plc|nv|sa|ag|lp|llc)\b\.?/gi;
-
-/*
-  Title-casing shouted names has one trap and it is acronyms: a blanket
-  lowercase turns CME GROUP into "Cme" and AST SPACEMOBILE into "Ast". Tokens
-  of three letters or fewer keep their capitals, which is the shape an acronym
-  has and a word this short almost never does.
-
-  "Group" and "Holdings" are NOT stripped, for the same reason — CME Group
-  without the Group is not a company anybody recognises.
-*/
 const tidy = (name) => {
   const cased =
     name === name.toUpperCase()
       ? name
-          .split(' ')
-          .map((word) =>
-            word.replace(/[^A-Z]/g, '').length <= 3
-              ? word
-              : word.toLowerCase().replace(/(^|[(&/-])([a-z])/g, (_, edge, ch) => edge + ch.toUpperCase()),
-          )
-          .join(' ')
+        .split(' ')
+        .map((word) => (word.replace(/[^A-Z]/g, '').length <= 3
+          ? word
+          : word.toLowerCase().replace(/(^|[(&/-])([a-z])/g, (_, edge, ch) => edge + ch.toUpperCase())))
+        .join(' ')
       : name;
 
   return (
@@ -267,42 +331,88 @@ const tidy = (name) => {
   );
 };
 
-const byRelationship = new Map();
-for (const e of circular.edges) {
-  const key = `${e.from}|${e.cusip}`;
-  const cur = byRelationship.get(key);
-  if (!cur || periodOrder(e.period) > periodOrder(cur.period)) byRelationship.set(key, e);
-}
+const latestPeriod = circular.latestPeriod;
+const allPeriods = [...new Set(circular.edges.map((e) => e.periodIso))].sort();
+const priorPeriod = allPeriods[allPeriods.indexOf(latestPeriod) - 1] ?? null;
 
-/* The quarter before the latest one, so a stake can be shown moving. */
-const priorRelationship = new Map();
-for (const e of circular.edges) {
-  const key = `${e.from}|${e.cusip}`;
-  const newest = byRelationship.get(key);
-  if (!newest || periodOrder(e.period) >= periodOrder(newest.period)) continue;
-  const cur = priorRelationship.get(key);
-  if (!cur || periodOrder(e.period) > periodOrder(cur.period)) priorRelationship.set(key, e);
-}
+/* The same collapse the evidence script applies: share classes of one investee
+   are one relationship, so the prior quarter has to be summed the same way. */
+const collapse = (rows) => {
+  const out = new Map();
+  for (const e of rows) {
+    const key = `${e.from}|${e.cusip}`;
+    out.set(key, (out.get(key) ?? 0) + e.value);
+  }
+  return out;
+};
+const before = collapse(circular.edges.filter((e) => e.periodIso === priorPeriod));
 
-const edges = [...byRelationship.entries()]
-  .map(([key, e]) => {
-    const prior = priorRelationship.get(key);
-    return {
-      from: e.from,
-      fromName: e.fromName,
-      to: tidy(e.to),
-      billions: r4(e.value / 1e9),
-      change: prior && prior.value > 0 ? r4(e.value / prior.value - 1) : null,
-      period: e.period,
-      inBook: held.has(e.from),
-    };
-  })
+/*
+  Filings are HTML, and stripping the tags leaves the entities behind. The
+  quotes came through carrying "&#9642;" (a black square, used as a bullet) and
+  "&#8217;" mid-word, which reads as markup escaping onto the page. Decoded
+  here rather than in the fetcher so that improving it never costs another pass
+  over EDGAR.
+*/
+const ENTITIES = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
+  rsquo: '’', lsquo: '‘', ldquo: '“', rdquo: '”',
+  mdash: '—', ndash: '–', hellip: '…', bull: '•',
+};
+const readable = (text) =>
+  text
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
+    .replace(/&([a-z]+);/gi, (whole, name) => ENTITIES[name.toLowerCase()] ?? whole)
+    /* Bullets and zero-width joiners survive decoding and are noise in a quote. */
+    .replace(/[▪•​‌‍﻿]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+([,.;:])/g, '$1')
+    .trim();
+
+const stakes = evidence.stakes
+  .map((st) => ({
+    from: st.from,
+    fromName: st.fromName,
+    to: tidy(st.to),
+    ticker: st.investeeTicker,
+    billions: r4(st.value / 1e9),
+    change: before.get(`${st.from}|${st.cusip}`) > 0
+      ? r4(st.value / before.get(`${st.from}|${st.cusip}`) - 1)
+      : null,
+    evidence: st.evidence
+      ? {
+        quote: readable(st.evidence.quote),
+        filer: st.evidence.filer,
+        form: st.evidence.form,
+        filed: st.evidence.filed,
+        url: st.evidence.url,
+        /* Which company said it. A supplier naming a customer and a customer
+           naming a supplier are not the same claim. */
+        direction: st.evidence.direction === 'investee-discloses-investor' ? 'investee' : 'investor',
+      }
+      : null,
+  }))
   .sort((a, b) => b.billions - a.billions);
 
-const stakes = edges.filter((e) => e.inBook).slice(0, 14);
+const circularStakes = stakes.filter((s) => s.evidence);
+const plainStakes = stakes.filter((s) => !s.evidence);
 
-/* Everything in the graph, held or not — the structure is worth seeing whole. */
-const graph = edges.slice(0, 18);
+/*
+  A FLOOR FOR WHAT GETS ITS OWN CARD, because the tail is long and immaterial.
+
+  All 58 evidenced pairs rendered as cards made the section 24,000 pixels tall
+  on a phone, and the bottom of it was Merck's $0.0M in Neuphoria and J&J's
+  $0.2M in Adicet — real relationships, disclosed, and far too small to be
+  worth a paragraph each.
+
+  A hundred million is the cut. It keeps 28 pairs carrying 98.9% of the money,
+  and the ones it drops are counted and totalled in the copy rather than
+  disappearing, so the reader can see the size of what is not shown.
+*/
+const CARD_FLOOR = 0.1;
+const cardStakes = circularStakes.filter((s) => s.billions >= CARD_FLOOR);
+const tailStakes = circularStakes.filter((s) => s.billions < CARD_FLOOR);
 
 const payload = {
   generatedAt: new Date().toISOString(),
@@ -325,22 +435,36 @@ const payload = {
     excluded: joinFailures,
     floor: HOLDER_FLOOR,
   },
-  language: {
-    positive: language.slice(0, 8),
-    negative: language.slice(-8).reverse(),
-    raised: language.filter((l) => l.guidance > 0).length,
-    lowered: language.filter((l) => l.guidance < 0).length,
+  reported: {
+    growing: withGrowth.slice(0, 8),
+    shrinking: withGrowth.slice(-8).reverse(),
+    covered: reported.length,
+    withGrowth: withGrowth.length,
+    raised: reported.filter((r) => r.guidance > 0).length,
+    lowered: reported.filter((r) => r.guidance < 0).length,
+  },
+  stakes: {
+    period: latestPeriod,
+    prior: priorPeriod,
+    list: plainStakes.slice(0, 20),
+    total: plainStakes.length,
+    holders: new Set(plainStakes.map((s) => s.from)).size,
+    billions: r4(plainStakes.reduce((t, s) => t + s.billions, 0)),
   },
   circular: {
-    heldStakes: stakes,
-    graph,
-    /* Relationships, not filing rows — one per holder-and-security pair. */
-    totalEdges: edges.length,
-    holders: new Set(edges.map((e) => e.from)).size,
-    latestPeriod: circular.edges.reduce(
-      (best, e) => (!best || periodOrder(e.period) > periodOrder(best) ? e.period : best),
-      null,
-    ),
+    period: latestPeriod,
+    prior: priorPeriod,
+    list: cardStakes,
+    total: circularStakes.length,
+    holders: new Set(circularStakes.map((s) => s.from)).size,
+    billions: r4(circularStakes.reduce((t, s) => t + s.billions, 0)),
+    /* What the card floor leaves out, so the copy can say it. */
+    floor: CARD_FLOOR,
+    tail: tailStakes.length,
+    tailBillions: r4(tailStakes.reduce((t, s) => t + s.billions, 0)),
+    /* How the split was arrived at, so the page can state it. */
+    considered: evidence.considered,
+    resolved: evidence.investeesResolved,
   },
 };
 
@@ -352,9 +476,12 @@ console.log(
   `signals: ${flows.length} names with a quarter-on-quarter ownership change` +
     (joinFailures ? ` (${joinFailures} dropped below ${HOLDER_FLOOR} holders — failed name join)` : ''),
 );
-console.log(`signals: ${language.length} with a scored release, ${payload.language.raised} raised guidance`);
 console.log(
-  `signals: ${edges.length} ownership relationships across ${payload.circular.holders} companies,` +
-    ` ${stakes.length} of them held`,
+  `signals: ${reported.length} names with a reported quarter, ${withGrowth.length} comparable year on year,`
+    + ` ${payload.reported.raised} raised guidance and ${payload.reported.lowered} lowered it`,
+);
+console.log(
+  `signals: ${stakes.length} stakes at ${latestPeriod} — ${circularStakes.length} carry a filing`
+    + ` describing a commercial relationship, ${plainStakes.length} do not`,
 );
 console.log(`signals: wrote ${(bytes / 1024).toFixed(1)} KB to public/data/signals.json`);
