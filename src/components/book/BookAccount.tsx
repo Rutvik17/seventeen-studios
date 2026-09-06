@@ -52,14 +52,21 @@ type Book = {
 };
 
 /*
-  Live first, baked second.
+  ONE SOURCE: the copy baked into the build.
 
-  The build carries a copy so the page works offline and on first paint; if a
-  newer one has been published to the data branch, that wins. Same shape as the
-  live quote on the board — raw GitHub sends CORS headers and caches for five
-  minutes, so the account refreshes on a rebalance without a deploy.
+  There was a second fetch here, of a newer `engine.json` on the data branch,
+  on the model of the live quote — and it never once succeeded. Nothing
+  publishes that file. `quote.yml` writes `quote.json` and only `quote.json`,
+  because the account is rebuilt by `npm run instrument` from the backtest
+  artifacts in `data/`, which are gitignored and far too large to hand to CI.
+  So the fallback was the only path that ever ran: a 404 on every page load,
+  and a five-minute timer to do it again.
+
+  It could be made to work by publishing engine.json from this machine. Until
+  something does, a branch fetch that has never returned a byte is machinery
+  rather than a feature, and the "· live" badge beside the holdings was a
+  promise the page could not keep.
 */
-const LIVE = 'https://raw.githubusercontent.com/Rutvik17/seventeen-studios/data/engine.json';
 
 const RANGES = [
   { label: '1Y', years: 1 },
@@ -81,36 +88,21 @@ export function BookAccount() {
   const [data, setData] = useState<Book | null>(null);
   const [failed, setFailed] = useState(false);
   const [range, setRange] = useState<string>('All');
-  const [live, setLive] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    const load = async () => {
-      // The baked copy is the floor: if the live one is missing or malformed the
-      // page still renders a complete account rather than an error.
-      try {
-        const res = await fetch(asset('/data/engine.json'));
-        if (res.ok && alive) setData(await res.json());
-      } catch {
+    // A 404 or a malformed body is a failure now rather than something to fall
+    // back from — there is nothing behind this to fall back to.
+    fetch(asset('/data/engine.json'))
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+      .then((book: Book) => {
+        if (alive) setData(book);
+      })
+      .catch(() => {
         if (alive) setFailed(true);
-      }
-      try {
-        const res = await fetch(LIVE, { cache: 'no-store' });
-        if (!res.ok) return;
-        const fresh: Book = await res.json();
-        if (alive && fresh?.currentBook?.positions?.length) {
-          setData(fresh);
-          setLive(true);
-        }
-      } catch {
-        // No live copy published yet. The baked one is already showing.
-      }
-    };
-    load();
-    const timer = setInterval(load, 5 * 60 * 1000);
+      });
     return () => {
       alive = false;
-      clearInterval(timer);
     };
   }, []);
 
@@ -231,7 +223,7 @@ export function BookAccount() {
         <p className="book__meta">
           As at {data.currentBook.date} · bought &rarr; now, and the return on each ·
           largest position {(Math.abs(data.currentBook.positions[0].weight) * 100).toFixed(2)}% of
-          the account{live ? ' · live' : ''}
+          the account
         </p>
         {/*
           `data-lenis-prevent` or this does not scroll. Lenis drives the page
