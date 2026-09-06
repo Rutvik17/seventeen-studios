@@ -39,7 +39,8 @@
     "conformal": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-conformal.mjs",
     "covariance": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/verify-covariance.mjs",
     "earnings": "node --experimental-strip-types --max-old-space-size=8192 --import ./scripts/alias-register.mjs scripts/fetch-earnings.mjs",
-    "earnings:verify": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-earnings.mjs"
+    "earnings:verify": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-earnings.mjs",
+    "engine:page": "node --max-old-space-size=8192 scripts/build-engine-page.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
