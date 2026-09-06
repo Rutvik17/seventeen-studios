@@ -367,6 +367,14 @@ export function BookAccount() {
       </section>
 
       <p className="book__note">
+        <a href="/book/method/">
+          How this is built &mdash; and the four construction methods that were
+          implemented, measured, and switched off
+        </a>
+        .
+      </p>
+
+      <p className="book__note">
         A simulation, not an account anybody holds. {money(data.stake)} compounded through a
         walk-forward backtest, monthly rebalancing, borrow and commission charged — and
         restricted on every single day to companies that were actually in the index that day.
