@@ -304,7 +304,7 @@ amount. It is the largest unmeasured risk to this result.
       is 112 folds. The early years train on less data so that is an upper
       bound, but it is the right number to plan around.
 
-- [ ] **Point-in-time RETRAIN.**- [ ] **Point-in-time RETRAIN.** The open half of the survivorship question:
+- [ ] **Point-in-time RETRAIN.** The open half of the survivorship question:
       train on membership-filtered rows rather than only grading on them. This
       is what the -69% was reaching for and the only way to settle it.
 - [ ] **Clean re-run of the 3-way IC comparison** on the fixed prices, to see how
