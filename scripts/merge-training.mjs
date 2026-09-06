@@ -55,6 +55,7 @@ const ORDER = [
   'all-three-sec',
   'point-in-time-training',
   'point-in-time-all-sec',
+  'selected',
 ];
 
 if (!existsSync(PARTIALS)) {

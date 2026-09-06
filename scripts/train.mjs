@@ -43,6 +43,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { buildPanel, rankNormalise, HORIZON } from '../src/lib/engine/panel.ts';
+import { TECHNICAL_COLUMNS } from '../src/lib/engine/technical.ts';
 import { train, predict, importances } from '../src/lib/engine/gbdt.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -133,13 +134,146 @@ function dailyIC(rows, preds) {
   return ics;
 }
 
-function walkForward(panel, label) {
+/*
+  PER-COLUMN SELECTION, INSIDE THE FOLD.
+
+  The nine-panel comparison admitted or rejected whole families and every one
+  of them lost. `npm run features` says that verdict is too coarse: the best
+  earnings column scores t = 12.2 and the best Form 4 column t = 10.9 — both
+  stronger than momentum — while sitting in families that also contain columns
+  at t = 0.5. Admitting eight columns to get one buries it.
+
+  So this admits columns rather than families, and it does it INSIDE each fold
+  using only rows the fold was already allowed to train on. Choosing columns on
+  the full sample and then scoring on part of it is how noise gets promoted to
+  signal, and it would make every number downstream meaningless.
+
+  WHAT IS AND IS NOT CHOSEN HERE
+
+  The technical columns are kept unconditionally. They are the baseline every
+  other panel is measured against and the one panel that wins; the question on
+  the table is which EXTRA columns earn a place beside them, not whether to
+  re-derive the price model.
+
+  The threshold is a fixed number rather than a fitted one. Tuning it per fold
+  would be a second selection problem stacked on the first, and there is not
+  enough data to pay for both.
+*/
+const SELECT_T = 3;
+
+const TECHNICAL = new Set(TECHNICAL_COLUMNS);
+
+/**
+ * Rank a vector within each day, once, so every column can reuse the grouping.
+ *
+ * Grouping the rows by date is the expensive part and it does not depend on
+ * the column, so doing it once per fold instead of once per column is what
+ * makes selecting over fifty columns across fourteen folds affordable.
+ */
+function groupByDate(rows) {
+  const byDate = new Map();
+  rows.forEach((r, i) => {
+    let g = byDate.get(r.t);
+    if (!g) byDate.set(r.t, (g = []));
+    g.push(i);
+  });
+  return [...byDate.values()].filter((g) => g.length >= 20);
+}
+
+function rankWithin(group, valueOf) {
+  const order = group
+    .map((i) => ({ i, v: valueOf(i) }))
+    .filter((x) => Number.isFinite(x.v))
+    .sort((a, b) => a.v - b.v);
+  const ranks = new Map();
+  let i = 0;
+  while (i < order.length) {
+    let j = i;
+    while (j + 1 < order.length && order[j + 1].v === order[i].v) j += 1;
+    const avg = (i + j) / 2;
+    for (let k = i; k <= j; k += 1) ranks.set(order[k].i, avg);
+    i = j + 1;
+  }
+  return ranks;
+}
+
+/** Which column indices this fold is allowed to use. */
+function selectColumns(trainRows, panel) {
+  const groups = groupByDate(trainRows);
+  const labelRanks = groups.map((g) => rankWithin(g, (i) => trainRows[i].label));
+
+  const kept = [];
+  const scored = [];
+
+  for (let c = 0; c < panel.columns.length; c += 1) {
+    const name = panel.columns[c];
+
+    /* The price model is the baseline, not a candidate. */
+    if (TECHNICAL.has(name)) {
+      kept.push(c);
+      continue;
+    }
+
+    /*
+      A raw macro column is constant across names within a day, so it has no
+      cross-sectional IC to measure and this test cannot speak to it. Dropping
+      it on a score it cannot produce would be a bug, so it is kept and the
+      macro panel remains the place that question gets asked.
+    */
+    if (c >= panel.rankableColumns) {
+      kept.push(c);
+      continue;
+    }
+
+    const ics = [];
+    for (let g = 0; g < groups.length; g += 1) {
+      const group = groups[g];
+      const a = rankWithin(group, (i) => trainRows[i].features[c]);
+      if (a.size < 20) continue;
+      const b = labelRanks[g];
+      const n = a.size;
+      const m = (n - 1) / 2;
+      let cov = 0; let va = 0; let vb = 0;
+      for (const [i, ar] of a) {
+        const br = b.get(i);
+        if (br === undefined) continue;
+        cov += (ar - m) * (br - m);
+        va += (ar - m) ** 2;
+        vb += (br - m) ** 2;
+      }
+      if (va > 0 && vb > 0) ics.push(cov / Math.sqrt(va * vb));
+    }
+
+    if (ics.length < 60) continue;
+    const m = mean(ics);
+    const sd = Math.sqrt(mean(ics.map((v) => (v - m) ** 2)));
+    const t = sd > 0 ? (m / sd) * Math.sqrt(ics.length) : 0;
+    scored.push({ name, t: +t.toFixed(2) });
+    if (Math.abs(t) >= SELECT_T) kept.push(c);
+  }
+
+  return {
+    kept,
+    admitted: scored.filter((x) => Math.abs(x.t) >= SELECT_T).map((x) => x.name),
+    rejected: scored.filter((x) => Math.abs(x.t) < SELECT_T).map((x) => x.name),
+  };
+}
+
+/** Reduce every row to the chosen columns, once per fold. */
+const project = (rows, kept) => rows.map((r) => {
+  const f = new Array(kept.length);
+  for (let i = 0; i < kept.length; i += 1) f[i] = r.features[kept[i]];
+  return f;
+});
+
+function walkForward(panel, label, { select = false } = {}) {
   const year = (t) => Number(panel.dates[t].slice(0, 4));
   const labelled = panel.rows.filter((r) => Number.isFinite(r.label));
   const years = [...new Set(labelled.map((r) => year(r.t)))].sort().filter((y) => y >= 2013);
 
   const perYear = [];
   const allIC = [];
+  const chosen = [];
   let lastModel = null;
 
   for (const y of years) {
@@ -150,18 +284,34 @@ function walkForward(panel, label) {
     const trainRows = labelled.filter((r) => r.t < firstTestT - HORIZON);
     if (trainRows.length < 20_000) continue;
 
+    /*
+      Selection runs on `trainRows`, which is already gated to strictly before
+      the fold minus the embargo — so the columns are chosen without the test
+      year having been looked at even once.
+    */
+    let columns = panel.columns;
+    let trainFeatures = trainRows;
+    let testFeatures = testRows;
+    if (select) {
+      const choice = selectColumns(trainRows, panel);
+      columns = choice.kept.map((c) => panel.columns[c]);
+      trainFeatures = project(trainRows, choice.kept).map((f, i) => ({ features: f, label: trainRows[i].label }));
+      testFeatures = project(testRows, choice.kept).map((f, i) => ({ features: f, label: testRows[i].label, t: testRows[i].t }));
+      chosen.push({ year: y, kept: columns.length, admitted: choice.admitted, rejected: choice.rejected.length });
+    }
+
     // Validation is the tail of training, still strictly before the fold.
-    const cut = Math.floor(trainRows.length * 0.85);
+    const cut = Math.floor(trainFeatures.length * 0.85);
     const model = train(
-      trainRows.slice(0, cut).map((r) => r.features),
-      trainRows.slice(0, cut).map((r) => r.label),
-      panel.columns,
-      trainRows.slice(cut).map((r) => r.features),
-      trainRows.slice(cut).map((r) => r.label),
+      trainFeatures.slice(0, cut).map((r) => r.features),
+      trainFeatures.slice(0, cut).map((r) => r.label),
+      columns,
+      trainFeatures.slice(cut).map((r) => r.features),
+      trainFeatures.slice(cut).map((r) => r.label),
     );
     lastModel = model;
 
-    const ics = dailyIC(testRows, predict(model, testRows.map((r) => r.features)));
+    const ics = dailyIC(testRows, predict(model, testFeatures.map((r) => r.features)));
     allIC.push(...ics);
     perYear.push({ year: y, ic: mean(ics), days: ics.length, rounds: model.rounds });
     process.stdout.write(`  ${label} ${y}\r`);
@@ -176,6 +326,7 @@ function walkForward(panel, label) {
     hit: allIC.filter((v) => v > 0).length / (allIC.length || 1),
     days: allIC.length,
     positiveYears: perYear.filter((p) => p.ic > 0).length,
+    chosen,
     model: lastModel,
   };
 }
@@ -221,6 +372,20 @@ const PANELS = [
     name: 'point-in-time + all SEC',
     extra: { membership, institutional, insider, language },
   },
+  /*
+    EVERY FAMILY OFFERED, ADMITTED COLUMN BY COLUMN.
+
+    The direct test of whether the families failed because they carry nothing
+    or because they were admitted wholesale. Same rows as `+ all three SEC`
+    plus fundamentals and macro; the only difference is that a column has to
+    earn its place in each fold's own training window.
+  */
+  {
+    slug: 'selected',
+    name: 'selected columns',
+    extra: { fundamentals, macro, institutional, insider, language },
+    select: true,
+  },
 ];
 
 const ONLY = (process.argv.find((a) => a.startsWith('--only=')) ?? '').slice(7);
@@ -245,6 +410,8 @@ const summarise = (run) => ({
   perYear: run.result.perYear.map((y) => ({
     year: y.year, ic: +y.ic.toFixed(5), days: y.days, rounds: y.rounds,
   })),
+  /* Empty for every panel but `selected`, where it is the actual finding. */
+  chosen: run.result.chosen ?? [],
 });
 
 const runs = [];
@@ -269,7 +436,7 @@ for (const panel of wanted) {
     + (rawColumns > 0 ? ` (${built.rankableColumns} ranked, ${rawColumns} raw macro)` : '')
     + ` (${((Date.now() - t0) / 1000).toFixed(1)}s)`,
   );
-  runs.push({ ...panel, result: walkForward(built, panel.slug) });
+  runs.push({ ...panel, result: walkForward(built, panel.slug, { select: panel.select }) });
 }
 
 /*
