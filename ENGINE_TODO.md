@@ -136,6 +136,42 @@ amount. It is the largest unmeasured risk to this result.
 
 ## Now
 
+- [x] **The retrain runs in CI now, not on the laptop.** `.github/workflows/train.yml`,
+      monthly on the 1st plus `workflow_dispatch`. Four hours is too long to
+      hold a machine hostage for a number nobody is waiting on.
+
+      **One job per panel.** The nine panels do not depend on each other — each
+      is a walk-forward over the same folds with one family added, built on the
+      price-only baseline rather than stacked on the panel before it — so they
+      are embarrassingly parallel. Wall clock is the slowest panel, about half
+      an hour, instead of the sum of nine. A single job would also sit close to
+      GitHub's six-hour limit, where losing hour four to a flaky SEC download
+      costs the whole run.
+
+      Shape: one `data` job fetches (so nine jobs do not each hammer the SEC)
+      and passes `data/*.json` on as an artifact; a `panel` matrix runs
+      `npm run train -- --only=<slug>` and uploads `data/partials/<slug>.json`;
+      a `merge` job runs `npm run train:merge`, prints the comparison to the
+      job summary, publishes `training.json` to the `data` branch and keeps
+      `model.json` as a 90-day artifact.
+
+      Degrades on purpose. `fail-fast: false` and `if: always()` on the merge,
+      each fetch wrapped in `continue-on-error`, and a missing family is not an
+      error — `train.mjs` already skips a panel whose data is not on disk. A
+      bad day at one SEC endpoint costs one panel; the merge names the hole.
+
+      **It promotes nothing.** `model.json` is an artifact and the site is
+      untouched; the backtest and the account page are rebuilt by a person who
+      has read the table. A model that trains itself into production on a
+      schedule is how a bad number ships on a Sunday.
+
+      Verified without a four-hour run: `--only=<unknown>` lists the nine valid
+      slugs, and `merge-training.mjs` reproduces the September table exactly
+      from partials rebuilt out of it — same ICs, same deltas, same winner,
+      and it writes `model.json` from the winning partial rather than the last
+      one to finish.
+
+
 - [x] **The nine-panel retrain — RUN, and every added family LOST.** `npm run
       train`, 2026-09-05, 1.92M rows, 21-day horizon, walk-forward with the
       21-day embargo. Mean IC across folds:

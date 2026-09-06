@@ -1,0 +1,234 @@
+# The nine-panel walk-forward, off the laptop and onto a schedule.
+#
+# WHY THIS EXISTS
+#
+# The comparison takes about four hours on the machine it was written on, and
+# four hours is too long to hold a laptop hostage for a number nobody is
+# waiting on. It is also the single most useful thing the engine produces —
+# which family helps and by how much — so it should happen regularly rather
+# than when somebody can spare an afternoon.
+#
+# WHY ONE JOB PER PANEL
+#
+# The panels do not depend on each other. Each is a walk-forward over the same
+# folds with one family added, built on the price-only baseline rather than
+# stacked on the panel before it. So they run in parallel and the wall clock is
+# the slowest panel — about half an hour — instead of the sum of all nine.
+#
+# A single job would also sit uncomfortably close to GitHub's six-hour limit,
+# and losing hour four to a flaky download would cost the whole run. Split, a
+# failed panel costs one panel: `fail-fast: false` lets the rest finish and the
+# merge step reports what is missing.
+#
+# WHAT IT DOES NOT DO
+#
+# It does not promote anything. `model.json` is an artifact, `training.json` is
+# published to the `data` branch to be read, and the site is untouched — the
+# backtest and the account page are rebuilt by a person who has looked at the
+# table. A model that trains itself into production on a schedule is how a bad
+# number ships on a Sunday.
+name: Train
+
+on:
+  # Monthly. The inputs move on a quarterly filing cycle and the label horizon
+  # is 21 trading days, so a weekly run would mostly re-measure the same data.
+  schedule:
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+    inputs:
+      refresh:
+        description: 'Re-fetch source data before training'
+        type: boolean
+        default: true
+      panels:
+        description: 'Comma-separated slugs, or blank for all nine'
+        type: string
+        default: ''
+
+# A second run would fight the first for the data cache and prove nothing.
+concurrency:
+  group: train
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------------------------------------------------------- the data
+  #
+  # One job fetches, so nine jobs do not each hammer the SEC. The result is
+  # passed on as an artifact rather than a cache, because an artifact is
+  # guaranteed within a run while a cache is best-effort.
+  data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    outputs:
+      panels: ${{ steps.plan.outputs.panels }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Restored across runs so a monthly refresh is incremental rather than a
+      # cold download of every SEC bulk file. The ladder means a partial hit
+      # still saves most of the work.
+      - name: Restore the data cache
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: engine-data-v1-${{ github.run_id }}
+          restore-keys: |
+            engine-data-v1-
+
+      # Each family is allowed to fail on its own. `train.mjs` treats a missing
+      # file as "that panel does not run" rather than as an error, so a bad day
+      # at one SEC endpoint costs one panel and not the whole comparison.
+      - name: Refresh the sources
+        if: inputs.refresh != false
+        continue-on-error: true
+        run: |
+          set +e
+          for target in data:prices data:fundamentals data:macro membership 13f form4 earnings; do
+            echo "::group::npm run $target"
+            timeout 45m npm run "$target" || echo "  ! $target failed or timed out — continuing"
+            echo "::endgroup::"
+          done
+          exit 0
+
+      - name: What is on disk
+        run: |
+          ls -la data/*.json || true
+          du -sh data || true
+
+      - name: Save the data cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: engine-data-v1-${{ github.run_id }}
+
+      # The matrix needs the JSON the panels read. The cache directory holds
+      # SEC zips that only the fetchers care about and would triple the size.
+      - name: Pass the inputs to the panels
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-data
+          retention-days: 2
+          if-no-files-found: error
+          path: |
+            data/*.json
+
+      - name: Decide which panels to run
+        id: plan
+        run: |
+          if [ -n "${{ inputs.panels }}" ]; then
+            LIST=$(echo '${{ inputs.panels }}' | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | jq -R . | jq -sc .)
+          else
+            LIST='["technical","fundamental","macro","13f-ownership","form-4-insiders","earnings-language","all-three-sec","point-in-time-training","point-in-time-all-sec"]'
+          fi
+          echo "panels=$LIST" >> "$GITHUB_OUTPUT"
+          echo "running: $LIST"
+
+  # -------------------------------------------------------------- the panels
+  panel:
+    needs: data
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      # One panel failing must not cancel the other eight — the comparison is
+      # still worth having with a hole in it, and the merge step names the hole.
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        panel: ${{ fromJSON(needs.data.outputs.panels) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: engine-data
+          path: data
+
+      - name: Walk forward
+        run: npm run train -- --only=${{ matrix.panel }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: partial-${{ matrix.panel }}
+          retention-days: 7
+          if-no-files-found: error
+          path: data/partials/${{ matrix.panel }}.json
+
+  # --------------------------------------------------------------- the table
+  merge:
+    needs: panel
+    # `always()` because a failed panel still leaves eight worth comparing.
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: partial-*
+          merge-multiple: true
+          path: data/partials
+
+      - name: Merge into one comparison
+        run: npm run train:merge
+
+      # model.json is 700 KB of weights and does not belong in git. It is kept
+      # as an artifact so a person who reads the table and wants the winner can
+      # download it and rebuild the backtest deliberately.
+      - name: Keep the result
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-result
+          retention-days: 90
+          path: |
+            data/training.json
+            data/model.json
+
+      # The readable half goes to the data branch — 16 KB, no history worth
+      # protecting, and the same channel the live quote uses. `main` is never
+      # touched by this workflow.
+      - name: Publish the comparison to the data branch
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch data \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" /tmp/data
+          cp data/training.json /tmp/data/training.json
+          cd /tmp/data
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet -- training.json; then
+            echo "the comparison has not changed, nothing to publish"
+          else
+            git add training.json
+            git commit -m "training: walk-forward IC as at $(date -u +%Y-%m-%d)"
+            git push
+          fi
