@@ -36,7 +36,7 @@ export const metadata: Metadata = {
  * company is a fact; an officer buying a company this account is currently
  * short is a fact with an argument in it, and the argument is only visible if
  * the holdings are on the same page. Filed the other way round, the reader has
- * to hold eighty-seven tickers in their head across a navigation.
+ * to hold every ticker in the book in their head across a navigation.
  */
 export default function BookPage() {
   return (

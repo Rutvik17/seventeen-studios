@@ -166,6 +166,27 @@ export function BookAccount() {
         <p className="book__against">
           The same {money(data.stake)} in SPY: <strong>{money(data.finalSpyValue)}</strong>
         </p>
+        {/*
+          THE SHORTFALL IS STATED, NOT LEFT TO BE NOTICED.
+
+          The account is deliberately concentrated, and a concentrated book
+          trails a diversified one at this model's information coefficient —
+          that is a decision rather than a disappointment, and a reader should
+          not have to compare two dollar figures to discover it. Rendered only
+          when the book is actually behind, so it never argues with the numbers
+          beside it.
+        */}
+        {data.finalValue < data.finalSpyValue ? (
+          <p className="book__against">
+            <strong>{data.currentBook.positions.length} names by choice.</strong>{' '}
+            {/* A level, not a change, so it carries no sign. */}
+            Concentration costs return here —{' '}
+            {(data.metrics.strategy.annual * 100).toFixed(1)}% a year against the
+            index&rsquo;s {(data.metrics.spy.annual * 100).toFixed(1)}% — and
+            buys a book a person could
+            actually hold instead of one that is an index fund in all but name.
+          </p>
+        ) : null}
         {data.biased ? (
           <p className="book__against">
             Allowed to buy companies before they joined the index, the same model

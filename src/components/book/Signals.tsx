@@ -26,7 +26,7 @@
  * WHY EVERY SECTION IS FILTERED TO THE BOOK
  *
  * Half a million insider filings is a database. The same data cut to the
- * eighty-seven names actually held is a position sheet, and an officer buying
+ * names actually held is a position sheet, and an officer buying
  * a stock the model already owns is a different fact from an officer buying
  * something nobody holds.
  *

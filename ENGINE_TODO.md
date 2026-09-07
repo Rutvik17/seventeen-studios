@@ -136,6 +136,38 @@ amount. It is the largest unmeasured risk to this result.
 
 ## Now
 
+- [x] **The book is concentrated to 15 names, and it underperforms.** `BOOK.maxNames`
+      15, `BOOK.maxLong` 0.16. Point-in-time the account goes $10,000 →
+      **$53,358** against SPY's $65,820: 13.1% a year against 14.8%, Sharpe
+      0.78 against 0.97, worst drawdown 25.5%.
+
+      This is a decision taken against the measurement rather than because of
+      it. Unlimited is the better book on every risk-adjusted axis and is also
+      indistinguishable from an index fund; the account is presented as a
+      manager's book and 95 names is not one. The brief was seven to fifteen
+      names, and fifteen is the top of that range and the best point in it.
+
+      **The cap has to move with the count.** The first attempt changed only
+      `maxNames` and the book came back at 11.1% a year — 15 names at the old
+      4% ceiling is 60 cents in the dollar, so a third of the account sat in
+      cash and it looked like the names were bad. `sweep-concentration.mjs`
+      already had the rule, min(0.22, max(0.04, 2.4 / n)), and 2.4/15 is the
+      0.16 now in `BOOK`. The two numbers are one decision.
+
+      The account page states the shortfall in words rather than leaving a
+      reader to compare two dollar figures, and only when the book is actually
+      behind.
+
+      Everything downstream was rebuilt: both backtests, `engine.json`,
+      `signals.json` (the filings sections now cover 15 names, not 87).
+
+      This does not reopen the curve. Eight names still lose to the index by
+      6.4 points a year with a worse drawdown, and the reason is Grinold rather
+      than taste — IR ~ IC x sqrt(breadth), and at IC 0.022 the top eight scores
+      are not reliably the best eight. The way to earn a tighter book is a
+      better IC, which is what the `selected` panel is for.
+
+
 - [x] **The retrain runs in CI now, not on the laptop.** `.github/workflows/train.yml`,
       monthly on the 1st plus `workflow_dispatch`. Four hours is too long to
       hold a machine hostage for a number nobody is waiting on.
