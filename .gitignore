@@ -32,10 +32,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts.bak
 
-# Raw market and SEC data caches. Fetched in CI, never committed:
-# 503 names x 16 years is ~85 MB of prices alone, and companyfacts is GBs.
-# Only computed features and backtest results are versioned.
-/data/
-
 # Generated every 15 minutes onto the data branch, never committed to main.
 quote.json
