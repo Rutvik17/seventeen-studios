@@ -66,7 +66,20 @@ export type BookOptions = {
 };
 
 export const BOOK: BookOptions = {
-  maxLong: 0.04,
+  /*
+    THE CAP MOVES WITH THE COUNT, OR CONCENTRATION JUST MEANS HOLDING LESS.
+
+    This was 0.04, sized for a book of ninety-five names. Cutting the count to
+    fifteen without touching it produced exactly the failure it looks like it
+    would not: fifteen names at a 4% ceiling is 60 cents in the dollar, and the
+    first run of the concentrated book came back at 11.1% a year — not because
+    the names were worse but because a fifth of the account was in cash.
+
+    `sweep-concentration.mjs` uses min(0.22, max(0.04, 2.4 / n)), and 2.4/15 is
+    the 0.16 here. The two numbers are one decision and have to be changed
+    together.
+  */
+  maxLong: 0.16,
   maxShort: 0.02,
   longThreshold: 0.5,
   shortThreshold: 1.2,
@@ -74,7 +87,39 @@ export const BOOK: BookOptions = {
   maxNet: 1.0,
   costBps: 10,
   borrowBps: 50,
-  maxNames: Infinity,
+  /*
+    FIFTEEN, WHICH IS A CHOICE AND NOT THE OPTIMUM.
+
+    Unlimited is the best book by every risk-adjusted measure — 95 positions,
+    Sharpe 0.97, a 19.1% worst drawdown — and it is also indistinguishable from
+    an index fund, which is not what this account is for. A book nobody could
+    hold by hand is a strange thing to present as a manager's book.
+
+    Fifteen is a deliberate underperformance, chosen with the number in view.
+    The sweep, `npm run concentration -- --pointInTime`:
+
+        names   held   $10k ->    annual   Sharpe   maxDD   vs SPY
+            8      8   $30,303      8.5%     0.58   30.1%    -6.4%
+           15     16   $53,358     13.1%     0.78   25.5%    -1.8%
+           20     22   $69,399     15.3%     0.88   24.3%    +0.4%
+           30     34   $67,264     15.0%     0.87   22.5%    +0.2%
+        unltd     95   $73,933     15.8%     0.97   19.1%    +1.0%
+
+    Fifteen LOSES to the index by 1.8 points a year, and that is the trade
+    being made rather than an oversight. Ninety-five names is the better book
+    by every risk-adjusted measure and is also indistinguishable from an index
+    fund; this account is presented as a manager's book, and a manager does not
+    hold ninety-five names. The brief was seven to fifteen. Fifteen is the top
+    of that range and the best point in it — eight names lose by 6.4 points
+    with a worse drawdown than the index.
+
+    Why the curve slopes this way is not taste, it is Grinold: IR is roughly
+    IC x sqrt(breadth), and at an IC of 0.022 the top eight scores are not
+    reliably the best eight. Concentration is a bet on conviction and a thin
+    edge has none to spend. Raise the IC and this number can fall — which is
+    what the `selected` panel is for.
+  */
+  maxNames: 15,
 };
 
 export type Candidate = {
