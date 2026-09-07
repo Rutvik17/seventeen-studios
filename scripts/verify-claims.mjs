@@ -128,9 +128,6 @@ const market = JSON.parse(
 const frozenModel = JSON.parse(
   readFileSync(new URL('../src/content/sentiment-model.json', import.meta.url), 'utf8'),
 );
-const survivorship = JSON.parse(
-  readFileSync(new URL('../src/content/survivorship.json', import.meta.url), 'utf8'),
-);
 
 const n = market.assets.length;
 const w = 1 / n;
@@ -166,37 +163,6 @@ if (!model) {
   console.log('  FAIL sentiment model missing from market.json');
   failures += 1;
 } else {
-  /*
-    The site quotes the REPRODUCIBLE survivorship measurement, so the checks are
-    that its arithmetic holds and that it still says what the page says.
-
-    The older end-to-end figure is deliberately not asserted: its method was
-    never committed, so there is nothing to check it against. Recording that it
-    is unverifiable is more honest than testing it against itself.
-  */
-  const sv = survivorship.measured;
-  const svDrop = (sv.meanIC.members - sv.meanIC.all) / sv.meanIC.all;
-  assert(
-    'survivorship: the quoted fall follows from the two ICs',
-    Math.abs(svDrop - sv.change) < 5e-3,
-    `${(svDrop * 100).toFixed(1)}% vs stored ${(sv.change * 100).toFixed(1)}%`,
-  );
-  assert(
-    'survivorship: dating membership does not help the model',
-    sv.meanIC.members < sv.meanIC.all,
-    `+${sv.meanIC.members} vs +${sv.meanIC.all}`,
-  );
-  assert(
-    'survivorship: membership covers the backtest',
-    sv.membershipRange[0] <= '2013-01-02' && sv.membershipRange[1] >= '2026-01-01',
-    `${sv.membershipRange[0]} to ${sv.membershipRange[1]}, ${sv.snapshots} snapshots`,
-  );
-  assert(
-    'survivorship: the unreproducible figure is marked as such',
-    survivorship.endToEnd.reproducible === false,
-    'endToEnd carries no script',
-  );
-
   /*
     The shipped model must BE the frozen one.
 

@@ -5,7 +5,6 @@ import { CreditInstrument } from '@/components/instruments/CreditInstrument';
 import { RigDemo } from '@/components/instruments/RigDemo';
 import { SplitText } from '@/components/motion/SplitText';
 import { Reveal } from '@/components/motion/Reveal';
-import { TransitionLink } from '@/components/Transition';
 
 /*
   Names all four.
@@ -56,8 +55,7 @@ export default function LabPage() {
         <Reveal className="page-head__lead">
           <p>
             A Monte Carlo risk desk, a credit model and a physics rig. Move the
-            inputs — everything recomputes in your browser. The trading model
-            has its own page: <TransitionLink href="/book/">The Book</TransitionLink>.
+            inputs — everything recomputes in your browser.
           </p>
         </Reveal>
       </header>
