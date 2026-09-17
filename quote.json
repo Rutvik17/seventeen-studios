@@ -1,46 +1,46 @@
 {
-  "fetchedAt": "2026-09-17T17:18:42.273Z",
+  "fetchedAt": "2026-09-17T20:24:23.501Z",
   "quotes": [
     {
       "symbol": "NVDA",
-      "price": 218.88,
-      "changeDay": 2.33,
-      "asOf": "2026-09-17T17:18:39.000Z",
+      "price": 219.34,
+      "changeDay": 2.54,
+      "asOf": "2026-09-17T20:00:00.000Z",
       "marketState": "UNKNOWN"
     },
     {
       "symbol": "TSLA",
-      "price": 367.99,
-      "changeDay": 2.77,
-      "asOf": "2026-09-17T17:18:40.000Z",
+      "price": 366.2,
+      "changeDay": 2.27,
+      "asOf": "2026-09-17T20:00:00.000Z",
       "marketState": "UNKNOWN"
     },
     {
       "symbol": "AMZN",
-      "price": 251.26,
-      "changeDay": 2.15,
-      "asOf": "2026-09-17T17:18:37.000Z",
+      "price": 251.19,
+      "changeDay": 2.13,
+      "asOf": "2026-09-17T20:00:01.000Z",
       "marketState": "UNKNOWN"
     },
     {
       "symbol": "GOOGL",
-      "price": 345.58,
-      "changeDay": 0.79,
-      "asOf": "2026-09-17T17:18:36.000Z",
+      "price": 347.33,
+      "changeDay": 1.3,
+      "asOf": "2026-09-17T20:00:01.000Z",
       "marketState": "UNKNOWN"
     },
     {
       "symbol": "RKLB",
-      "price": 67.61,
-      "changeDay": 6.14,
-      "asOf": "2026-09-17T17:18:40.000Z",
+      "price": 67.82,
+      "changeDay": 6.47,
+      "asOf": "2026-09-17T20:00:00.000Z",
       "marketState": "UNKNOWN"
     },
     {
       "symbol": "QCOM",
-      "price": 190.8,
-      "changeDay": 3.22,
-      "asOf": "2026-09-17T17:18:37.000Z",
+      "price": 188.71,
+      "changeDay": 2.09,
+      "asOf": "2026-09-17T20:00:01.000Z",
       "marketState": "UNKNOWN"
     }
   ]
