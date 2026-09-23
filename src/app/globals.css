@@ -537,31 +537,6 @@ body:has([data-slate]) .nav.is-scrolled::before {
   background: linear-gradient(180deg, rgba(36, 60, 51, 0.94), rgba(36, 60, 51, 0));
 }
 
-/* ---------- Prose -------------------------------------------------------- */
-
-.prose {
-  display: grid;
-  /* `minmax(0, 1fr)`, not the implicit `auto` track, so one long unbroken
-     word cannot stretch the column past a phone's viewport. */
-  grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
-  max-width: 68ch;
-}
-.prose p {
-  color: var(--fg-dim);
-  font-size: clamp(15.5px, 1.15vw, 18px);
-  line-height: 1.72;
-}
-.prose h2 {
-  margin-top: clamp(16px, 2vw, 30px);
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: clamp(21px, 2.4vw, 34px);
-  letter-spacing: -0.035em;
-  line-height: 1.14;
-  color: var(--fg);
-}
-
 /* ==================================================================
    Responsive
    ================================================================== */
@@ -1202,13 +1177,6 @@ body:has([data-slate]) .nav.is-scrolled::before {
   margin-top: clamp(50px, 9vh, 90px);
   color: var(--muted);
 }
-.endpaper__legal {
-  display: flex;
-  gap: 20px;
-}
-.endpaper__legal a:hover {
-  color: var(--fg);
-}
 
 /* ==================================================================
    A SHEET — the shell of every simple page
@@ -1277,17 +1245,6 @@ body:has([data-slate]) .nav.is-scrolled::before {
   text-decoration-color: var(--accent-2);
   text-decoration-thickness: 3px;
   text-underline-offset: 7px;
-}
-.sheet__prose {
-  margin-top: clamp(36px, 6vh, 64px);
-  max-width: 46rem;
-  display: grid;
-  gap: 28px;
-}
-.sheet__aside {
-  font-family: var(--font-hand), cursive;
-  font-size: 22px;
-  color: var(--fg-dim);
 }
 
 /* The blank notebook: ruled lines waiting, and a folio. */

@@ -40,15 +40,12 @@ import { contactHref } from '@/lib/contact';
  */
 
 type ContactLinkProps = {
-  /** Prefills the email subject once the link has upgraded. */
-  subject?: string;
   className?: string;
   /** The words on the link — required, so no page falls back to a stock label. */
   children: React.ReactNode;
 } & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'children'>;
 
 export function ContactLink({
-  subject,
   className,
   children,
   ...rest
@@ -61,8 +58,8 @@ export function ContactLink({
     // Mutating the DOM directly, not via state: putting this in the render
     // path would hand the string back to React and it would reappear in the
     // hydration payload, which is the exact leak this component exists to fix.
-    el.href = contactHref(subject);
-  }, [subject]);
+    el.href = contactHref();
+  }, []);
 
   /*
     asset() on a ROUTE, unusually, and for the same reason it is used on files:

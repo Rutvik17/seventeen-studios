@@ -40,10 +40,9 @@ export function contactAddress(): string {
   return `${reverse(head)}${reverse(tail)}@${reverse(host)}.${reverse(tld)}`;
 }
 
-/** A `mailto:` for it, with an optional subject. */
-export function contactHref(subject?: string): string {
-  const base = `mailto:${contactAddress()}`;
-  return subject ? `${base}?subject=${encodeURIComponent(subject)}` : base;
+/** A `mailto:` for it. */
+export function contactHref(): string {
+  return `mailto:${contactAddress()}`;
 }
 
 function reverse(s: string): string {

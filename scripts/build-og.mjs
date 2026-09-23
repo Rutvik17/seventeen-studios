@@ -41,7 +41,6 @@ import { fileURLToPath } from 'node:url';
 
 import { founder } from '../src/content/founder.ts';
 import { site, chapters } from '../src/content/studio.ts';
-import { policies } from '../src/content/policies.ts';
 import { graspInfo, graspModule } from '../src/content/grasp.ts';
 import { CURVES } from '../src/lib/calculus.ts';
 import { bridge, cableY, PAGE, SUN } from '../src/lib/sketchbook/geometry.ts';
@@ -470,17 +469,6 @@ function cards() {
     },
   ];
 
-  for (const policy of policies) {
-    list.push({
-      file: `legal-${policy.slug}`,
-      label: 'Legal',
-      title: policy.title,
-      standfirst: policy.scope,
-      plate: 'mark',
-      titleSize: 58,
-      footRight: site.name,
-    });
-  }
 
   return list;
 }
