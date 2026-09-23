@@ -24,8 +24,9 @@
  *
  * Every plate below is produced by the same code the page it advertises uses —
  * `Spring` integrates the spring card, `simulateRisk` bins the risk card,
- * `CURVES[0]` draws the parabola, and the e-ink panel is set in the same 5 × 7
- * font the device prints with. Nothing is traced by eye.
+ * `CURVES[0]` draws the parabola, the landing's pendulums are integrated by
+ * `tracePair`, and the founder card's bridge is the sketchbook's own geometry.
+ * Nothing is traced by eye.
  *
  * That is not craft for its own sake. A share image is the one asset nobody
  * looks at again after the day it is made, and a hand-drawn approximation of a
@@ -45,7 +46,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { founder, panelCard } from '../src/content/founder.ts';
+import { founder } from '../src/content/founder.ts';
 import { site } from '../src/content/studio.ts';
 import { entries } from '../src/content/notebook.ts';
 import { products } from '../src/content/products.ts';
@@ -55,8 +56,8 @@ import { CURVES } from '../src/lib/calculus.ts';
 import { simulateRisk } from '../src/lib/quant.ts';
 import { CARD_BOOK, expectedLoss } from '../src/lib/credit.ts';
 import { Spring } from '../src/lib/physics.ts';
-import { INK } from '../src/lib/pixelfont.ts';
-import { composePanel, PANEL } from '../src/lib/panel.ts';
+import { tracePair, L1, L2 } from '../src/lib/pendulum.ts';
+import { bridge, cableY, PAGE, SUN } from '../src/lib/sketchbook/geometry.ts';
 import { NOTEBOOK_CARD } from '../src/lib/og.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -84,19 +85,6 @@ const SLATE = '#2d4a3f';
 const SLATE_DEEP = '#243c33';
 const CHALK = '#eef1e6';
 const CHALK_ACCENT = '#f0d266';
-
-/* The board palette, lifted from the same tokens the landing page paints with. */
-const PCB = {
-  mask: '#14483a',
-  maskHi: '#1c6350',
-  edge: '#0c2f26',
-  copper: '#c9962f',
-  pad: '#d9ae4a',
-  hole: '#0a221c',
-  silk: '#e8efe9',
-  body: '#23262b',
-  bezel: '#2b2e33',
-};
 
 /** The 17 mark, from `components/Logo.tsx`. */
 const LOGO = {
@@ -338,201 +326,86 @@ function plateSigmoid(box, ink, accent = ACCENT) {
 }
 
 /* ------------------------------------------------------------------ *
- * The e-ink panel
+ * The pendulums
  * ------------------------------------------------------------------ */
 
 /**
- * The panel's card.
+ * The landing's two double pendulums, integrated for sixteen seconds from the
+ * page's own default release and drawn as the paths their tips took.
  *
- * Composed by `composePanel`, so the card shows the panel rather than a
- * drawing of one. The first version laid
- * the three lines out by hand here and was already subtly wrong: it invented its
- * own rule position and dropped the location/time strip entirely.
- *
- * The clock is frozen at whatever moment the images were generated, and that is
- * correct. This is a photograph of a device, not a running one, and a share
- * image cannot tick.
+ * Sixteen because that is just past the point where they separate: the two
+ * traces lie on top of each other for most of the run and come apart at the
+ * end, which is the whole of what the landing shows.
  */
-function einkBitmap() {
-  return composePanel({
-    name: founder.name,
-    role: panelCard.role,
-    employer: panelCard.employer,
-    location: site.location,
-    at: null,
-    stamp: new Date().toISOString(),
-  });
-}
-
-/**
- * Bitmap to SVG, run-length encoded a row at a time.
- *
- * One rect per RUN of identical pixels rather than per pixel: the panel is
- * 37,888 pixels and almost all of them are paper, so this is a few hundred
- * rects instead of tens of thousands, and it stays vector — no resampling, no
- * soft edges, which is the whole discipline of the bitmap font.
- */
-function bitmapToSvg(bmp, scale, colours) {
-  const rects = [];
-  for (let y = 0; y < bmp.height; y++) {
-    let x = 0;
-    while (x < bmp.width) {
-      const ink = bmp.get(x, y);
-      let run = 1;
-      while (x + run < bmp.width && bmp.get(x + run, y) === ink) run++;
-      if (ink !== INK.paper) {
-        rects.push(
-          `<rect x="${x * scale}" y="${y * scale}" width="${run * scale}" height="${scale}" fill="${colours[ink] ?? colours[1]}"/>`,
-        );
-      }
-      x += run;
-    }
-  }
-  return rects.join('');
-}
-
-function plateEink(box) {
-  const bmp = einkBitmap();
-  const scale = 3;
-  const w = PANEL.width * scale;
-  const h = PANEL.height * scale;
-  return `
-    <g transform="translate(${(box - w) / 2}, ${(box - h) / 2})">
-      <rect x="-14" y="-14" width="${w + 28}" height="${h + 28}" rx="5" fill="${PCB.bezel}"/>
-      <rect x="0" y="0" width="${w}" height="${h}" fill="#f2f1ec"/>
-      ${bitmapToSvg(bmp, scale, { 1: '#1a1c1a' })}
-    </g>`;
+function platePendulum(w, h, ink, accent) {
+  const { a, b, pair } = tracePair(16);
+  const reach = L1 + L2;
+  const scale = (Math.min(w, h) / 2 / reach) * 0.92;
+  const cx = w / 2;
+  const cy = h / 2;
+  const pts = (trail) => trail.map((p) => [cx + p.x * scale, cy + p.y * scale]);
+  const copper = '#b4622a';
+  const tip = (s) => {
+    const x1 = cx + Math.sin(s.t1) * L1 * scale;
+    const y1 = cy + Math.cos(s.t1) * L1 * scale;
+    return { x1, y1, x2: x1 + Math.sin(s.t2) * L2 * scale, y2: y1 + Math.cos(s.t2) * L2 * scale };
+  };
+  const p = tip(pair.a);
+  return [
+    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(reach * scale)}" fill="none" stroke="${ink}" stroke-opacity="0.14" stroke-width="1.5" stroke-dasharray="4 7"/>`,
+    polyline(pts(a), accent, 1.6, 'opacity="0.85"'),
+    polyline(pts(b), copper, 1.6, 'opacity="0.85"'),
+    `<path d="M${n(cx)} ${n(cy)} L${n(p.x1)} ${n(p.y1)} L${n(p.x2)} ${n(p.y2)}" fill="none" stroke="${ink}" stroke-width="2.4"/>`,
+    `<circle cx="${n(p.x1)}" cy="${n(p.y1)}" r="5" fill="${ink}"/>`,
+    `<circle cx="${n(p.x2)}" cy="${n(p.y2)}" r="9" fill="${accent}"/>`,
+  ].join('');
 }
 
 /* ------------------------------------------------------------------ *
- * The board
+ * The sketchbook
  * ------------------------------------------------------------------ */
 
-/**
- * A populated circuit board.
- *
- * The only plate composed by eye rather than computed, because there is no
- * function on the site that returns "what a board looks like" — the landing
- * page's board is laid out in a component. The palette is the shared token set,
- * so at least the colour is not a second opinion.
- *
- * `reserve` is a rectangle nothing is drawn into. The display module mounts
- * there, and without it the first version put the panel down on top of the
- * SoC — which is not somewhere a HAT can sit, and looked like exactly the kind
- * of decorative nonsense the rest of this file exists to avoid.
- */
-function plateBoard(w, h, reserve) {
-  const clear = (x, y, pad = 0) =>
-    !reserve ||
-    x < reserve.x - pad ||
-    x > reserve.x + reserve.w + pad ||
-    y < reserve.y - pad ||
-    y > reserve.y + reserve.h + pad;
-
-  const traces = [];
-  const rng = seeded(7);
-  for (let i = 0; i < 26; i++) {
-    const y = 34 + rng() * (h - 68);
-    const x = 18 + rng() * 50;
-    const len = 70 + rng() * (w - x - 110);
-    const bend = 20 + rng() * 34;
-    traces.push(
-      `<path d="M${n(x)} ${n(y)} H${n(x + len - bend)} l${n(bend)} ${n(rng() > 0.5 ? bend : -bend)} H${n(w - 20)}" fill="none" stroke="${PCB.copper}" stroke-width="${rng() > 0.72 ? 3.4 : 2}" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>`,
-    );
-  }
-
-  /* The 40-pin header along the top, and a row of pads along the bottom. */
-  const pads = [];
-  for (let i = 0; i < 20; i++) {
-    const x = 34 + i * ((w - 68) / 19);
-    pads.push(
-      `<rect x="${n(x - 4)}" y="20" width="8" height="9" rx="1.5" fill="${PCB.pad}"/>`,
-      `<rect x="${n(x - 4)}" y="31" width="8" height="9" rx="1.5" fill="${PCB.pad}"/>`,
-    );
-  }
-  for (let i = 0; i < 12; i++) {
-    const x = 46 + i * ((w - 92) / 11);
-    if (clear(x, h - 26, 10)) {
-      pads.push(
-        `<rect x="${n(x - 6)}" y="${n(h - 31)}" width="12" height="9" rx="2" fill="${PCB.pad}" opacity="0.9"/>`,
-      );
-    }
-  }
-
-  const chip = (cx, cy, cw, ch, label) => `
-    <rect x="${n(cx)}" y="${n(cy)}" width="${cw}" height="${ch}" rx="4" fill="${PCB.body}"/>
-    <rect x="${n(cx + 4)}" y="${n(cy + 4)}" width="${cw - 8}" height="${ch - 8}" rx="2" fill="none" stroke="${PCB.silk}" stroke-width="1.2" opacity="0.45"/>
-    <text x="${n(cx + cw / 2)}" y="${n(cy + ch / 2 + 4)}" text-anchor="middle" fill="${PCB.silk}" font-family="JetBrains Mono, monospace" font-size="11" opacity="0.85" letter-spacing="1.2">${esc(label)}</text>`;
-
-  const hole = (cx, cy) =>
-    `<circle cx="${n(cx)}" cy="${n(cy)}" r="6" fill="${PCB.hole}"/>`;
-
-  return `
-    <rect x="0" y="0" width="${w}" height="${h}" rx="10" fill="${PCB.mask}"/>
-    <g opacity="0.85">${traces.join('')}</g>
-    ${pads.join('')}
-    ${chip(22, h * 0.46, 84, 62, 'BCM2711')}
-    ${chip(w - 112, h * 0.5, 74, 46, 'LPDDR4')}
-    ${hole(22, 52)}${hole(w - 22, 52)}${hole(22, h - 20)}${hole(w - 22, h - 20)}
-    <rect x="0" y="0" width="${w}" height="${h}" rx="10" fill="none" stroke="${PCB.edge}" stroke-width="3"/>`;
-}
+const SKETCH = { paper: '#f3ead5', ink: '#1f3a8a', graphite: '#34343a', accent: '#c8233f' };
 
 /**
- * The board with the display module seated on it — MODEL A, in one picture.
- *
- * Landscape rather than square, because a board is, and squeezing it into the
- * square plate box the diagrams use left it small enough to read as decoration.
+ * The founder card: the bridge the sketchbook ends on, from the same geometry,
+ * with the same crimson wash on its cables and the sun behind the tower.
  */
-function plateDevice(w, h) {
-  const bw = w - 16;
-  const bh = h - 60;
-  const scale = 1;
-  const pw = PANEL.width * scale;
-  const ph = PANEL.height * scale;
-  const px = (bw - pw) / 2;
-  const py = (bh - ph) / 2 + 6;
-
+function stageSketch() {
+  const s = 0.54;
+  const ox = W - PAGE.w * s + 30;
+  const oy = (H - PAGE.h * s) / 2 - 10;
+  const parts = bridge();
+  const lines = parts
+    .map((p) => {
+      const faint = p.id.startsWith('water') || p.id.startsWith('dim');
+      return `<polyline points="${p.pts.map((q) => `${n(q.x)},${n(q.y)}`).join(' ')}" fill="none" stroke="${faint ? SKETCH.graphite : SKETCH.ink}" stroke-width="${n(1.5 * p.weight)}" stroke-linecap="round" stroke-linejoin="round" opacity="${faint ? 0.5 : 0.95}"/>`;
+    })
+    .join('');
+  const wash = parts
+    .filter((p) => p.id.startsWith('cable'))
+    .map((p) => `<polyline points="${p.pts.map((q) => `${n(q.x)},${n(q.y - 3)}`).join(' ')}" fill="none" stroke="${SKETCH.accent}" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.14"/>`)
+    .join('');
+  const gridLines = [];
+  for (let x = 0; x <= W; x += 28) gridLines.push(`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="${SKETCH.graphite}" stroke-opacity="${x % 140 === 0 ? 0.09 : 0.045}"/>`);
+  for (let y = 0; y <= H; y += 28) gridLines.push(`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="${SKETCH.graphite}" stroke-opacity="${y % 140 === 0 ? 0.09 : 0.045}"/>`);
+  // Asserting the geometry the card relies on, so a change to the bridge cannot
+  // quietly leave the sun hanging somewhere other than behind the tower.
+  if (!(cableY(600) > SUN.y)) throw new Error('bridge geometry changed: cable no longer sags below the sun');
   return `
-    <g transform="translate(8, 24) rotate(-2.4 ${bw / 2} ${bh / 2})">
-      ${plateBoard(bw, bh, { x: px - 16, y: py - 16, w: pw + 32, h: ph + 32 })}
-      <g transform="translate(${n(px)}, ${n(py)})">
-        <rect x="-11" y="-11" width="${pw + 22}" height="${ph + 22}" rx="4" fill="${PCB.bezel}"/>
-        <rect x="-11" y="${ph + 5}" width="${pw + 22}" height="6" rx="3" fill="#191b1f"/>
-        <rect width="${pw}" height="${ph}" fill="#f4f3ee"/>
-        ${bitmapToSvg(einkBitmap(), scale, { 1: '#1a1c1a' })}
-      </g>
+    <rect width="${W}" height="${H}" fill="${SKETCH.paper}"/>
+    ${gridLines.join('')}
+    <line x1="72.5" y1="0" x2="72.5" y2="${H}" stroke="${SKETCH.ink}" stroke-opacity="0.2"/>
+    <g transform="translate(${n(ox)}, ${n(oy)}) scale(${s})">
+      <circle cx="${SUN.x}" cy="${SUN.y}" r="${SUN.r}" fill="${SKETCH.accent}" opacity="0.14" stroke="${SKETCH.accent}" stroke-opacity="0.2" stroke-width="3"/>
+      ${wash}
+      ${lines}
     </g>`;
-}
-
-/** Deterministic noise, so the board is identical on every run. */
-function seeded(seed) {
-  let s = seed >>> 0;
-  return () => {
-    s = (s * 1664525 + 1013904223) >>> 0;
-    return s / 4294967296;
-  };
 }
 
 /* ------------------------------------------------------------------ *
  * Stage plates — artwork that fills the whole card
  * ------------------------------------------------------------------ */
-
-/** The landing: the board, with the panel lit on it. */
-function stageDevice() {
-  const bw = 620;
-  const bh = 400;
-  return `
-    <rect width="${W}" height="${H}" fill="${PAPER}"/>
-    ${grid()}
-    <g transform="translate(${W - bw - 70}, ${(H - bh) / 2 - 10}) rotate(-4 ${bw / 2} ${bh / 2})">
-      ${plateBoard(bw, bh)}
-      <g transform="translate(${bw / 2 - 140}, ${bh / 2 - 62})">
-        <rect x="-12" y="-12" width="${PANEL.width + 24}" height="${PANEL.height + 24}" rx="4" fill="${PCB.bezel}"/>
-        <rect width="${PANEL.width}" height="${PANEL.height}" fill="#f2f1ec"/>
-        ${bitmapToSvg(einkBitmap(), 1, { 1: '#1a1c1a' })}
-      </g>
-    </g>`;
-}
 
 /** The Grasp course: the chalkboard, mid-derivation. */
 function stageChalkboard() {
@@ -617,18 +490,14 @@ const PLATES = {
   spring: (w, h, ink, accent) => plateSpring(Math.min(w, h), ink, accent),
   credit: (w, h, ink, accent) => plateCredit(Math.min(w, h), ink, accent),
   sigmoid: (w, h, ink, accent) => plateSigmoid(Math.min(w, h), ink, accent),
-  eink: (w, h) => plateEink(Math.min(w, h)),
-  device: (w, h) => plateDevice(w, h),
-  board: (w, h) =>
-    `<g transform="translate(0, ${n((h - h * 0.72) / 2)})">${plateBoard(w, h * 0.72)}</g>`,
+  pendulum: (w, h, ink, accent) => platePendulum(w, h, ink, accent),
   bands: (w, h) => plateBands(w, h),
   mark: (w, h, ink) => plateMark(Math.min(w, h), ink),
 };
 
 /** Plates that want a landscape box rather than the square the diagrams use. */
 const PLATE_BOX = {
-  device: { w: 566, h: 420 },
-  board: { w: 470, h: 400 },
+  pendulum: { w: 470, h: 470 },
   bands: { w: 500, h: 430 },
 };
 
@@ -693,6 +562,9 @@ function html(card) {
   const onDark = card.onDark ?? false;
   const textInk = onDark ? CHALK : ink;
   const dim = onDark ? `${CHALK}b0` : `${ink}a8`;
+  // The scrim fades from the card's own ground, so text sits on the same paper
+  // the artwork does rather than on a patch of the site's grey.
+  const scrimRgb = [1, 3, 5].map((i) => parseInt(ground.slice(i, i + 2), 16)).join(',');
 
   const stage = card.stage
     ? `<svg class="stage" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${defs(ink)}${card.stage()}</svg>`
@@ -725,9 +597,9 @@ function html(card) {
     position: absolute; inset: 0;
     background: linear-gradient(
       100deg,
-      ${onDark ? 'rgba(36,60,51,0.96)' : 'rgba(236,234,228,0.97)'} 0%,
-      ${onDark ? 'rgba(36,60,51,0.86)' : 'rgba(236,234,228,0.88)'} 38%,
-      ${onDark ? 'rgba(36,60,51,0)' : 'rgba(236,234,228,0)'} 62%
+      ${onDark ? 'rgba(36,60,51,0.96)' : `rgba(${scrimRgb},0.97)`} 0%,
+      ${onDark ? 'rgba(36,60,51,0.86)' : `rgba(${scrimRgb},0.88)`} 38%,
+      ${onDark ? 'rgba(36,60,51,0)' : `rgba(${scrimRgb},0)`} 62%
     );
   }
   .card {
@@ -801,10 +673,21 @@ function cards() {
       file: 'home',
       label: site.location,
       title: founder.name,
-      standfirst: `${founder.role}. Interactive instruments, custom hardware, and software built to be taken apart.`,
-      plate: 'device',
+      standfirst: `${founder.role}. Interactive instruments, simulations, and software built to be taken apart.`,
+      plate: 'pendulum',
       titleSize: 58,
       footRight: 'Portfolio',
+    },
+    {
+      file: 'founder',
+      label: 'Founder',
+      title: founder.name,
+      standfirst: `${founder.title}, ${founder.employer}. A sketchbook that draws its way to a résumé.`,
+      stage: stageSketch,
+      ground: SKETCH.paper,
+      ink: '#1d1d21',
+      titleSize: 64,
+      footRight: 'PDF · DOCX',
     },
     {
       file: 'lab',
@@ -858,7 +741,7 @@ function cards() {
       file: 'start',
       label: 'Contact',
       title: 'Roles, questions, second opinions.',
-      standfirst: 'The mathematics, the hardware, or how a page was built.',
+      standfirst: 'The mathematics, the simulations, or how a page was built.',
       plate: 'mark',
       titleSize: 60,
       footRight: site.location,

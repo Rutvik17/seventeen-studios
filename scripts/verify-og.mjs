@@ -3,7 +3,7 @@
  *
  *   node scripts/verify-og.mjs [outDir]
  *
- * Runs in `postbuild`, beside `verify-drawing.mjs`. It reads the exported HTML
+ * Runs in `postbuild`, beside `verify-assets.mjs`. It reads the exported HTML
  * rather than the source, because the source is not what crawlers see.
  *
  * ---

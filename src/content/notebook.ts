@@ -23,7 +23,7 @@ import type { Block } from './types';
  * THE RULES, WHICH ARE GRASP'S
  *
  * 1. **Assume no prior knowledge at all.** Not "rusty" — none. Read it back as
- *    someone who does not know what a volt or a derivative is, and find the
+ *    someone who does not know what a variance or a derivative is, and find the
  *    first word they would have had to look up.
  * 2. **Every symbol is introduced before it is used.** The `equation` block
  *    type enforces this: `words` and `where` are required fields, so a symbolic
@@ -46,8 +46,6 @@ import type { Block } from './types';
  * instead of a tag page with one entry on it that nobody can find.
  */
 export type Tag =
-  | 'hardware'
-  | 'electronics'
   | 'quantitative'
   | 'machine-learning'
   | 'physics'
@@ -56,8 +54,6 @@ export type Tag =
   | 'teaching';
 
 export const TAGS: { id: Tag; label: string; blurb: string }[] = [
-  { id: 'hardware', label: 'Hardware', blurb: 'Boards, parts, power budgets' },
-  { id: 'electronics', label: 'Electronics', blurb: 'Circuits from first principles' },
   { id: 'quantitative', label: 'Quantitative', blurb: 'Risk, simulation, money' },
   { id: 'machine-learning', label: 'Machine learning', blurb: 'Models that are actually fitted' },
   { id: 'physics', label: 'Physics', blurb: 'Forces, motion, simulation' },
@@ -100,312 +96,8 @@ export type Entry = {
 export const entries: Entry[] = [
   /* ------------------------------------------------------------------ */
   {
-    slug: 'designing-a-circuit-board',
-    index: '01',
-    title: 'Designing a circuit board',
-    standfirst:
-      'What every part on a circuit board is for, and how to size the two things that decide whether it works: trace width, and the battery behind a duty cycle.',
-    topic: 'Hardware',
-    tags: ['hardware', 'electronics'],
-    outcome:
-      'Read a circuit board, work out how wide a wire has to be, and size a battery for a device that sleeps.',
-    prerequisites: ['None. It starts at what a circuit board is.'],
-    date: '2026-08-22',
-    color: '#d3e3da',
-    ink: '#123f33',
-    blocks: [
-      {
-        type: 'p',
-        text: 'The problem: show one figure on a device that sits on a shelf, is read at a glance, and runs for months on a single cell. Three constraints follow immediately. The display cannot be lit, because a backlight is the largest load in the budget. It has to hold its image with the power off, because the processor will be asleep almost all of the time. And the processor has to wake on a schedule it is not itself counting.',
-      },
-      {
-        type: 'p',
-        text: 'What follows is a board that meets those constraints, component by component, starting from the bare laminate. No prior electronics is assumed.',
-      },
-
-      { type: 'h2', text: 'What a circuit board actually is' },
-      {
-        type: 'p',
-        text: 'A circuit board is wires made flat. That is the whole idea. Instead of running loose wire between parts, you glue a thin sheet of copper onto a stiff board, dissolve away everything except the lines you want, and you are left with wires that cannot move, cannot tangle, and cost the same whether you make one or ten thousand.',
-      },
-      {
-        type: 'term',
-        word: 'FR-4',
-        plain:
-          'The stiff board underneath — woven glass cloth set in resin. It is the same material as the green boards inside every appliance you own, and 1.6 mm thick is the standard because that is what fits the connectors everyone already makes.',
-      },
-      {
-        type: 'p',
-        text: 'The green colour is a lacquer called soldermask, painted over the copper everywhere except where a part needs to be attached. It stops the copper corroding and stops molten metal bridging two lines that should not touch.',
-      },
-
-      { type: 'h2', text: 'The parts, and what each one is for' },
-      {
-        type: 'p',
-        text: 'Turn the board with your pointer and click anything on it. Every component gets a plain answer to three questions: what it is, what it does here, and what would break without it.',
-      },
-      { type: 'embed', component: 'board3d', caption: 'Drag to turn · click any part' },
-      {
-        type: 'p',
-        text: 'Fourteen parts. One of them thinks; the rest either feed it, time it, or are told what to do. That ratio is normal — most of a board exists to keep one chip alive and honest.',
-      },
-
-      { type: 'h2', text: 'Regulating the supply voltage' },
-      {
-        type: 'term',
-        word: 'Volt',
-        plain:
-          'A measure of electrical push. Higher voltage pushes harder. A USB charger pushes at 5 volts; the computer on this board is built for 3.3 and is destroyed, permanently and instantly, by 5.',
-      },
-      {
-        type: 'p',
-        text: 'So the very first thing on the board after the socket is a part whose only job is to push less hard. It takes 5 volts in and lets 3.3 volts out, and it does that by turning the difference into heat. Nothing clever, and absolutely required.',
-      },
-      {
-        type: 'note',
-        label: 'The part everyone forgets',
-        text: 'A USB-C socket will not give you any power at all until the device identifies itself, and it does that with two ordinary resistors. Leave them off and a perfectly good board is simply dead when you plug it in — no light, no warmth, no clue. It is the most common first-board mistake there is.',
-      },
-
-      { type: 'h2', text: 'Trace width, from the IPC-2221A standard' },
-      {
-        type: 'p',
-        text: 'A wire carrying electricity warms up. Too thin and it warms a lot; thin enough and it behaves like the element in a toaster. So there is a real question with a real answer: given how much current this line has to carry, how wide does the copper need to be?',
-      },
-      {
-        type: 'term',
-        word: 'Amp',
-        plain:
-          'A measure of how much electricity is flowing — the quantity, where volts are the push. A phone charger supplies one or two amps. This whole board averages about a thousandth of one.',
-      },
-      {
-        type: 'p',
-        text: 'The electronics industry answers this with a standard called IPC-2221, and it works in two steps. First, how much copper cross-section do you need? Then, given how thick your copper sheet is, how wide does that make the line?',
-      },
-      {
-        type: 'equation',
-        words:
-          'The cross-section needed grows with the current, and shrinks the more warming you are willing to tolerate.',
-        symbols: 'A = ( I ÷ ( k × ΔT^b ) )^(1÷c)',
-        where: [
-          { symbol: 'A', means: 'the cross-section of copper needed, in square thousandths of an inch' },
-          { symbol: 'I', means: 'the current the wire must carry, in amps' },
-          { symbol: 'ΔT', means: 'how much hotter than the surrounding air you will let the wire get, in degrees Celsius' },
-          { symbol: 'k, b, c', means: 'constants measured by experiment. `k` is 0.048 for a wire on the surface and 0.024 for one buried inside the board — buried copper has no air to shed heat into' },
-        ],
-        substituted: 'A = ( 0.5 ÷ ( 0.048 × 10^0.44 ) )^(1÷0.725)',
-        result: '6.26',
-        soWhat:
-          'Half an amp, on the surface, warming by no more than ten degrees, needs about six and a quarter square thousandths of an inch of copper.',
-      },
-      {
-        type: 'equation',
-        words:
-          'Spread that cross-section over however thick your copper sheet is, and what is left over is the width.',
-        symbols: 'w = A ÷ ( t × 1.378 )',
-        where: [
-          { symbol: 'w', means: 'the width of the line, in thousandths of an inch' },
-          { symbol: 'A', means: 'the cross-section from the step above' },
-          { symbol: 't', means: 'the copper weight in ounces — the industry sells it by weight per square foot rather than by thickness' },
-          { symbol: '1.378', means: 'how many thousandths of an inch thick one ounce per square foot works out to be' },
-        ],
-        substituted: 'w = 6.26 ÷ ( 1 × 1.378 )',
-        result: '4.55 thousandths of an inch, or 0.116 mm',
-        soWhat:
-          'About a tenth of a millimetre — narrower than a human hair is wide. That is the *minimum*, not the target.',
-      },
-      {
-        type: 'p',
-        text: 'Move the sliders. The thing worth noticing is not any single answer but the shape of it: double the current and the width does not double, it roughly triples. That exponent of one-over-0.725 is where that comes from, and no sentence explains it as well as ten seconds of dragging.',
-      },
-      { type: 'embed', component: 'trace-width', caption: 'The real IPC-2221A calculation' },
-      {
-        type: 'note',
-        label: 'Why the corners are never square',
-        text: 'Look at any trace on the board: it turns at 45 degrees, never at a right angle. That is not styling. The board is made by dissolving unwanted copper away in acid, and a sharp inside corner holds the acid against the metal for longer than the flat runs — so the corner over-etches and the wire ends up thinnest exactly where it turns. Every board manufacturer forbids right angles for this reason.',
-      },
-
-      { type: 'h2', text: 'The crystal that keeps time' },
-      {
-        type: 'p',
-        text: 'It does not. A processor has no sense of time at all; it only knows how to count. To sleep for ten minutes and wake up, it needs something outside itself that ticks at a rate nobody has to guess.',
-      },
-      {
-        type: 'p',
-        text: 'That is the crystal — a sliver of quartz a little over three millimetres long. Squeeze quartz and it produces a small voltage; apply a voltage and it flexes. Wire that up so each flex triggers the next and it will vibrate, at a rate set by the size of the slice and almost nothing else. Not by temperature, not by how old it is, not by the weather.',
-      },
-      {
-        type: 'term',
-        word: '32,768',
-        plain:
-          'The number of times per second this crystal vibrates. It looks arbitrary and is not: it is 2 multiplied by itself fifteen times. A counter that halves the rate fifteen times over — which is the simplest circuit there is — turns it into exactly one tick per second. Every quartz watch in the world uses this same number for this same reason.',
-      },
-      {
-        type: 'p',
-        text: 'A crystal on its own runs slightly fast, because the circuit around it adds a small electrical load the crystal was not cut for. The fix is two capacitors — components that hold a tiny amount of charge — one on each leg, chosen to make up the difference.',
-      },
-      {
-        type: 'equation',
-        words:
-          'The two capacitors, plus the stray capacitance that the pads and tracks bring with them, have to add up to the load the crystal was designed for.',
-        symbols: 'C_L = ( C1 × C2 ) ÷ ( C1 + C2 ) + C_stray',
-        where: [
-          { symbol: 'C_L', means: 'the load the crystal needs, printed on its datasheet — 12.5 pF here' },
-          { symbol: 'C1, C2', means: 'the two capacitors you add, one on each leg' },
-          { symbol: 'C_stray', means: 'capacitance you get for free whether you want it or not, from the copper pads and the tracks. About 3 pF' },
-          { symbol: 'pF', means: 'a picofarad — a millionth of a millionth of a farad. These are genuinely tiny quantities of charge' },
-        ],
-        substituted: 'with C1 = C2, this rearranges to C1 = 2 × ( 12.5 − 3 )',
-        result: '19 pF',
-        soWhat:
-          'And you cannot buy a 19 pF capacitor. They are made in a fixed series of values, so you fit 18 pF — the nearest one that exists — and accept the result.',
-      },
-      {
-        type: 'p',
-        text: 'Fitting 18 pF gives a load of 12.0 pF against the 12.5 the crystal wanted. That half-picofarad of error is real and it makes the clock run very slightly fast. This is what electronics is actually like: the formula gives you a number, the shop does not sell that number, and part of the job is knowing which errors you can live with.',
-      },
-
-      { type: 'h2', text: 'E-ink: an image that survives the power going off' },
-      {
-        type: 'p',
-        text: 'The display is electronic paper. Instead of lighting pixels up, it moves specks of black and white pigment through a clear fluid using an electric field. Once they have moved they stay put — with the power off, for years. It only draws current while the picture is changing.',
-      },
-      {
-        type: 'p',
-        text: 'That is why the READOUT costs nothing to keep. A backlit screen spends its energy holding a picture; this one spends nothing until the picture is wrong. The device also carries a small OLED for the companion, and that one does spend energy every second it is lit — which is exactly why the numbers live on the e-paper and only the character lives on the screen that moves.',
-      },
-      {
-        type: 'note',
-        label: 'The trade, stated honestly',
-        text: 'It is slow. A full refresh on a three-colour panel takes about fifteen seconds, because the red pigment needs a long repeated shove to move at all — and it flashes black and white several times while it works. That rules out anything interactive and rules in exactly this: a thing that changes a few times an hour and is readable in direct sunlight.',
-      },
-
-      { type: 'h2', text: 'The power budget, and battery life' },
-      {
-        type: 'p',
-        text: 'Battery life is one sum, and it is the average current that goes into it, not the peak. Sizing a cell from the transmit figure is the common error, and it is off by two orders of magnitude here.',
-      },
-      {
-        type: 'p',
-        text: 'The radio pulls about 240 milliamps while it is transmitting — a lot. Deep asleep, the whole board draws 0.043 milliamps — almost nothing. The mistake is to size the battery off the big number. What actually matters is the average, because the radio is only on for about a third of one percent of the time.',
-      },
-      {
-        type: 'equation',
-        words:
-          'The average draw is each mode’s current multiplied by the fraction of time spent in it, all added together.',
-        symbols: 'I_avg = Σ ( I_mode × t_mode )',
-        where: [
-          { symbol: 'I_avg', means: 'the average current, in milliamps' },
-          { symbol: 'Σ', means: 'a Greek capital sigma — it just means "add all of these up"' },
-          { symbol: 'I_mode', means: 'the current drawn in one mode, such as asleep or transmitting' },
-          { symbol: 't_mode', means: 'the fraction of time spent in that mode, between 0 and 1' },
-        ],
-        substituted:
-          '( 0.043 × 0.9145 ) + ( 240 × 0.0035 ) + ( 26 × 0.002 ) + ( 38.40 × 0.08 )',
-        result: '4.00 milliamps',
-        soWhat:
-          'Three shapes of draw, and the one you would not have guessed wins. The radio is rare and enormous — 240 mA for 0.35% of the time, contributing 0.84. Sleep is constant and almost nothing. The OLED is neither: 38.40 mA for 8% of the time contributes 3.07, more than everything else combined. A mode that is only occasionally on, at a merely moderate current, can still be the whole budget. That 38.40 is not a figure anyone chose. It is measured off the artwork: the companion scene was rendered at actual size and its mean per-subpixel drive came out at 27.1%, and an OLED draws in proportion to what it lights. At full contrast that is 112.9 mA and the battery lasts 4.3 days, so the panel runs at 34% instead. The picture set the brightness, and the brightness set the battery life.',
-      },
-      {
-        type: 'equation',
-        words:
-          'Battery life is the capacity divided by the average draw — after knocking off some capacity you will never actually get to use.',
-        symbols: 'days = ( capacity × 0.85 ) ÷ I_avg ÷ 24',
-        where: [
-          { symbol: 'capacity', means: 'the battery’s rating in milliamp-hours — 1200 mAh means it can supply 1200 milliamps for one hour, or 1 milliamp for 1200 hours' },
-          { symbol: '0.85', means: 'a derate. A battery cannot be run flat: the voltage sags below what the regulator needs while there is still charge left, and the battery leaks a little on its own' },
-          { symbol: '÷ 24', means: 'hours into days' },
-        ],
-        substituted: '( 1200 × 0.85 ) ÷ 4.00 ÷ 24',
-        result: 'about 11 days',
-        soWhat:
-          'Drop the 0.85 and you would claim 12.5 days. That is how most quoted battery lives get to be about a fifth too generous. And note what the companion cost: without its display this same board runs about 45 days. Deciding the device should have a face that moves shortened its life by a factor of four, and that is a product decision the arithmetic makes visible rather than an engineering detail.',
-      },
-
-      { type: 'h2', text: 'Why the display shows a face' },
-      {
-        type: 'p',
-        text: 'The screen could show a number. It shows a face instead, because a face is readable from across a room and a number is not. You do not read it — you catch it, the way you catch someone’s expression before you have heard a word.',
-      },
-      {
-        type: 'p',
-        text: 'The interesting problem is what the face should react to. Reacting to a percentage is wrong: a 3% move is an ordinary Tuesday for a volatile stock and a significant event for a stable one, so a fixed threshold would leave the thing permanently alarmed about one and asleep through the other.',
-      },
-      {
-        type: 'p',
-        text: 'So it reacts to how *unusual* the move is for that particular stock, measured against how much that stock normally moves in a day. Same expression, different trigger point per asset — which is the same idea a risk desk uses, and the subject of the next entry.',
-      },
-      { type: 'h2', text: 'Build it yourself' },
-      {
-        type: 'p',
-        text: 'You do not need a board fabricated to build this. Every part below exists as a breakout you can wire on a breadboard for about forty dollars, and the firmware is the same either way.',
-      },
-      {
-        type: 'defs',
-        items: [
-          { term: 'ESP32-C3 dev board', description: 'Any of them. It has the module, the regulator, the USB socket and the button already on it — the first four things this lesson designed.' },
-          { term: '4.01in seven-colour e-paper', description: 'Waveshare make the common one, 640 x 400, with a driver board that speaks SPI. This holds the readout.' },
-          { term: '1.5in RGB OLED, SSD1351', description: '128 x 128, also SPI. This is the companion’s own display — e-paper cannot animate, so the face lives here. It needs a 16 V panel rail, which the breakout board generates for you.' },
-          { term: 'Nine jumper wires', description: 'Power, ground, and four signals for each display — they share the clock and data lines, so each panel needs only its own chip select.' },
-        ],
-      },
-      {
-        type: 'p',
-        text: 'Wire it, then flash this. It connects, fetches a price, decides a face and sleeps — the whole loop in the order the board was designed around.',
-      },
-      {
-        type: 'code',
-        language: 'cpp',
-        code: [
-          '#include <WiFi.h>',
-          '#include <HTTPClient.h>',
-          '',
-          '// Wake, work, sleep. Everything about the power budget is this shape:',
-          '// the radio is the expensive part, so it is on for as little as possible.',
-          'const uint64_t SLEEP_MINUTES = 30;',
-          '',
-          'void setup() {',
-          '  WiFi.begin(SSID, PASSWORD);',
-          '  while (WiFi.status() != WL_CONNECTED) delay(200);',
-          '',
-          '  HTTPClient http;',
-          '  http.begin(QUOTE_URL);',
-          '  if (http.GET() == 200) {',
-          '    float change = parseChange(http.getString());',
-          '    drawPanel(change);          // ~15 s, then it holds with no power',
-          '  }',
-          '  http.end();',
-          '  WiFi.disconnect(true);        // radio OFF before sleeping, or it',
-          '  WiFi.mode(WIFI_OFF);          // keeps drawing tens of milliamps',
-          '',
-          '  esp_sleep_enable_timer_wakeup(SLEEP_MINUTES * 60ULL * 1000000ULL);',
-          '  esp_deep_sleep_start();       // never returns; setup() runs again on wake',
-          '}',
-          '',
-          'void loop() {}                  // unreachable — deep sleep restarts the chip',
-        ].join('\n'),
-      },
-      {
-        type: 'note',
-        label: 'The line that decides your battery life',
-        text: 'Turning the radio off before sleeping. Leave it up and the board draws tens of milliamps instead of forty microamps — a thousand times more — and the forty-five days in this lesson becomes about an hour. Every figure in the power budget above assumes those two lines are there.',
-      },
-      {
-        type: 'p',
-        text: 'Once it works on a breadboard, the board in this lesson is the same circuit with the jumper wires replaced by copper. That is genuinely the only difference, and it is why prototyping first is worth the forty dollars: a mistake costs a rewire rather than a fabrication run.',
-      },
-      {
-        type: 'note',
-        label: 'Where it is up to',
-        text: 'The board is designed, not fabricated. Everything above is real: real packages, real footprints, real calculations. What has not happened yet is sending it to a manufacturer and finding out which of my assumptions were wrong — and that is genuinely the most useful part, which is why it will get its own entry when it happens.',
-      },
-    ],
-  },
-
-  /* ------------------------------------------------------------------ */
-  {
     slug: 'monte-carlo-simulation',
-    index: '02',
+    index: '01',
     title: 'Monte Carlo simulation',
     standfirst:
       'Estimating a probability by simulation when the closed form is intractable — from a coin flip to value at risk across six correlated assets.',
@@ -665,7 +357,7 @@ export const entries: Entry[] = [
   /* ------------------------------------------------------------------ */
   {
     slug: 'physics-based-animation',
-    index: '03',
+    index: '02',
     title: 'Physics-based animation',
     standfirst:
       'Integrating forces instead of sampling curves: a spring, a driven pendulum, two-bone inverse kinematics, and a Verlet chain.',
@@ -865,7 +557,7 @@ export const entries: Entry[] = [
   /* ------------------------------------------------------------------ */
   {
     slug: 'what-a-derivative-measures',
-    index: '04',
+    index: '03',
     title: 'What a derivative measures',
     standfirst:
       'What a derivative measures, read off a graph before any notation is introduced.',
@@ -1022,7 +714,7 @@ export const entries: Entry[] = [
   /* ------------------------------------------------------------------ */
   {
     slug: 'modelling-credit-risk',
-    index: '05',
+    index: '04',
     title: 'Modelling credit risk',
     standfirst:
       'Decomposing expected loss into probability of default, loss given default and exposure — and why correlation rather than the average sets the capital.',
@@ -1175,7 +867,7 @@ export const entries: Entry[] = [
   /* ------------------------------------------------------------------ */
   {
     slug: 'logistic-regression-on-market-returns',
-    index: '06',
+    index: '05',
     title: 'Logistic regression',
     standfirst:
       'Fitting a logistic regression by gradient descent on two years of returns, then measuring it against the base rate it has to beat.',
@@ -1190,7 +882,7 @@ export const entries: Entry[] = [
     blocks: [
       {
         type: 'p',
-        text: 'The expression on the landing page’s e-ink panel is set by a trained classifier rather than by a threshold someone picked. Building it that way raises the question that turns out to be harder than the training: how do you establish whether a model has learned anything at all?',
+        text: 'Can two years of daily returns tell you whether tomorrow will be an up day? Training a classifier to try is the easy half. The harder question is how you establish whether a model has learned anything at all.',
       },
       {
         type: 'p',
@@ -1377,25 +1069,6 @@ export const entries: Entry[] = [
       {
         type: 'p',
         text: 'Sorted into five groups from least to most confident, the model\u2019s predictions do line up in roughly the right order on data it never saw: its most confident fifth was right more often than its least confident fifth. The relationship is weak and not perfectly monotonic — but it is there, and it is a far more interesting result than the accuracy number.',
-      },
-
-      { type: 'h2', text: 'What the face on the board shows' },
-      {
-        type: 'p',
-        text: 'Showing the model\u2019s confidence, not a prediction you should act on.',
-      },
-      {
-        type: 'p',
-        text: 'The model\u2019s outputs span about 2.14 percentage points — from roughly 50.4% to 52.5%. Mapping that straight onto expressions would leave the companion permanently neutral, so the face shows where today sits inside the model\u2019s OWN range instead. "More bullish than four days in five" is a real statement. "51.3% chance of a rise" is technically true and communicates nothing.',
-      },
-      {
-        type: 'p',
-        text: 'The colour comes from somewhere else entirely: red for a fall, green for a rise, because that is what every reader of a market screen already expects. Mood from the model, sign from the market.',
-      },
-      {
-        type: 'note',
-        label: 'Do not trade on the companion',
-        text: 'It is a demonstration of method on a problem chosen because it is hard, not a signal. The most useful thing it does is show what an honest evaluation looks like when the answer is "barely" — which, in this field, is what the answer usually is.',
       },
     ],
   },

@@ -4,8 +4,7 @@
  * First visit.
  *
  * The mark fills with water while the page resolves, then the columns sweep up
- * onto the board. It is the same screen the page transitions and the founder
- * page show — see `components/loader/LoaderScreen.tsx`.
+ * off the page. It is the same screen the page transitions show — see `components/loader/LoaderScreen.tsx`.
  *
  * ---
  *
@@ -105,8 +104,8 @@ export function Preloader() {
           ease: 'power4.inOut',
           stagger: 0.06,
           // Hand over as the curtain starts lifting, not after it has gone: the
-          // board should already be assembling as the columns clear, which is
-          // what makes the two read as one continuous move.
+          // page's entrance should already be under way as the columns clear,
+          // which is what makes the two read as one continuous move.
           onStart: enter,
         },
         '>-0.15',

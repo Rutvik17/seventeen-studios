@@ -11,13 +11,10 @@
     "market": "node scripts/fetch-market.mjs",
     "prebuild": "node scripts/fetch-market.mjs",
     "claims": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-claims.mjs",
-    "verify": "npm run typecheck && npm run claims && npm run sprites",
-    "drawing": "node scripts/verify-drawing.mjs",
-    "postbuild": "node scripts/verify-drawing.mjs && node scripts/verify-og.mjs && node scripts/verify-assets.mjs",
+    "verify": "npm run typecheck && npm run claims",
+    "postbuild": "node scripts/verify-og.mjs && node scripts/verify-assets.mjs",
     "og": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/build-og.mjs",
-    "drive": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-drive.mjs",
     "fit:sentiment": "node scripts/fetch-market.mjs --fit",
-    "sprites": "node scripts/verify-sprites.mjs",
     "assets": "node scripts/verify-assets.mjs"
   },
   "dependencies": {
@@ -26,14 +23,12 @@
     "next": "^14.2.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "three": "^0.160.0",
     "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@types/three": "^0.160.0",
     "docx": "^9.7.1",
     "typescript": "^5.5.2"
   }

@@ -68,10 +68,6 @@ export function ogImage(name: string, alt: string): OgImage[] {
  * image either way, which is not what alt text is for.
  */
 export const NOTEBOOK_CARD: Record<string, { plate: string; alt: string }> = {
-  'designing-a-circuit-board': {
-    plate: 'board',
-    alt: 'a populated circuit board — copper traces, a pin header, and two labelled chips',
-  },
   'monte-carlo-simulation': {
     plate: 'histogram',
     alt: 'a simulated distribution of outcomes, with the worst five percent marked off at the value-at-risk cut',

@@ -67,8 +67,6 @@ export type Block =
 
 /** Interactive pieces a notebook entry can mount. */
 export type EmbedId =
-  | 'board3d'
-  | 'trace-width'
   | 'derivative'
   | 'risk'
   | 'credit'

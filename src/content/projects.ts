@@ -96,22 +96,4 @@ export const projects: Project[] = [
     color: '#f8dde1',
     ink: '#8f2338',
   },
-  {
-    slug: 'companion-device',
-    index: '05',
-    name: 'E-ink companion device',
-    line: 'An ESP32 board driving two displays — seven-colour e-paper for the numbers, a small OLED for the face that reads them.',
-    metric: '0.93 mA average · 45 days on a 1200 mAh cell',
-    status: 'Designing',
-    stack: ['ESP32-C3', 'E-ink', 'KiCad', 'C++'],
-    /*
-      The notebook entry that designs this board — trace widths, crystal load
-      capacitors and battery life, each worked from its formula. It pointed at
-      the founder page, which built the device in 3D, until that page was
-      cleared for a rebuild.
-    */
-    href: '/notebook/designing-a-circuit-board/',
-    color: '#d3e3da',
-    ink: '#123f33',
-  },
 ];

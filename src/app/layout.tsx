@@ -83,7 +83,7 @@ const LANDING_TITLE = `${founder.name} — ${founder.role}, ${founder.location}`
 */
 const LANDING_IMAGE = ogImage(
   'home',
-  `${founder.name} beside the companion device, its e-ink panel reading his name and title`,
+  `${founder.name} — the paths of two double pendulums released a billionth of a radian apart, in blue and copper, coming apart`,
 );
 
 export const metadata: Metadata = {

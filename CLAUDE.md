@@ -2,8 +2,7 @@
 
 Rutvik Patel's engineering portfolio. Next.js 14 (App Router) + TypeScript,
 statically exported to GitHub Pages. GSAP for choreography, Lenis for scroll,
-Three.js where a thing genuinely needs a GPU, zustand for the few pieces of
-global UI state.
+canvas 2D for the drawings, zustand for the few pieces of global UI state.
 
 `README.md` covers running it, deploying it, and the file layout. This file is
 the set of rules to keep in mind when changing it.
@@ -61,9 +60,9 @@ say hello. All of it is deleted, and none of it should come back:
    portfolio; they scan it and then play with whatever moves.
 7. **Every number on the site is computed, and its working is shown.** This is
    the site's whole differentiator and it is not negotiable:
-   - the board's trace widths come from IPC-2221A, its crystal capacitors from
-     the oscillator's load spec, its battery life from a duty-cycled average
-     (`src/lib/board.ts`);
+   - the landing's pendulums print the gap between them, the doubling time
+     fitted to that gap's growth, and the energy their integrator has lost
+     (`src/lib/pendulum.ts`);
    - the risk desk prints its own disagreement with the closed-form answer
      (`src/lib/quant.ts`);
    - Grasp's demo shows the numeric derivative beside the exact one, with the
@@ -76,8 +75,8 @@ say hello. All of it is deleted, and none of it should come back:
    measured. `status` on a project says `Designing` or `In progress` when that is
    the truth; presenting an intention as a shipped product is the fastest way to
    lose a technical reader. The career record lives in `src/content/resume.ts`
-   and everything in it is real. The founder page is currently an empty route,
-   cleared for a rebuild.
+   and everything in it is real; the founder page lists it and offers the PDF
+   and .docx built from it.
 9. **Never type a calendar-dependent value into the copy.** Durations, "now"
    years, counts of things in a collection and reading times all come from
    `src/lib/time.ts` or are derived from the data itself. Dates of events that
@@ -106,7 +105,7 @@ Concretely, in the notebook and in any explanatory copy:
 - **No filler.** The failure mode of technical blogging is padding — a thousand
   words of preamble before the first useful sentence. Get to the thing.
 
-A notebook entry is not done if a reader who has never seen a circuit board or a
+A notebook entry is not done if a reader who has never seen a variance or a
 derivative cannot follow it end to end.
 
 ---
@@ -137,8 +136,10 @@ read it once at runtime with `getComputedStyle(document.documentElement)
 | `--accent` | `#1b4fe0` | plotter blue — the one accent |
 | `--accent-2` | `#b4622a` | copper, only where a drawing needs two readings |
 
-`--pcb-*` are the landing board's own colours (soldermask, copper, silkscreen)
-and must not leak into the interface.
+`--sketch-*` are the founder sketchbook's own colours (paper, graphite, charcoal,
+ink, one crimson). They are declared on the story in
+`components/founder/Founder.module.css`, read back by the renderer with
+`getComputedStyle`, and must not leak into the interface.
 
 Light theme: elevation is carried by `--shadow`, not by brightness. In a dark
 theme a raised surface is *lighter* than its ground; in a light one it is whiter

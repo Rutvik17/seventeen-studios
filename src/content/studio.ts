@@ -37,7 +37,7 @@ export const site = {
   wordmarkSecond: 'STUDIOS',
   tagline: 'The engineering notebook of Rutvik Patel.',
   description:
-    'Seventeen Studios is Rutvik Patel’s engineering portfolio — interactive instruments, custom hardware, and software built to be taken apart.',
+    'Seventeen Studios is Rutvik Patel’s engineering portfolio — interactive instruments, simulations, and software built to be taken apart.',
   founded: String(foundedYear()),
   location: 'Toronto, Canada',
   timezone: 'America/Toronto',
@@ -79,56 +79,32 @@ export const nav = [
 /**
  * The landing.
  *
- * Six words of copy on the whole first screen. The board assembling behind them
- * is the argument; a paragraph next to it would only be an apology for the
- * board not being clear enough.
+ * The first screen is two double pendulums diverging, and a readout that shows
+ * the working. The copy labels it; it does not explain it — each figure gets
+ * one plain line saying what it measures, because "energy error" means nothing
+ * to someone who has not met an integrator.
  */
 export const hero = {
   wordmarkTop: 'SEVENTEEN',
   wordmarkBottom: 'STUDIOS',
   eyebrow: 'Rutvik Patel — software engineer, Toronto',
   line: 'Things I build, with the working left in.',
+  cursor: 'Drag',
+  hint: 'Drag the tip, or tap, to release them from somewhere else',
+  hintStatic: 'Tap to release them from somewhere else',
+  readout: {
+    time: 'Simulated seconds since release.',
+    gap: 'Distance between the two tips, on arms a metre long.',
+    doubling: 'Measured, not assumed: fitted to how fast the gap grew while it was under a centimetre.',
+    drift: 'Without friction this must stay zero. What is left is rounding in the integrator.',
+  },
 } as const;
-
-/**
- * The board story's five acts.
- *
- * The captions are the only text on the landing and each is under nine words,
- * because they are read at a glance while something is moving.
- */
-export const boardActs = [
-  {
-    index: '01',
-    title: 'Substrate',
-    caption: 'Two layers of copper on 1.6 mm FR-4.',
-  },
-  {
-    index: '02',
-    title: 'Placement',
-    caption: 'Real footprints, to the tenth of a millimetre.',
-  },
-  {
-    index: '03',
-    title: 'Routing',
-    caption: 'Forty-five degrees only. Width from IPC-2221.',
-  },
-  {
-    index: '04',
-    title: 'Power',
-    caption: '3.3 V logic. 16 V for the OLED.',
-  },
-  {
-    index: '05',
-    title: 'Awake',
-    caption: 'A face on OLED. Numbers held on e-paper.',
-  },
-] as const;
 
 /** Marquee strip. Nouns, not adjectives. */
 export const marqueeItems = [
   'Interactive Instruments',
   'Quantitative Modelling',
-  'Embedded Hardware',
+  'Simulation',
   'WebGL & Canvas',
   'React · TypeScript',
   'Design Systems',

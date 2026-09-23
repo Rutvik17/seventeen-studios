@@ -1,14 +1,15 @@
 # Seventeen Studios
 
 Rutvik Patel's engineering portfolio: a statically exported Next.js 14
-application built around interactive instruments rather than prose. A circuit
-board that assembles itself as you scroll, a Monte Carlo risk desk on real
-market data, a character rigged on springs and inverse kinematics, and a
-calculus demo you operate by dragging.
+application built around interactive instruments rather than prose. Two double
+pendulums coming apart on the landing, a Monte Carlo risk desk on real market
+data, a character rigged on springs and inverse kinematics, a calculus demo you
+operate by dragging, and a founder page that draws itself in a sketchbook.
 
-Every figure on it is computed and shows its working — the board's trace widths
-come out of IPC-2221A, the risk desk prints its disagreement with the
-closed-form answer. Nothing is a screenshot.
+Every figure on it is computed and shows its working — the landing fits the
+rate its pendulums diverge at and prints the energy its integrator loses, the
+risk desk prints its disagreement with the closed-form answer. Nothing is a
+screenshot.
 
 Live: **https://rutvik17.github.io/seventeen-studios/**
 
@@ -80,7 +81,7 @@ src/
     lab/                   working instruments — risk desk, companion rig
     notebook/              writing: index + [slug] detail
     products/              shipped software: index + [slug] detail
-    founder/               empty — cleared for a rebuild
+    founder/               the sketchbook story, then the résumé downloads
     legal/                 privacy + terms ([slug])
     start/                 contact
     globals.css            the entire design system
@@ -90,6 +91,7 @@ src/
     Preloader.tsx          first-visit counter and column sweep
     Cursor.tsx             dot / ring / contextual label
     Nav.tsx, MenuOverlay   header and full-screen index
+    founder/               the sketchbook component and the page's styles
     instruments/           the things that actually run
     Prose.tsx              renders authored content blocks
     motion/                Reveal, SplitText, Magnetic, Scramble
@@ -97,10 +99,8 @@ src/
   content/                 all copy, as typed data (types.ts is the model)
     market.json            real closes, written by scripts/fetch-market.mjs
   lib/
-    panel.ts               the 2.9" panel's card, drawn on the home share image
-    board.ts               PCB geometry + IPC-2221A trace maths
-    pixel.ts               the e-paper readout panel
-    oled.ts                the companion display and its 16 V boost stage
+    pendulum.ts            the landing's double pendulums: RK4, energy, fitted divergence
+    sketchbook/            the founder story — geometry and timing, and the canvas painter
     quant.ts               Monte Carlo, VaR, expected shortfall, Cholesky
     calculus.ts            central differences + exact derivatives
     physics.ts             springs, pendulums, two-bone IK, Verlet
@@ -139,10 +139,9 @@ month to keep a long-untouched site from sitting on a stale figure.
 ### The résumé
 
 `src/content/resume.ts` is the source for the two files in `public/founder`: a
-PDF to hand to a person, and a .docx for applicant tracking systems. Nothing on
-the site links to them at the moment — the founder page has been cleared for a
-rebuild — so whatever replaces that page is where they surface again. They are
-regenerated with:
+PDF to hand to a person, and a .docx for applicant tracking systems. The founder
+page offers both for download, with each file's size read from disk at build
+time. They are regenerated with:
 
 ```bash
 npm i -D playwright        # only needed for the PDF step
@@ -157,8 +156,8 @@ suspiciously small.
 
 ### Artwork
 
-Everything drawn on this site is generated at runtime — the board as SVG, the
-e-ink panel and the instruments on canvas — so there is nothing to optimise and
+Everything drawn on this site is generated at runtime — the pendulums, the
+sketchbook and the instruments on canvas — so there is nothing to optimise and
 nothing to lay out late. The only raster assets are the two résumé files in `public/founder` and the
 share cards in `public/og`.
 
@@ -207,6 +206,8 @@ Explanatory writing follows one rule, borrowed from Grasp: assume the reader has
 never studied any of this. Every symbol is introduced before it is used, every
 equation is stated in words before symbols, and no jargon goes undefined.
 
-`/founder/` is an empty page, cleared for a rebuild. The route stays up
-because the nav, the work list, the sitemap and the notebook's author markup
-all link to it.
+The founder page is a sketchbook that draws a story on itself — a book
+opening, a spark drawing a head, a block breaking it apart, the pieces coming
+back as a bridge — and ends on a card and the résumé. Every frame is a function
+of the time alone (`src/lib/sketchbook`), so skipping, replaying and the
+reduced-motion storyboard are all just other values of `t`.

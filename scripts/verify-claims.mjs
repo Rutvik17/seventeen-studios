@@ -10,13 +10,13 @@
  * The site's stated rule is that every figure on it is computed and shows its
  * working. That is only worth anything if the printed result actually equals
  * what the printed working produces — and prose drifts. A constant gets tuned in
- * `lib/board.ts`, the paragraph quoting it does not move, and the entry now
+ * a `lib/` module, the paragraph quoting it does not move, and the entry now
  * teaches a wrong number with a correct-looking derivation beside it. That is
  * worse than no number, because it is confidently wrong.
  *
- * This caught one on its first run: the trace-width entry claimed a
- * cross-section of 6.27 where the formula gives 6.264. Small, and exactly the
- * kind of thing proofreading never finds — the digits look right.
+ * This caught one on its first run: a lesson claimed a figure of 6.27 where the
+ * formula gives 6.264. Small, and exactly the kind of thing proofreading never
+ * finds — the digits look right.
  *
  * Borrowed wholesale from Grasp, where the same rule is enforced by a test
  * suite and for the same reason: wrong arithmetic in something that teaches is
@@ -25,8 +25,7 @@
  * Run: node scripts/verify-claims.mjs   (also runs as part of `npm run verify`)
  */
 
-import { POWER_MODES, averageCurrentMa, batteryDays } from '../src/lib/board.ts';
-import { SCENE_DRIVE, PANEL_CONTRAST, boostInputCurrentMa } from '../src/lib/oled.ts';
+import { Pair, START } from '../src/lib/pendulum.ts';
 
 let failures = 0;
 
@@ -50,56 +49,28 @@ function check(label, actual, claimed, tolerance = 0.005) {
   );
 }
 
-/* ---------- IPC-2221A, "A thing that tells you something" ---------- */
-
-const k = 0.048; // external layer
-const area = Math.pow(0.5 / (k * Math.pow(10, 0.44)), 1 / 0.725);
-check('trace: cross-section A (sq mils)', area, 6.26);
-
-const mils = area / (1 * 1.378);
-check('trace: width (mils)', mils, 4.55, 0.01);
-check('trace: width (mm)', mils * 0.0254, 0.116, 0.001);
-
-/* ---------- crystal load ---------- */
-
-check('crystal: C1 = 2(12.5 - 3) pF', 2 * (12.5 - 3), 19);
-check('crystal: 18 pF pair gives C_L', (18 * 18) / (18 + 18) + 3, 12.0);
-
-/* ---------- power budget ---------- */
+/* ---------- the landing's pendulums, `lib/pendulum.ts` ---------- */
 
 /*
-  IMPORTED FROM `lib/board.ts`, NOT RETYPED HERE.
-
-  This block used to hold its own copy of the power modes, and that is the exact
-  failure this whole file exists to catch — one number in two places drifts, and
-  a checker with a stale copy agrees enthusiastically with a stale paragraph.
-
-  It happened: the board gained a fourth mode when the OLED went on it, and this
-  file went on verifying a three-mode budget that no longer described anything.
-  Both agreed, both were wrong, and the run stayed green.
-
-  Importing the real table means adding a mode CANNOT leave the check behind.
+  The module's header says the gap between the two tips starts at about a
+  nanometre, passes a metre inside fifteen seconds, and that the energy the
+  integrator loses is negligible beside it. Those are claims about a
+  simulation, so the simulation is run here and held to them.
 */
-const duty = POWER_MODES.reduce((s, m) => s + m.dutyCycle, 0);
-check('power: duty cycles sum to 1', duty, 1.0, 1e-9);
-
-const avg = averageCurrentMa();
-check('power: average current (mA)', avg, 4.00, 0.01);
-check('power: radio contribution (mA)', 240 * 0.0035, 0.84);
-// The OLED is now the largest single contributor, which is the lesson's point.
-const oled = POWER_MODES.find((m) => /OLED/.test(m.name));
-check('power: OLED contribution (mA)', oled.milliamps * oled.dutyCycle, 3.07, 0.01);
-/*
-  The companion's brightness is not a preference, it is what the power budget
-  allows given how much of the panel the artwork lights. Both halves are
-  asserted, because a claim that only checks the chosen value would still pass
-  if the constraint that forced it quietly went away.
-*/
-check('power: at full contrast the scene would blow the budget', boostInputCurrentMa(SCENE_DRIVE, 1), 112.9, 0.5);
-check('power: at the chosen contrast it fits', boostInputCurrentMa(SCENE_DRIVE * PANEL_CONTRAST, 1), 38.40, 0.05);
-
-check('power: battery life derated (days)', batteryDays(1200, avg), 10.7, 0.1);
-check('power: battery life undated (days)', 1200 / avg / 24, 12.5, 0.1);
+{
+  const pair = new Pair(START);
+  const start = pair.gap();
+  assert('pendulum: the gap starts at about a nanometre', start > 0.5e-9 && start < 5e-9, `${(start * 1e9).toFixed(2)} nm`);
+  let passed = null;
+  for (let s = 1; s <= 45; s += 1) {
+    pair.advance(480);
+    if (passed === null && pair.gap() > 1) passed = pair.time;
+  }
+  assert('pendulum: the gap passes a metre inside 15 s', passed !== null && passed < 15, `${passed?.toFixed(1)} s`);
+  assert('pendulum: energy error stays under one part in a million', Math.abs(pair.drift) < 1e-6, pair.drift.toExponential(2));
+  const doubling = pair.doubling();
+  assert('pendulum: a doubling time was fitted', doubling !== null && doubling > 0.1 && doubling < 2, `${doubling?.toFixed(3)} s`);
+}
 
 /* ---------- credit risk, "What a lender is afraid of" ---------- */
 
@@ -195,7 +166,7 @@ if (!model) {
   // Evaluated on days it never saw, chronologically after training.
   assert('model: train and test both have rows', model.train.n > 0 && model.test.n > 0, `${model.train.n} / ${model.test.n}`);
 
-  // The face maps a percentile, which needs a non-degenerate output range.
+  // A model whose outputs barely move has not learned to distinguish anything.
   const span = model.quantiles[model.quantiles.length - 1] - model.quantiles[0];
   assert('model: output band is non-degenerate', span > 0.002, `${(span * 100).toFixed(2)} pts`);
 
@@ -329,13 +300,11 @@ function lessonTerminal(start, drift, vol, years, z) {
 check('slope: 1.40 / 0.50', 1.4 / 0.5, 2.8, 1e-9);
 
 /*
-  The founder page's figures used to be checked here — GPIO pitch, LPDDR4
-  bandwidth, the SPI framebuffer and its clock time, the panel's PPI on both
-  axes. They went out with the working column that printed them: this file
-  exists to catch a printed number drifting from its formula, so a claim about
-  a number nothing prints is a test with no subject.
-
-  They come back with the surface. `git show ccb69d4 -- scripts/verify-claims.mjs`
+  The circuit board's figures used to be checked here — trace widths, crystal
+  load capacitors, the power budget. They went out with the board and the
+  lesson that printed them: this file exists to catch
+  a printed number drifting from its formula, so a claim about a number nothing
+  prints is a test with no subject.
 */
 
 console.log();
