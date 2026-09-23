@@ -96,18 +96,20 @@ src/
     founder/               the book component and its styles
     grasp/                 the chalkboard
     instruments/           the derivative Grasp demonstrates
-    notebook/              the entries' working parts — the rocket, its controls and its working
+    notebook/              the entries' working parts — the rocket entry's shell: canvas, button, sound, chapters
     sections/Contents.tsx  the landing
   content/                 all copy, as typed data
   lib/
     sketchbook/            the book's drawings — geometry, chapters, the canvas painter
     sketch/wordmark.ts     the landing's pencil-drawn, cross-hatched title
+    sketch/pencil.ts       coloured-pencil strokes, washes and handwriting for canvas drawings
     pageTurn.ts            the sheet that turns between pages
     ready.ts               holds the loader until every self-painting part has painted
     url.ts                 where the site lives — the one place it is written
     sketch/portrait.ts     the founder's photo, redrawn in pencil and coloured pencil
     calculus.ts            Grasp's numeric and exact derivatives
-    rocket/                the rocket entry: its physics, drawing, sound and number formatting
+    rocket/                the rocket entry: physics, orbits, the crafts, the sky and globe scenes, sound
+    rocket/chapters/       one module per chapter — lift-off, staging, orbit, landing — behind one interface
 scripts/
   build-og.mjs             share cards, drawn from the site's own data
   verify-og.mjs            postbuild: every page names a share card that exists

@@ -21,7 +21,7 @@ export const notebook: NotebookEntry[] = [
   {
     slug: 'rocket-physics',
     title: 'Rocket physics',
-    summary: 'My first look at rockets: what lifts them off the ground, and what brings them back down.',
+    summary: 'My first look at rockets: how they lift off, drop their empty stages, stay up in orbit and come home to land.',
     date: '2026-09-23',
     cardAlt: 'A pencil drawing of a rocket on a launch pad on the curve of the Earth',
   },
