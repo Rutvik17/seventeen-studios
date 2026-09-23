@@ -401,10 +401,19 @@ code {
   top: 0;
   transform-origin: 0 0;
 }
+/*
+  Its size is pinned. The site-wide `svg { max-width: 100% }` resolves against
+  the lean wrapper, which has no in-flow content and so is 0px wide — left to
+  that rule the pencil is squashed to nothing, and only the circles it draws
+  are visible. That shipped.
+*/
 .cursor-pencil__body {
   position: absolute;
   left: -2px;
   top: -44px;
+  width: 46px;
+  height: 46px;
+  max-width: none;
   overflow: visible;
   transform-origin: 2px 44px;
   transition: transform 0.35s var(--ease-out);
