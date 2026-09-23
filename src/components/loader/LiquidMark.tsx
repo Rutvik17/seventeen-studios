@@ -18,7 +18,7 @@
  *
  * three.js is already a dependency, and this is the one place on the site where
  * reaching for it would be the wrong call. Next code-splits by route, so three
- * currently lives in the founder chunk and nowhere else. Importing it here would
+ * currently lives in the notebook's board explorer chunk and nowhere else. Importing it here would
  * pull a 3D engine into the SHARED bundle — the loader is in the root layout, so
  * it is on the critical path of every first paint on every route.
  *

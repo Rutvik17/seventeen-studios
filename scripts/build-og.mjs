@@ -45,7 +45,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { founder, founderPage } from '../src/content/founder.ts';
+import { founder, panelCard } from '../src/content/founder.ts';
 import { site } from '../src/content/studio.ts';
 import { entries } from '../src/content/notebook.ts';
 import { products } from '../src/content/products.ts';
@@ -56,8 +56,7 @@ import { simulateRisk } from '../src/lib/quant.ts';
 import { CARD_BOOK, expectedLoss } from '../src/lib/credit.ts';
 import { Spring } from '../src/lib/physics.ts';
 import { INK } from '../src/lib/pixelfont.ts';
-import { composePanel } from '../src/lib/founder/panel.ts';
-import { PANEL } from '../src/lib/founder/device.ts';
+import { composePanel, PANEL } from '../src/lib/panel.ts';
 import { NOTEBOOK_CARD } from '../src/lib/og.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -343,10 +342,10 @@ function plateSigmoid(box, ink, accent = ACCENT) {
  * ------------------------------------------------------------------ */
 
 /**
- * The panel as it reads once the assembly finishes.
+ * The panel's card.
  *
- * Composed by `composePanel` — the function the founder page itself calls — so
- * the card shows the panel rather than a drawing of one. The first version laid
+ * Composed by `composePanel`, so the card shows the panel rather than a
+ * drawing of one. The first version laid
  * the three lines out by hand here and was already subtly wrong: it invented its
  * own rule position and dropped the location/time strip entirely.
  *
@@ -355,17 +354,14 @@ function plateSigmoid(box, ink, accent = ACCENT) {
  * image cannot tick.
  */
 function einkBitmap() {
-  return composePanel(
-    { kind: 'card' },
-    {
-      name: founder.name,
-      role: founderPage.panelRole,
-      employer: founderPage.panelEmployer,
-      location: site.location,
-      at: null,
-      stamp: new Date().toISOString(),
-    },
-  );
+  return composePanel({
+    name: founder.name,
+    role: panelCard.role,
+    employer: panelCard.employer,
+    location: site.location,
+    at: null,
+    stamp: new Date().toISOString(),
+  });
 }
 
 /**
@@ -809,15 +805,6 @@ function cards() {
       plate: 'device',
       titleSize: 58,
       footRight: 'Portfolio',
-    },
-    {
-      file: 'founder',
-      label: 'Founder',
-      title: 'MODEL A',
-      standfirst: 'A Raspberry Pi and a 2.9-inch e-ink module, assembled part by part as you scroll.',
-      plate: 'device',
-      titleSize: 72,
-      footRight: 'WebGL · React Three Fiber',
     },
     {
       file: 'lab',

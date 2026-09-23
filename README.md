@@ -80,7 +80,7 @@ src/
     lab/                   working instruments — risk desk, companion rig
     notebook/              writing: index + [slug] detail
     products/              shipped software: index + [slug] detail
-    founder/               MODEL A in 3D, then the employment record
+    founder/               empty — cleared for a rebuild
     legal/                 privacy + terms ([slug])
     start/                 contact
     globals.css            the entire design system
@@ -90,7 +90,6 @@ src/
     Preloader.tsx          first-visit counter and column sweep
     Cursor.tsx             dot / ring / contextual label
     Nav.tsx, MenuOverlay   header and full-screen index
-    founder/               the 3D assembly and the employment record
     instruments/           the things that actually run
     Prose.tsx              renders authored content blocks
     motion/                Reveal, SplitText, Magnetic, Scramble
@@ -98,7 +97,7 @@ src/
   content/                 all copy, as typed data (types.ts is the model)
     market.json            real closes, written by scripts/fetch-market.mjs
   lib/
-    founder/               MODEL A — the GLB, the studio, the panel firmware
+    panel.ts               the 2.9" panel's card, drawn on the home share image
     board.ts               PCB geometry + IPC-2221A trace maths
     pixel.ts               the e-paper readout panel
     oled.ts                the companion display and its 16 V boost stage
@@ -141,8 +140,8 @@ month to keep a long-untouched site from sitting on a stale figure.
 
 `src/content/resume.ts` is the source for the two files in `public/founder`: a
 PDF to hand to a person, and a .docx for applicant tracking systems. Nothing on
-the site links to them at the moment — the founder page that did was torn down
-— so whatever replaces that page is where they surface again. They are
+the site links to them at the moment — the founder page has been cleared for a
+rebuild — so whatever replaces that page is where they surface again. They are
 regenerated with:
 
 ```bash
@@ -160,8 +159,8 @@ suspiciously small.
 
 Everything drawn on this site is generated at runtime — the board as SVG, the
 e-ink panel and the instruments on canvas — so there is nothing to optimise and
-nothing to lay out late. The only raster assets are in `public/founder` (a portrait and the two résumé
-files) and `public/models` (the Raspberry Pi GLB the founder page loads).
+nothing to lay out late. The only raster assets are the two résumé files in `public/founder` and the
+share cards in `public/og`.
 
 ### Motion
 
@@ -201,26 +200,13 @@ npm run market      # refresh by hand
 
 Nothing is invented. No clients, no testimonials, no metric that was not
 measured; a project's `status` says `Designing` or `In progress` when that is
-the truth. The founder page is a personal employment record, and every date in
-`src/content/founder.ts` that the rebuilt page will draw on is real.
+the truth. The career in `src/content/resume.ts` is a personal employment
+record, and every date in it is real.
 
 Explanatory writing follows one rule, borrowed from Grasp: assume the reader has
 never studied any of this. Every symbol is introduced before it is used, every
 equation is stated in words before symbols, and no jargon goes undefined.
 
-The founder page is the same device as the landing, built rather than drawn: a
-Raspberry Pi and 2.9" e-ink panel modelled in Blender, assembled by scroll, and
-finishing on the panel powering up and printing who built it. There is no
-headline over it and no caption beside it — the object is the argument. The
-employment record underneath is the factual career in `src/content/founder.ts`.
-
-Styles, animation and the 3D stack live under `src/components/founder` and
-`src/lib/founder` so the page can come out without touching the rest of the
-site.
-
-Two things in there are corrections to the asset rather than to the code, and
-both are commented where they are applied: the export numbers the SPI cable
-*before* the two parts it joins, so it has to be re-ordered or the controller
-and the display fly in through it; and it seats the microSD slot a millimetre
-inside the laminate, so it has to be dropped clear of the board and brought in
-from underneath rather than down through it.
+`/founder/` is an empty page, cleared for a rebuild. The route stays up
+because the nav, the work list, the sitemap and the notebook's author markup
+all link to it.

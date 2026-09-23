@@ -75,9 +75,9 @@ say hello. All of it is deleted, and none of it should come back:
 8. **Nothing invented.** No clients, no testimonials, no metrics that were not
    measured. `status` on a project says `Designing` or `In progress` when that is
    the truth; presenting an intention as a shipped product is the fastest way to
-   lose a technical reader. The founder page is a personal employment record and
-   everything on it is real — the record lives in `src/content/founder.ts`, and
-   the page that renders it is currently being rebuilt.
+   lose a technical reader. The career record lives in `src/content/resume.ts`
+   and everything in it is real. The founder page is currently an empty route,
+   cleared for a rebuild.
 9. **Never type a calendar-dependent value into the copy.** Durations, "now"
    years, counts of things in a collection and reading times all come from
    `src/lib/time.ts` or are derived from the data itself. Dates of events that
