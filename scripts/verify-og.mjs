@@ -51,7 +51,7 @@ const OUT = process.argv[2] ?? 'out';
   check: an og:image that is NOT under the site's own base is now a failure in
   its own right rather than something quietly mis-parsed.
 */
-const SITE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://seventeenstudios.co').replace(
+const SITE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://rutvik17.github.io/seventeen-studios').replace(
   /\/$/,
   '',
 );

@@ -6,16 +6,17 @@
 /* ---------- Tokens ---------------------------------------------- */
 
 /*
-  LIGHT, WITH A PLOTTER-BLUE PEN.
+  A SKETCHBOOK.
 
-  The ground is a warm paper grey and the ink is near-black; one blue does all
-  the emphasis. That blue is the same one Grasp draws its curves in, which is
-  deliberate — the portfolio and the product it ships should read as one hand.
+  The whole site is one sketchbook — the landing is its contents page, the
+  founder page is the book itself, the loader is a pencil drawing the mark and
+  a change of page is a page turning. So the ground is warm paper, the ink is
+  charcoal, the pen is a deep ink blue, and one crimson is kept for the moments
+  that matter: the breakthrough in the founder's story, the thing to do next.
 
-  The vermilion-and-washi palette that briefly lived here is gone. It was a
-  strong scheme for a Japanese-craft studio and the wrong one for an
-  engineering notebook: warm red carries alarm in every technical context, and
-  a portfolio full of it looked like a dashboard in a bad state.
+  It replaced a cool paper grey with a bright plotter blue, which was a good
+  scheme for an instrument panel and read as a different site from the
+  sketchbook the founder page had become.
 
   Elevation is carried by `--shadow`, not by brightness. In dark themes a raised
   surface is lighter than its ground; in light themes it is whiter and CASTS,
@@ -23,27 +24,27 @@
 */
 
 :root {
-  /* Paper. Warm and slightly grey, so long-form reading is not a glare. */
-  --bg: #eceae4;
-  --bg-raise: #f8f7f4;
-  --bg-sunk: #e0ded6;
+  /* Paper: cream, with enough warmth to read as a page rather than a screen. */
+  --bg: #f4efe3;
+  --bg-raise: #fbf8f1;
+  --bg-sunk: #e9e1cf;
 
-  /* Graphite. Near-black with a trace of blue, so it reads as pencil. */
-  --fg: #14161a;
-  --fg-dim: rgba(20, 22, 26, 0.66);
-  --muted: #767a82;
+  /* Charcoal. */
+  --fg: #1d1d21;
+  --fg-dim: rgba(29, 29, 33, 0.68);
+  --muted: #7d7768;
 
-  --line: rgba(20, 22, 26, 0.12);
-  --line-strong: rgba(20, 22, 26, 0.24);
+  --line: rgba(29, 29, 33, 0.12);
+  --line-strong: rgba(29, 29, 33, 0.24);
 
-  /* The pen. */
-  --accent: #1b4fe0;
-  --accent-deep: #12379c;
-  --accent-soft: rgba(27, 79, 224, 0.09);
+  /* The pen: deep ink blue. */
+  --accent: #1f3a8a;
+  --accent-deep: #152a66;
+  --accent-soft: rgba(31, 58, 138, 0.09);
 
-  /* Second pen, for a drawing that needs two readings of one quantity. */
-  --accent-2: #b4622a;
-  --accent-2-soft: rgba(180, 98, 42, 0.1);
+  /* The crimson — the second reading of a drawing, and the one thing to do next. */
+  --accent-2: #c8233f;
+  --accent-2-soft: rgba(200, 35, 63, 0.1);
 
   /* The plane — Grasp's ground, defined here and applied only there. */
   --grid-unit: 24px;
@@ -81,40 +82,6 @@
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
-}
-
-/*
-  GRASP'S GROUND — the ruled plane, on the product's pages only.
-
-  `isolation` is load-bearing, not tidiness. The plane is painted by a FIXED
-  pseudo-element at `z-index: -1`; without a stacking context here that −1 joins
-  the root's negative layer, which paints beneath the background of every
-  in-flow box on the page, so this article's own background would cover it and
-  the plane would never appear. Isolating clamps the −1 to this subtree, and the
-  article deliberately paints no background of its own.
-*/
-.product-world {
-  position: relative;
-  isolation: isolate;
-  color: var(--fg);
-}
-
-.product-world::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-color: var(--bg-raise);
-  background-image: var(--plane);
-  background-size: var(--plane-size);
-  background-position: center top;
-  pointer-events: none;
-}
-
-@media (max-width: 700px) {
-  .product-world {
-    --grid-unit: 20px;
-  }
 }
 
 /* ---------- Reset ------------------------------------------------ */
@@ -260,7 +227,7 @@ code {
   font-family: var(--font-mono), monospace;
   font-size: 0.88em;
   color: var(--accent);
-  background: rgba(27, 79, 224, 0.07);
+  background: rgba(31, 58, 138, 0.07);
   padding: 0.1em 0.36em;
   border-radius: 2px;
 }
@@ -328,47 +295,6 @@ code {
 }
 .button:hover i {
   transform: translateX(4px);
-}
-.button--ghost:hover {
-  color: var(--accent);
-}
-
-.link-arrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  font-family: var(--font-mono), monospace;
-  font-size: 11.5px;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--fg-dim);
-  transition: color 0.3s, gap 0.3s var(--ease-out);
-}
-.link-arrow i {
-  font-style: normal;
-}
-.link-arrow:hover {
-  color: var(--accent);
-  gap: 15px;
-}
-
-.link-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  font-family: var(--font-mono), monospace;
-  font-size: 11.5px;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--muted);
-  transition: color 0.3s, gap 0.3s var(--ease-out);
-}
-.link-back i {
-  font-style: normal;
-}
-.link-back:hover {
-  color: var(--fg);
-  gap: 14px;
 }
 
 /* Split-text machinery. */
@@ -447,8 +373,20 @@ code {
   background-size: 200px 200px;
 }
 
-.cursor-dot,
-.cursor-ring {
+/*
+  The pencil. Its point is the pointer: the SVG is drawn with the point at
+  (0, 0) and offset by the viewBox origin, so no transform-origin arithmetic is
+  needed to keep the two together while it tilts.
+*/
+.cursor-marks {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  pointer-events: none;
+}
+.cursor-pencil {
   position: fixed;
   top: 0;
   left: 0;
@@ -457,69 +395,49 @@ code {
   opacity: 0;
   will-change: transform;
 }
-.cursor-dot {
-  width: 5px;
-  height: 5px;
-  margin: -2.5px 0 0 -2.5px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-.cursor-ring {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  margin: -17px 0 0 -17px;
-  border: 1px solid rgba(16, 19, 25, 0.3);
-  border-radius: 50%;
-  transition: width 0.35s var(--ease-out), height 0.35s var(--ease-out),
-    margin 0.35s var(--ease-out), border-color 0.35s, background-color 0.35s;
-}
-.cursor-ring.is-active {
-  width: 58px;
-  height: 58px;
-  margin: -29px 0 0 -29px;
-  border-color: var(--accent);
-  background: rgba(27, 79, 224, 0.07);
-}
-.cursor-ring.is-labelled {
-  width: 78px;
-  height: 78px;
-  margin: -39px 0 0 -39px;
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-.cursor-ring__label {
-  font-family: var(--font-mono), monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #05050a;
-  text-align: center;
-  line-height: 1.1;
-  max-width: 62px;
-  opacity: 0;
-  transition: opacity 0.25s;
-}
-.cursor-ring.is-labelled .cursor-ring__label {
-  opacity: 1;
-}
-
-.reading-progress {
-  position: fixed;
-  top: 0;
+.cursor-pencil__lean {
+  position: absolute;
   left: 0;
-  right: 0;
-  height: 2px;
-  z-index: 9997;
-  background: rgba(16, 19, 25, 0.06);
+  top: 0;
+  transform-origin: 0 0;
 }
-.reading-progress__bar {
-  height: 100%;
-  background: var(--accent);
-  transform-origin: 0 50%;
-  transform: scaleX(0);
+.cursor-pencil__body {
+  position: absolute;
+  left: -2px;
+  top: -44px;
+  overflow: visible;
+  transform-origin: 2px 44px;
+  transition: transform 0.35s var(--ease-out);
+  filter: drop-shadow(2px 3px 2px rgba(60, 45, 20, 0.18));
+}
+/* Over something that does something, the pencil lifts and leans in. */
+.cursor-pencil.is-active .cursor-pencil__body {
+  transform: rotate(-14deg) scale(1.12);
+}
+/* Pressing: the pencil taps down onto the page. */
+.cursor-pencil.is-pressed .cursor-pencil__body {
+  transform: rotate(-4deg) scale(0.94);
+  transition-duration: 0.12s;
+}
+.cursor-pencil__label {
+  position: absolute;
+  left: 14px;
+  top: 10px;
+  white-space: nowrap;
+  font-family: var(--font-hand), cursive;
+  font-size: 21px;
+  line-height: 1;
+  color: var(--fg);
+  padding: 0 2px 3px;
+  background: rgba(251, 248, 241, 0.92);
+  border-radius: 3px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.2s, transform 0.3s var(--ease-out), background-size 0.35s var(--ease-out) 0.08s;
+}
+.cursor-pencil.is-labelled .cursor-pencil__label {
+  opacity: 1;
+  transform: none;
 }
 
 /* ---------- The loader ------------------------------------------- */
@@ -533,8 +451,8 @@ code {
   a filling one — which made the site look like three sites that shared a
   typeface.
 
-  The mark and the counter are laid out here; the water itself is a canvas, and
-  what it is doing is `lib/loader/water.ts`.
+  The mark and the counter are laid out here; the drawing is
+  `components/loader/PencilMark.tsx`.
 */
 .loader {
   position: absolute;
@@ -556,93 +474,88 @@ code {
   font-variant-numeric: tabular-nums;
 }
 
-.liquid {
-  position: relative;
-  width: clamp(200px, 26vw, 420px);
+.pencil-mark {
+  width: clamp(180px, 22vw, 340px);
   /* The mark's own proportions — 36 x 26. */
   aspect-ratio: 36 / 26;
 }
-
-/* The empty glyph. What the water has not reached yet. */
-.liquid__base {
-  position: absolute;
-  inset: 0;
+.pencil-mark__svg {
   width: 100%;
   height: 100%;
-  fill: var(--line-strong);
+  overflow: visible;
 }
+.pencil-mark__line {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 0.55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.pencil-mark__line--light {
+  stroke-width: 0.3;
+  opacity: 0.45;
+}
+.pencil-mark__tip {
+  transition: opacity 0.3s;
+}
+
+/* ---------- The turning sheet: preloader and page transitions ---- */
 
 /*
-  The canvas carries the water and the glyph carries the shape: the mask is what
-  turns a rectangle of simulated liquid into a numeral with liquid in it. Drawing
-  the glyph in the shader instead would mean an SDF of the paths and a second
-  thing to keep in step with `Logo.tsx`.
+  One sheet of paper, clipped along the fold by `lib/pageTurn.ts`. The hidden
+  state below is the sheet's own (it is chrome, not content): collapsed to a
+  zero-width strip at the right edge until a turn starts.
 */
-.liquid__water,
-.liquid__flat {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  mask-size: 100% 100%;
-  -webkit-mask-size: 100% 100%;
-  mask-repeat: no-repeat;
-  -webkit-mask-repeat: no-repeat;
-}
-
-/*
-  No WebGL2, or reduced motion. A hard edge at the fill line rather than a
-  gradient fade: the level is a fact and a soft edge makes it look like an
-  opinion.
-*/
-.liquid__flat {
-  background: linear-gradient(
-    to top,
-    var(--accent-deep) 0%,
-    var(--accent) var(--fill),
-    transparent var(--fill)
-  );
-}
-
-/* ---------- Preloader -------------------------------------------- */
-
-.preloader {
-  position: fixed;
-  inset: 0;
-  z-index: 20000;
-  color: var(--fg);
-}
-.preloader__cols {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-}
-.preloader__col {
-  background: var(--bg);
-  border-right: 1px solid rgba(16, 19, 25, 0.03);
-}
-
-/* ---------- Page-transition curtain ------------------------------ */
-
+.preloader,
 .curtain {
   position: fixed;
   inset: 0;
-  z-index: 19000;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
   pointer-events: none;
 }
-.curtain__col {
-  background: var(--bg);
-  transform: translateY(100%);
+.preloader {
+  z-index: 20000;
+  color: var(--fg);
+  pointer-events: auto;
+}
+.curtain {
+  z-index: 19000;
+}
+.preloader__sheet,
+.curtain__sheet {
+  position: absolute;
+  inset: 0;
+  background-color: var(--bg);
+  background-image: var(--plane);
+  background-size: var(--plane-size);
+  --grid-unit: 28px;
+}
+.curtain__sheet {
+  clip-path: polygon(101% 0, 101% 0, 101% 100%, 101% 100%);
+}
+/* The underside of the lifted page and the shadow it throws, along the fold. */
+.preloader__edge,
+.curtain__edge {
+  position: absolute;
+  top: -5vh;
+  left: 0;
+  width: 140px;
+  height: 110vh;
+  margin-left: -70px;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(60, 45, 20, 0) 0%,
+    rgba(60, 45, 20, 0.16) 44%,
+    rgba(233, 225, 207, 0.95) 50%,
+    rgba(251, 248, 241, 0.6) 62%,
+    rgba(251, 248, 241, 0) 100%
+  );
 }
 /*
-  The curtain shows the same loader as everything else now.
-
-  It used to be an outlined "17" set in the display face — a third loading
-  treatment on a site that already had two. What is left here is the positioning
-  and the hidden start state; the contents are `LoaderScreen`.
+  The loader on the transition sheet, hidden until the sheet is down. Opacity
+  on the mark, not on the sheet — the sheet has to be opaque the moment it
+  arrives or the old page shows through it.
 */
 .curtain__mark {
   position: absolute;
@@ -671,8 +584,8 @@ code {
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(250, 249, 245, 0.88) 0%,
-    rgba(250, 249, 245, 0.6) 55%,
+    rgba(244, 239, 227, 0.9) 0%,
+    rgba(244, 239, 227, 0.6) 55%,
     transparent 100%
   );
   opacity: 0;
@@ -686,427 +599,79 @@ code {
 
 .nav__mark {
   display: inline-flex;
-  align-items: baseline;
-  font-family: var(--font-display), sans-serif;
-  font-weight: 800;
-  font-size: 15px;
-  letter-spacing: 0.02em;
+  align-items: center;
+  color: var(--fg);
 }
-/*
-  The mark sits on the dot's baseline. `.nav__mark` aligns on `baseline`, and an
-  inline-level SVG's baseline is its bottom edge — so the numerals and the full
-  stop line up without a magic offset.
-*/
+/* The mark in pencil: outlined and hatched, like the loader draws it. */
 .nav__logo {
   display: block;
-  height: 17px;
+  height: 26px;
   width: auto;
-  color: var(--fg);
-  transition: color 0.3s;
-}
-.nav__mark-dot {
-  color: var(--accent);
-  margin-left: 1px;
+  overflow: visible;
+  transition: transform 0.4s var(--ease-out), color 0.3s;
 }
 .nav__mark:hover .nav__logo {
+  transform: rotate(-4deg) scale(1.06);
   color: var(--accent);
 }
 
-.nav__links {
+/* The three index tabs, in handwriting. */
+.nav__tabs {
   display: flex;
-  gap: clamp(18px, 2.6vw, 44px);
+  gap: clamp(14px, 2.4vw, 34px);
 }
-
-/*
-  THE HEADER OVER A DARK PAGE.
-
-  The bar is fixed and lives in the root layout, so it cannot inherit anything
-  from the page under it — and Grasp's two pages are a slate green board. Left
-  alone the header is graphite on dark green: technically present, unreadable.
-
-  `:has()` rather than a class toggled by JavaScript on `documentElement`. A
-  navigation bar that is only legible once a bundle has run is not a bar that
-  degrades, and this is exactly the kind of state that gets left behind on a
-  route change. The page declares `data-slate` and the header responds; there is
-  nothing to remember to clean up.
-
-  There WAS an inversion like this once and it was deleted in #29 as dead code,
-  correctly — nothing on the site had a dark background any more. It is back
-  because something does.
-*/
-/*
-  …AND NOT WHILE THE MENU IS OVER IT.
-
-  The overlay tiles the viewport with `--bg-raise` panels, and the header stays
-  above it (z-index 500 against 480) so the close control remains reachable. So
-  on Grasp's two pages, opening the menu put chalk-white links and a chalk-white
-  mark onto a near-white ground: present, clickable, invisible. It reads as the
-  navigation having vanished, and it is the only place on the site where two
-  correct rules produced an unreadable result.
-
-  `:not(:has(.menu[data-open]))` on the inversion itself rather than a second
-  block restating the light colours. Suppressing the override lets the base
-  colours apply on their own, so there is still exactly one definition of what
-  the header looks like on paper — restating them here is how the two would
-  drift the next time one is touched.
-*/
-body:has([data-slate]):not(:has(.menu[data-open])) .nav__logo,
-body:has([data-slate]):not(:has(.menu[data-open])) .nav__link,
-body:has([data-slate]):not(:has(.menu[data-open])) .nav__index {
-  color: #eef1e6;
-}
-
-body:has([data-slate]):not(:has(.menu[data-open])) .nav__mark-dot {
-  color: #f0d266;
-}
-
-body:has([data-slate]):not(:has(.menu[data-open])) .nav__time {
-  color: rgba(238, 241, 230, 0.5);
-}
-
-body:has([data-slate]):not(:has(.menu[data-open])) .nav__index {
-  border-color: rgba(238, 241, 230, 0.34);
-}
-
-body:has([data-slate]):not(:has(.menu[data-open])) .nav__index-bars i {
-  background: #eef1e6;
-}
-
-/* The bar gains a ground of its own once the page is scrolled under it. */
-body:has([data-slate]):not(:has(.menu[data-open])) .nav.is-scrolled {
-  background: linear-gradient(180deg, rgba(36, 60, 51, 0.94), rgba(36, 60, 51, 0));
-}
-.nav__link {
-  font-family: var(--font-mono), monospace;
-  font-size: 11.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--fg);
-  opacity: 0.5;
-  transition: opacity 0.3s, color 0.3s;
-}
-.nav__link:hover {
-  opacity: 1;
-}
-.nav__link.is-active {
-  opacity: 1;
-  color: var(--accent);
-}
-
-.nav__aside {
-  display: flex;
-  align-items: center;
-  gap: clamp(14px, 2vw, 28px);
-}
-.nav__time {
-  min-width: 68px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-.nav__index {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 20px;
-  border: 1px solid var(--line-strong);
-  border-radius: 100px;
-  font-family: var(--font-mono), monospace;
-  font-size: 11.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  transition: border-color 0.3s, color 0.3s, background-color 0.3s;
-}
-.nav__index:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.nav__index-bars {
-  display: grid;
-  gap: 4px;
-  width: 15px;
-}
-.nav__index-bars i {
-  display: block;
-  height: 1px;
-  background: currentColor;
-  transition: transform 0.4s var(--ease-out);
-}
-.nav__index.is-open .nav__index-bars i:first-child {
-  transform: translateY(2.5px) rotate(45deg);
-}
-.nav__index.is-open .nav__index-bars i:last-child {
-  transform: translateY(-2.5px) rotate(-45deg);
-}
-
-/* ---------- Index overlay ---------------------------------------- */
-
-.menu {
-  position: fixed;
-  inset: 0;
-  z-index: 480;
-  visibility: hidden;
-  pointer-events: none;
-}
-.menu__panels {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-}
-.menu__panel {
-  background: var(--bg-raise);
-  border-right: 1px solid rgba(16, 19, 25, 0.04);
-  transform: translateY(-100%);
-}
-.menu__inner {
+.nav__tab {
   position: relative;
-  z-index: 1;
-  height: 100%;
-  padding: calc(var(--gutter) + 62px) var(--gutter) var(--gutter);
-  display: grid;
-  grid-template-columns: 1.1fr 1.4fr;
-  grid-template-rows: 1fr auto;
-  gap: clamp(28px, 4vw, 72px);
-  overflow-y: auto;
-  /* The overlay is taller than a phone screen, so it has to scroll on its
-     own: keep the gesture inside it, and never chain to the locked page. */
-  overscroll-behavior: contain;
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
-}
-.menu__caption {
-  display: block;
-  margin-bottom: 22px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--line);
-}
-.menu__primary ul {
-  display: grid;
-  gap: clamp(2px, 0.6vw, 10px);
-}
-.menu__primary-link {
-  display: block;
-  overflow: hidden;
-}
-.menu__primary-item {
-  display: block;
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: clamp(34px, 5.6vw, 82px);
-  /* The link is an overflow-hidden reveal mask, so the line box has to
-     contain the ink. Measured: Syne needs ~0.93em of the box for ascent plus
-     descent at this weight, so 1.12 keeps a few px of headroom under the
-     descender of "Thinking" while the stack stays tight. */
-  line-height: 1.12;
-  letter-spacing: -0.045em;
-  transition: color 0.35s, transform 0.5s var(--ease-out);
-}
-.menu__primary-link:hover .menu__primary-item {
-  color: var(--accent);
-  transform: translateX(18px);
-}
-
-/*
-  THE PAGE YOU ARE ON.
-
-  Dimmed, rather than removed. A full-screen index whose rows change depending on
-  where you are stops being a map of the site, so the row stays and says what it
-  is: pressing it closes the index and takes you to the top of the page you are
-  already reading.
-
-  Colour and nothing else. A marker was drawn beside the word first — a short
-  accent rule on a pseudo-element — and it never appeared: `.menu__primary-link`
-  is `overflow: hidden` because it doubles as the reveal mask for the entrance,
-  so anything set outside the text box is clipped away. The weight drop carries
-  it on its own, and `aria-current` is what actually announces it.
-*/
-.menu__primary-link[aria-current='page'] .menu__primary-item {
-  color: var(--muted);
-}
-
-/* It still lights up under the pointer — it is still a link. */
-.menu__primary-link[aria-current='page']:hover .menu__primary-item {
-  color: var(--accent);
-}
-.menu__foot {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding-top: 24px;
-  border-top: 1px solid var(--line);
-}
-.menu__email {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 600;
-  font-size: clamp(18px, 2.2vw, 30px);
-  letter-spacing: -0.02em;
+  padding: 4px 2px 8px;
+  font-family: var(--font-hand), cursive;
+  font-size: clamp(22px, 1.7vw, 27px);
+  line-height: 1;
+  color: var(--fg-dim);
   transition: color 0.3s;
 }
-.menu__email:hover {
-  color: var(--accent);
+.nav__tab:hover,
+.nav__tab.is-active {
+  color: var(--fg);
 }
-.menu__social {
-  display: flex;
-  gap: 20px;
-}
-.menu__social a:hover {
-  color: var(--accent);
-}
-
-/* ---------- Section scaffolding ---------------------------------- */
-
-.section {
-  position: relative;
-  max-width: var(--max);
-  margin: 0 auto;
-  padding: clamp(80px, 11vh, 150px) var(--gutter);
-}
-.field {
+.nav__underline {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
+  left: -4px;
+  right: -4px;
+  bottom: 0;
+  width: calc(100% + 8px);
+  height: 9px;
+  overflow: visible;
 }
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 0 0 rgba(27, 79, 224, 0.45);
-  }
-  50% {
-    opacity: 0.55;
-    box-shadow: 0 0 0 6px rgba(27, 79, 224, 0);
-  }
+.nav__underline path {
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.45s var(--ease-out);
 }
-@keyframes cue {
-  0% {
-    transform: scaleY(0);
-    opacity: 0;
-  }
-  35% {
-    transform: scaleY(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scaleY(1) translateY(46px);
-    opacity: 0;
-  }
+.nav__tab:hover .nav__underline path,
+.nav__tab:focus-visible .nav__underline path,
+.nav__tab.is-active .nav__underline path {
+  stroke-dashoffset: 0;
 }
 
-/* ---------- Marquee ----------------------------------------------- */
-
-.marquee {
-  position: relative;
-  padding: clamp(16px, 2vw, 26px) 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  overflow: hidden;
-  white-space: nowrap;
+/*
+  Over Grasp's slate chalkboard the bar is chalk-coloured. `:has()` rather than
+  a class toggled by script, so the header is legible without the bundle and
+  nothing is left behind on a route change: the page declares `data-slate` and
+  the header responds.
+*/
+body:has([data-slate]) .nav__mark,
+body:has([data-slate]) .nav__tab,
+body:has([data-slate]) .nav__tab.is-active {
+  color: #eef1e6;
 }
-.marquee__track {
-  display: flex;
-  width: max-content;
-  will-change: transform;
-}
-.marquee__half {
-  display: flex;
-}
-.marquee__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 20px;
-  padding-right: clamp(28px, 4vw, 62px);
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: clamp(15px, 1.7vw, 24px);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: rgba(16, 19, 25, 0.3);
-}
-.marquee__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  flex: none;
-}
-.step {
-  position: sticky;
-  top: clamp(90px, 14vh, 150px);
-  background: var(--bg-raise);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: clamp(26px, 3vw, 52px);
-  display: grid;
-  gap: 18px;
-  overflow: hidden;
-  will-change: transform;
-}
-
-/* ---------- Footer ---------------------------------------------------- */
-
-.footer {
-  max-width: var(--max);
-  margin: 0 auto;
-  padding: clamp(50px, 7vw, 96px) var(--gutter) 28px;
-  border-top: 1px solid var(--line);
-  overflow: hidden;
-}
-.footer__grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: clamp(24px, 3vw, 60px);
-}
-.footer__col ul {
-  display: grid;
-  gap: 9px;
-  margin-top: 18px;
-}
-.footer__col a {
-  font-size: 14.5px;
-  color: var(--fg-dim);
-  transition: color 0.3s, padding-left 0.35s var(--ease-out);
-}
-.footer__col a:hover {
-  color: var(--accent);
-  padding-left: 6px;
-}
-/* Measured to the container width by FitText; the clamp is only the
-   pre-measurement value, kept conservative so it can never overflow if the
-   script has not run yet. */
-.fit-text {
-  width: 100%;
-}
-.fit-text__inner {
-  /* inline-block, not block: the element has to shrink-wrap the glyphs or
-     measuring it just returns the container width and the fit is a no-op. */
-  display: inline-block;
-  vertical-align: top;
-  white-space: nowrap;
-  font-size: clamp(40px, 11vw, 200px);
-}
-.footer__wordmark {
-  margin: clamp(40px, 6vw, 90px) 0 clamp(20px, 2vw, 34px);
-}
-.footer__wordmark .fit-text__inner {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 800;
-  line-height: 0.82;
-  letter-spacing: -0.055em;
-  color: rgba(16, 19, 25, 0.08);
-  user-select: none;
-}
-.footer__base {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px 32px;
-  justify-content: space-between;
-  padding-top: 22px;
-  border-top: 1px solid var(--line);
+body:has([data-slate]) .nav.is-scrolled::before {
+  background: linear-gradient(180deg, rgba(36, 60, 51, 0.94), rgba(36, 60, 51, 0));
 }
 
 /* ---------- Page shells ------------------------------------------------ */
@@ -1115,51 +680,6 @@ body:has([data-slate]):not(:has(.menu[data-open])) .nav.is-scrolled {
   max-width: var(--max);
   margin: 0 auto;
   padding: clamp(110px, 16vh, 190px) var(--gutter) clamp(60px, 8vw, 120px);
-}
-
-/*
-  A page whose body is a full-bleed row list. The container holds the header
-  only, so it must not also reserve the bottom space the content would have
-  used — the list supplies its own.
-*/
-.page--head-only {
-  padding-bottom: 0;
-}
-
-/*
-  No rule under a header that is immediately followed by a list of ruled rows.
-  The two lines end up a few pixels apart and read as a mistake.
-*/
-.page-head--flush {
-  border-bottom: 0;
-  margin-bottom: clamp(28px, 4vw, 54px);
-}
-.page-head {
-  display: grid;
-  gap: 22px;
-  padding-bottom: clamp(40px, 5vw, 78px);
-  border-bottom: 1px solid var(--line);
-  margin-bottom: clamp(40px, 5vw, 80px);
-}
-.page-head__title {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 800;
-  font-size: clamp(42px, 8.6vw, 148px);
-  line-height: 0.92;
-  letter-spacing: -0.055em;
-  /* Masks the line reveal. Leading below 1 puts the descenders of g, y and p
-     outside the line box, so the mask needs room under the baseline or it
-     slices them off — "Small by design" lost the tails of both its y and its g.
-     The negative margin gives the space back to the layout, and a line entering
-     from a full line-height below is still well clear of it. */
-  overflow: hidden;
-  padding-bottom: 0.2em;
-  margin-bottom: -0.2em;
-}
-.page-head__lead {
-  max-width: 62ch;
-  font-size: clamp(16px, 1.3vw, 20px);
-  color: var(--fg-dim);
 }
 
 /* ---------- Prose -------------------------------------------------------- */
@@ -1342,102 +862,22 @@ ol.prose__list li::before {
   padding-right: 0;
 }
 
-/* ---------- Not found -------------------------------------------------------- */
-
-.not-found {
-  display: grid;
-  justify-items: start;
-  gap: 22px;
-  min-height: 70svh;
-  align-content: center;
-}
-.not-found__title {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 800;
-  font-size: clamp(46px, 10vw, 160px);
-  letter-spacing: -0.055em;
-  line-height: 0.9;
-}
-.not-found__body {
-  max-width: 46ch;
-  color: var(--fg-dim);
-}
-
 /* ==================================================================
    Responsive
    ================================================================== */
 
 @media (max-width: 1180px) {
-  .capabilities__grid,
-  .service__panel-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .principles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .engagements {
     grid-template-columns: minmax(0, 1fr);
   }
-  .case__facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .builder {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .builder__summary {
-    position: static;
-  }
 }
 
 @media (max-width: 900px) {
-  /*
-    THE BAR KEEPS ITS LINKS DOWN TO TABLET WIDTH.
-
-    All five used to be dropped at 900px, leaving a mark and the Index button
-    with a lot of air between them and every route two taps behind an overlay.
-    Five mono labels, the mark and the Index button measure roughly 400px, so
-    they sit comfortably from here down to about 700.
-
-    The clock goes instead: it is the one thing on the bar nobody navigates
-    with, and it buys the links their room.
-  */
-  .nav__time {
-    display: none;
-  }
-  .nav__links {
-    gap: 16px;
-  }
-  .menu__inner {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
-    padding-top: calc(var(--gutter) + 54px);
-  }
   .risk {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .footer__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .footer__grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  /* Tighten the index so the whole thing is a short scroll on a phone. */
-  .menu__primary-item {
-    font-size: clamp(30px, 8.6vw, 44px);
-  }
-  .menu__caption {
-    margin-bottom: 14px;
-    padding-bottom: 10px;
-  }
-  .menu__foot {
-    gap: 14px;
-    padding-top: 18px;
-  }
-  .menu__email {
-    font-size: 20px;
   }
 }
 
@@ -1449,10 +889,6 @@ ol.prose__list li::before {
 @media (max-width: 360px) {
   .nav {
     gap: 12px;
-  }
-  .nav__index {
-    padding: 11px 13px;
-    gap: 9px;
   }
 }
 
@@ -1469,470 +905,8 @@ ol.prose__list li::before {
     transition-duration: 0.08s !important;
     scroll-behavior: auto !important;
   }
-  .marquee__track {
-    transform: none;
-  }
-  .work__viewport {
-    height: auto;
-    overflow-x: auto;
-  }
-  .work__track {
-    transform: none !important;
-  }
   .curtain,
   .preloader {
-    display: none;
-  }
-  /* Hover translations are the vestibular offenders; colour changes stay. */
-  .work-row:hover,
-  .essay-row:hover,
-  .thinking__row:hover,
-  .faq__item summary:hover,
-  .builder__step button:hover {
-    padding-left: 0;
-  }
-  .poster {
-    transform: none !important;
-  }
-}
-
-/* ---------- Exploded axonometric ------------------------------------------ */
-
-/*
-  The studio's signature drawing. Geometry in `lib/axonometric.ts`, choreography
-  in `components/Exploded.tsx`; this file only says what ink each part is in.
-*/
-
-/*
-  The outer element is the SCROLL TRACK, not the drawing. Its height is the
-  distance over which the stack comes apart; the stage inside it is what pins
-  and holds still. Splitting the two is what lets every label land while the
-  drawing is stationary and fully on screen — see the note in Exploded.tsx.
-*/
-.exploded {
-  position: relative;
-  width: 100%;
-  height: 260vh;
-}
-
-.exploded__stage {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: calc(var(--grid-unit) * 0.5);
-}
-
-/*
-  Reduced motion, and no-JS. Nothing pins, so the track must collapse to the
-  drawing's own height or the page carries two viewports of emptiness. The
-  attribute is set by the component; the `:not()` covers the case where the
-  bundle never runs at all.
-*/
-.exploded[data-static='true'],
-html.no-js .exploded {
-  height: auto;
-}
-
-.exploded[data-static='true'] .exploded__stage,
-html.no-js .exploded .exploded__stage {
-  height: auto;
-}
-
-.exploded__caption {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--step-label);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: var(--grid-unit);
-}
-
-/*
-  Height-capped, not width-driven. Five layers at full separation is roughly a
-  615 × 1008 viewBox — at any sensible column width that renders past 1100px and
-  cannot be seen whole, which is half of why the diagram did not read. Letting
-  it letterbox down to the viewport keeps the whole stack in frame at the moment
-  the labels arrive.
-*/
-.exploded__svg {
-  display: block;
-  width: 100%;
-  max-height: min(76vh, 760px);
-  overflow: visible;
-}
-
-.exploded[data-static='true'] .exploded__svg,
-html.no-js .exploded .exploded__svg {
-  max-height: none;
-  height: auto;
-}
-
-/* The layer's own surface. Barely there — it is a plane, not a card. */
-.exploded__plane {
-  fill: var(--bg-raise);
-  stroke: var(--line-strong);
-  stroke-width: 1;
-  /* Paper is opaque; a translucent plane would let the layer below show
-     through and the stack would read as one muddled surface rather than as
-     separate sheets. */
-  fill-opacity: 0.92;
-}
-
-.exploded__grid {
-  fill: none;
-  stroke: var(--grid-line-major);
-  stroke-width: 0.75;
-  vector-effect: non-scaling-stroke;
-}
-
-.exploded__curve {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 2.25;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-}
-
-.exploded__curve--alt {
-  stroke: var(--accent-2);
-}
-
-.exploded__leader {
-  fill: none;
-  stroke: var(--line-strong);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-
-.exploded__node {
-  fill: var(--accent);
-}
-
-.exploded__index,
-.exploded__label,
-.exploded__note {
-  /* Text in a scaled SVG: `non-scaling-stroke` does not apply, so sizes here
-     are in user units and scale with the viewBox. That is wanted — the callouts
-     should hold their proportion to the drawing at every width. */
-  font-family: var(--font-mono), ui-monospace, monospace;
-}
-
-.exploded__index {
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  fill: var(--accent);
-}
-
-.exploded__label {
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  fill: var(--fg);
-}
-
-.exploded__note {
-  font-size: 11px;
-  letter-spacing: 0.02em;
-  fill: var(--muted);
-}
-
-@media (max-width: 860px) {
-  /*
-    The callout column needs room the drawing does not have on a phone. Rather
-    than shrink the type below reading size, the notes are dropped and the
-    labels kept — the diagram still says what each layer IS, which is the part
-    that carries meaning.
-  */
-  .exploded__note {
-    display: none;
-  }
-  .exploded__label {
-    font-size: 17px;
-  }
-}
-
-/* ---------- Product page ---------------------------------------------------- */
-
-.product {
-  padding-top: clamp(120px, 16vh, 200px);
-}
-
-.product__head {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 var(--gutter);
-}
-
-.product__head-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--gutter);
-  align-items: baseline;
-  justify-content: space-between;
-  padding-bottom: calc(var(--grid-unit) * 1.5);
-  border-bottom: 1px solid var(--line);
-}
-
-.product__status {
-  color: var(--accent);
-}
-
-.product__index {
-  display: block;
-  color: var(--muted);
-  margin-top: calc(var(--grid-unit) * 2);
-}
-
-.product__name {
-  font-family: var(--font-display), serif;
-  font-size: clamp(52px, 11vw, 148px);
-  font-weight: 700;
-  line-height: 0.94;
-  letter-spacing: -0.03em;
-  /* A mask with sub-1 leading clips descenders — pair it with padding and an
-     equal negative margin. Same rule as every other masked heading here. */
-  padding-bottom: 0.2em;
-  margin-bottom: -0.2em;
-}
-
-.product__tagline p {
-  font-family: var(--font-display), serif;
-  font-size: clamp(20px, 2.4vw, 30px);
-  font-weight: 500;
-  color: var(--accent-2);
-  margin-top: calc(var(--grid-unit) * 0.75);
-}
-
-.product__summary p {
-  max-width: 62ch;
-  font-size: clamp(17px, 1.2vw, 20px);
-  color: var(--fg-dim);
-  margin-top: calc(var(--grid-unit) * 1.5);
-}
-
-.product__facts dl {
-  display: flex;
-  flex-wrap: wrap;
-  gap: calc(var(--grid-unit) * 2.5);
-  margin-top: calc(var(--grid-unit) * 2);
-  padding-top: calc(var(--grid-unit) * 1.5);
-  border-top: 1px solid var(--line);
-}
-
-.product__facts dt {
-  color: var(--muted);
-  margin-bottom: 6px;
-}
-
-.product__facts dd {
-  font-size: 17px;
-}
-
-.product__drawing {
-  max-width: 1180px;
-  margin: clamp(80px, 12vh, 150px) auto;
-  padding: 0 var(--gutter);
-}
-
-.product__section {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: clamp(56px, 8vh, 96px) var(--gutter);
-  display: grid;
-  grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
-  gap: clamp(28px, 5vw, 90px);
-  align-items: start;
-  border-top: 1px solid var(--line);
-}
-
-.product__section-head {
-  position: sticky;
-  top: calc(var(--grid-unit) * 5);
-}
-
-.product__section-title {
-  font-family: var(--font-display), serif;
-  font-size: clamp(26px, 2.6vw, 38px);
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin-top: var(--grid-unit);
-  padding-bottom: 0.2em;
-  margin-bottom: -0.2em;
-}
-
-.product__cta {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: clamp(72px, 12vh, 140px) var(--gutter);
-  border-top: 1px solid var(--line);
-}
-
-.product__cta h2 {
-  font-family: var(--font-display), serif;
-  font-size: clamp(28px, 4vw, 54px);
-  font-weight: 600;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
-  max-width: 18ch;
-}
-
-.product__cta p {
-  max-width: 58ch;
-  color: var(--fg-dim);
-  margin-top: var(--grid-unit);
-}
-
-.product__cta-actions a {
-  color: var(--accent);
-  text-decoration: none;
-  border-bottom: 1px solid currentColor;
-  padding-bottom: 2px;
-}
-
-@media (max-width: 900px) {
-  .product__section {
-    /* `minmax(0, 1fr)`, not a bare `1fr`: a bare one is `minmax(auto, 1fr)`
-       and cannot shrink below its widest unbreakable child, so the column
-       — and everything in it — overflows the phone instead of fitting. */
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .product__section-head {
-    position: static;
-  }
-}
-
-/* ---------- Legal ----------------------------------------------------------- */
-
-/*
-  The plainest layout on the site, and that is the design. Someone here is
-  checking a specific claim or reviewing the app against its stated behaviour;
-  both want the text at once. Nothing arrives late and nothing is choreographed.
-*/
-
-.legal {
-  max-width: 780px;
-  margin: 0 auto;
-  padding: clamp(120px, 16vh, 200px) var(--gutter) clamp(80px, 12vh, 140px);
-}
-
-.legal__title {
-  font-family: var(--font-display), serif;
-  font-size: clamp(34px, 5.2vw, 62px);
-  font-weight: 600;
-  line-height: 1.04;
-  letter-spacing: -0.025em;
-  margin-top: calc(var(--grid-unit) * 2);
-  padding-bottom: 0.2em;
-  margin-bottom: -0.2em;
-}
-
-.legal__scope p {
-  font-size: clamp(17px, 1.2vw, 19px);
-  color: var(--fg-dim);
-  margin-top: var(--grid-unit);
-}
-
-.legal__updated {
-  color: var(--muted);
-  margin-top: calc(var(--grid-unit) * 1.5);
-  padding-bottom: calc(var(--grid-unit) * 1.5);
-  border-bottom: 1px solid var(--line);
-}
-
-.legal__body {
-  margin-top: calc(var(--grid-unit) * 2);
-}
-
-.legal__foot {
-  margin-top: calc(var(--grid-unit) * 3);
-  padding-top: calc(var(--grid-unit) * 1.5);
-  border-top: 1px solid var(--line);
-  color: var(--fg-dim);
-}
-
-.legal__foot a {
-  color: var(--accent);
-}
-
-.legal__nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--gutter);
-  margin-top: var(--grid-unit);
-}
-
-.legal__nav a {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--step-label);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-  text-decoration: none;
-}
-
-.legal__nav a:hover {
-  color: var(--fg);
-}
-
-/* ---------- Footer legal row ------------------------------------------------ */
-
-.footer__legal {
-  display: flex;
-  flex-wrap: wrap;
-  gap: calc(var(--grid-unit) * 0.75) var(--gutter);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.footer__legal a {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--step-label);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-  text-decoration: none;
-  transition: color 0.3s var(--ease-out);
-}
-
-.footer__legal a:hover {
-  color: var(--fg);
-}
-
-/* ==================================================================
-   THE COMPANION
-   ================================================================== */
-
-.companion {
-  position: fixed;
-  left: clamp(12px, 2vw, 28px);
-  bottom: clamp(12px, 2vw, 28px);
-  z-index: 60;
-  width: clamp(150px, 15vw, 210px);
-  pointer-events: none;
-}
-
-/*
-  Revealed on hover and ALWAYS on keyboard focus. A control that appears only
-  on hover is invisible to a keyboard, which is how dismiss buttons end up
-  unreachable by the people most likely to want them.
-*/
-.companion:hover .companion__close,
-.companion__close:focus-visible {
-  opacity: 1;
-}
-
-@media (max-width: 860px) {
-  /*
-    A fixed companion on a phone covers a real share of the viewport and sits
-    exactly where a thumb rests. Removed rather than shrunk — the tour is a
-    bonus, the page is the content.
-  */
-  .companion:not(.companion--static) {
     display: none;
   }
 }
@@ -1944,419 +918,6 @@ html.no-js .exploded .exploded__svg {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-}
-
-.instrument__tag {
-  color: var(--accent);
-}
-
-.instrument__title {
-  font-family: var(--font-display), serif;
-  font-size: clamp(22px, 2.2vw, 32px);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  margin-top: 6px;
-}
-
-.instrument__sub {
-  color: var(--muted);
-  margin-top: 4px;
-  font-size: 14.5px;
-}
-
-.instrument__controls {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
-  gap: clamp(14px, 2vw, 28px);
-  margin: calc(var(--grid-unit) * 1.5) 0;
-  padding: calc(var(--grid-unit) * 0.9) 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
-.instrument__control {
-  display: grid;
-  gap: 6px;
-}
-
-.instrument__control input[type="range"] {
-  width: 100%;
-  accent-color: var(--accent);
-  cursor: ew-resize;
-}
-
-.instrument__control output {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 15px;
-  color: var(--fg);
-}
-
-.instrument__figure {
-  margin-top: calc(var(--grid-unit) * 1.25);
-}
-
-.instrument__figure figcaption {
-  color: var(--muted);
-  margin-bottom: 8px;
-}
-
-.instrument__svg {
-  width: 100%;
-  height: auto;
-  background: var(--bg-sunk);
-  border-radius: var(--radius);
-}
-
-.instrument__band {
-  fill: var(--accent);
-}
-
-.instrument__median {
-  fill: none;
-  stroke: var(--accent-deep);
-  stroke-width: 2;
-}
-
-.instrument__walk {
-  fill: none;
-  stroke: var(--fg);
-  stroke-width: 0.75;
-  opacity: 0.26;
-}
-
-.instrument__baseline {
-  stroke: var(--line-strong);
-  stroke-width: 1;
-  stroke-dasharray: 3 4;
-}
-
-.instrument__bar {
-  fill: var(--accent);
-  opacity: 0.5;
-}
-
-.instrument__bar--tail {
-  fill: var(--accent-deep);
-  opacity: 0.95;
-}
-
-.instrument__marker {
-  stroke: var(--fg);
-  stroke-width: 1.5;
-}
-
-.instrument__axis {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10px;
-  fill: var(--muted);
-}
-
-/*
-  AXIS LABELS ARE SIZED IN DEVICE PIXELS; THE PADDING THEY SIT IN IS NOT.
-
-  Every chart here is an SVG with a fixed viewBox and `width: 100%`, so it scales
-  to its container. A CSS font-size does NOT scale with it — `10px` means ten
-  device pixels at any container width, and the browser achieves that by
-  inflating the font in USER units as the SVG shrinks. Measured on a 500px
-  viewport: the SVG renders at scale 0.474 and the computed font-size is 26 user
-  units rather than 10.
-
-  The left padding is a plain user-unit constant, so it does not grow to match.
-  Past a certain width the labels run off the left edge and get cut: the risk
-  desk's "$1,000,000" rendered at x=-92 and showed as ",000", and the factor
-  desk's "1.00x" showed as "00x". Both had been shipping that way.
-
-  Scaling the font down with the SVG instead would fix the geometry and produce
-  five-pixel text nobody can read. Shrinking it a little on narrow screens keeps
-  it legible and brings it back inside the padding.
-*/
-@media (max-width: 720px) {
-  .instrument__axis {
-    font-size: 7px;
-  }
-}
-
-.instrument__axis--accent {
-  fill: var(--fg);
-}
-
-/*
-  The engine's year-by-year.
-
-  Numbers are tabular-figure and right-aligned so the decimal points line up in
-  a column: a reader comparing fourteen years is scanning down, and ragged
-  decimals make that a re-read every row. The excess column is the only one
-  carrying colour, because it is the only one where the sign is the point.
-*/
-.engine__years {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: clamp(12px, 1.1vw, 14px);
-  font-variant-numeric: tabular-nums;
-}
-
-.engine__years th,
-.engine__years td {
-  padding: 0.34rem 0.6rem;
-  border-bottom: 1px solid var(--line);
-  text-align: right;
-}
-
-.engine__years thead th {
-  color: var(--muted);
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.82em;
-}
-
-.engine__years tbody th,
-.engine__years thead th:first-child {
-  text-align: left;
-}
-
-.engine__years tbody th {
-  font-weight: 400;
-  color: var(--muted);
-}
-
-.engine__years td[data-sign='up'] { color: var(--up, #2f7d4f); }
-.engine__years td[data-sign='down'] { color: var(--down, #b04141); }
-
-.instrument__readout {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
-  gap: clamp(14px, 2vw, 26px);
-  margin-top: calc(var(--grid-unit) * 1.5);
-  padding-top: calc(var(--grid-unit) * 1.2);
-  border-top: 1px solid var(--line);
-}
-
-.instrument__cell dt {
-  color: var(--muted);
-}
-
-.instrument__value {
-  display: block;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: clamp(17px, 1.5vw, 22px);
-  margin-top: 4px;
-  /* Tabular figures. Without them every digit change shifts the column width
-     and the whole readout jitters while a slider is being dragged. */
-  font-variant-numeric: tabular-nums;
-}
-
-.instrument__cell.is-strong .instrument__value {
-  color: var(--accent);
-}
-
-.instrument__note {
-  display: block;
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-
-.instrument__caveat {
-  margin-top: calc(var(--grid-unit) * 1.5);
-  padding: calc(var(--grid-unit) * 0.9);
-  background: var(--bg-sunk);
-  border-left: 2px solid var(--accent-2);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  font-size: 14px;
-  color: var(--fg-dim);
-  max-width: 78ch;
-}
-
-/* ==================================================================
-   THE RIG
-   ================================================================== */
-
-.rig {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
-  gap: clamp(20px, 3vw, 48px);
-  margin-top: clamp(28px, 4vh, 56px);
-  align-items: start;
-}
-
-.rig__stage {
-  background: var(--bg-sunk);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  min-height: 380px;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-}
-
-.rig__canvas {
-  width: 100%;
-  height: 100%;
-  min-height: 340px;
-}
-
-.rig__reduced {
-  max-width: 44ch;
-  color: var(--fg-dim);
-  font-size: 15px;
-}
-
-.rig__panel {
-  display: grid;
-  gap: calc(var(--grid-unit) * 0.8);
-  padding: calc(var(--grid-unit) * 0.9);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--bg-raise);
-}
-
-.rig__slider {
-  display: grid;
-  gap: 5px;
-}
-
-.rig__slider-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 13px;
-}
-
-.rig__slider-head output {
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-}
-
-.rig__slider input[type="range"] {
-  width: 100%;
-  accent-color: var(--accent);
-}
-
-.rig__slider small {
-  color: var(--muted);
-  font-size: 11.5px;
-}
-
-.rig__pose-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.rig__pose {
-  padding: 5px 11px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  font-size: 12.5px;
-  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
-}
-
-.rig__pose.is-active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-
-.rig__telemetry {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding-top: calc(var(--grid-unit) * 0.7);
-  border-top: 1px solid var(--line);
-}
-
-.rig__telemetry dt {
-  font-size: 9.5px;
-  color: var(--muted);
-}
-
-.rig__telemetry dd {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
-  margin-top: 2px;
-}
-
-.rig__code {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
-  gap: clamp(18px, 2.4vw, 40px);
-  margin-top: calc(var(--grid-unit) * 0.5);
-}
-
-.rig__code figcaption {
-  color: var(--accent);
-  margin-bottom: 8px;
-}
-
-.rig__code pre {
-  /* Code blocks are the one thing on this site allowed their own scrollbar.
-     Wrapping a line of source changes what it says. */
-  overflow-x: auto;
-  padding: calc(var(--grid-unit) * 0.75);
-  background: var(--fg);
-  color: #ede8dc;
-  border-radius: var(--radius);
-  font-size: 12.5px;
-  line-height: 1.55;
-}
-
-.rig__code code {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  white-space: pre;
-}
-
-.rig__code p {
-  margin-top: 10px;
-  font-size: 14.5px;
-  color: var(--fg-dim);
-  max-width: 52ch;
-}
-
-@media (max-width: 900px) {
-  .rig {
-    /* `minmax(0, 1fr)`, not a bare `1fr`: a bare one is `minmax(auto, 1fr)`
-       and cannot shrink below its widest unbreakable child, so the column
-       — and everything in it — overflows the phone instead of fitting. */
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* ==================================================================
-   THE DERIVATIVE INSTRUMENT — Grasp's product page
-   ================================================================== */
-
-.product__demo {
-  max-width: 1180px;
-  margin: clamp(56px, 9vh, 110px) auto 0;
-  padding: 0 var(--gutter);
-}
-
-.product__demo-head {
-  max-width: 62ch;
-  margin-bottom: clamp(24px, 4vh, 44px);
-}
-
-.product__demo-title {
-  font-family: var(--font-display), serif;
-  font-size: clamp(26px, 3.4vw, 46px);
-  font-weight: 600;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
-  margin-top: 8px;
-  padding-bottom: 0.14em;
-  margin-bottom: -0.14em;
-}
-
-.product__demo-head p {
-  margin-top: calc(var(--grid-unit) * 0.9);
-  color: var(--fg-dim);
-  font-size: clamp(16px, 1.05vw, 19px);
 }
 
 /*
@@ -2604,521 +1165,10 @@ html.no-js .exploded .exploded__svg {
   font-size: 0.92em;
 }
 
-/* ==================================================================
-   OUTRO + CONTACT
-   ================================================================== */
-
-.outro {
-  max-width: var(--max);
-  margin: 0 auto;
-  padding: clamp(90px, 18vh, 220px) var(--gutter);
-  border-top: 1px solid var(--line);
-}
-
-.outro__question {
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(44px, 9vw, 148px);
-  font-weight: 700;
-  line-height: 0.9;
-  letter-spacing: -0.035em;
-  padding-bottom: 0.08em;
-  margin-bottom: -0.08em;
-}
-
-.outro__link {
-  display: inline-block;
-  margin-top: clamp(24px, 4vh, 48px);
-  font-size: clamp(16px, 1.4vw, 21px);
-  color: var(--accent);
-  border-bottom: 1px solid currentColor;
-  padding-bottom: 3px;
-}
-
-.contact-page__links {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 var(--gutter) clamp(80px, 14vh, 160px);
-}
-
-.contact-page__primary {
-  display: inline-block;
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(26px, 3.4vw, 48px);
-  font-weight: 600;
-  letter-spacing: -0.025em;
-  color: var(--accent);
-  border-bottom: 2px solid currentColor;
-  padding-bottom: 4px;
-}
-
-.contact-page__elsewhere {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--gutter);
-  list-style: none;
-  margin-top: calc(var(--grid-unit) * 2);
-  padding-top: calc(var(--grid-unit) * 1.2);
-  border-top: 1px solid var(--line);
-}
-
-.contact-page__elsewhere a {
-  border-bottom: 1px solid var(--line-strong);
-  padding-bottom: 2px;
-}
-
-/* ==================================================================
-   LAB
-   ================================================================== */
-
-.lab__block {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: clamp(40px, 7vh, 90px) var(--gutter);
-  /* Anchored from the work index, so the heading must clear the fixed nav. */
-  scroll-margin-top: 96px;
-}
-
-.lab__title {
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(22px, 2.4vw, 34px);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  margin-bottom: calc(var(--grid-unit) * 0.8);
-}
-
-.lab__title .mono-label {
-  color: var(--muted);
-  margin-right: 10px;
-}
-
-/* ==================================================================
-   TUCKED ROWS — work index and notebook index
-   ================================================================== */
-
-/*
-  The wash. Fixed and behind everything so the colour reaches the viewport
-  edges rather than stopping at the list — a tint that ends at a container edge
-  reads as a highlighted box, not as the page changing.
-*/
-.rows__wash {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background: var(--bg);
-  pointer-events: none;
-}
-
-/*
-  FULL BLEED.
-
-  The section carries no horizontal padding; the padding lives on each row's
-  link instead. That is what lets the colour band run edge to edge while the
-  type still lines up with the rest of the page. Padding the section and
-  bleeding the fill out of it with negative offsets was the first attempt and it
-  breaks the moment a scrollbar changes the viewport width.
-*/
-.section-rows {
-  position: relative;
-  padding: clamp(64px, 11vh, 140px) 0;
-}
-
-.section-rows--flush {
-  padding-top: 0;
-}
-
-.section-rows__head {
-  color: var(--muted);
-  margin: 0 auto clamp(18px, 3vh, 36px);
-  max-width: var(--max);
-  padding: 0 var(--gutter);
-}
-
 .rows {
   list-style: none;
   margin: 0;
   padding: 0;
-}
-
-.rows__row {
-  position: relative;
-  font-family: var(--font-display), sans-serif;
-  /*
-    ONE ROW HEIGHT ACROSS THE SITE.
-
-    The work index and the notebook index are the same component and should be
-    the same object; they had drifted to 88px and 46px, so the work rows towered
-    and the lessons looked like a footnote under them.
-
-    52px is the settlement, and it is set by the longest thing that has to fit
-    on one line: "What a derivative measures" is 26 characters, and at this size
-    it needs about 700px of the ~785px a lesson row gives its title. Going back
-    up to 88px would clip it, and the words are the content on an index.
-
-    The row's height is this size times its leading plus the padding on
-    `.rows__link`, so changing it here changes both indexes together — which is
-    the point.
-  */
-  font-size: clamp(28px, 3.5vw, 52px);
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  /* Matches `.rows__title`. The row measures its open height from the content,
-     so the two leadings have to agree or the measurement is of a shorter box
-     than the one being displayed. */
-  line-height: 1.16;
-  overflow: hidden;
-  /* Stops a row's relayout escaping into the rest of the page — the thing that
-     makes animating height affordable at all. */
-  contain: layout paint;
-}
-
-/*
-  One hairline between rows, none above the first or below the last. The
-  previous version also ruled under the section heading, which left two
-  horizontal lines belonging to nothing.
-*/
-.rows__row + .rows__row {
-  border-top: 1px solid var(--line);
-}
-
-/*
-  THE NOTEBOOK'S ROWS RUN SMALLER THAN THE WORK'S, AND IT IS A CONTENT
-  CONSTRAINT RATHER THAN A TASTE.
-
-  A row sets its title at display size and ellipsises it to one line. That works
-  for the work index, where a title is a name — "Grasp", "Portfolio risk desk".
-  It does not work for a lesson, where the title has to say what the lesson
-  teaches: at 88px, "Designing a circuit board" arrives as "Designing a circ…",
-  which is worse than the oblique title it replaced, because at least that one
-  could be read.
-
-  Two thirds of the size fits a five-word technical title on one line at this
-  measure, and the rows still read as display type.
-*/
-
-.rows__fill {
-  position: absolute;
-  inset: 0;
-  transform-origin: left center;
-  will-change: transform;
-  pointer-events: none;
-}
-
-.rows__link {
-  position: relative;
-  display: flex;
-  align-items: baseline;
-  gap: clamp(10px, 1.6vw, 24px);
-  /*
-    Vertical padding is the row's breathing room, and it has to live HERE rather
-    than on the title: the open height is measured from this element's
-    `scrollHeight`, so space added anywhere else is invisible to the measurement
-    and the row closes over the tails of g, p and y.
-
-    `BREATHE` in `RevealRows.tsx` must match this — the component computes the
-    resting height from it, and if the two disagree the clip lands somewhere
-    other than where the padding put the type.
-  */
-  /*
-    Top padding only. Air below and a tuck cannot coexist — the row's bottom
-    edge is the cut, so padding there simply stops the clipping. `AIR` in
-    `RevealRows.tsx` must match this value; the component computes the resting
-    height from it and the two disagreeing puts the cut in the wrong place.
-  */
-  padding: 0.3em var(--gutter) 0;
-  text-decoration: none;
-  color: inherit;
-}
-
-/*
-  Title and tag travel together, so the tag stays pinned to the end of the words
-  rather than drifting off to a column of its own.
-*/
-/*
-  THE TITLE TAKES THE WIDTH BEFORE THE STANDFIRST DOES.
-
-  These were the other way round — the standfirst grew and the title was the one
-  that shrank and ellipsised. That held while every title was a name of one or
-  two words ("Grasp", "Mochi"). It stopped holding the moment the titles started
-  saying what the thing is, and both indexes began serving "Portfolio risk d…"
-  and "What a derivative measur…".
-
-  On an index the title is what is being scanned for and the standfirst is a
-  gloss that loses nothing to a two-line clamp, so the priority belongs this way
-  round.
-*/
-.rows__lead {
-  display: flex;
-  align-items: baseline;
-  gap: clamp(8px, 1.2vw, 18px);
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-/*
-  Closed: one line, ellipsised. Open: allowed to wrap.
-
-  `min-width: 0` on both this and its flex parent is what makes the ellipsis
-  possible — a flex item's default `min-width: auto` refuses to shrink below its
-  content, so `text-overflow` never has anything to act on and the title simply
-  overflows instead.
-*/
-.rows__title {
-  display: block;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--fg);
-  will-change: color;
-  /*
-    `overflow: hidden` is here for the ellipsis, and it clips descenders as a
-    side effect — every g, p and y in a row title lost its tail.
-
-    Two changes fix it together. The leading goes above 1 so the line box is
-    taller than the glyphs and the tails fall inside it, and the padding gives
-    the clip somewhere to happen that is below the text rather than through it.
-    Leading alone is not enough: a descender can still sit on the content edge.
-  */
-  line-height: 1.16;
-  padding-bottom: 0.14em;
-}
-
-.rows__row.is-open .rows__title {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-}
-
-.rows__tag {
-  flex: none;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  padding: 3px 10px;
-  opacity: 0.7;
-  /* The tag rides at the title's baseline, and at this type size that puts it
-     visually low. Nudging it back up costs nothing and reads much better. */
-  transform: translateY(-0.18em);
-}
-
-.rows__meta {
-  /* Capped rather than greedy — see the note on `.rows__lead`. */
-  flex: 0 1 28%;
-  min-width: 0;
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-size: clamp(12px, 0.9vw, 15px);
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1.35;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.rows__trail {
-  flex: none;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  font-weight: 400;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.rows__row.is-open .rows__trail {
-  color: inherit;
-  opacity: 0.7;
-}
-
-@media (max-width: 900px) {
-  /* No room for a supporting line beside type this size. The tag and the
-     trailing marker carry enough. */
-  .rows__meta {
-    display: none;
-  }
-}
-
-/* ---- reduced motion: open, quiet, colour-coded by a border ---- */
-
-.rows--static .rows__row {
-  height: auto;
-  padding: 0.12em 0 0.16em;
-}
-
-.rows--static .rows__fill {
-  display: none;
-}
-
-.rows--static .rows__link {
-  flex-wrap: wrap;
-  border-left: 4px solid var(--row-color, var(--accent));
-  padding-left: calc(var(--gutter) - 4px);
-}
-
-.rows--static .rows__title {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-}
-
-.rows--static .rows__meta {
-  display: block;
-  opacity: 1;
-  visibility: visible;
-  flex-basis: 100%;
-  -webkit-line-clamp: none;
-}
-
-/* The products index already has a page header, so its row list should not
-   add another block of top padding under it. */
-.section-rows--flush {
-  padding-top: 0;
-}
-
-/* ==================================================================
-   NOTEBOOK — entry page
-   ================================================================== */
-
-/*
-  The entry's colour tints the HEADER only, never the body.
-
-  A full-page wash is right for choosing between entries and wrong for reading
-  one: long-form text on a tinted ground is measurably slower to read, and by
-  the time someone is here the colour has already done its job.
-*/
-.entry__head {
-  background: var(--entry-color, var(--bg-sunk));
-  color: var(--entry-ink, var(--fg));
-  padding: clamp(110px, 16vh, 190px) var(--gutter) clamp(40px, 7vh, 80px);
-}
-
-/*
-  Header and body share ONE centred column, and that is the whole fix.
-
-  They previously had different containers: the header was left-aligned inside
-  1180px while the body was a 62ch measure centred in the viewport. Both were
-  "centred", but their left edges were nowhere near each other — on a wide
-  screen the prose started several hundred pixels right of the title, which
-  reads as the article having drifted off to one side.
-
-  One token, used by both, and the two cannot drift again.
-*/
-.entry__head-inner {
-  max-width: var(--entry-measure);
-  margin: 0 auto;
-}
-
-.entry__head .link-back {
-  color: inherit;
-  opacity: 0.75;
-}
-
-.entry__meta {
-  display: block;
-  margin-top: calc(var(--grid-unit) * 1.5);
-  opacity: 0.7;
-}
-
-.entry__title {
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(32px, 5.2vw, 68px);
-  font-weight: 700;
-  /* Above 1, so descenders sit inside the line box rather than on its edge. */
-  line-height: 1.06;
-  letter-spacing: -0.032em;
-  margin-top: 10px;
-  /* Sub-1 leading under a reveal mask clips descenders — pad, then pull back. */
-  padding-bottom: 0.1em;
-  margin-bottom: -0.1em;
-}
-
-.entry__standfirst p {
-  max-width: 56ch;
-  margin-top: calc(var(--grid-unit) * 1.1);
-  font-size: clamp(16px, 1.25vw, 21px);
-  opacity: 0.86;
-}
-
-/*
-  One measure, centred. No sidebar and no contents rail: these are read start to
-  finish, and a nav column beside a 62-character measure mostly steals width
-  from the thing being read.
-*/
-/*
-  Header and body align because they now have the SAME box model, not merely the
-  same max-width. That distinction was the bug.
-
-  The header was `padding: gutter` on the outer element with the measure applied
-  to an inner one; the body put the measure on the padded element itself. So the
-  header's measure excluded its gutter and the body's included it, and the two
-  text columns started exactly one gutter apart — 76px at desktop. Both looked
-  "centred" and neither lined up with the other.
-
-  Now both are: full-width element, gutter padding, children centred at the
-  measure. Any new block inherits the alignment for free.
-*/
-/*
-  THE ENTRY COLUMN, and the reason this took three attempts.
-
-  `.entry__body` and `.prose` are the SAME element, and `.prose` carries
-  `max-width: 68ch` with no auto margin. So the whole prose block was pinned to
-  the left of the padded area — and centring its children inside it, which is
-  what the previous fix did, moved nothing, because the box they were being
-  centred in was already hard against the left edge.
-
-  It is also why the board explorer was tiny: an embed cannot exceed a container
-  capped at 68ch, whatever max-width it declares for itself.
-
-  So the cap is released here and the measure moves onto the children, where a
-  wide block can opt out of it. `justify-items: center` does the centring —
-  `.prose` is a grid, and a grid item is centred by the container rather than by
-  its own auto margins, which is the mechanism the earlier attempt reached for
-  and the reason it silently did nothing.
-*/
-.entry__body {
-  max-width: none;
-  justify-items: center;
-  padding: clamp(44px, 8vh, 90px) var(--gutter) clamp(60px, 10vh, 120px);
-}
-
-.entry__body > * {
-  width: min(100%, var(--entry-measure));
-}
-
-/* Wider than the reading measure, on the same centre line. Higher specificity
-   than the rule above, so it does not depend on source order. */
-.entry__body > .prose__embed {
-  width: min(100%, 1180px);
-}
-
-.entry__body > h2 {
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(24px, 2.8vw, 38px);
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
-  margin: calc(var(--grid-unit) * 2.4) 0 calc(var(--grid-unit) * 0.7);
-}
-
-.entry__body > p {
-  font-size: clamp(16px, 1.15vw, 19px);
-  line-height: 1.68;
-  margin-bottom: calc(var(--grid-unit) * 0.9);
-}
-
-.entry__foot {
-  padding: 0 var(--gutter) clamp(70px, 12vh, 140px);
-}
-
-.entry__foot > * {
-  display: block;
-  width: min(100%, var(--entry-measure));
-  margin-inline: auto;
 }
 
 /* ---- a defined word ---- */
@@ -3227,175 +1277,6 @@ html.no-js .exploded .exploded__svg {
   color: var(--muted);
 }
 
-/* ---- an embedded instrument ---- */
-
-/*
-  Bleeds past the reading measure. An instrument squeezed into 62 characters is
-  unusable, and the measure exists for prose, not for a control surface.
-*/
-/*
-  Wider than the reading measure, and centred on the same axis.
-
-  It used to escape with `margin-left: 50%` and a translate, which worked only
-  while its parent was the measure-width column. Now that the parent is full
-  width the override is a plain max-width — fewer moving parts, and it cannot
-  drift out of alignment with the prose above it.
-*/
-.prose__embed {
-  margin: calc(var(--grid-unit) * 2) auto;
-  /*
-    The auto inline margins make this a shrink-to-fit grid item, which would let
-    it size to its content and overflow the track again. Cap it at the column.
-  */
-  max-width: 100%;
-  min-width: 0;
-}
-
-.prose__embed-caption {
-  color: var(--muted);
-  margin-top: 10px;
-  text-align: center;
-}
-
-.embed__placeholder {
-  display: grid;
-  place-items: center;
-  min-height: 320px;
-  background: var(--bg-sunk);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  color: var(--muted);
-}
-
-/* ==================================================================
-   TRACE WIDTH CALCULATOR
-   ================================================================== */
-
-.trace-calc {
-  display: grid;
-  grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
-  gap: clamp(16px, 2.4vw, 36px);
-  padding: clamp(16px, 2.2vw, 28px);
-  background: var(--bg-raise);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-}
-
-.trace-calc__controls {
-  display: grid;
-  gap: calc(var(--grid-unit) * 0.8);
-  align-content: start;
-}
-
-.trace-calc__slider {
-  display: grid;
-  gap: 5px;
-}
-
-.trace-calc__slider-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.trace-calc__slider-head output {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 14px;
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-}
-
-.trace-calc__slider input[type='range'] {
-  width: 100%;
-  accent-color: var(--accent);
-}
-
-.trace-calc__slider small,
-.trace-calc__toggle small {
-  font-size: 11.5px;
-  line-height: 1.45;
-  color: var(--muted);
-}
-
-.trace-calc__toggle {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 4px 8px;
-  align-items: center;
-  padding-top: calc(var(--grid-unit) * 0.6);
-  border-top: 1px solid var(--line);
-}
-
-.trace-calc__toggle small {
-  grid-column: 2;
-}
-
-.trace-calc__working {
-  align-self: start;
-}
-
-.trace-calc__step {
-  margin-bottom: calc(var(--grid-unit) * 0.9);
-}
-
-.trace-calc__step .mono-label {
-  display: block;
-  color: var(--muted);
-  margin-bottom: 6px;
-}
-
-.trace-calc__step code {
-  display: block;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: clamp(12px, 1vw, 14.5px);
-  font-variant-numeric: tabular-nums;
-  overflow-x: auto;
-  white-space: nowrap;
-  padding-bottom: 4px;
-}
-
-.trace-calc__step code b {
-  color: var(--accent);
-}
-
-.trace-calc__step em {
-  font-size: 12.5px;
-  color: var(--muted);
-}
-
-.trace-calc__answer {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 10px;
-  padding-top: calc(var(--grid-unit) * 0.7);
-  border-top: 1px solid var(--line);
-}
-
-.trace-calc__answer strong {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: clamp(20px, 2vw, 28px);
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-}
-
-.trace-calc__note {
-  margin-top: calc(var(--grid-unit) * 0.8);
-  font-size: 13px;
-  line-height: 1.55;
-  color: var(--muted);
-}
-
-@media (max-width: 860px) {
-  .trace-calc {
-    /* `minmax(0, 1fr)`, not a bare `1fr`: a bare one is `minmax(auto, 1fr)`
-       and cannot shrink below its widest unbreakable child, so the column
-       — and everything in it — overflows the phone instead of fitting. */
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* Visually hidden, still announced. */
 .sr-only {
   position: absolute;
@@ -3407,221 +1288,6 @@ html.no-js .exploded .exploded__svg {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
-}
-
-/* ==================================================================
-   HOLDINGS + DIVERSIFICATION
-   ================================================================== */
-
-.holdings {
-  margin: calc(var(--grid-unit) * 1.4) 0;
-  border-top: 1px solid var(--line);
-}
-
-.holdings__head,
-.holdings__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 5.5rem 5.5rem minmax(0, 12rem);
-  gap: clamp(8px, 1.4vw, 20px);
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.holdings__head {
-  color: var(--muted);
-  padding-bottom: 8px;
-}
-
-/* The last three columns are figures. Right-aligning them is what lets the eye
-   compare down a column instead of reading each cell. */
-.holdings__head > :not(:first-child),
-.holdings__price,
-.holdings__vol {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.holdings__head > :last-child {
-  text-align: left;
-}
-
-.holdings__name {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.holdings__name strong {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 14px;
-}
-
-.holdings__name em {
-  font-style: normal;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.holdings__price,
-.holdings__vol {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 13.5px;
-}
-
-.holdings__vol {
-  color: var(--accent-2);
-}
-
-.holdings__weight {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 3rem;
-  gap: 8px;
-  align-items: center;
-}
-
-.holdings__weight input[type='range'] {
-  width: 100%;
-  accent-color: var(--accent);
-}
-
-.holdings__weight output {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 13px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-@media (max-width: 760px) {
-  .holdings__head {
-    display: none;
-  }
-  .holdings__row {
-    grid-template-columns: minmax(0, 1fr) 4.5rem;
-    row-gap: 6px;
-  }
-  .holdings__vol {
-    display: none;
-  }
-  .holdings__weight {
-    grid-column: 1 / -1;
-  }
-}
-
-/* ---- the diversification comparison ---- */
-
-/*
-  Two bars, one above the other, on a SHARED scale. That is the whole design:
-  the point only lands if both numbers are visible at once and measured against
-  the same axis. Two separate gauges, or one number with the other in prose,
-  and the comparison stops being immediate.
-*/
-.diversify {
-  padding: calc(var(--grid-unit) * 1.1);
-  background: var(--bg-sunk);
-  border-radius: var(--radius);
-  margin-bottom: calc(var(--grid-unit) * 1.2);
-}
-
-.diversify__lead {
-  font-size: 14.5px;
-  line-height: 1.6;
-  color: var(--fg-dim);
-  max-width: 72ch;
-}
-
-.diversify__bars {
-  display: grid;
-  gap: 10px;
-  margin: calc(var(--grid-unit) * 0.9) 0;
-}
-
-.diversify__bar {
-  display: grid;
-  grid-template-columns: minmax(0, 13rem) minmax(0, 1fr) 4rem;
-  gap: 12px;
-  align-items: center;
-}
-
-.diversify__bar .mono-label {
-  color: var(--muted);
-}
-
-.diversify__track {
-  height: 10px;
-  background: var(--bg-raise);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.diversify__fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.4s var(--ease-out);
-}
-
-.diversify__bar--flat .diversify__fill {
-  background: var(--line-strong);
-}
-
-.diversify__bar--accent .diversify__fill {
-  background: var(--accent);
-}
-
-.diversify__bar output {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 14px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.diversify__saved {
-  font-size: 14.5px;
-  line-height: 1.55;
-  color: var(--fg-dim);
-  max-width: 68ch;
-}
-
-.diversify__saved strong {
-  color: var(--accent);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 1.15em;
-}
-
-/* ---- the answer, in a sentence ---- */
-
-/*
-  Before the table of figures, not after it. Someone who does not know what
-  value at risk is needs the sentence; someone who does will skip it and read
-  the table. Putting the table first serves only the second group.
-*/
-.instrument__plain {
-  font-size: clamp(15px, 1.15vw, 18px);
-  line-height: 1.65;
-  max-width: 70ch;
-  margin: calc(var(--grid-unit) * 1.4) 0 0;
-  padding-left: calc(var(--grid-unit) * 0.8);
-  border-left: 3px solid var(--accent);
-}
-
-.instrument__plain strong {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  color: var(--accent);
-}
-
-.instrument__caveat--quiet {
-  border-left-color: var(--line-strong);
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.instrument__control small {
-  font-size: 11.5px;
-  color: var(--muted);
-  line-height: 1.4;
 }
 
 /* ==================================================================
@@ -3640,22 +1306,7 @@ html.no-js .exploded .exploded__svg {
    ================================================================== */
 
 @media (max-width: 900px) {
-  /*
-    SVG TEXT IS THE BIG ONE.
-
-    A label set at 10 user units inside a 760-unit viewBox renders at
-    10 x (rendered width / 760). On a 350px-wide phone that is 4.6px —
-    illegible, and it applies to every axis label, tick and annotation on every
-    instrument at once.
-
-    Font size inside an SVG does not respond to the element's rendered size, so
-    the only fix is to set a larger value in USER UNITS at small viewports. 26
-    units puts the label back at roughly 12px on a 350px screen, which is the
-    floor for anything meant to be read.
-  */
-  .instrument__axis {
-    font-size: 26px;
-  }
+  
 
   .deriv__tri-label {
     font-size: 24px;
@@ -3676,79 +1327,7 @@ html.no-js .exploded .exploded__svg {
   }
 }
 
-@media (max-width: 760px) {
-  /*
-    The diversification comparison is a label, a bar and a figure on one line.
-    At 13rem for the label plus 4rem for the figure, a 390px screen leaves about
-    34px for the bar itself — which is the one part carrying the meaning.
-    Stacked, the bar gets the full width.
-  */
-  .diversify__bar {
-    grid-template-columns: minmax(0, 1fr) 4.5rem;
-    row-gap: 4px;
-  }
-
-  .diversify__bar .mono-label {
-    grid-column: 1 / -1;
-  }
-
-  
-}
-
 @media (max-width: 700px) {
-  /*
-    THE ROW LIST.
-
-    At 5.6vw the titles fall to their 28px floor on a phone, and a band 0.9 of
-    that is 25px — readable, but the type has stopped being the point. Bumping
-    the floor keeps these as the display objects they are on desktop.
-  */
-  .rows__row {
-    font-size: clamp(34px, 9vw, 48px);
-  }
-
-  /* The trailing status marker and the tag cannot both fit beside type that
-     size. The status is the one a reader can infer from the page they land on. */
-  .rows__trail {
-    display: none;
-  }
-
-  
-
-  
-
-  
-
-  /*
-    THE BAR RUNS OUT OF ROOM BEFORE THE ROUTES DO.
-
-    Five labels need about 260px of the 390 a phone has, and the mark and the
-    Index button take most of the rest — so something has to go, and it is a
-    question of arithmetic rather than of taste.
-
-    What stays is the three routes that are read: the notebook, the lab and
-    Grasp. Contact and the founder page come off, and neither is lost — the
-    Index button opens the full site overlay, the footer carries contact in
-    two forms, and the founder page is currently empty. They are the two the
-    bar can most afford to drop: one is a destination people arrive at from a
-    link rather than hunt for in a header, and the other has nothing on it yet.
-  */
-  .nav__link[data-label='contact'],
-  .nav__link[data-label='founder'] {
-    display: none;
-  }
-  .nav__links {
-    gap: 14px;
-  }
-
-  /* The entry header's type is sized for a wide measure. */
-  .entry__title {
-    font-size: clamp(30px, 8.4vw, 42px);
-  }
-
-  .outro__question {
-    font-size: clamp(38px, 12vw, 62px);
-  }
 
   /*
     Equations scroll horizontally rather than wrapping, which is correct — a
@@ -3765,291 +1344,6 @@ html.no-js .exploded .exploded__svg {
   .rig__code pre,
   .prose__code pre {
     font-size: 11.5px;
-  }
-}
-
-@media (max-width: 560px) {
-  /*
-    The holdings table keeps its price column here; at 5.5rem it is the one
-    figure that stays comparable down a column, and losing it would leave a
-    weight slider with nothing to weigh.
-  */
-  .holdings__row {
-    grid-template-columns: minmax(0, 1fr) 5rem;
-  }
-
-  .holdings__price {
-    text-align: right;
-  }
-
-  /* Readouts stack to two-up rather than one, so the panel stays scannable. */
-  .instrument__readout {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .instrument__value {
-    font-size: 16px;
-  }
-}
-
-/* ==================================================================
-   TAG FILTER
-   ================================================================== */
-
-.tagbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-width: var(--max);
-  margin: 0 auto clamp(20px, 3vh, 40px);
-  padding: 0 var(--gutter);
-}
-
-/*
-  The fill is a separate element scaled from the left rather than a background
-  colour that fades. A colour fading in reads as a state change; one that sweeps
-  across reads as a selection being made, which is what actually happened.
-*/
-.tagbar__pill {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  padding: 7px 15px;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--fg-dim);
-  transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
-}
-
-.tagbar__fill {
-  position: absolute;
-  inset: 0;
-  background: var(--fg);
-  will-change: transform;
-}
-
-.tagbar__label {
-  position: relative;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 7px;
-}
-
-.tagbar__pill.is-active {
-  color: var(--bg);
-  border-color: var(--fg);
-}
-
-/* The count rides along at a smaller size, dimmed against whichever ground it
-   currently sits on. */
-.tagbar__label em {
-  font-style: normal;
-  font-size: 9.5px;
-  opacity: 0.6;
-}
-
-.tagbar__pill:hover:not(.is-active) {
-  color: var(--fg);
-  border-color: var(--fg);
-}
-
-/* ==================================================================
-   A LESSON'S CONTRACT
-   ================================================================== */
-
-/*
-  What you will be able to do, and what you need first. Stated before the lesson
-  rather than discovered during it — a reader deciding whether to spend twenty
-  minutes deserves both answers in the first screen.
-*/
-.entry__contract {
-  margin-top: calc(var(--grid-unit) * 1.6);
-  padding-top: calc(var(--grid-unit) * 1.1);
-  border-top: 1px solid currentColor;
-}
-
-.entry__contract dl {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
-  gap: clamp(14px, 2.4vw, 36px);
-}
-
-.entry__contract dt {
-  opacity: 0.65;
-  margin-bottom: 6px;
-}
-
-.entry__contract dd {
-  font-size: clamp(14px, 1.05vw, 16.5px);
-  line-height: 1.5;
-}
-
-@media (max-width: 700px) {
-  .tagbar {
-    /* A wrapping pill grid eats the whole first screen on a phone. One row that
-       scrolls keeps the lessons above the fold. */
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    mask-image: linear-gradient(to right, #000 88%, transparent);
-  }
-  .tagbar::-webkit-scrollbar {
-    display: none;
-  }
-  .tagbar__pill {
-    flex: none;
-  }
-}
-
-/* ==================================================================
-   CREDIT BOOK
-   ================================================================== */
-
-.credit__book {
-  margin: calc(var(--grid-unit) * 1.4) 0;
-  border-top: 1px solid var(--line);
-}
-
-.credit__head,
-.credit__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 6rem 7rem 7rem minmax(0, 11rem);
-  gap: clamp(8px, 1.4vw, 20px);
-  align-items: center;
-  padding: 11px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.credit__head {
-  color: var(--muted);
-  padding-bottom: 8px;
-}
-
-/* The three columns are figures and belong on a common right edge — that is
-   what lets the eye compare down a column instead of reading each cell. */
-.credit__head > :nth-child(2),
-.credit__head > :nth-child(3),
-.credit__head > :nth-child(4),
-.credit__fig {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.credit__band {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.credit__band strong {
-  font-size: 15px;
-}
-
-.credit__band em {
-  font-style: normal;
-  font-size: 11.5px;
-  color: var(--muted);
-}
-
-.credit__fig {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 13.5px;
-}
-
-.credit__count {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 3.5rem;
-  gap: 8px;
-  align-items: center;
-}
-
-.credit__count input[type='range'] {
-  width: 100%;
-  accent-color: var(--accent);
-}
-
-.credit__count output {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 12.5px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-/*
-  The correlation control is set apart from the book above it, because it is not
-  another property of the accounts — it is an assumption about the world they
-  live in, and it is the only control here that changes the answer by an order
-  of magnitude.
-*/
-.credit__control {
-  margin: calc(var(--grid-unit) * 1.4) 0;
-  padding: calc(var(--grid-unit) * 1.1);
-  background: var(--bg-sunk);
-  border-left: 3px solid var(--accent);
-  border-radius: 0 var(--radius) var(--radius) 0;
-}
-
-.credit__control label {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 4rem;
-  grid-template-areas: 'label label' 'slider value';
-  gap: 8px 14px;
-  align-items: center;
-}
-
-.credit__control .mono-label {
-  grid-area: label;
-  color: var(--muted);
-}
-
-.credit__control input[type='range'] {
-  grid-area: slider;
-  width: 100%;
-  accent-color: var(--accent);
-}
-
-.credit__control output {
-  grid-area: value;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: clamp(18px, 1.8vw, 24px);
-  color: var(--accent);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.credit__hint {
-  margin-top: 12px;
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--fg-dim);
-  max-width: 70ch;
-}
-
-.credit__hint strong {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  color: var(--fg);
-}
-
-@media (max-width: 860px) {
-  .credit__head {
-    display: none;
-  }
-  .credit__row {
-    grid-template-columns: minmax(0, 1fr) 4.5rem 4.5rem;
-    row-gap: 6px;
-  }
-  /* The recovery rate is the least comparative of the three and the first to
-     go when there is no room for all of them. */
-  .credit__row > .credit__fig:nth-of-type(3) {
-    display: none;
-  }
-  .credit__count {
-    grid-column: 1 / -1;
   }
 }
 
@@ -4074,253 +1368,400 @@ html.no-js .exploded .exploded__svg {
     overflow-x: clip;
   }
 
-  /* The lesson header's type is sized for a wide measure and has nowhere to go
-     at this width. */
-  .page-head__title {
-    font-size: clamp(34px, 11vw, 52px);
-  }
+  
 }
-
-/*
-  Everything the desk needs beyond the shared `.instrument__*` vocabulary: a
-  ticker picker and a funnel. The charts, controls and readout are the same
-  components the risk desk uses, which is why there is so little here.
-*/
-
-/* ---- the chart ---- */
-
-/*
-  Candles.
-
-  Hollow for up, filled for down — the older convention, and the one that reads
-  better on paper: a page of mostly-rising bars stays light instead of turning
-  into a wall of green. The wick takes the body's colour so a long tail still
-  belongs to its candle.
-*/
-/* Too many bars to draw bodies: closes only. */
-
-/*
-  The gap, behind the price.
-
-  Drawn from the bar that completed it to the bar that filled it, which is
-  exactly the span over which it was an unfilled inefficiency — the thing the
-  model claims to be trading.
-*/
-/* Direction on the balance, and nowhere else — a coloured number is a claim. */
-.instrument__value.is-up { color: var(--accent); }
-.instrument__value.is-down { color: var(--accent-2); }
-
-/* ---- where the Mondays went ---- */
-
-/* ---- focusing a trade ---- */
-
-/* The rows are the way to the trades on the chart, so they look like it. */
 
 /* ==================================================================
-   THE LANDING — two pendulums, and the working beside them
+   THE LANDING — the sketchbook's contents page
    ================================================================== */
 
-/*
-  One screen, no pinning: the pendulums keep swinging on their own clock, so
-  there is nothing for the scroll to drive. Wordmark top and bottom, the drawing
-  between, the readout in the right-hand column.
-*/
-.hero {
+.book-cover {
   position: relative;
   min-height: 100svh;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 0 clamp(16px, 3vw, 48px);
-  padding: clamp(64px, 9vh, 104px) var(--gutter) clamp(28px, 5vh, 56px);
-  overflow: hidden;
+  padding: clamp(92px, 13vh, 132px) var(--gutter) clamp(56px, 10vh, 110px);
+  background-image: var(--plane);
+  background-size: var(--plane-size);
+  --grid-unit: 28px;
 }
 
-/*
-  Pinned to the frame, edge to edge, at the largest size the viewport allows.
-  This is the site's signature and it should always be the biggest thing on
-  screen, at every width.
-*/
-.hero__wordmark {
-  grid-column: 1 / -1;
-  font-family: var(--font-display), sans-serif;
-  font-weight: 800;
-  font-size: clamp(40px, 11.4vw, 190px);
-  line-height: 0.82;
-  letter-spacing: -0.035em;
-  text-transform: uppercase;
-  margin: 0;
-  pointer-events: none;
-  position: relative;
-  z-index: 1;
-  /* Descenders clip under sub-1 leading — pad, then pull the space back. */
-  padding-bottom: 0.06em;
-  margin-bottom: -0.06em;
+/* The margin rule, in ink, as on a real page. */
+.book-cover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--gutter) * 0.55);
+  width: 1px;
+  background: var(--accent-2);
+  opacity: 0.25;
 }
 
-.hero__wordmark--top {
-  grid-row: 1;
-  justify-self: start;
-}
-
-.hero__wordmark--bottom {
-  grid-row: 3;
-  justify-self: end;
-}
-
-.hero__eyebrow {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: end;
-  justify-self: end;
-  color: var(--muted);
-  pointer-events: none;
-}
-
-.hero__line {
-  grid-column: 1;
-  grid-row: 3;
-  align-self: center;
-  max-width: 26ch;
-  font-size: clamp(14px, 1vw, 17px);
+.book-cover__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 24px;
+  margin-bottom: clamp(18px, 3vh, 34px);
+  font-family: var(--font-hand), cursive;
   color: var(--fg-dim);
 }
-
-.hero__stage {
-  grid-column: 1;
-  grid-row: 2;
-  min-height: 0;
-  position: relative;
-}
-
-/*
-  `pan-y`, not `none`. A phone has to be able to scroll past the landing with a
-  thumb that happens to start on the drawing, so touch drags scroll the page and
-  a tap is what releases the pendulums.
-*/
-.hero__canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  touch-action: pan-y;
-  cursor: grab;
-}
-
-.hero__canvas:active {
-  cursor: grabbing;
-}
-
-.hero__readout {
-  grid-column: 2;
-  grid-row: 2;
-  align-self: center;
-  display: grid;
-  gap: 18px;
-  padding-left: clamp(16px, 2vw, 28px);
-  border-left: 1px solid var(--line);
-}
-
-.hero__caption {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 600;
-  font-size: clamp(18px, 1.5vw, 24px);
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
-.hero__figures {
-  display: grid;
-  gap: 14px;
-}
-
-.hero__figure dt {
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-
-.hero__figure dd {
-  display: grid;
-  gap: 2px;
-}
-
-.hero__figure strong {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-weight: 500;
-  font-size: clamp(17px, 1.3vw, 21px);
-  font-variant-numeric: tabular-nums;
+.book-cover__shelfmark {
+  font-size: clamp(24px, 2.2vw, 34px);
   color: var(--fg);
 }
-
-.hero__figure:nth-child(2) strong {
-  color: var(--accent);
+.book-cover__owner {
+  font-size: clamp(19px, 1.6vw, 25px);
 }
 
-.hero__note {
-  font-size: 13px;
+.book-cover__title {
+  position: relative;
+}
+.book-cover__wordmark {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: min(10.2vw, 180px);
+  line-height: 0.86;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+.book-cover__wordmark span:last-child {
+  align-self: flex-end;
+}
+/* Once the pencil has the title, the set one steps aside — still read aloud. */
+.book-cover__wordmark[data-drawn] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.book-cover__canvas {
+  display: block;
+  width: 100%;
+  height: 0;
+  visibility: hidden;
+}
+
+.book-cover__line {
+  max-width: 34ch;
+  margin: clamp(22px, 4vh, 44px) 0 clamp(40px, 8vh, 84px) auto;
+  font-family: var(--font-hand), cursive;
+  font-size: clamp(24px, 2.3vw, 36px);
+  line-height: 1.2;
+  color: var(--fg);
+  text-align: right;
+}
+
+/* ---- contents ---- */
+
+.contents {
+  max-width: 1180px;
+}
+.contents__head {
+  font-family: var(--font-hand), cursive;
+  font-weight: 600;
+  font-size: clamp(34px, 3.4vw, 52px);
+  line-height: 1;
+  margin-bottom: 10px;
+  color: var(--fg);
+}
+.contents__list {
+  list-style: none;
+  border-top: 1px solid var(--line-strong);
+}
+.contents__row {
+  display: grid;
+  grid-template-columns: clamp(52px, 6vw, 90px) minmax(0, 1fr) clamp(96px, 10vw, 150px) 34px;
+  align-items: center;
+  gap: 8px clamp(14px, 2vw, 32px);
+  padding: clamp(14px, 2.2vh, 22px) 0;
+  border-bottom: 1px dashed var(--line-strong);
+}
+.contents__numeral {
+  font-family: var(--font-hand), cursive;
+  font-size: clamp(28px, 2.6vw, 42px);
+  color: var(--accent);
+}
+.contents__text {
+  display: grid;
+  gap: 4px;
+}
+.contents__title {
+  justify-self: start;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: clamp(28px, 3.6vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  padding: 0 4px 0.1em;
+  margin: 0 -4px -0.1em;
+  /* The marker swipe, crimson, drawn in under the title on hover. */
+  background: linear-gradient(transparent 62%, var(--accent-2-soft) 62%, var(--accent-2-soft) 94%, transparent 94%) no-repeat 0 0 / 0% 100%;
+  transition: background-size 0.5s var(--ease-out);
+}
+.contents__note {
+  max-width: 58ch;
+  font-size: clamp(14.5px, 1.05vw, 17px);
   line-height: 1.45;
   color: var(--fg-dim);
 }
-
-.hero__hint {
-  color: var(--muted);
+.contents__arrow {
+  font-family: var(--font-hand), cursive;
+  font-size: 30px;
+  color: var(--fg);
+  transition: transform 0.4s var(--ease-out), color 0.3s;
+}
+.contents__row:hover .contents__title,
+.contents__row:focus-visible .contents__title {
+  background-size: 100% 100%;
+}
+.contents__row:hover .contents__arrow,
+.contents__row:focus-visible .contents__arrow {
+  transform: translateX(8px);
+  color: var(--accent-2);
 }
 
-@media (max-width: 1000px) {
-  /*
-    `minmax(0, 1fr)`, never a bare `1fr`: the wordmark is one unbreakable word,
-    and a bare `1fr` cannot shrink below its min-content width.
-  */
-  .hero {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(52svh, 1fr) auto auto;
+/* The doodles. Hidden starting state is armed by script only. */
+.doodle {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.doodle path {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  vector-effect: non-scaling-stroke;
+}
+.doodle path:nth-child(n + 2) {
+  stroke: var(--accent);
+  stroke-width: 1.4;
+}
+.contents__list[data-armed] .doodle path {
+  stroke-dashoffset: 1;
+}
+.contents__list[data-armed].is-drawn .doodle path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.1s var(--ease-in-out) calc(var(--i) * 0.28s + 0.2s);
+}
+.contents__row:hover .doodle path {
+  animation: redraw 0.9s var(--ease-in-out) both;
+  animation-delay: calc(var(--i) * 0.16s);
+}
+@keyframes redraw {
+  from {
+    stroke-dashoffset: 1;
   }
-  .hero__readout {
-    grid-column: 1;
-    grid-row: 4;
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    padding-left: 0;
-    padding-top: 16px;
-    margin-top: 20px;
-  }
-  .hero__figures {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px 20px;
-  }
-  .hero__eyebrow,
-  .hero__line {
-    display: none;
+  to {
+    stroke-dashoffset: 0;
   }
 }
 
 @media (max-width: 700px) {
-  .hero {
-    padding-top: clamp(56px, 12vh, 88px);
+  .book-cover__line {
+    text-align: left;
+    margin-left: 0;
   }
-  /*
-    Syne ExtraBold sets "SEVENTEEN" at 10.16x its font size (measured on a clone
-    at a 100px reference). Inside the gutter that is too small to outrank the
-    row titles below it, so on a phone the lockup goes full-bleed instead.
-  */
-  .hero__wordmark {
-    font-size: min(8.4vw, 54px);
-    max-width: 100%;
+  .contents__row {
+    grid-template-columns: 40px minmax(0, 1fr) 64px;
   }
-  .hero__note {
-    font-size: 12px;
+  .contents__arrow {
+    display: none;
   }
 }
 
-@media (max-width: 560px) {
-  /*
-    Edge to edge, cancelling the gutter with a negative inline margin rather than
-    `width: 100vw`, which counts a classic scrollbar. 9.6vw sizes SEVENTEEN to
-    the viewport with a little air: 380px of 390.
-  */
-  .hero__wordmark {
-    margin-inline: calc(var(--gutter) * -1);
-    max-width: none;
-    font-size: 9.6vw;
-  }
+/* ==================================================================
+   THE ENDPAPER — the footer, inside the back cover
+   ================================================================== */
+
+.endpaper {
+  position: relative;
+  padding: clamp(70px, 12vh, 130px) var(--gutter) 26px;
+  background-color: var(--bg-sunk);
+  /* Marbled endpaper, suggested rather than drawn: two soft washes of ink. */
+  background-image:
+    radial-gradient(ellipse at 18% 30%, rgba(31, 58, 138, 0.07), transparent 55%),
+    radial-gradient(ellipse at 82% 70%, rgba(200, 35, 63, 0.06), transparent 55%);
+  border-top: 1px solid var(--line-strong);
+}
+
+/* The bookplate: a ruled label, slightly askew, the way it gets stuck in. */
+.endpaper__plate {
+  width: min(34rem, 100%);
+  margin: 0 auto;
+  padding: clamp(26px, 4vw, 44px) clamp(24px, 4vw, 48px);
+  background: var(--bg-raise);
+  border: 1.5px solid var(--fg);
+  outline: 1px solid var(--fg);
+  outline-offset: -8px;
+  box-shadow: 0 2px 4px rgba(60, 45, 20, 0.08), 0 18px 40px rgba(60, 45, 20, 0.12);
+  transform: rotate(-1.2deg);
+  text-align: center;
+  display: grid;
+  gap: 6px;
+}
+.endpaper__found {
+  font-family: var(--font-hand), cursive;
+  font-size: clamp(20px, 1.8vw, 26px);
+  color: var(--muted);
+}
+.endpaper__owner {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  white-space: nowrap;
+  font-size: clamp(30px, 3.6vw, 50px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  padding-bottom: 0.08em;
+}
+.endpaper__place {
+  font-family: var(--font-hand), cursive;
+  font-size: clamp(20px, 1.6vw, 24px);
+  color: var(--fg-dim);
+}
+.endpaper__reach {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 8px 22px;
+  margin-top: 14px;
+  font-family: var(--font-hand), cursive;
+  font-size: 23px;
+}
+.endpaper__reach a {
+  color: var(--accent);
+}
+.endpaper__write {
+  color: var(--fg) !important;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-2);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+
+.endpaper__edge {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 24px;
+  margin-top: clamp(50px, 9vh, 90px);
+  color: var(--muted);
+}
+.endpaper__legal {
+  display: flex;
+  gap: 20px;
+}
+.endpaper__legal a:hover {
+  color: var(--fg);
+}
+
+/* ==================================================================
+   A SHEET — the shell of every simple page
+   ================================================================== */
+
+.sheet {
+  position: relative;
+  min-height: 78svh;
+  padding: clamp(120px, 18vh, 190px) var(--gutter) clamp(60px, 10vh, 110px);
+  background-image: var(--plane);
+  background-size: var(--plane-size);
+  --grid-unit: 28px;
+}
+.sheet::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--gutter) * 0.55);
+  width: 1px;
+  background: var(--accent-2);
+  opacity: 0.25;
+}
+.sheet__head {
+  display: grid;
+  gap: 12px;
+  max-width: 46rem;
+}
+.sheet__kicker {
+  font-family: var(--font-hand), cursive;
+  font-size: clamp(24px, 2vw, 32px);
+  color: var(--accent);
+}
+.sheet__title {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: clamp(42px, 6vw, 96px);
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+  padding-bottom: 0.08em;
+}
+.sheet__lead {
+  max-width: 44ch;
+  font-size: clamp(17px, 1.3vw, 21px);
+  line-height: 1.55;
+  color: var(--fg-dim);
+}
+.sheet__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px 26px;
+  margin-top: clamp(30px, 5vh, 56px);
+  font-family: var(--font-hand), cursive;
+  font-size: 26px;
+}
+.sheet__actions a {
+  color: var(--accent);
+}
+.sheet__primary {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: clamp(24px, 2vw, 32px);
+  color: var(--fg) !important;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-2);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 7px;
+}
+.sheet__prose {
+  margin-top: clamp(36px, 6vh, 64px);
+  max-width: 46rem;
+  display: grid;
+  gap: 28px;
+}
+.sheet__aside {
+  font-family: var(--font-hand), cursive;
+  font-size: 22px;
+  color: var(--fg-dim);
+}
+
+/* The blank notebook: ruled lines waiting, and a folio. */
+.sheet__ruled {
+  position: relative;
+  margin-top: clamp(40px, 8vh, 80px);
+  max-width: 46rem;
+  display: grid;
+  gap: 34px;
+}
+.sheet__ruled span:not(.sheet__folio) {
+  display: block;
+  height: 1px;
+  background: var(--accent);
+  opacity: 0.22;
+}
+.sheet__folio {
+  justify-self: end;
+  font-family: var(--font-hand), cursive;
+  font-size: 22px;
+  color: var(--muted);
 }

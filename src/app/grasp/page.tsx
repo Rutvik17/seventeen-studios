@@ -1,87 +1,81 @@
 import type { Metadata } from 'next';
 import { ogImage } from '@/lib/og';
-import { graspModule, onTheWeb } from '@/content/grasp';
-import { productBySlug } from '@/content/products';
+import { graspInfo, graspModule, onTheWeb } from '@/content/grasp';
+import { Chalkboard } from '@/components/grasp/Chalkboard';
+import { DerivativeInstrument } from '@/components/instruments/DerivativeInstrument';
 import { TransitionLink } from '@/components/Transition';
 import styles from '@/components/grasp/Grasp.module.css';
 
-const grasp = productBySlug('grasp');
-
-const DESCRIPTION =
-  'Module 1 of Grasp: nine lessons that build the derivative from steepness, one idea at a time.';
+const TITLE = `${graspInfo.name} — ${graspInfo.tagline}`;
 
 export const metadata: Metadata = {
-  title: `Learn calculus — ${graspModule.title}`,
-  description: DESCRIPTION,
-  // Set explicitly, from the same constant. Without it this route inherits the
-  // root's `og:title` and shares itself as "Seventeen Studios".
+  title: TITLE,
+  description: graspInfo.summary,
   openGraph: {
-    title: `Learn calculus — ${graspModule.title}`,
-    description: DESCRIPTION,
-    images: ogImage(
-      'grasp-course',
-      'A chalkboard with the parabola f(x) = x squared and its tangent, labelled slope = 2x',
-    ),
+    title: TITLE,
+    description: graspInfo.summary,
+    images: ogImage('grasp', 'A chalkboard with the parabola f(x) = x squared and its tangent, labelled slope = 2x'),
   },
 };
 
 /**
- * The course.
+ * Grasp — the whole of it, on one page.
  *
- * Where "Learn calculus" on the landing page goes, and the shell the web
- * version of Grasp is being built into. Right now it is the contents of Module
- * 1 — the nine lessons, with the titles they carry in the app.
- *
- * ---
- *
- * IT SAYS WHAT IS NOT HERE
- *
- * None of the nine has a web surface yet; they run on iOS. A contents page that
- * listed them as though they were all one tap away would be the most damaging
- * thing on this site — the studio's entire argument is that what you can see has
- * been built. So the count comes from the data (`onTheWeb`), the state of each
- * lesson is on its own row, and the line at the top is the truth rather than a
- * launch announcement.
- *
- * As lessons come over, flipping `web: true` in `content/grasp.ts` is the whole
- * change: the count, the row and the link all follow.
+ * The chalkboard derives the idea; the demonstration puts it under the reader's
+ * own hand; the contents say which of the nine lessons can be done here yet.
+ * It used to be split across a product page and a course page, when Grasp was
+ * an app with a website; now the website is where it lives.
  */
 export default function GraspPage() {
   return (
     <article className={styles.world} data-slate>
       <header className={styles.head}>
-        <TransitionLink href="/products/grasp/" className={styles.back} data-cursor="Back">
-          <i aria-hidden="true">←</i> Grasp
+        <TransitionLink href="/" className={styles.back} data-cursor="Back">
+          <i aria-hidden="true">←</i> Contents
         </TransitionLink>
-        <h1 className={styles.name}>{graspModule.title}</h1>
-        <p className={styles.tagline}>
-          {graspModule.position} · {graspModule.lessons.length} lessons
-        </p>
+        <h1 className={styles.name}>{graspInfo.name}</h1>
+        <p className={styles.tagline}>{graspInfo.tagline}</p>
+        <div className={styles.cue} aria-hidden="true">
+          <span className={styles.cueLabel}>scroll to learn</span>
+          <svg viewBox="0 0 28 72" className={styles.cueArrow}>
+            <path className={styles.cueShaft} d="M14 6 V 54" />
+            <path className={styles.cueHead} d="M5 45 L 14 58 L 23 45" />
+          </svg>
+        </div>
       </header>
 
-      <section className={styles.syllabus} aria-label="Module 1 lessons">
+      <Chalkboard />
+
+      {/*
+        The board proves the derivative exists; this is where the reader does it
+        with their own hand. It keeps its light palette on purpose — the one
+        thing on the page meant to be touched should not look like the drawing.
+      */}
+      <section className={styles.demo}>
+        <div className={styles.demoHead}>
+          <span className={`mono-label ${styles.demoLabel}`}>Now you</span>
+          <h2 className={styles.demoTitle}>Drag the point. Watch the slopes make a curve.</h2>
+        </div>
+        <DerivativeInstrument />
+      </section>
+
+      <section className={styles.syllabus} aria-label={`${graspModule.position} lessons`}>
+        <p className={styles.tagline}>
+          {graspModule.position} · {graspModule.title} · {graspModule.lessons.length} lessons
+        </p>
         <ol className={styles.lessons}>
           {graspModule.lessons.map((lesson) => (
             <li className={styles.lesson} key={lesson.index} data-web={lesson.web ? '' : undefined}>
               <span className={styles.lessonIndex}>{lesson.index}</span>
               <span className={styles.lessonTitle}>{lesson.title}</span>
-              <span className={styles.lessonState}>
-                {lesson.web ? 'open' : grasp?.platform ?? 'iOS'}
-              </span>
+              <span className={styles.lessonState}>{lesson.web ? 'open' : 'being drawn'}</span>
             </li>
           ))}
         </ol>
-
-        {/*
-          The one honest sentence. It is here because the demonstration cannot
-          say it: a reader looking at nine lessons has no way to know which of
-          them they can do from this browser, and guessing wrong is a worse
-          experience than being told.
-        */}
         <p className={styles.syllabusNote}>
           {onTheWeb === 0
-            ? 'These run on iOS. The web versions are being built one at a time — the interactive derivative on the previous page is the first of them.'
-            : `${onTheWeb} of ${graspModule.lessons.length} are playable here so far. The rest run on iOS while they are brought over.`}
+            ? 'Grasp is being built here, one lesson at a time. The derivative above is the first working piece; the nine lessons follow.'
+            : `${onTheWeb} of ${graspModule.lessons.length} lessons can be done here so far; the rest are being drawn.`}
         </p>
       </section>
     </article>

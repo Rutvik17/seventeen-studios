@@ -1,103 +1,64 @@
 'use client';
 
+/**
+ * The back endpaper of the sketchbook.
+ *
+ * Every sketchbook has the same thing inside its back cover: a bookplate with
+ * the owner's name and where to send the book if it is found. This is that
+ * page — the name, the city, a way to write, and the two places he is
+ * elsewhere — with the small print (the year, the legal pages) set along the
+ * bottom edge the way a colophon is.
+ *
+ * It replaced a four-column site map, a full-width wordmark and a legal row:
+ * a web footer, bolted onto the bottom of a book. The book has three sections
+ * and they are in the tabs at the top; the endpaper does not need to list them
+ * again.
+ */
+
 import { useEffect, useState } from 'react';
-import { site, nav } from '@/content/studio';
-import { products } from '@/content/products';
+import { site, endpaper } from '@/content/studio';
 import { policies } from '@/content/policies';
 import { TransitionLink } from './Transition';
 import { ContactLink } from './ContactLink';
-import { FitText } from './FitText';
 
 /**
  * `buildYear` is the year the export was built, passed in from the server so
- * the first paint is already correct. The effect then re-reads the clock on the
- * client, which only matters for a visitor holding a cached page across New
- * Year — the copyright line corrects itself rather than waiting for a deploy.
+ * the first paint is already correct; the effect re-reads the clock for a
+ * visitor holding a cached page across New Year.
  */
 export function Footer({ buildYear }: { buildYear: number }) {
   const [year, setYear] = useState(buildYear);
   useEffect(() => setYear(new Date().getFullYear()), []);
 
   return (
-    <footer className="footer">
-      <div className="footer__grid">
-        <div className="footer__col">
-          <span className="mono-label">Studio</span>
-          <ul>
-            {nav.map((item) => (
-              <li key={item.href}>
-                <TransitionLink href={item.href}>{item.label}</TransitionLink>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="footer__col">
-          <span className="mono-label">Products</span>
-          <ul>
-            {products.map((product) => (
-              <li key={product.slug}>
-                <TransitionLink href={`/products/${product.slug}/`}>
-                  {product.name}
-                </TransitionLink>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        
-
-        
-
-        <div className="footer__col">
-          <span className="mono-label">Elsewhere</span>
-          <ul>
-            {site.social.map((item) => (
-              <li key={item.label}>
-                {'contact' in item ? (
-                  <ContactLink>{item.label}</ContactLink>
-                ) : (
-                  <a
-                    href={item.href}
-                    target={item.href.startsWith('http') ? '_blank' : undefined}
-                    rel="noreferrer noopener"
-                  >
-                    {item.label}
-                  </a>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+    <footer className="endpaper">
+      <div className="endpaper__plate">
+        <p className="endpaper__found">{endpaper.found}</p>
+        <p className="endpaper__owner">{endpaper.owner}</p>
+        <p className="endpaper__place">{endpaper.place}</p>
+        <p className="endpaper__reach">
+          <ContactLink className="endpaper__write" data-cursor="Write">
+            {endpaper.write}
+          </ContactLink>
+          {site.social.map((item) => (
+            <a key={item.label} href={item.href} target="_blank" rel="noreferrer noopener">
+              {item.label}
+            </a>
+          ))}
+        </p>
       </div>
 
-      <FitText className="footer__wordmark" maxPx={340}>
-        <span aria-hidden="true">
-          {site.wordmark}
-          <span className="accent">.</span>
-        </span>
-      </FitText>
-
-      <div className="footer__base">
+      <div className="endpaper__edge">
         <span className="mono-label" suppressHydrationWarning>
-          © {year} {site.name}
+          {endpaper.label} · © {year} {endpaper.owner}
         </span>
-        <span className="mono-label">{site.location}</span>
-        {/*
-          The legal pages live down here rather than in the nav because that is
-          where every visitor already looks for them — and App Store review
-          follows the same habit when it goes checking that the privacy policy
-          for a submitted app is actually reachable from the site that hosts it.
-        */}
-        <ul className="footer__legal">
+        <span className="endpaper__legal">
           {policies.map((policy) => (
-            <li key={policy.slug}>
-              <TransitionLink href={`/legal/${policy.slug}/`}>
-                {policy.title}
-              </TransitionLink>
-            </li>
+            <TransitionLink key={policy.slug} href={`/legal/${policy.slug}/`} className="mono-label">
+              {policy.title.split(' — ')[0]}
+            </TransitionLink>
           ))}
-        </ul>
+        </span>
       </div>
     </footer>
   );

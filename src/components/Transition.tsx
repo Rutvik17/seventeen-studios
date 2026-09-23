@@ -28,8 +28,7 @@ import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap';
 import { getLenis } from '@/lib/lenis';
 import { whenSettled } from '@/lib/settled';
 import { LoaderScreen } from '@/components/loader/LoaderScreen';
-
-const COLUMNS = 4;
+import { turnAway, turnOver } from '@/lib/pageTurn';
 
 type NavigateFn = (href: string) => void;
 const NavigateContext = createContext<NavigateFn>(() => {});
@@ -42,6 +41,8 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const curtainRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const edgeRef = useRef<HTMLDivElement>(null);
   const markRef = useRef<HTMLDivElement>(null);
   const counterRef = useRef({ value: 0 });
   const [covering, setCovering] = useState(false);
@@ -99,8 +100,13 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
         onUpdate: () => setProgress(counterRef.current.value),
       });
 
-      const columns = curtainRef.current.querySelectorAll('.curtain__col');
-      gsap.killTweensOf([columns, markRef.current]);
+      const sheet = sheetRef.current;
+      const edge = edgeRef.current;
+      if (!sheet || !edge) {
+        router.push(href);
+        return;
+      }
+      gsap.killTweensOf(markRef.current);
       gsap
         .timeline({
           onComplete: () => {
@@ -112,18 +118,8 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
           },
         })
         .set(curtainRef.current, { pointerEvents: 'auto' })
-        // `y: 0` clears the CSS `translateY(100%)` that GSAP would otherwise
-        // resolve to a pixel offset and stack under `yPercent`.
-        .fromTo(
-          columns,
-          { yPercent: 100, y: 0 },
-          {
-            yPercent: 0,
-            duration: 0.55,
-            ease: 'power4.inOut',
-            stagger: 0.055,
-          },
-        )
+        // A fresh sheet turned over the page, right to left.
+        .add(turnOver({ sheet, edge }))
         .fromTo(
           markRef.current,
           { opacity: 0, y: 14 },
@@ -154,8 +150,9 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
 
     const cancel = whenSettled(() => {
       const curtain = curtainRef.current;
-      if (!curtain) return;
-      const columns = curtain.querySelectorAll('.curtain__col');
+      const sheet = sheetRef.current;
+      const edge = edgeRef.current;
+      if (!curtain || !sheet || !edge) return;
 
       timeline = gsap.timeline({
         onComplete: () => {
@@ -175,17 +172,8 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
           onUpdate: () => setProgress(counterRef.current.value),
         })
         .to(markRef.current, { opacity: 0, duration: 0.2, ease: 'power2.in' }, '-=0.1')
-        .to(
-          columns,
-          {
-            yPercent: -100,
-            y: 0,
-            duration: 0.6,
-            ease: 'power4.inOut',
-            stagger: 0.05,
-          },
-          '-=0.1',
-        );
+        // And turned away onto the new page.
+        .add(turnAway({ sheet, edge }), '-=0.05');
     });
 
     return () => {
@@ -200,12 +188,12 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
     <NavigateContext.Provider value={navigate}>
       {children}
       <div className="curtain" ref={curtainRef} aria-hidden="true">
-        {Array.from({ length: COLUMNS }).map((_, index) => (
-          <div className="curtain__col" key={index} />
-        ))}
-        <div className="curtain__mark" ref={markRef}>
-          <LoaderScreen progress={progress} />
+        <div className="curtain__sheet" ref={sheetRef}>
+          <div className="curtain__mark" ref={markRef}>
+            <LoaderScreen progress={progress} />
+          </div>
         </div>
+        <div className="curtain__edge" ref={edgeRef} />
       </div>
     </NavigateContext.Provider>
   );

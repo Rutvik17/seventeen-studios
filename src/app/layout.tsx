@@ -6,12 +6,12 @@ import { Preloader } from '@/components/Preloader';
 import { Cursor } from '@/components/Cursor';
 import { Grain } from '@/components/Grain';
 import { Nav } from '@/components/Nav';
-import { MenuOverlay } from '@/components/MenuOverlay';
 import { Footer } from '@/components/Footer';
 import { site } from '@/content/studio';
 import { founder } from '@/content/founder';
 import { currentYear } from '@/lib/time';
 import { ogImage } from '@/lib/og';
+import { SITE_URL } from '@/lib/url';
 import './globals.css';
 
 /**
@@ -62,7 +62,7 @@ const hand = Caveat({
   display: 'swap',
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://seventeenstudios.co';
+const siteUrl = SITE_URL;
 
 /**
  * The landing's title, written once.
@@ -83,7 +83,7 @@ const LANDING_TITLE = `${founder.name} — ${founder.role}, ${founder.location}`
 */
 const LANDING_IMAGE = ogImage(
   'home',
-  `${founder.name} — the paths of two double pendulums released a billionth of a radian apart, in blue and copper, coming apart`,
+  `${founder.name} — the contents page of a hand-drawn sketchbook: the founder, instruments, lessons and Grasp`,
 );
 
 export const metadata: Metadata = {
@@ -176,7 +176,6 @@ export default function RootLayout({
               Skip to content
             </a>
             <Nav />
-            <MenuOverlay />
             <main id="main">{children}</main>
             <Footer buildYear={currentYear()} />
           </TransitionProvider>

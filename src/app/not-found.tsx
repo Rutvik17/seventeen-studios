@@ -1,19 +1,18 @@
-import Link from 'next/link';
+import { Sheet } from '@/components/Sheet';
+import { TransitionLink } from '@/components/Transition';
 
 export default function NotFound() {
   return (
-    <div className="page not-found">
-      <span className="mono-label">Error 404</span>
-      <h1 className="not-found__title">
-        Nothing here<span className="accent">.</span>
-      </h1>
-      <p className="not-found__body">
-        The page you asked for does not exist — which, on a site this size,
-        probably means a stale link rather than anything interesting.
-      </p>
-      <Link href="/" className="button button--ghost">
-        Back to the studio
-      </Link>
-    </div>
+    <Sheet
+      kicker="Error 404"
+      title="This page was torn out."
+      lead={<p>Probably a stale link. The rest of the book is still here.</p>}
+    >
+      <div className="sheet__actions">
+        <TransitionLink href="/" className="sheet__primary">
+          Back to the contents
+        </TransitionLink>
+      </div>
+    </Sheet>
   );
 }

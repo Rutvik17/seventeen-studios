@@ -23,9 +23,8 @@
  * WHY THE ARTWORK IS COMPUTED RATHER THAN DRAWN
  *
  * Every plate below is produced by the same code the page it advertises uses —
- * `Spring` integrates the spring card, `simulateRisk` bins the risk card,
- * `CURVES[0]` draws the parabola, the landing's pendulums are integrated by
- * `tracePair`, and the founder card's bridge is the sketchbook's own geometry.
+ * `CURVES[0]` draws the parabola, the landing's card lists the landing's own
+ * chapters, and the founder card's bridge is the sketchbook's own geometry.
  * Nothing is traced by eye.
  *
  * That is not craft for its own sake. A share image is the one asset nobody
@@ -47,18 +46,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { founder } from '../src/content/founder.ts';
-import { site } from '../src/content/studio.ts';
-import { entries } from '../src/content/notebook.ts';
-import { products } from '../src/content/products.ts';
+import { site, chapters } from '../src/content/studio.ts';
 import { policies } from '../src/content/policies.ts';
-import { graspModule } from '../src/content/grasp.ts';
+import { graspInfo, graspModule } from '../src/content/grasp.ts';
 import { CURVES } from '../src/lib/calculus.ts';
-import { simulateRisk } from '../src/lib/quant.ts';
-import { CARD_BOOK, expectedLoss } from '../src/lib/credit.ts';
-import { Spring } from '../src/lib/physics.ts';
-import { tracePair, L1, L2 } from '../src/lib/pendulum.ts';
 import { bridge, cableY, PAGE, SUN } from '../src/lib/sketchbook/geometry.ts';
-import { NOTEBOOK_CARD } from '../src/lib/og.ts';
+import { SITE_HOST } from '../src/lib/url.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = path.join(root, 'public', 'og');
@@ -78,9 +71,9 @@ const outDir = path.join(root, 'public', 'og');
 const W = 1200;
 const H = 630;
 
-const PAPER = '#eceae4';
-const GRAPHITE = '#14161a';
-const ACCENT = '#1b4fe0';
+const PAPER = '#f4efe3';
+const GRAPHITE = '#1d1d21';
+const ACCENT = '#1f3a8a';
 const SLATE = '#2d4a3f';
 const SLATE_DEEP = '#243c33';
 const CHALK = '#eef1e6';
@@ -181,184 +174,33 @@ function plateCurve(box, ink, accent = ACCENT) {
   ].join('');
 }
 
-/**
- * The Monte Carlo terminal-value distribution.
- *
- * Run here with parameters written into this file rather than read from
- * `market.json` — see the note at the top about why no live figure appears on a
- * committed image. The shape is the point.
- */
-function plateHistogram(box, ink, accent = ACCENT) {
-  const result = simulateRisk({
-    notional: 1_000_000,
-    drift: 0.06,
-    volatility: 0.19,
-    horizonDays: 63,
-    alpha: 0.05,
-    paths: 25_000,
-    seed: 20260822,
-  });
 
-  const bins = result.histogram;
-  const peak = Math.max(...bins.map((b) => b.count));
-  const lo = bins[0].x0;
-  const hi = bins[bins.length - 1].x1;
 
-  const pad = 26;
-  const w = box - pad * 2;
-  const h = box - pad * 2;
-  const px = (v) => pad + ((v - lo) / (hi - lo)) * w;
 
-  /* The quantile the loss is measured at, in the same units as the bins. */
-  const cut = result.terminal[Math.floor(result.terminal.length * 0.05)];
-
-  const bars = bins
-    .map((b) => {
-      const bh = (b.count / peak) * (h - 8);
-      const x = px(b.x0);
-      const bw = Math.max(1, px(b.x1) - px(b.x0) - 1.5);
-      const tail = b.x1 <= cut;
-      return `<rect x="${n(x)}" y="${n(pad + h - bh)}" width="${n(bw)}" height="${n(bh)}" fill="${tail ? accent : ink}" opacity="${tail ? 0.95 : 0.28}"/>`;
-    })
-    .join('');
-
-  return [
-    bars,
-    `<line x1="${n(px(cut))}" y1="${pad - 6}" x2="${n(px(cut))}" y2="${pad + h}" stroke="${accent}" stroke-width="3" stroke-dasharray="7 6"/>`,
-    `<line x1="${pad}" y1="${pad + h}" x2="${pad + w}" y2="${pad + h}" stroke="${ink}55" stroke-width="2"/>`,
-  ].join('');
-}
-
-/**
- * A damped spring, integrated by the class the rig actually runs on.
- *
- * Semi-implicit Euler at a fixed 1/60 step — the same integrator, the same
- * constants, so the overshoot and settle drawn here are the ones on the page.
- */
-function plateSpring(box, ink, accent = ACCENT) {
-  /*
-    The rig's own defaults — the numbers its sliders start on. Picked out of the
-    air at first, which made the claim above ("the same constants") untrue, and
-    also made the plot wrong-looking: a stiffer, lighter-damped spring settled
-    inside the first fifth of the frame and left four fifths of flat line.
-
-    At stiffness 130 and damping 15 the ratio is about 0.66 — under one, so it
-    overshoots once and comes back, which is the behaviour the entry is about.
-    Sixty steps at 1/60s is the one second in which all of that happens.
-  */
-  const spring = new Spring(0, { stiffness: 130, damping: 15, mass: 1 });
-  spring.target = 1;
-
-  const steps = 60;
-  const dt = 1 / 60;
-  const values = [];
-  for (let i = 0; i < steps; i++) {
-    spring.step(dt);
-    values.push(spring.value);
-  }
-
-  const domain = [0, steps - 1];
-  const range = [-0.15, 1.5];
-  const f = frame(box, domain, range);
-
-  const pts = values.map((v, i) => [f.x(i), f.y(v)]);
-  const rest = f.y(1);
-
-  return [
-    `<line x1="${n(f.x(domain[0]))}" y1="${n(rest)}" x2="${n(f.x(domain[1]))}" y2="${n(rest)}" stroke="${ink}38" stroke-width="2" stroke-dasharray="6 6"/>`,
-    `<line x1="${n(f.x(0))}" y1="${n(f.y(range[0]))}" x2="${n(f.x(0))}" y2="${n(f.y(range[1]))}" stroke="${ink}38" stroke-width="2"/>`,
-    polyline(pts, accent, 4),
-  ].join('');
-}
-
-/**
- * Expected loss per tier of the card book.
- *
- * `expectedLoss` is PD x LGD x EAD; multiplying by the account count gives the
- * tier's contribution. Subprime is a tenth of the accounts and the tallest bar,
- * which is the entire point of the entry.
- */
-function plateCredit(box, ink, accent = ACCENT) {
-  const tiers = CARD_BOOK.map((b) => ({
-    label: b.label,
-    value: expectedLoss(b) * b.count,
-  }));
-  const peak = Math.max(...tiers.map((t) => t.value));
-
-  const pad = 30;
-  const w = box - pad * 2;
-  const h = box - pad * 2;
-  const slot = w / tiers.length;
-  const bw = slot * 0.52;
-
-  const bars = tiers
-    .map((t, i) => {
-      const bh = (t.value / peak) * (h - 40);
-      const x = pad + slot * i + (slot - bw) / 2;
-      // No tick marks under the bars: with three unlabelled bars a dot says
-      // nothing the bar has not already said, and it read as dirt on the card.
-      return `<rect x="${n(x)}" y="${n(pad + h - bh)}" width="${n(bw)}" height="${n(bh)}" fill="${i === 2 ? accent : ink}" opacity="${i === 2 ? 0.95 : 0.3}"/>`;
-    })
-    .join('');
-
-  return `${bars}<line x1="${pad}" y1="${pad + h}" x2="${pad + w}" y2="${pad + h}" stroke="${ink}55" stroke-width="2"/>`;
-}
-
-/** The logistic function — the curve the classifier squashes through. */
-function plateSigmoid(box, ink, accent = ACCENT) {
-  const domain = [-6, 6];
-  const range = [-0.12, 1.12];
-  const f = frame(box, domain, range);
-
-  const pts = [];
-  for (let x = domain[0]; x <= domain[1] + 1e-9; x += 0.1) {
-    pts.push([f.x(x), f.y(1 / (1 + Math.exp(-x)))]);
-  }
-
-  return [
-    `<line x1="${n(f.x(domain[0]))}" y1="${n(f.y(0.5))}" x2="${n(f.x(domain[1]))}" y2="${n(f.y(0.5))}" stroke="${ink}30" stroke-width="2" stroke-dasharray="6 6"/>`,
-    `<line x1="${n(f.x(domain[0]))}" y1="${n(f.y(1))}" x2="${n(f.x(domain[1]))}" y2="${n(f.y(1))}" stroke="${ink}30" stroke-width="2"/>`,
-    `<line x1="${n(f.x(domain[0]))}" y1="${n(f.y(0))}" x2="${n(f.x(domain[1]))}" y2="${n(f.y(0))}" stroke="${ink}30" stroke-width="2"/>`,
-    `<line x1="${n(f.x(0))}" y1="${n(f.y(range[0]))}" x2="${n(f.x(0))}" y2="${n(f.y(range[1]))}" stroke="${ink}38" stroke-width="2"/>`,
-    polyline(pts, accent, 4),
-    `<circle cx="${n(f.x(0))}" cy="${n(f.y(0.5))}" r="7" fill="${accent}"/>`,
-  ].join('');
-}
 
 /* ------------------------------------------------------------------ *
- * The pendulums
+ * The contents page
  * ------------------------------------------------------------------ */
 
 /**
- * The landing's two double pendulums, integrated for sixteen seconds from the
- * page's own default release and drawn as the paths their tips took.
- *
- * Sixteen because that is just past the point where they separate: the two
- * traces lie on top of each other for most of the run and come apart at the
- * end, which is the whole of what the landing shows.
+ * The landing's own contents, from the same `chapters` the page lists: a
+ * handwritten heading, then each chapter's numeral and title on a dashed rule.
  */
-function platePendulum(w, h, ink, accent) {
-  const { a, b, pair } = tracePair(16);
-  const reach = L1 + L2;
-  const scale = (Math.min(w, h) / 2 / reach) * 0.92;
-  const cx = w / 2;
-  const cy = h / 2;
-  const pts = (trail) => trail.map((p) => [cx + p.x * scale, cy + p.y * scale]);
-  const copper = '#b4622a';
-  const tip = (s) => {
-    const x1 = cx + Math.sin(s.t1) * L1 * scale;
-    const y1 = cy + Math.cos(s.t1) * L1 * scale;
-    return { x1, y1, x2: x1 + Math.sin(s.t2) * L2 * scale, y2: y1 + Math.cos(s.t2) * L2 * scale };
-  };
-  const p = tip(pair.a);
-  return [
-    `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(reach * scale)}" fill="none" stroke="${ink}" stroke-opacity="0.14" stroke-width="1.5" stroke-dasharray="4 7"/>`,
-    polyline(pts(a), accent, 1.6, 'opacity="0.85"'),
-    polyline(pts(b), copper, 1.6, 'opacity="0.85"'),
-    `<path d="M${n(cx)} ${n(cy)} L${n(p.x1)} ${n(p.y1)} L${n(p.x2)} ${n(p.y2)}" fill="none" stroke="${ink}" stroke-width="2.4"/>`,
-    `<circle cx="${n(p.x1)}" cy="${n(p.y1)}" r="5" fill="${ink}"/>`,
-    `<circle cx="${n(p.x2)}" cy="${n(p.y2)}" r="9" fill="${accent}"/>`,
-  ].join('');
+function plateContents(w, h, ink, accent) {
+  const rowH = (h - 96) / chapters.length;
+  const rows = chapters
+    .map((c, i) => {
+      const y = 96 + i * rowH + rowH / 2;
+      return `
+        <text x="0" y="${n(y + 10)}" fill="${accent}" font-family="Caveat, cursive" font-size="40">${esc(c.numeral)}</text>
+        <text x="64" y="${n(y + 10)}" fill="${ink}" font-family="Syne, sans-serif" font-weight="700" font-size="34" letter-spacing="-1">${esc(c.title)}</text>
+        <line x1="0" y1="${n(y + rowH / 2)}" x2="${w}" y2="${n(y + rowH / 2)}" stroke="${ink}" stroke-opacity="0.3" stroke-width="1.5" stroke-dasharray="5 6"/>`;
+    })
+    .join('');
+  return `
+    <text x="0" y="52" fill="${ink}" font-family="Caveat, cursive" font-size="54">Contents</text>
+    <line x1="0" y1="78" x2="${w}" y2="78" stroke="${ink}" stroke-opacity="0.5" stroke-width="2"/>
+    ${rows}`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -448,30 +290,26 @@ function stageChalkboard() {
     <text x="${n(fx(at) + 18)}" y="${n(fy(curve.f(at)) - 16)}" fill="${CHALK_ACCENT}" font-family="Caveat, cursive" font-size="34" opacity="0.95">slope = 2x</text>`;
 }
 
-/**
- * The notebook index: one band per entry, in each entry's own colour.
- *
- * The titles are on the bands. Without them this was six coloured swatches —
- * decorative, and saying nothing a reader could act on. With them the card is
- * the table of contents, which is what the page is.
- */
-function plateBands(w, h) {
-  const gap = 9;
-  const rows = entries.length;
-  const bh = (h - gap * (rows - 1)) / rows;
-  return entries
-    .map((e, i) => {
-      const y = i * (bh + gap);
-      return `
-        <rect x="0" y="${n(y)}" width="${w}" height="${n(bh)}" rx="3" fill="${e.color}"/>
-        <rect x="0" y="${n(y)}" width="6" height="${n(bh)}" rx="2" fill="${e.ink}"/>
-        <text x="20" y="${n(y + bh / 2 + 5)}" fill="${e.ink}" font-family="JetBrains Mono, monospace" font-size="15" letter-spacing="1.4" opacity="0.75">${esc(e.index)}</text>
-        <text x="54" y="${n(y + bh / 2 + 6)}" fill="${e.ink}" font-family="DM Sans, sans-serif" font-size="19" font-weight="500">${esc(e.title)}</text>`;
-    })
-    .join('');
-}
 
 /** The mark, for pages whose subject is the site itself. */
+/** The notebook: a ruled page, blank, with a pencil resting across it. */
+function plateBlank(w, h, ink, accent) {
+  const lines = [];
+  for (let y = 70; y < h - 20; y += 44) lines.push(`<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="${accent}" stroke-opacity="0.3" stroke-width="1.5"/>`);
+  return `
+    <rect width="${w}" height="${h}" fill="#fbf8f1" stroke="${ink}" stroke-opacity="0.2"/>
+    <line x1="40" y1="0" x2="40" y2="${h}" stroke="#c8233f" stroke-opacity="0.35" stroke-width="1.5"/>
+    ${lines.join('')}
+    <g transform="translate(${w * 0.28}, ${h * 0.72}) rotate(-24)">
+      <path d="M0 0 L22 -9 L22 9 Z" fill="${ink}"/>
+      <path d="M22 -9 L56 -18 L56 18 L22 9 Z" fill="#e6c89a" stroke="${ink}" stroke-width="2"/>
+      <rect x="56" y="-18" width="210" height="36" fill="${accent}" stroke="${ink}" stroke-width="2"/>
+      <rect x="266" y="-18" width="20" height="36" fill="#b9b3a2" stroke="${ink}" stroke-width="2"/>
+      <rect x="286" y="-18" width="26" height="36" rx="6" fill="#c8233f" stroke="${ink}" stroke-width="2"/>
+    </g>
+    <text x="${w - 16}" y="${h - 22}" text-anchor="end" fill="${ink}" fill-opacity="0.5" font-family="Caveat, cursive" font-size="30">p. 1</text>`;
+}
+
 function plateMark(box, ink) {
   const s = box * 0.62;
   const h = (s / 36) * 26;
@@ -486,19 +324,15 @@ function plateMark(box, ink) {
  */
 const PLATES = {
   curve: (w, h, ink, accent) => plateCurve(Math.min(w, h), ink, accent),
-  histogram: (w, h, ink, accent) => plateHistogram(Math.min(w, h), ink, accent),
-  spring: (w, h, ink, accent) => plateSpring(Math.min(w, h), ink, accent),
-  credit: (w, h, ink, accent) => plateCredit(Math.min(w, h), ink, accent),
-  sigmoid: (w, h, ink, accent) => plateSigmoid(Math.min(w, h), ink, accent),
-  pendulum: (w, h, ink, accent) => platePendulum(w, h, ink, accent),
-  bands: (w, h) => plateBands(w, h),
+  contents: (w, h, ink, accent) => plateContents(w, h, ink, accent),
+  blank: (w, h, ink, accent) => plateBlank(w, h, ink, accent),
   mark: (w, h, ink) => plateMark(Math.min(w, h), ink),
 };
 
 /** Plates that want a landscape box rather than the square the diagrams use. */
 const PLATE_BOX = {
-  pendulum: { w: 470, h: 470 },
-  bands: { w: 500, h: 430 },
+  contents: { w: 470, h: 440 },
+  blank: { w: 470, h: 420 },
 };
 
 /* A faint plane grid, the same one the site lays under its pages. */
@@ -655,7 +489,7 @@ function html(card) {
       </div>
       ${plate}
     </div>
-    <div class="foot"><span>${esc(card.footLeft ?? 'seventeenstudios.co')}</span><span>${esc(card.footRight ?? '')}</span></div>
+    <div class="foot"><span>${esc(card.footLeft ?? SITE_HOST)}</span><span>${esc(card.footRight ?? '')}</span></div>
   </div>
 </body></html>`;
 }
@@ -666,23 +500,21 @@ function html(card) {
 
 
 function cards() {
-  const grasp = products.find((p) => p.slug === 'grasp');
-
   const list = [
     {
       file: 'home',
       label: site.location,
       title: founder.name,
-      standfirst: `${founder.role}. Interactive instruments, simulations, and software built to be taken apart.`,
-      plate: 'pendulum',
+      standfirst: `${founder.role}. A sketchbook of work — the founder’s story, a notebook, and Grasp.`,
+      plate: 'contents',
       titleSize: 58,
-      footRight: 'Portfolio',
+      footRight: 'Sketchbook No. 17',
     },
     {
       file: 'founder',
       label: 'Founder',
       title: founder.name,
-      standfirst: `${founder.title}, ${founder.employer}. A sketchbook that draws its way to a résumé.`,
+      standfirst: `${founder.title}, ${founder.employer}. His career as a sketchbook, the résumé in the back pocket.`,
       stage: stageSketch,
       ground: SKETCH.paper,
       ink: '#1d1d21',
@@ -690,84 +522,34 @@ function cards() {
       footRight: 'PDF · DOCX',
     },
     {
-      file: 'lab',
-      label: 'Lab',
-      title: 'Working instruments',
-      standfirst: 'A Monte Carlo risk desk, a credit model and a physics rig. Move the inputs.',
-      plate: 'histogram',
-      footRight: '25,000 paths · 95%',
+      file: 'notebook',
+      label: 'Notebook',
+      title: 'Blank pages.',
+      standfirst: 'Where the next things get drawn first. Nothing here yet — the pencil is sharpened.',
+      plate: 'blank',
+      footRight: 'Notebook',
     },
     {
-      file: 'grasp-course',
+      file: 'grasp',
       label: `Grasp · ${graspModule.position}`,
-      title: graspModule.title,
-      standfirst: `${graspModule.lessons.length} lessons that build the derivative from steepness, one idea at a time.`,
+      title: graspInfo.name,
+      standfirst: `${graspInfo.tagline}. ${graspModule.lessons.length} lessons that build the derivative from steepness, being built on this site.`,
       stage: stageChalkboard,
       ground: SLATE,
       onDark: true,
-      titleSize: 84,
+      titleSize: 96,
       footRight: 'Learn calculus',
-    },
-    {
-      file: 'notebook',
-      label: 'Notebook',
-      title: 'Lessons',
-      standfirst: 'Each one starts from nothing and ends with the thing built — the maths, the physics and the code.',
-      plate: 'bands',
-      footRight: `${entries.length} lessons`,
-    },
-    {
-      file: 'products',
-      label: 'Products',
-      title: 'Shipped',
-      standfirst: grasp ? `${grasp.name} — ${grasp.tagline}` : undefined,
-      plate: 'curve',
-      color: '#dce5fc',
-      ink: '#12379c',
-      footRight: grasp?.platform ?? '',
-    },
-    {
-      file: 'products-grasp',
-      label: 'Product',
-      title: grasp?.name ?? 'Grasp',
-      standfirst: grasp?.tagline,
-      plate: 'curve',
-      ground: '#dce5fc',
-      ink: '#12379c',
-      titleSize: 92,
-      footRight: grasp?.platform ?? 'iOS',
     },
     {
       file: 'start',
       label: 'Contact',
-      title: 'Roles, questions, second opinions.',
-      standfirst: 'The mathematics, the simulations, or how a page was built.',
+      title: 'Write to me.',
+      standfirst: 'Roles, questions, or something in the sketchbook.',
       plate: 'mark',
-      titleSize: 60,
+      titleSize: 72,
       footRight: site.location,
     },
   ];
-
-  for (const entry of entries) {
-    list.push({
-      file: `notebook-${entry.slug}`,
-      label: `Notebook · ${entry.index}`,
-      title: entry.title,
-      standfirst: entry.standfirst,
-      plate: NOTEBOOK_CARD[entry.slug]?.plate ?? 'mark',
-      ground: entry.color,
-      ink: entry.ink,
-      /*
-        The entry's own ink, not the site's blue. Each notebook colour pair is
-        chosen to sit together, and dropping a cobalt accent onto the warm
-        Monte Carlo card was the one place the set stopped looking deliberate.
-        Contrast still carries the highlight — the same hue at full strength
-        against bars at a quarter.
-      */
-      accent: entry.ink,
-      footRight: entry.topic,
-    });
-  }
 
   for (const policy of policies) {
     list.push({

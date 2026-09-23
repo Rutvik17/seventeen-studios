@@ -3,8 +3,8 @@
 /**
  * First visit.
  *
- * The mark fills with water while the page resolves, then the columns sweep up
- * off the page. It is the same screen the page transitions show — see `components/loader/LoaderScreen.tsx`.
+ * A pencil draws the mark while the page resolves, then the sheet turns away
+ * like a page. It is the same screen the page transitions show — see `components/loader/LoaderScreen.tsx`.
  *
  * ---
  *
@@ -39,6 +39,7 @@ import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { lockScroll, unlockScroll } from '@/lib/lenis';
 import { hasEnteredThisSession, markEnteredThisSession, useUi } from '@/lib/store';
 import { LoaderScreen } from '@/components/loader/LoaderScreen';
+import { turnAway } from '@/lib/pageTurn';
 
 /** How long the sequence runs, in seconds. */
 const WINDOW = 1.9;
@@ -75,7 +76,7 @@ export function Preloader() {
 
       /*
         React state rather than a ref written straight to the DOM, because the
-        number is not the only thing that consumes it — the water level follows
+        number is not the only thing that consumes it — the drawing follows
         it too, and both should read the same value on the same frame.
 
         It is one setState per frame for under two seconds, on a screen with
@@ -88,28 +89,21 @@ export function Preloader() {
         onUpdate: () => setProgress(counter.value),
       });
 
-      timeline.to(
-        root.querySelectorAll('.loader'),
-        { opacity: 0, duration: 0.3, ease: 'power2.in' },
-        // A beat at 100 so the water actually reaches the top before it goes.
-        // The level chases the counter, so it is always a little behind it.
-        '>+0.4',
-      );
+      // A beat at 100 with the mark finished and hatched, before the page turns.
+      // The drawing stays on the sheet and leaves with it, as it would on paper.
+      timeline.to({}, { duration: 0.45 });
 
-      timeline.to(
-        root.querySelectorAll('.preloader__col'),
-        {
-          yPercent: -100,
-          duration: 0.75,
-          ease: 'power4.inOut',
-          stagger: 0.06,
-          // Hand over as the curtain starts lifting, not after it has gone: the
-          // page's entrance should already be under way as the columns clear,
-          // which is what makes the two read as one continuous move.
-          onStart: enter,
-        },
-        '>-0.15',
-      );
+      // The loading sheet turns away onto the page. Hand over as it starts
+      // lifting, not after it has gone: the page's entrance should already be
+      // under way as it clears, which is what makes the two read as one move.
+      const sheet = root.querySelector<HTMLElement>('.preloader__sheet');
+      const edge = root.querySelector<HTMLElement>('.preloader__edge');
+      if (sheet && edge) {
+        timeline.call(enter, undefined, '>-0.15');
+        timeline.add(turnAway({ sheet, edge }), '<');
+      } else {
+        timeline.call(enter);
+      }
     }, root);
 
     return () => {
@@ -122,13 +116,10 @@ export function Preloader() {
 
   return (
     <div className="preloader" ref={rootRef} role="status" aria-label="Loading">
-      <div className="preloader__cols" aria-hidden="true">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div className="preloader__col" key={index} />
-        ))}
+      <div className="preloader__sheet">
+        <LoaderScreen progress={progress} />
       </div>
-
-      <LoaderScreen progress={progress} />
+      <div className="preloader__edge" aria-hidden="true" />
     </div>
   );
 }

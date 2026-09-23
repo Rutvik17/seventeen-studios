@@ -462,18 +462,3 @@ export const SUN = { x: 902, y: 318, r: 66 } as const;
 
 /** Particle count for the break-up and the reassembly. */
 export const PARTICLES = 520;
-
-/**
- * A rough rectangle, for the hand-drawn button: two passes that do not quite
- * meet, as SVG paths in a `w` × `h` box.
- *
- * Two paths rather than one path with two subpaths, so each can be drawn on
- * with its own `pathLength="1"` dash.
- */
-export function roughRect(w: number, h: number, seed: number): [string, string] {
-  const rand = rng(seed);
-  const j = (v: number) => (v + (rand() - 0.5) * 3).toFixed(1);
-  const pass = (o: number) =>
-    `M${j(2 + o)} ${j(3 - o)} L${j(w - 2)} ${j(2 + o)} L${j(w - 2 - o)} ${j(h - 2)} L${j(2)} ${j(h - 2 + o)} L${j(3 + o)} ${j(-1)}`;
-  return [pass(0), pass(1.5)];
-}

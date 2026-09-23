@@ -1,24 +1,23 @@
 /**
- * Grasp's course, as data.
+ * Grasp, as data.
  *
- * The nine lessons of Module 1, with the titles they actually carry in the app
- * — taken from `src/lessons/module01/index.ts` in the Grasp repository, not
- * rewritten for the web. If a lesson is renamed there it should be renamed here,
- * and the two drifting apart is the only way this file can be wrong.
- *
- * ---
- *
- * NOTHING HERE CLAIMS TO BE PLAYABLE
- *
- * Studio rule 8. The lessons run on iOS today; the web versions are being
- * brought over one at a time, and the first piece of that work is the
- * interactive derivative on the landing page. So each lesson carries a `web`
- * flag and the page states plainly what is and is not here yet.
+ * Grasp is a calculus course you learn by dragging, and it lives here, on this
+ * site — it is no longer an app. The nine lessons of Module 1 are listed with
+ * their titles; each carries a `web` flag for whether it can be done here yet,
+ * and the page states plainly which can and which are still being built.
  *
  * A contents page that lists nine lessons as though they were all one tap away
- * would be the single most damaging thing this site could do: the whole
- * argument of the studio is that what you see is what has been built.
+ * would be the single most damaging thing this site could do: what you see
+ * should be what has been built.
  */
+
+export const graspInfo = {
+  name: 'Grasp',
+  tagline: 'Calculus you can touch',
+  summary:
+    'A calculus course you learn by dragging, built right here on the site. Every idea is something you move rather than something you memorise, and no number appears without the working that produced it.',
+  status: 'Being built',
+} as const;
 
 export type Lesson = {
   /** Two digits, as the app numbers them. */

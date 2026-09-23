@@ -8,13 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "market": "node scripts/fetch-market.mjs",
-    "prebuild": "node scripts/fetch-market.mjs",
-    "claims": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/verify-claims.mjs",
-    "verify": "npm run typecheck && npm run claims",
+    "verify": "npm run typecheck",
     "postbuild": "node scripts/verify-og.mjs && node scripts/verify-assets.mjs",
     "og": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/build-og.mjs",
-    "fit:sentiment": "node scripts/fetch-market.mjs --fit",
     "assets": "node scripts/verify-assets.mjs"
   },
   "dependencies": {

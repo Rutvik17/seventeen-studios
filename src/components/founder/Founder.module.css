@@ -1,15 +1,18 @@
 /*
- * The founder page.
+ * The founder page: the sketchbook.
  *
  * Isolated in a module so the page can change without touching the rest of the
- * site. The sketchbook's palette is declared here, on the story itself, rather
- * than in globals.css: it is the drawing's own colours — paper, graphite,
- * charcoal, ink and one crimson — and like the landing's old board colours it
- * must not leak into the interface. The renderer reads them back with
+ * site. The sketchbook's own palette is declared here, on the book itself: it
+ * is the drawing's colours — paper, graphite, charcoal, ink and one crimson —
+ * and it must not leak into the interface. The renderer reads them back with
  * `getComputedStyle`, so they are written down exactly once.
+ *
+ * Two layouts. Without the script, `.book` is an ordinary column of articles —
+ * the whole story, readable. With it, the script sets `data-mode="book"` and
+ * the page becomes one open spread filling the screen, a page at a time.
  */
 
-.story {
+.book {
   --sketch-paper: #f3ead5;
   --sketch-paper-edge: #d8c59e;
   --sketch-graphite: #34343a;
@@ -18,360 +21,362 @@
   --sketch-accent: #c8233f;
 
   position: relative;
-  height: 100svh;
-  min-height: 560px;
-  /* The colour the canvas paints, so there is paper before it does — and if it never does. */
   background: var(--sketch-paper);
   color: var(--sketch-charcoal);
-  overflow: hidden;
-}
-
-.stage {
-  position: absolute;
-  inset: 0;
+  padding: clamp(96px, 14vh, 140px) var(--gutter) clamp(60px, 10vh, 100px);
 }
 
 .canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  display: none;
 }
 
-/* ---- the running scene label and the controls ---- */
-
-.scene,
-.controls {
-  position: absolute;
-  bottom: clamp(18px, 4vh, 36px);
-  z-index: 2;
-  color: var(--sketch-graphite);
-}
-
-.scene {
-  left: var(--gutter);
-}
-
-.controls {
-  right: var(--gutter);
-}
-
-.controls button {
-  color: inherit;
-  padding: 8px 0;
-  border-bottom: 1px solid currentColor;
-}
-
-/* ---- the card ---- */
-
-.card {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
+.pages {
   display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: clamp(14px, 2.4vh, 26px);
-  padding: 0 var(--gutter);
-  text-align: center;
-  pointer-events: none;
+  gap: clamp(56px, 10vh, 110px);
+  max-width: 46rem;
 }
 
-.name {
+.page {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.kicker {
+  font-family: var(--font-hand), cursive;
+  font-size: clamp(22px, 1.9vw, 30px);
+  color: var(--sketch-ink);
+}
+
+.title {
   font-family: var(--font-display), sans-serif;
-  font-weight: 800;
-  font-size: clamp(44px, 9vw, 150px);
-  line-height: 0.9;
-  letter-spacing: -0.04em;
-  margin: 0;
-  /* Descenders clip under sub-1 leading — pad, then pull the space back. */
+  font-weight: 700;
+  font-size: clamp(30px, 3.4vw, 56px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
   padding-bottom: 0.08em;
   margin-bottom: -0.08em;
 }
 
-.title {
+.page[data-kind='cover'] .title {
+  font-weight: 800;
+  font-size: clamp(44px, 6vw, 96px);
+}
+
+.body {
+  font-size: clamp(16px, 1.2vw, 19px);
+  line-height: 1.6;
+  color: rgba(29, 29, 33, 0.78);
+  max-width: 40ch;
+}
+
+.meta {
+  color: var(--sketch-graphite);
+  opacity: 0.75;
+}
+
+.links {
+  list-style: none;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 0 0.7em;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: clamp(12px, 1.1vw, 15px);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--sketch-graphite);
+  gap: 8px 22px;
+  margin-top: 6px;
 }
 
-.sep {
-  color: var(--sketch-accent);
+.links a,
+.reach a {
+  font-family: var(--font-hand), cursive;
+  font-size: 24px;
+  color: var(--sketch-ink);
+  text-decoration: underline;
+  text-decoration-color: rgba(200, 35, 63, 0.4);
+  text-underline-offset: 4px;
 }
 
-.cta {
-  position: relative;
-  pointer-events: auto;
-  margin-top: clamp(10px, 3vh, 34px);
-  display: inline-grid;
-  place-items: center;
-  width: 280px;
-  max-width: 100%;
-  height: 64px;
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: 17px;
-  letter-spacing: -0.01em;
-  color: var(--sketch-charcoal);
-}
+/* ---- the back pocket ---- */
 
-.cta > span {
-  position: relative;
-}
-
-.outline {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.outline path {
-  fill: none;
-  stroke: var(--sketch-charcoal);
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-}
-
-.outline path + path {
-  stroke-width: 1;
-  opacity: 0.55;
-}
-
-/*
-  The pulse: a crimson halo breathing behind the drawn outline, once the outline
-  has finished drawing (`data-live` is set by the script at that moment). The
-  accent appears in the story only at the breakthrough, and here — the only
-  thing on the page that asks to be done next.
-*/
-.cta::before {
-  content: '';
-  position: absolute;
-  inset: 4px;
-  border-radius: 6px;
-  opacity: 0;
-}
-
-.cta[data-live]::before {
-  animation: sketchPulse 2.2s ease-in-out infinite;
-}
-
-.cta:hover .outline path,
-.cta:focus-visible .outline path {
-  stroke: var(--sketch-accent);
-}
-
-@keyframes sketchPulse {
-  0%,
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 0 0 rgba(200, 35, 63, 0.32);
-  }
-  60% {
-    opacity: 1;
-    box-shadow: 0 0 0 16px rgba(200, 35, 63, 0);
-  }
-}
-
-/*
-  REDUCED MOTION — the storyboard.
-
-  Nothing is layered: the sheet of four frames, their captions, then the card,
-  one after another down the page. The pulse is a repeating movement and comes
-  off; the crimson outline says the same thing still.
-*/
-.story[data-static] {
-  height: auto;
-  min-height: 0;
-  padding: clamp(80px, 12vh, 120px) var(--gutter) clamp(40px, 8vh, 80px);
-}
-
-.story[data-static] .stage {
-  position: relative;
-  height: clamp(320px, 48vw, 460px);
-}
-
-.story[data-static] .card {
-  position: static;
-  padding-top: clamp(32px, 6vh, 64px);
-}
-
-.story[data-static] .cta .outline path:first-child {
-  stroke: var(--sketch-accent);
-}
-
-.captions {
-  list-style: none;
+.pocket {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 12px;
-  padding: 0 14px;
-  color: var(--sketch-graphite);
-}
-
-@media (max-width: 899px) {
-  .story[data-static] .stage {
-    height: clamp(420px, 110vw, 620px);
-  }
-  .captions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cta[data-live]::before {
-    animation: none;
-  }
-}
-
-@media (max-width: 700px) {
-  .story {
-    height: 88svh;
-  }
-  .scene {
-    display: none;
-  }
-}
-
-/* ==================================================================
-   THE RÉSUMÉ
-   ================================================================== */
-
-.resume {
-  padding: clamp(80px, 14vh, 160px) var(--gutter) clamp(80px, 12vh, 140px);
-  max-width: var(--max);
-  margin: 0 auto;
-  display: grid;
-  gap: clamp(40px, 7vh, 72px);
-  /* Lenis and anchor jumps land here, below the fixed header. */
-  scroll-margin-top: 40px;
-}
-
-.resumeHead {
-  display: grid;
-  gap: 12px;
-}
-
-.resumeHead h2 {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: clamp(40px, 6vw, 88px);
-  line-height: 0.95;
-  letter-spacing: -0.04em;
-  padding-bottom: 0.08em;
-}
-
-.resumeHead :global(.mono-label) {
-  color: var(--muted);
+  gap: 18px;
+  margin-top: 10px;
 }
 
 .downloads {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(12px, 2vw, 24px);
+  gap: 14px;
+  max-width: 34rem;
 }
 
 .download {
   display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  gap: 8px 16px;
-  padding: clamp(20px, 3vw, 36px);
-  background: var(--bg-raise);
-  border-radius: var(--radius-lg, 14px);
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  gap: 4px;
+  padding: 16px 18px 14px;
+  background: #fffdf6;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(60, 45, 20, 0.08), 0 10px 24px rgba(60, 45, 20, 0.1);
+  transform: rotate(-1.2deg);
+  transition: transform 0.35s var(--ease-out), box-shadow 0.35s;
+}
+
+.download + .download {
+  transform: rotate(1.4deg);
 }
 
 .download:hover,
 .download:focus-visible {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  transform: rotate(0) translateY(-4px);
+  box-shadow: 0 2px 4px rgba(60, 45, 20, 0.1), 0 18px 34px rgba(60, 45, 20, 0.16);
 }
 
 .format {
   font-family: var(--font-display), sans-serif;
   font-weight: 800;
-  font-size: clamp(34px, 4.4vw, 64px);
-  line-height: 1;
+  font-size: 34px;
   letter-spacing: -0.03em;
-  color: var(--accent);
+  color: var(--sketch-accent);
 }
 
-.arrow {
-  font-size: clamp(22px, 2.4vw, 32px);
-  line-height: 1;
-  color: var(--fg);
+.download + .download .format {
+  color: var(--sketch-ink);
 }
 
-.meta {
-  grid-column: 1 / -1;
+.dnote {
+  font-size: 14px;
+  color: rgba(29, 29, 33, 0.7);
+}
+
+.size {
+  color: var(--sketch-graphite);
+  opacity: 0.7;
+}
+
+.reach {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 4px 16px;
-  color: var(--fg-dim);
-  font-size: 15px;
-}
-
-.meta :global(.mono-label) {
-  color: var(--muted);
-}
-
-.roles {
-  list-style: none;
-  display: grid;
-  border-top: 1px solid var(--line);
-}
-
-.role {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  gap: 8px 22px;
   align-items: baseline;
-  gap: 6px 24px;
-  padding: 18px 0;
-  border-bottom: 1px solid var(--line);
 }
 
-.roleTitle {
+.reach .write {
   font-family: var(--font-display), sans-serif;
-  font-weight: 600;
-  font-size: clamp(18px, 1.6vw, 24px);
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--sketch-charcoal);
+  text-decoration: underline;
+  text-decoration-color: var(--sketch-accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
 }
 
-.roleCompany {
-  color: var(--fg-dim);
+/* ================================================================
+   THE BOOK — switched on by script
+   ================================================================ */
+
+.book[data-mode] {
+  height: 100svh;
+  min-height: 600px;
+  padding: 0;
+  overflow: hidden;
 }
 
-.roleDates {
-  color: var(--muted);
+.book[data-mode] .canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.book[data-mode] .pages {
+  position: absolute;
+  inset: 0;
+  max-width: none;
+  display: block;
+  pointer-events: none;
+}
+
+.book[data-mode] .page {
+  position: absolute;
+  left: max(var(--gutter), 90px);
+  top: 50%;
+  width: min(34rem, calc(50vw - var(--gutter) - 110px));
+  transform: translateY(-50%);
+  pointer-events: auto;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease 0.4s, visibility 0s linear 0.9s;
+}
+
+.book[data-mode] .page[data-current] {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.6s ease 0.45s, visibility 0s;
+}
+
+/* The cover's words sit under the drawn book, centred. */
+.book[data-mode] .page[data-kind='cover'] {
+  left: 50%;
+  top: auto;
+  bottom: clamp(70px, 10vh, 110px);
+  width: min(40rem, 90vw);
+  transform: translateX(-50%);
+  justify-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.book[data-mode] .page[data-kind='cover'] .kicker,
+.book[data-mode] .page[data-kind='cover'] .title {
+  display: none;
+}
+
+/* ---- the chapter tabs, down the book's edge ---- */
+
+.tabs {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  gap: 4px;
+  z-index: 2;
+}
+
+.tab {
+  padding: 8px 14px 8px 12px;
+  border-radius: 6px 0 0 6px;
+  font-family: var(--font-hand), cursive;
+  font-size: 18px;
+  text-align: left;
+  color: var(--sketch-graphite);
+  background: rgba(216, 197, 158, 0.55);
+  transform: translateX(8px);
+  transition: transform 0.3s var(--ease-out), background-color 0.3s, color 0.3s;
+}
+
+.tab:hover,
+.tab:focus-visible {
+  transform: translateX(0);
+}
+
+.tab[aria-current] {
+  color: #fff;
+  background: var(--sketch-accent);
+  transform: translateX(0);
+}
+
+/* ---- turning ---- */
+
+.back {
+  position: absolute;
+  left: max(var(--gutter), 90px);
+  bottom: clamp(22px, 5vh, 44px);
+  z-index: 2;
+  font-family: var(--font-hand), cursive;
+  font-size: 22px;
+  color: var(--sketch-graphite);
+}
+
+/*
+  The page corner: a dog-ear in the bottom right that lifts on hover, with a
+  handwritten label saying where the next turn goes.
+*/
+.corner {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 230px;
+  height: 150px;
+  display: grid;
+  place-items: end;
+  padding: 0 88px 26px 0;
+}
+
+.fold {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, var(--sketch-paper-edge) 0%, #efe3c6 48%, rgba(60, 45, 20, 0.28) 50%, transparent 56%);
+  filter: drop-shadow(-3px -3px 4px rgba(60, 45, 20, 0.18));
+  transform-origin: 100% 100%;
+  transition: width 0.4s var(--ease-out), height 0.4s var(--ease-out);
+}
+
+.corner:hover .fold,
+.corner:focus-visible .fold {
+  width: 104px;
+  height: 104px;
+}
+
+.cornerLabel {
+  position: relative;
+  font-family: var(--font-hand), cursive;
+  font-size: 24px;
+  white-space: nowrap;
+  color: var(--sketch-charcoal);
+  background: linear-gradient(transparent 60%, rgba(200, 35, 63, 0.18) 60%) no-repeat;
+}
+
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  color: var(--sketch-graphite);
+  opacity: 0.5;
   white-space: nowrap;
 }
 
-@media (max-width: 700px) {
+/* ---- phones: drawing on top, words under it ---- */
+
+@media (max-width: 899px) {
+  .book[data-mode] .page {
+    left: 18px;
+    right: 18px;
+    top: auto;
+    bottom: 96px;
+    width: auto;
+    transform: none;
+    gap: 8px;
+  }
+  .title {
+    font-size: clamp(26px, 7vw, 36px);
+  }
+  .body {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .tabs,
+  .hint {
+    display: none;
+  }
+  .corner {
+    width: 200px;
+    height: 110px;
+    padding: 0 72px 22px 0;
+  }
+  .cornerLabel {
+    font-size: 20px;
+  }
+  .back {
+    left: 18px;
+    bottom: 26px;
+  }
   .downloads {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
-  .role {
-    grid-template-columns: minmax(0, 1fr) auto;
+  .format {
+    font-size: 26px;
   }
-  .roleCompany {
-    grid-column: 1;
-    grid-row: 2;
-  }
-  .roleDates {
-    grid-column: 2;
-    grid-row: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .book[data-mode] .page,
+  .book[data-mode] .page[data-current] {
+    transition: opacity 0.2s, visibility 0s;
   }
 }

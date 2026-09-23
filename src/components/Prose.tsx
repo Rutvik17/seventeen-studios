@@ -7,7 +7,6 @@
 
 import type { Block } from '@/content/types';
 import { inline } from '@/lib/inline';
-import { Embed } from '@/components/notebook/Embed';
 
 export function Prose({
   blocks,
@@ -141,16 +140,6 @@ function ProseBlock({ block }: { block: Block }) {
             <figcaption className="equation__so-what">{inline(block.soWhat)}</figcaption>
           )}
         </figure>
-      );
-
-    case 'embed':
-      return (
-        <div className="prose__embed">
-          <Embed component={block.component} />
-          {block.caption && (
-            <p className="prose__embed-caption mono-label">{block.caption}</p>
-          )}
-        </div>
       );
 
     default:
