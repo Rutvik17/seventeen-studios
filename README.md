@@ -90,7 +90,7 @@ src/
     Footer.tsx             the back endpaper
     Sheet.tsx              the shell of every simple page
     Cursor.tsx             the pencil and its hover marks
-    Preloader.tsx          first visit: a pencil draws the mark, the sheet turns away
+    Preloader.tsx          every full load: a pencil draws the mark until the page is ready
     Transition.tsx         page-turn transitions + TransitionLink
     loader/                the pencil-drawn mark
     founder/               the book component and its styles
@@ -103,6 +103,7 @@ src/
     sketchbook/            the book's drawings — geometry, chapters, the canvas painter
     sketch/wordmark.ts     the landing's pencil-drawn, cross-hatched title
     pageTurn.ts            the sheet that turns between pages
+    ready.ts               holds the loader until every self-painting part has painted
     url.ts                 where the site lives — the one place it is written
     sketch/portrait.ts     the founder's photo, redrawn in pencil and coloured pencil
     calculus.ts            Grasp's numeric and exact derivatives

@@ -31,7 +31,12 @@ export const founder = {
   */
   title: 'Senior Software Engineer',
   employer: 'EY',
+  /** What the work is, in a phrase — for link previews and the site's description. */
+  focus: 'building agentic AI platforms',
 } as const;
+
+/** The year of the first role, from the résumé's timeline. */
+export const careerStart = resumeExperience[resumeExperience.length - 1].start.slice(3);
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 

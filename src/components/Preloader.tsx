@@ -1,36 +1,30 @@
 'use client';
 
 /**
- * First visit.
+ * The loader on a full page load.
  *
- * A pencil draws the mark while the page resolves, then the sheet turns away
- * like a page. It is the same screen the page transitions show — see `components/loader/LoaderScreen.tsx`.
- *
- * ---
- *
- * WHAT WAS HERE
- *
- * A simulated serial boot log: a reset reason, a ROM banner, a rail voltage, a
- * crystal locking. It was written to make the wait part of the landing — the
- * board being powered on one moment before it assembles — and as an idea it was
- * sound. What it was not was the same as anything else on the site. Changing
- * route showed a bare "17" on four sweeping columns, and the founder page showed
- * a filling numeral, so the site had three loading screens with three different
- * arguments and no relationship between them.
- *
- * One of them had to win, and it is the one that reports progress in the mark
- * itself.
+ * A pencil draws the mark while the page gets ready, then the sheet turns away
+ * like a page. It is the same screen the page transitions show — see
+ * `components/loader/LoaderScreen.tsx`.
  *
  * ---
  *
- * IT IS TIED TO A REAL SIGNAL
+ * IT STAYS UNTIL THE PAGE IS READY — ON EVERY FULL LOAD
  *
- * The counter tracks the window the fonts resolve in, not a timer chosen to look
- * good. A progress bar that finishes before the page does — or keeps running
- * after it is ready — is the most common lie in this pattern and the one people
- * notice.
+ * It used to run once a session and skip reloads, so a reload of the founder
+ * page showed its chapters piled on top of each other for a moment before the
+ * book took them in hand. Now it covers every full load from the first frame
+ * (the inline script in the document head puts it up before anything paints)
+ * and leaves only when the fonts have arrived and every part of the page that
+ * paints itself has said it is ready (`lib/ready.ts`).
  *
- * Runs once per session, and never for reduced-motion visitors.
+ * The first visit of a session gets the whole drawing; a reload gets a quicker
+ * one. Either way the pencil stops at 90% if the page is not ready yet and
+ * finishes the mark only when it is — the counter reports a real state, not a
+ * timer chosen to look good.
+ *
+ * Reduced motion gets the finished mark, still, and no turn: the sheet is
+ * simply gone when the page is ready.
  */
 
 import { useRef, useState } from 'react';
@@ -38,11 +32,13 @@ import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { lockScroll, unlockScroll } from '@/lib/lenis';
 import { hasEnteredThisSession, markEnteredThisSession, useUi } from '@/lib/store';
+import { doneLoading, everythingReady } from '@/lib/ready';
 import { LoaderScreen } from '@/components/loader/LoaderScreen';
 import { turnAway } from '@/lib/pageTurn';
 
-/** How long the sequence runs, in seconds. */
-const WINDOW = 1.9;
+/** How long the pencil takes to draw the mark, seconds: a first visit, and a reload. */
+const DRAW_FIRST = 1.9;
+const DRAW_AGAIN = 0.7;
 
 export function Preloader() {
   const enter = useUi((state) => state.enter);
@@ -51,47 +47,55 @@ export function Preloader() {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useIsomorphicLayoutEffect(() => {
-    // Skip entirely on repeat views and for reduced-motion visitors.
-    if (hasEnteredThisSession() || prefersReducedMotion()) {
-      setActive(false);
-      enter();
+    const root = rootRef.current;
+    let alive = true;
+    const finish = () => {
+      doneLoading();
       markEnteredThisSession();
-      return;
+      unlockScroll();
+      setActive(false);
+    };
+    lockScroll();
+    const ready = everythingReady();
+
+    if (prefersReducedMotion() || !root) {
+      setProgress(100);
+      void ready.then(() => {
+        if (!alive) return;
+        enter();
+        finish();
+      });
+      return () => {
+        alive = false;
+        unlockScroll();
+      };
     }
 
-    lockScroll();
-    const root = rootRef.current;
-    if (!root) return;
-
+    let isReady = false;
     const ctx = gsap.context(() => {
       const counter = { value: 0 };
-
-      const timeline = gsap.timeline({
-        onComplete: () => {
-          markEnteredThisSession();
-          unlockScroll();
-          setActive(false);
-        },
-      });
+      const timeline = gsap.timeline({ onComplete: finish });
 
       /*
         React state rather than a ref written straight to the DOM, because the
-        number is not the only thing that consumes it — the drawing follows
-        it too, and both should read the same value on the same frame.
-
-        It is one setState per frame for under two seconds, on a screen with
-        nothing else mounted. The rule this bends is about gesture handlers.
+        number is not the only thing that consumes it — the drawing follows it
+        too, and both should read the same value on the same frame.
       */
       timeline.to(counter, {
-        value: 100,
-        duration: WINDOW,
+        value: 90,
+        duration: hasEnteredThisSession() ? DRAW_AGAIN : DRAW_FIRST,
         ease: 'power1.inOut',
         onUpdate: () => setProgress(counter.value),
       });
+      // Wait here, at 90%, for the page — if it is not ready already.
+      timeline.call(() => {
+        if (!isReady) timeline.pause();
+      });
+      timeline.to(counter, { value: 100, duration: 0.3, ease: 'power1.out', onUpdate: () => setProgress(counter.value) });
 
-      // A beat at 100 with the mark finished and hatched, before the page turns.
-      // The drawing stays on the sheet and leaves with it, as it would on paper.
-      timeline.to({}, { duration: 0.45 });
+      // A beat with the mark finished and hatched, before the page turns. The
+      // drawing stays on the sheet and leaves with it, as it would on paper.
+      timeline.to({}, { duration: 0.3 });
 
       // The loading sheet turns away onto the page. Hand over as it starts
       // lifting, not after it has gone: the page's entrance should already be
@@ -104,9 +108,15 @@ export function Preloader() {
       } else {
         timeline.call(enter);
       }
+
+      void ready.then(() => {
+        isReady = true;
+        if (alive && timeline.paused()) timeline.resume();
+      });
     }, root);
 
     return () => {
+      alive = false;
       ctx.revert();
       unlockScroll();
     };

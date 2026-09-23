@@ -40,7 +40,7 @@ export const EARTH = {
   radius: 6_371_008.8,
 } as const;
 
-/** The lesson's rocket. Small and punchy, so a child's hold of a few seconds is enough. */
+/** The lesson's rocket. Small and punchy, so a hold of a few seconds is enough. */
 export const ROCKET = {
   /** kg. Kept constant — see "what it leaves out". */
   mass: 10_000,
@@ -81,7 +81,7 @@ export function wouldEscape(h: number, v: number): boolean {
 /**
  * How much faster than real life the drawing runs, at height `h`.
  *
- * Real flights take minutes near the ground and hours out in space; a child
+ * Real flights take minutes near the ground and hours out in space; a reader
  * watches for a few seconds. So time is sped up, and sped up more the higher
  * the rocket is, where everything happens slowly. It changes how fast the
  * drawing moves, never any number the page shows.

@@ -21,7 +21,7 @@ export const notebook: NotebookEntry[] = [
   {
     slug: 'rocket-physics',
     title: 'Rocket physics',
-    summary: 'Leaving Earth takes a push stronger than its pull, and enough speed that it can never pull you back.',
+    summary: 'My first look at rockets: what lifts them off the ground, and what brings them back down.',
     date: '2026-09-23',
     cardAlt: 'A pencil drawing of a rocket on a launch pad on the curve of the Earth',
   },

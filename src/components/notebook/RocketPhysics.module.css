@@ -28,7 +28,7 @@
   --rocket-pull: #1f63d6;
   --rocket-mark: #0f9d8a;
 
-  margin-top: clamp(40px, 7vh, 72px);
+  margin-top: clamp(24px, 4vh, 44px);
   display: grid;
   gap: clamp(22px, 3vh, 34px);
   max-width: 1240px;
@@ -37,7 +37,6 @@
 /* ---- the chapter ---- */
 
 .chapterHead {
-  grid-area: head;
   display: grid;
   gap: 8px;
 }
@@ -63,22 +62,29 @@
 
 /* ---- the drawing and its controls ---- */
 
-/* Wide: the drawing on the left, the chapter and its controls beside it.
-   Narrow: the chapter, then the drawing, then the controls. */
+/* Wide: the drawing with its notes under it on the left, the chapter and its
+   controls beside it — two columns, each as tall as its own content, so
+   neither leaves a gap for the other. Narrow: one column, in reading order. */
 .stage {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    'frame head'
-    'frame controls';
   column-gap: clamp(20px, 2.4vw, 38px);
-  row-gap: 18px;
   align-items: start;
+}
+.side {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  gap: 18px;
+}
+.drawing {
+  grid-column: 1;
+  grid-row: 1;
+  display: grid;
+  gap: 26px;
 }
 
 .frame {
-  grid-area: frame;
   position: relative;
   aspect-ratio: 4 / 3.3;
   overflow: hidden;
@@ -121,7 +127,6 @@
 }
 
 .panel {
-  grid-area: controls;
   display: grid;
   gap: 16px;
 }
@@ -269,11 +274,29 @@
 @media (max-width: 899px) {
   .stage {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto;
     grid-template-areas:
       'head'
       'frame'
-      'controls';
+      'controls'
+      'notes';
+    row-gap: 18px;
+  }
+  .side,
+  .drawing {
+    display: contents;
+  }
+  .chapterHead {
+    grid-area: head;
+  }
+  .frame {
+    grid-area: frame;
+  }
+  .panel {
+    grid-area: controls;
+  }
+  .notes {
+    grid-area: notes;
+    margin-top: 8px;
   }
 }
 

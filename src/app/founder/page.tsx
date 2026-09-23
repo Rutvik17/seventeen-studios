@@ -2,7 +2,7 @@ import { statSync } from 'node:fs';
 import path from 'node:path';
 import type { Metadata } from 'next';
 import { ogImage } from '@/lib/og';
-import { founder, founderPage } from '@/content/founder';
+import { careerStart, founder, founderPage } from '@/content/founder';
 import { Book } from '@/components/founder/Book';
 
 /**
@@ -13,7 +13,7 @@ import { Book } from '@/components/founder/Book';
  * as its author, and the address printed on the résumé itself.
  */
 
-const DESCRIPTION = `${founder.name} — ${founder.title}, ${founder.employer}. His career as a sketchbook you turn through, with the résumé in the back pocket, in PDF and DOCX.`;
+const DESCRIPTION = `${founder.name}, ${founder.title} at ${founder.employer}. Every role since ${careerStart}, and the résumé as PDF or DOCX.`;
 
 export const metadata: Metadata = {
   /*

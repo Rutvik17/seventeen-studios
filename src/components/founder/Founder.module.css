@@ -214,6 +214,15 @@
   transition: opacity 0.6s ease 0.45s, visibility 0s;
 }
 
+/*
+  Switching into the book happens with no transitions at all. The fades above
+  are for turning a page; applied to the switch, they left every chapter
+  visible and stacked for most of a second while it faded out.
+*/
+.book[data-mode]:not([data-settled]) .page {
+  transition: none;
+}
+
 /* The cover's words sit under the drawn book, centred. */
 .book[data-mode] .page[data-kind='cover'] {
   left: 50%;

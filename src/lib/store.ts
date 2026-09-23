@@ -22,10 +22,9 @@ export const useUi = create<UiState>((set) => ({
 }));
 
 /**
- * The preloader only runs on the first visit of a session. Subsequent
- * client-side navigations (and reloads within the session) skip straight to
- * the content — an unskippable four-second curtain on every page would be a
- * hostile piece of choreography.
+ * Whether this session has already been through the loader. The first full
+ * load of a session gets the loader's whole drawing; later ones — reloads, a
+ * page opened in a new tab — get a quicker one.
  */
 const SESSION_KEY = 'seventeen:entered';
 

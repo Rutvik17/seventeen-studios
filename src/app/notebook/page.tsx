@@ -4,8 +4,9 @@ import { formatDate } from '@/lib/time';
 import { Sheet } from '@/components/Sheet';
 import { TransitionLink } from '@/components/Transition';
 import { notebook } from '@/content/notebook';
+import { founder } from '@/content/founder';
 
-const DESCRIPTION = 'The notebook in Rutvik Patel’s sketchbook, where he documents his journey as he learns something new every day.';
+const DESCRIPTION = `${founder.name}’s notebook: what he is learning, worked through one entry at a time.`;
 
 export const metadata: Metadata = {
   title: 'Notebook',

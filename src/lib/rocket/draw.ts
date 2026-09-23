@@ -413,13 +413,15 @@ export type Moment = {
   weight: number;
   /** Newtons of thrust the push arrow is drawn at full length for. */
   fullThrust: number;
-  pushLabel: string;
-  pullLabel: string;
+  thrustLabel: string;
+  weightLabel: string;
   /** Seconds, for the flame's flicker and the smoke's drift; frozen under reduced motion. */
   t: number;
   seed: number;
   /** Seconds since the rocket fell back onto the pad, or null. */
   sinceLanding: number | null;
+  /** How fast it came down, m/s: a hard landing bounces and throws up dust, a soft one barely does. */
+  landingSpeed: number;
   /** The highest the last flight reached, metres, or null. */
   highest: number | null;
   highestLabel: string;
@@ -472,12 +474,13 @@ export function drawMoment(ctx: CanvasRenderingContext2D, L: Layout, pal: Palett
   let bounce = 0;
   if (m.sinceLanding !== null && m.sinceLanding < 1) {
     const u = m.sinceLanding;
-    bounce = -H * 0.14 * Math.exp(-u / 0.18) * Math.abs(Math.sin(u * 22));
+    const hard = Math.min(1, m.landingSpeed / 40);
+    bounce = -H * 0.14 * hard * Math.exp(-u / 0.18) * Math.abs(Math.sin(u * 22));
     for (let k = 0; k < 4; k += 1) {
       const spread = H * (0.4 + u * 1.3) * (1 + k * 0.25);
       const arc = circle({ x: L.rocketX, y: L.groundY - 6 }, spread, 24, Math.PI).slice(0, 13);
       sketch(ctx, arc.map((p) => ({ x: p.x, y: L.groundY - 6 - (L.groundY - 6 - p.y) * 0.35 })), {
-        seed: m.seed + 200 + k, color: pal.dust, width: 1.6, jitter: 1, alpha: 1 - u,
+        seed: m.seed + 200 + k, color: pal.dust, width: 1.6, jitter: 1, alpha: (1 - u) * (0.25 + 0.75 * hard),
       });
     }
   }
@@ -513,12 +516,12 @@ function drawForces(ctx: CanvasRenderingContext2D, x: number, base: number, H: n
   const pull = m.weight * perNewton;
   const pullFrom = { x: x + H * 0.34, y: base - H * 0.55 };
   arrow(ctx, pullFrom, { x: pullFrom.x, y: pullFrom.y + pull }, pal.pull, m.seed + 700);
-  label(ctx, m.pullLabel, pullFrom.x + 7, pullFrom.y + pull * 0.6, pal, { size: small, color: pal.pull });
+  label(ctx, m.weightLabel, pullFrom.x + 7, pullFrom.y + pull * 0.6, pal, { size: small, color: pal.pull });
   if (m.thrust > 0) {
     const push = m.thrust * perNewton;
     const pushFrom = { x: x + H * 0.6, y: base - H * 0.05 };
     arrow(ctx, pushFrom, { x: pushFrom.x, y: pushFrom.y - push }, pal.push, m.seed + 710);
-    label(ctx, m.pushLabel, pushFrom.x + 7, pushFrom.y - push * 0.6, pal, { size: small, color: pal.push });
+    label(ctx, m.thrustLabel, pushFrom.x + 7, pushFrom.y - push * 0.6, pal, { size: small, color: pal.push });
   }
 }
 
