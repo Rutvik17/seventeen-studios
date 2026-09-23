@@ -216,6 +216,12 @@ should not drift.
   window).
 - Entrance animations gate on `useUi(state => state.entered)`, which the
   preloader sets. Without that gate they play behind the curtain.
+- **Anything that paints itself holds the loader until it has.** A canvas
+  drawing its first frame, or a layout that switches mode once the script runs,
+  calls `holdLoader()` (`src/lib/ready.ts`) as it mounts and releases it once
+  painted; the preloader and the page-turn curtain both wait. A reload of the
+  founder page used to show its chapters piled on top of each other before the
+  book took them in hand.
 - **Never `setPointerCapture` on pointerdown** in a drag interaction. Capture
   retargets the following `click` event to the capturing element, so every link
   underneath silently stops working. Capture only once the pointer has moved

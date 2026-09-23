@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Rocket physics, for kids: hold a button, fire a rocket, and watch gravity
- * decide whether it comes back.
+ * Rocket physics: hold a button to fire the engine, and watch thrust and
+ * gravity decide whether the rocket climbs, lands or escapes.
  *
  * The physics is `lib/rocket/physics.ts`; this component runs it, draws it
  * (`lib/rocket/draw.ts`) and sounds it (`lib/rocket/audio.ts`). Every number
@@ -17,6 +17,7 @@
 
 import { useEffect, useReducer, useRef } from 'react';
 import { prefersReducedMotion } from '@/lib/gsap';
+import { holdLoader } from '@/lib/ready';
 import { rocketChapters, rocketCopy } from '@/content/rocket';
 import {
   advance,
@@ -42,6 +43,8 @@ type State = {
   isMuted: boolean;
   isAudioInitialized: boolean;
   phase: Phase;
+  /** The speed of the last landing, m/s, until the next press. */
+  touchdown: number | null;
   firing: boolean;
 };
 
@@ -49,7 +52,7 @@ type Action =
   | { type: 'chapter'; index: number }
   | { type: 'toggleMute' }
   | { type: 'audioReady' }
-  | { type: 'phase'; phase: Phase }
+  | { type: 'phase'; phase: Phase; touchdown: number | null }
   | { type: 'firing'; value: boolean };
 
 function reducer(state: State, action: Action): State {
@@ -61,13 +64,20 @@ function reducer(state: State, action: Action): State {
     case 'audioReady':
       return { ...state, isAudioInitialized: true };
     case 'phase':
-      return state.phase === action.phase ? state : { ...state, phase: action.phase };
+      return state.phase === action.phase && state.touchdown === action.touchdown
+        ? state
+        : { ...state, phase: action.phase, touchdown: action.touchdown };
     case 'firing':
       return state.firing === action.value ? state : { ...state, firing: action.value };
   }
 }
 
-const INITIAL: State = { chapter: 0, isMuted: false, isAudioInitialized: false, phase: 'ready', firing: false };
+const INITIAL: State = { chapter: 0, isMuted: false, isAudioInitialized: false, phase: 'ready', touchdown: null, firing: false };
+
+/** The status line: the landing's is the one that carries a number. */
+function status({ phase, touchdown }: State): string {
+  return phase === 'landed' ? rocketCopy.status.landed(fmt.speed(touchdown ?? 0)) : rocketCopy.status[phase];
+}
 
 type Working = Record<'weight' | 'thrust' | 'net' | 'escape' | 'motion', string>;
 
@@ -79,7 +89,8 @@ function working(f: Flight): Working {
   const thrust = thrustOf(f);
   const net = thrust - weight;
   const escape = escapeSpeedAt(f.height);
-  const held = f.onPad && net <= 0 ? ` — ${w.padHolds}` : '';
+  // On the pad with the push below the pull, the ground makes up the difference.
+  const held = f.onPad && net <= 0 ? ` — ${w.groundHolds}` : '';
   const verdict = f.onPad ? '' : `, ${wouldEscape(f.height, f.speed) ? w.faster : w.slower}`;
   return {
     weight: `${fmt.kilograms(ROCKET.mass)} × ${fmt.gravity(g)} = ${fmt.kilonewtons(weight)}`,
@@ -207,10 +218,14 @@ export function RocketPhysics() {
     });
     seen.observe(frame);
 
+    // The loader stays up until the drawing's first frame is on the canvas.
+    const release = holdLoader();
+
     let flight = onThePad();
     let escaped = false;
     let gone = false;
     let landedAt: number | null = null;
+    let touchdown: number | null = null;
     let highest: number | null = null;
     let phase: Phase = 'ready';
     let wasOn = false;
@@ -226,23 +241,30 @@ export function RocketPhysics() {
       raf = requestAnimationFrame(tick);
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      const on = engine.current;
-      const pressed = on && !wasOn;
-      wasOn = on;
+      const held = engine.current;
+      const pressed = held && !wasOn;
+      wasOn = held;
 
-      // A new press draws a fresh rocket once the last one has gone or come
-      // down. A new press, not a held one: holding on while the rocket leaves
-      // the top of the page must not replace it before its escape is seen.
-      if (pressed && (gone || landedAt !== null)) {
+      // A new press starts a fresh flight once the last one has gone or come
+      // down, so its highest point is its own. A new press, not a held one:
+      // holding on while the rocket leaves the top of the page must not
+      // replace it before its escape is seen, and a press in mid-air is a
+      // burn, not a new flight.
+      if (pressed && (gone || flight.onPad)) {
         flight = onThePad();
         escaped = false;
         gone = false;
         landedAt = null;
       }
+      if (pressed) touchdown = null;
+      // A landing ends the flight. Holding on through it does not launch the
+      // rocket straight back up; the next flight takes a new press.
+      const on = held && touchdown === null;
       if (!gone) {
         flight = advance(flight, dt, on);
         if (flight.touchdownSpeed !== null) {
           landedAt = now;
+          touchdown = flight.touchdownSpeed;
           highest = flight.highest;
         }
       }
@@ -250,26 +272,33 @@ export function RocketPhysics() {
       if (!escaped && wouldEscape(flight.height, flight.speed) && (!on || flight.height > EXIT_HEIGHT)) escaped = true;
       if (escaped && flight.height > EXIT_HEIGHT) gone = true;
 
+      // What the forces are doing, not what the button is: an engine still
+      // spooling up in the air is on, but not yet out-pushing gravity.
+      const lifting = thrustOf(flight) > weightAt(flight.height);
       const next: Phase = escaped
         ? 'escaped'
-        : landedAt !== null
-          ? 'landed'
-          : flight.onPad
-            ? on
-              ? 'straining'
+        : flight.onPad
+          ? on
+            ? 'straining'
+            : touchdown !== null
+              ? 'landed'
               : 'ready'
-            : on
-              ? wouldEscape(flight.height, flight.speed)
-                ? 'fastEnough'
-                : 'climbing'
-              : flight.speed < 0
-                ? 'falling'
-                : flight.height > EXIT_HEIGHT
-                  ? 'above'
-                  : 'coasting';
+          : flight.speed >= 0
+            ? on && wouldEscape(flight.height, flight.speed)
+              ? 'fastEnough'
+              : lifting
+                ? 'climbing'
+                : on
+                  ? 'slowing'
+                  : flight.height > EXIT_HEIGHT
+                    ? 'above'
+                    : 'coasting'
+            : on && lifting
+              ? 'braking'
+              : 'falling';
       if (next !== phase) {
         phase = next;
-        dispatch({ type: 'phase', phase: next });
+        dispatch({ type: 'phase', phase: next, touchdown });
         if (next === 'escaped') audio.current?.chime();
       }
 
@@ -289,7 +318,12 @@ export function RocketPhysics() {
         });
       }
 
-      if (!visible) return;
+      // Out of view there is nothing to draw — and nothing for the loader to
+      // wait for.
+      if (!visible) {
+        release();
+        return;
+      }
 
       // The still layer, redrawn only when the pencil boils (ten times a second).
       const boil = reduced ? 0 : Math.floor((now - started) / 100);
@@ -323,19 +357,22 @@ export function RocketPhysics() {
         thrust: thrustOf(flight),
         weight: weightAt(flight.height),
         fullThrust: ROCKET.maxThrust,
-        pushLabel: rocketCopy.arrows.push,
-        pullLabel: rocketCopy.arrows.pull,
+        thrustLabel: rocketCopy.arrows.thrust,
+        weightLabel: rocketCopy.arrows.weight,
         t: reduced ? 0 : (now - started) / 1000,
         seed: 3000 + boil * 17,
         sinceLanding: landedAt === null || reduced ? null : (now - landedAt) / 1000,
+        landingSpeed: touchdown ?? 0,
         highest,
         highestLabel: highest === null ? '' : `${rocketCopy.highest} · ${fmt.height(highest)}`,
         trail: !flight.onPad || gone,
       });
+      release();
     };
     raf = requestAnimationFrame(tick);
 
     return () => {
+      release();
       cancelAnimationFrame(raf);
       resize.disconnect();
       seen.disconnect();
@@ -365,69 +402,72 @@ export function RocketPhysics() {
   return (
     <section className={styles.entry} ref={entryRef} aria-labelledby="rocket-chapter">
       <div className={styles.stage}>
-        <header className={styles.chapterHead}>
-          <p className={styles.chapterKicker}>
-            {rocketCopy.chapter} {state.chapter + 1}
-          </p>
-          <h2 className={styles.chapterTitle} id="rocket-chapter">
-            {chapter.title}
-          </h2>
-          <p className={styles.lede}>{chapter.lede}</p>
-        </header>
-
-        <div className={styles.frame} ref={frameRef}>
-          <canvas className={styles.canvas} ref={canvasRef} role="img" aria-label={rocketCopy.drawing} />
-          <button
-            type="button"
-            className={styles.sound}
-            aria-pressed={!state.isMuted}
-            data-cursor={rocketCopy.sound}
-            onClick={() => dispatch({ type: 'toggleMute' })}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
-              {state.isMuted ? (
-                <path d="M16 9.5l5 5M21 9.5l-5 5" />
-              ) : (
-                <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" />
-              )}
-            </svg>
-            {rocketCopy.sound}
-          </button>
+        <div className={styles.side}>
+          <header className={styles.chapterHead}>
+            <p className={styles.chapterKicker}>
+              {rocketCopy.chapter} {state.chapter + 1}
+            </p>
+            <h2 className={styles.chapterTitle} id="rocket-chapter">
+              {chapter.title}
+            </h2>
+            <p className={styles.lede}>{chapter.lede}</p>
+          </header>
+          <div className={styles.panel}>
+            <button
+              type="button"
+              className={styles.hold}
+              data-firing={state.firing ? '' : undefined}
+              data-cursor={rocketCopy.holdCursor}
+              onPointerDown={() => fire(true)}
+              onKeyDown={onKey(true)}
+              onKeyUp={onKey(false)}
+              onBlur={() => fire(false)}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              {rocketCopy.hold}
+            </button>
+            <p className={styles.status} aria-live="polite">
+              {status(state)}
+            </p>
+            <dl className={styles.working}>
+              {line('weight', styles.pull)}
+              {line('thrust', styles.push)}
+              {line('net')}
+              {line('escape', styles.escape)}
+              {line('motion')}
+            </dl>
+          </div>
         </div>
 
-        <div className={styles.panel}>
-          <button
-            type="button"
-            className={styles.hold}
-            data-firing={state.firing ? '' : undefined}
-            data-cursor={rocketCopy.holdCursor}
-            onPointerDown={() => fire(true)}
-            onKeyDown={onKey(true)}
-            onKeyUp={onKey(false)}
-            onBlur={() => fire(false)}
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            {rocketCopy.hold}
-          </button>
-          <p className={styles.status} aria-live="polite">
-            {rocketCopy.status[state.phase]}
-          </p>
-          <dl className={styles.working}>
-            {line('weight', styles.pull)}
-            {line('thrust', styles.push)}
-            {line('net')}
-            {line('escape', styles.escape)}
-            {line('motion')}
-          </dl>
-        </div>
-      </div>
+        <div className={styles.drawing}>
+          <div className={styles.frame} ref={frameRef}>
+            <canvas className={styles.canvas} ref={canvasRef} role="img" aria-label={rocketCopy.drawing} />
+            <button
+              type="button"
+              className={styles.sound}
+              aria-pressed={!state.isMuted}
+              data-cursor={rocketCopy.sound}
+              onClick={() => dispatch({ type: 'toggleMute' })}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
+                {state.isMuted ? (
+                  <path d="M16 9.5l5 5M21 9.5l-5 5" />
+                ) : (
+                  <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" />
+                )}
+              </svg>
+              {rocketCopy.sound}
+            </button>
+          </div>
 
-      <div className={styles.notes}>
-        {rocketCopy.glossary.map((note) => (
-          <p key={note}>{note}</p>
-        ))}
-        <p className={styles.leavesOut}>{rocketCopy.leavesOut}</p>
+          <div className={styles.notes}>
+            {rocketCopy.glossary.map((note) => (
+              <p key={note}>{note}</p>
+            ))}
+            <p className={styles.leavesOut}>{rocketCopy.leavesOut}</p>
+          </div>
+        </div>
       </div>
 
       <nav className={styles.deck} aria-label={rocketCopy.deck.label}>

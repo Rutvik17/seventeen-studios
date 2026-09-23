@@ -29,10 +29,11 @@
  */
 
 
+import { founder } from './founder';
+
 export const site = {
   name: 'Seventeen Studios',
-  description:
-    'Seventeen Studios is Rutvik Patel’s sketchbook — a software engineer’s work, drawn in pencil: the founder’s story, a notebook, and Grasp.',
+  description: `The sketchbook of ${founder.name}, ${founder.title} at ${founder.employer}, ${founder.focus}.`,
   location: 'Toronto, Canada',
   /*
     There is deliberately no `email` field. It is assembled on the client by

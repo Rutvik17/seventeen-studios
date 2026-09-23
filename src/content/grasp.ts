@@ -11,15 +11,10 @@
  * should be what has been built.
  */
 
-export const graspInfo = {
-  name: 'Grasp',
-  tagline: 'Calculus you can touch',
-  summary:
-    'A calculus course you learn by dragging, built right here on the site. Every idea is something you move rather than something you memorise, and no number appears without the working that produced it.',
-} as const;
+import { spell } from '@/lib/time';
 
 export type Lesson = {
-  /** Two digits, as the app numbers them. */
+  /** Two digits: 01, 02 … */
   index: string;
   title: string;
   /** True once the lesson has a working surface on the web. */
@@ -45,4 +40,10 @@ export const graspModule = {
 } as const;
 
 /** How many of the nine can actually be done here. Derived, never typed. */
+export const graspInfo = {
+  name: 'Grasp',
+  tagline: 'Calculus you can touch',
+  summary: `A calculus course you learn by dragging: ${spell(graspModule.lessons.length)} lessons, from the steepness of a line to velocity.`,
+} as const;
+
 export const onTheWeb = graspModule.lessons.filter((l) => l.web).length;

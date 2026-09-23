@@ -35,6 +35,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from '@/lib/gsap';
 import { useUi } from '@/lib/store';
+import { holdLoader } from '@/lib/ready';
 import { book, founderPage, type BookPage } from '@/content/founder';
 import { site } from '@/content/studio';
 import { TransitionLink } from '@/components/Transition';
@@ -76,6 +77,8 @@ export function Book({ sizes }: { sizes: Sizes }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [index, setIndex] = useState(0);
   const [mode, setMode] = useState<'flow' | 'book'>('flow');
+  /** Book mode is on and its first frame is painted; until then, nothing fades. */
+  const [settled, setSettled] = useState(false);
   const entered = useUi((s) => s.entered);
 
   // Everything the animation loop needs, outside React's render cycle.
@@ -198,6 +201,17 @@ export function Book({ sizes }: { sizes: Sizes }) {
     state.opened = performance.now();
     state.kick();
 
+    // The loader stays up until the book has switched on and painted: the
+    // reader sees the book, never the chapters stacked before it takes them in
+    // hand. Two frames — one for the mode to render, one for the first paint.
+    const release = holdLoader();
+    let settle = requestAnimationFrame(() => {
+      settle = requestAnimationFrame(() => {
+        setSettled(true);
+        release();
+      });
+    });
+
     // The portrait is drawn from the photograph once, off the main path; if its
     // page is already open when it is ready, it draws itself in from the start.
     let alive = true;
@@ -214,6 +228,8 @@ export function Book({ sizes }: { sizes: Sizes }) {
 
     return () => {
       alive = false;
+      cancelAnimationFrame(settle);
+      release();
       cancelAnimationFrame(state.raf);
       state.raf = 0;
       sizesObs.disconnect();
@@ -320,6 +336,7 @@ export function Book({ sizes }: { sizes: Sizes }) {
       ref={root}
       className={styles.book}
       data-mode={mode === 'book' ? 'book' : undefined}
+      data-settled={settled ? '' : undefined}
       data-lenis-prevent={mode === 'book' ? '' : undefined}
       aria-label="Sketchbook"
     >

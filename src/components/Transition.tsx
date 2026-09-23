@@ -27,6 +27,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap';
 import { getLenis } from '@/lib/lenis';
 import { whenSettled } from '@/lib/settled';
+import { pageReady } from '@/lib/ready';
 import { LoaderScreen } from '@/components/loader/LoaderScreen';
 import { turnAway, turnOver } from '@/lib/pageTurn';
 
@@ -145,35 +146,43 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
 
     let timeline: gsap.core.Timeline | null = null;
 
-    const cancel = whenSettled(() => {
-      const curtain = curtainRef.current;
-      const sheet = sheetRef.current;
-      const edge = edgeRef.current;
-      if (!curtain || !sheet || !edge) return;
+    // First the new page says it is ready (`lib/ready.ts`), then the frames
+    // settle: a page that paints itself is never uncovered half-painted.
+    let alive = true;
+    let cancel = () => {};
+    void pageReady().then(() => {
+      if (!alive) return;
+      cancel = whenSettled(() => {
+        const curtain = curtainRef.current;
+        const sheet = sheetRef.current;
+        const edge = edgeRef.current;
+        if (!curtain || !sheet || !edge) return;
 
-      timeline = gsap.timeline({
-        onComplete: () => {
-          setCovering(false);
-          pendingRef.current = null;
-          gsap.set(curtain, { pointerEvents: 'none' });
-          ScrollTrigger.refresh();
-        },
+        timeline = gsap.timeline({
+          onComplete: () => {
+            setCovering(false);
+            pendingRef.current = null;
+            gsap.set(curtain, { pointerEvents: 'none' });
+            ScrollTrigger.refresh();
+          },
+        });
+
+        timeline
+          // The page is ready. Spend the last of the counter, then leave.
+          .to(counterRef.current, {
+            value: 100,
+            duration: 0.3,
+            ease: 'power2.out',
+            onUpdate: () => setProgress(counterRef.current.value),
+          })
+          .to(markRef.current, { opacity: 0, duration: 0.2, ease: 'power2.in' }, '-=0.1')
+          // And turned away onto the new page.
+          .add(turnAway({ sheet, edge }), '-=0.05');
       });
-
-      timeline
-        // The page is ready. Spend the last of the counter, then leave.
-        .to(counterRef.current, {
-          value: 100,
-          duration: 0.3,
-          ease: 'power2.out',
-          onUpdate: () => setProgress(counterRef.current.value),
-        })
-        .to(markRef.current, { opacity: 0, duration: 0.2, ease: 'power2.in' }, '-=0.1')
-        // And turned away onto the new page.
-        .add(turnAway({ sheet, edge }), '-=0.05');
     });
 
     return () => {
+      alive = false;
       cancel();
       timeline?.kill();
     };

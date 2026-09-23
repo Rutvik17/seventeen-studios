@@ -380,6 +380,14 @@ code {
   color: var(--fg);
   pointer-events: auto;
 }
+/*
+  The loader exists only while the inline script in the document head has
+  marked the page as loading — so without JavaScript it is never shown, and it
+  can never be what stands between a reader and the page.
+*/
+html:not(.is-loading) .preloader {
+  display: none;
+}
 .curtain {
   z-index: 19000;
 }
@@ -563,8 +571,8 @@ body:has([data-slate]) .nav.is-scrolled::before {
     transition-duration: 0.08s !important;
     scroll-behavior: auto !important;
   }
-  .curtain,
-  .preloader {
+  /* The turn is the motion; the loader itself stays, still (see Preloader). */
+  .curtain {
     display: none;
   }
 }

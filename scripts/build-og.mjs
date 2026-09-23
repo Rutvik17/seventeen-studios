@@ -39,10 +39,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { founder } from '../src/content/founder.ts';
+import { careerStart, founder } from '../src/content/founder.ts';
 import { site, chapters } from '../src/content/studio.ts';
 import { graspInfo, graspModule } from '../src/content/grasp.ts';
 import { notebook } from '../src/content/notebook.ts';
+import { formatDate, spell } from '../src/lib/time.ts';
 import { rocketParts } from '../src/lib/rocket/shape.ts';
 import { CURVES } from '../src/lib/calculus.ts';
 import { bridge, cableY, PAGE, SUN } from '../src/lib/sketchbook/geometry.ts';
@@ -85,6 +86,7 @@ const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const n = (v) => Number(v.toFixed(2));
+const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /* ------------------------------------------------------------------ *
  * Plates — the artwork, one per kind of page
@@ -452,7 +454,7 @@ function cards() {
       file: 'home',
       label: site.location,
       title: founder.name,
-      standfirst: `${founder.role}. A sketchbook of work — the founder’s story, a notebook, and Grasp.`,
+      standfirst: `${founder.title} at ${founder.employer}, ${founder.focus}.`,
       plate: 'contents',
       titleSize: 58,
       footRight: 'Sketchbook No. 17',
@@ -461,7 +463,7 @@ function cards() {
       file: 'founder',
       label: 'Founder',
       title: founder.name,
-      standfirst: `${founder.title}, ${founder.employer}. His career as a sketchbook, the résumé in the back pocket.`,
+      standfirst: `${founder.title} at ${founder.employer}. Every role since ${careerStart}, and the résumé to download.`,
       stage: stageSketch,
       ground: SKETCH.paper,
       ink: '#1d1d21',
@@ -472,20 +474,20 @@ function cards() {
       file: 'notebook',
       label: 'Notebook',
       title: 'Something new, every day.',
-      standfirst: 'The notebook where Rutvik documents his journey as he learns.',
+      standfirst: `${founder.name.split(' ')[0]}’s notebook: what he is learning, worked through one entry at a time.`,
       plate: 'blank',
-      footRight: 'Notebook',
+      footRight: 'Sketchbook No. 17',
     },
     {
       file: 'grasp',
-      label: `Grasp · ${graspModule.position}`,
+      label: graspInfo.name,
       title: graspInfo.name,
-      standfirst: `${graspInfo.tagline}. ${graspModule.lessons.length} lessons that build the derivative from steepness.`,
+      standfirst: `${graspInfo.tagline}. ${capitalise(spell(graspModule.lessons.length))} lessons, from the steepness of a line to velocity.`,
       stage: stageChalkboard,
       ground: SLATE,
       onDark: true,
       titleSize: 96,
-      footRight: 'Learn calculus',
+      footRight: `${graspModule.position} · ${graspModule.title}`,
     },
     ...notebook.map((entry) => ({
       file: `notebook-${entry.slug}`,
@@ -493,7 +495,7 @@ function cards() {
       title: entry.title,
       standfirst: entry.summary,
       plate: entry.slug in PLATES ? entry.slug : 'blank',
-      footRight: 'Notebook',
+      footRight: formatDate(entry.date),
     })),
   ];
 

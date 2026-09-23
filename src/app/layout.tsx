@@ -12,6 +12,7 @@ import { founder } from '@/content/founder';
 import { currentYear } from '@/lib/time';
 import { ogImage } from '@/lib/og';
 import { SITE_URL } from '@/lib/url';
+import { LOADING_CLASS, LOADING_FAILSAFE_MS } from '@/lib/ready';
 import './globals.css';
 
 /**
@@ -165,7 +166,23 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${syne.variable} ${dmSans.variable} ${mono.variable} ${hand.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        {/*
+          Runs before the first paint, so the loader covers the page from the
+          first frame instead of arriving after the page has been seen in
+          pieces. It is the only thing that shows the loader: without
+          JavaScript this never runs and the page is simply there, and if the
+          bundle fails the class comes off on its own — content is never
+          hidden for good (rule 4).
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(d){d.classList.add('${LOADING_CLASS}');setTimeout(function(){d.classList.remove('${LOADING_CLASS}')},${LOADING_FAILSAFE_MS})})(document.documentElement)`,
+          }}
+        />
+      </head>
       <body>
         <Providers>
           <TransitionProvider>
