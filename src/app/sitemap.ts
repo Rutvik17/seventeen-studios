@@ -3,7 +3,7 @@ import { SITE_URL } from '@/lib/url';
 
 /** Static sitemap. `output: 'export'` writes this to /sitemap.xml at build time. */
 export default function sitemap(): MetadataRoute.Sitemap {
-  return ['', '/founder', '/notebook', '/grasp', '/start'].map((route) => ({
+  return ['', '/founder', '/notebook', '/grasp'].map((route) => ({
     url: `${SITE_URL}${route}/`,
     lastModified: new Date(),
     changeFrequency: 'monthly' as const,

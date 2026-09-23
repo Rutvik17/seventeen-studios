@@ -84,7 +84,6 @@ src/
     founder/               the book: cover, chapters, the résumé in the back pocket
     notebook/              the notebook
     grasp/                 Grasp: the chalkboard, the live derivative, the lessons
-    start/                 contact (the page email links fall back to)
     globals.css            tokens, the chrome, and the shared page styles
   components/
     Nav.tsx                the top edge: the mark and three index tabs
@@ -120,10 +119,10 @@ and every other fact in it is the résumé's own.
 
 ### Anything that moves with the calendar
 
-`lib/time.ts` derives it from a fixed anchor rather than having it typed into
-the copy: years of experience and the copyright line. Dates of things that
-*happened* stay literal. The values resolve at build time, so the deploy
-workflow also runs weekly to keep a figure from going stale.
+`lib/time.ts` computes it rather than having it typed into the copy — today,
+that is the copyright year. Dates of things that *happened* stay literal. The
+values resolve at build time, so the deploy workflow also runs weekly to keep a
+figure from going stale.
 
 ### The résumé
 

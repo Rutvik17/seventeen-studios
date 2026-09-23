@@ -28,7 +28,6 @@
  * whatever moves.
  */
 
-import { spellCapitalised, yearsOfExperience } from '@/lib/time';
 
 export const site = {
   name: 'Seventeen Studios',
@@ -83,21 +82,21 @@ export const chapters: Chapter[] = [
   {
     numeral: 'I',
     title: 'The founder',
-    note: `${spellCapitalised(yearsOfExperience())} years of work, from a first job in Kanata to enterprise AI at EY — and the résumé in the back pocket.`,
+    note: 'My journey',
     href: '/founder/',
     doodle: 'head',
   },
   {
     numeral: 'II',
     title: 'Notebook',
-    note: 'Where I document my journey, learning something new every day.',
+    note: 'Learning something new every day',
     href: '/notebook/',
     doodle: 'notebook',
   },
   {
     numeral: 'III',
     title: 'Grasp',
-    note: 'Calculus you learn by dragging it, right here on this site.',
+    note: 'Learning calculus',
     href: '/grasp/',
     doodle: 'tangent',
   },

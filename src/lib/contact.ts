@@ -22,7 +22,7 @@
  *
  * **The link still goes somewhere without JavaScript.** `ContactLink` attaches
  * the `mailto:` after mount — assembling it during render would serialise it
- * into the export — and until then it points at the contact page, never a dead
+ * into the export — and until then it points at his LinkedIn, never a dead
  * control that looks live.
  */
 

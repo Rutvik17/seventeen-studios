@@ -21,9 +21,8 @@ on:
   push:
     branches: [main]
   # Calendar-derived copy goes stale in a static export and rebuilding fixes it:
-  # years of experience and the copyright year are computed at build time by
-  # `src/lib/time.ts` and freeze at the moment of the build. Weekly is enough to
-  # keep them honest.
+  # the copyright year is computed at build time by `src/lib/time.ts` and
+  # freezes at the moment of the build. Weekly is enough to keep it honest.
   schedule:
     - cron: '30 22 * * 1'
   # Lets you publish a build by hand from the Actions tab.
