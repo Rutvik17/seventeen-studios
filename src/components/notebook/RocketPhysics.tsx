@@ -1,120 +1,89 @@
 'use client';
 
 /**
- * Rocket physics, in four chapters on one page: lift-off, staging, orbit and
- * landing. One button, one drawing, one working panel; the chapter decides
- * what they do.
+ * Rocket physics: one trip, from the launch pad to the Moon, with the booster
+ * flying home to be caught — played back from a flight flown once, in full,
+ * by the physics in `lib/rocket/mission/`.
  *
- * This component is the shell. Each chapter (`lib/rocket/chapters/`) owns its
- * physics, its drawing and its words, behind one interface; the shell owns the
- * canvas, the button, the sound and the loop, and runs whichever chapter is
- * open. Every number in the working panel is computed from the same state the
- * drawing shows, and written straight into the DOM — through refs, not React
- * state, so sixty updates a second do not re-render the page.
+ * This component is the player. It flies the mission while the loader is up,
+ * then plays it back: one button (lift off, pause, play, watch again), a
+ * mission clock, a split view for the booster, a strip of the trip's steps to
+ * jump between, and the working for whatever is happening. Every number on it
+ * is computed from the same flight the drawing shows, and written straight
+ * into the DOM — through refs, not React state, so sixty updates a second do
+ * not re-render the page.
  *
  * Reduced motion keeps everything the drawing tells you and drops the motion
- * that carries it: the pencil stops boiling, nothing shakes or flickers, and
- * the drawing moves on in steps twice a second instead of gliding.
+ * that carries it: the pencil stops boiling, the camera cuts instead of
+ * gliding, and the drawing moves on in steps twice a second.
  */
 
-import { useEffect, useMemo, useReducer, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from '@/lib/gsap';
 import { holdLoader } from '@/lib/ready';
-import { rocketChapters, rocketCopy } from '@/content/rocket';
-import { CHAPTERS, type Chapter, type Tone } from '@/lib/rocket/chapters';
+import { rocketCopy } from '@/content/rocket';
+import { flyMission, type EventId, type Mission } from '@/lib/rocket/mission/mission';
+import { timelineFor } from '@/lib/rocket/mission/timeline';
+import { GROUPS, groupAt, statusAt, workingAt, type Group, type Tone } from '@/lib/rocket/mission/readout';
+import { boosterCamera, cameraAt, renderBooster, renderMain, shotsFor } from '@/lib/rocket/scene/render';
 import { readPalette } from '@/lib/rocket/palette';
 import { createRocketAudio, type RocketAudio } from '@/lib/rocket/audio';
+import * as fmt from '@/lib/rocket/format';
 import styles from './RocketPhysics.module.css';
 
-type State = {
-  chapter: number;
-  isMuted: boolean;
-  isAudioInitialized: boolean;
-  firing: boolean;
-};
+type Mode = 'ready' | 'playing' | 'paused' | 'done';
 
-type Action =
-  | { type: 'chapter'; index: number }
-  | { type: 'toggleMute' }
-  | { type: 'audioReady' }
-  | { type: 'firing'; value: boolean };
+/** Moments that make a sound as the playback passes them. */
+const SOUNDS: [EventId, 'chime' | 'clunk'][] = [
+  ['separation', 'clunk'],
+  ['caught', 'clunk'],
+  ['orbit', 'chime'],
+  ['docked', 'clunk'],
+  ['touchdown', 'chime'],
+];
 
-function reducer(state: State, action: Action): State {
-  switch (action.type) {
-    case 'chapter':
-      return { ...state, chapter: Math.max(0, Math.min(rocketChapters.length - 1, action.index)) };
-    case 'toggleMute':
-      return { ...state, isMuted: !state.isMuted };
-    case 'audioReady':
-      return { ...state, isAudioInitialized: true };
-    case 'firing':
-      return state.firing === action.value ? state : { ...state, firing: action.value };
-  }
-}
+/** How often the words and numbers are rewritten, ms. */
+const WORDS_EVERY = 100;
 
-const INITIAL: State = { chapter: 0, isMuted: false, isAudioInitialized: false, firing: false };
-
-/** How often the words and numbers are rewritten, ms. Often enough to follow, not so often they blur. */
-const NUMBERS_EVERY = 80;
+const WORDS = { heights: rocketCopy.heights, earth: rocketCopy.earth, moon: rocketCopy.moon, arrows: rocketCopy.arrows };
 
 export function RocketPhysics() {
-  const [state, dispatch] = useReducer(reducer, INITIAL);
+  const [mode, setMode] = useState<Mode>('ready');
+  const [group, setGroup] = useState<Group>('launch');
+  const [step, setStep] = useState(-1);
+  const [isMuted, setMuted] = useState(false);
+  const [mission, setMission] = useState<Mission | null>(null);
+
   const entryRef = useRef<HTMLElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const insetRef = useRef<HTMLDivElement>(null);
+  const insetCanvasRef = useRef<HTMLCanvasElement>(null);
   const statusRef = useRef<HTMLParagraphElement>(null);
-  const buttonRef = useRef<HTMLSpanElement>(null);
+  const clockRef = useRef<HTMLParagraphElement>(null);
   const values = useRef<Record<string, HTMLElement | null>>({});
-  const engine = useRef(false);
-  /** Presses and releases since the loop last looked, so a quick tap is never lost between frames. */
-  const edges = useRef({ presses: 0, releases: 0 });
+  /** Playback seconds, and whether it is running: read by the loop, set by the controls. */
+  const playback = useRef({ p: 0, running: false, started: false });
   const audio = useRef<RocketAudio | null>(null);
-  const muted = useRef(state.isMuted);
+  const muted = useRef(isMuted);
 
-  const copy = rocketChapters[state.chapter];
-  // One run of the open chapter. Turning to another starts it afresh.
-  const run: Chapter = useMemo(() => CHAPTERS[copy.id](), [copy.id]);
-
-  /** Sound can only start inside a press, so the first press starts it. */
-  const ensureAudio = () => {
-    if (audio.current) {
-      audio.current.resume();
-      return;
-    }
-    const created = createRocketAudio(muted.current);
-    if (created) {
-      audio.current = created;
-      dispatch({ type: 'audioReady' });
-    }
-  };
-
-  const fire = (on: boolean) => {
-    if (on) ensureAudio();
-    if (engine.current === on) return;
-    engine.current = on;
-    if (on) edges.current.presses += 1;
-    else edges.current.releases += 1;
-    dispatch({ type: 'firing', value: on });
-  };
-
-  // Letting go anywhere cuts the engine. Listening on the window rather than
-  // capturing the pointer, so nothing else on the page stops taking clicks.
+  // Fly the trip once, while the loader is up.
   useEffect(() => {
-    const stop = () => fire(false);
-    window.addEventListener('pointerup', stop);
-    window.addEventListener('pointercancel', stop);
-    window.addEventListener('blur', stop);
+    const release = holdLoader();
+    const id = window.setTimeout(() => {
+      setMission(flyMission());
+      release();
+    }, 0);
     return () => {
-      window.removeEventListener('pointerup', stop);
-      window.removeEventListener('pointercancel', stop);
-      window.removeEventListener('blur', stop);
+      window.clearTimeout(id);
+      release();
     };
   }, []);
 
   useEffect(() => {
-    muted.current = state.isMuted;
-    audio.current?.setMuted(state.isMuted);
-  }, [state.isMuted]);
+    muted.current = isMuted;
+    audio.current?.setMuted(isMuted);
+  }, [isMuted]);
 
   useEffect(() => {
     const onVisibility = () => (document.hidden ? audio.current?.suspend() : audio.current?.resume());
@@ -126,135 +95,192 @@ export function RocketPhysics() {
     };
   }, []);
 
-  // The drawing, the chapter and the numbers: one loop.
+  /** Sound can only start inside a press, so the first press starts it. */
+  const ensureAudio = () => {
+    if (audio.current) {
+      audio.current.resume();
+      return;
+    }
+    audio.current = createRocketAudio(muted.current);
+  };
+
+  const run = (from?: number) => {
+    ensureAudio();
+    const pb = playback.current;
+    if (from !== undefined) pb.p = from;
+    pb.running = true;
+    pb.started = true;
+    setMode('playing');
+  };
+
+  const press = () => {
+    const pb = playback.current;
+    if (mode === 'playing') {
+      pb.running = false;
+      setMode('paused');
+    } else if (mode === 'done') run(0);
+    else run();
+  };
+
+  // The loop: the clock, the camera, the drawing and the words.
   useEffect(() => {
     const entry = entryRef.current;
     const frame = frameRef.current;
     const canvas = canvasRef.current;
+    const insetCanvas = insetCanvasRef.current;
+    const inset = insetRef.current;
     const ctx = canvas?.getContext('2d');
-    if (!entry || !frame || !canvas || !ctx) return;
+    const ictx = insetCanvas?.getContext('2d');
+    if (!mission || !entry || !frame || !canvas || !ctx || !insetCanvas || !ictx || !inset) return;
 
     const reduced = prefersReducedMotion();
     const pal = readPalette(entry);
-    edges.current = { presses: 0, releases: 0 };
-
-    // Three layers: the backdrop (washes, drawn once per size), the still
-    // drawing over it (re-drawn when the pencil boils), and the moment (every
-    // frame). The first two are composited into `still`, so a frame is one blit
-    // and what moves.
+    const tl = timelineFor(mission);
+    const e = mission.events;
+    let w = 1;
+    let h = 1;
     let dpr = 1;
-    const backdrop = document.createElement('canvas');
-    const still = document.createElement('canvas');
-    let stillKey = '';
-    let drawnAt = -Infinity;
+    let shots = shotsFor(mission, tl, w, h);
     const size = () => {
-      const { width, height } = frame.getBoundingClientRect();
+      const rect = frame.getBoundingClientRect();
       dpr = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = still.width = backdrop.width = Math.max(1, Math.round(width * dpr));
-      canvas.height = still.height = backdrop.height = Math.max(1, Math.round(height * dpr));
-      run.resize(width, height);
-      const bctx = backdrop.getContext('2d');
-      if (bctx) {
-        bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        run.backdrop(bctx, pal);
-      }
-      stillKey = '';
+      w = rect.width;
+      h = rect.height;
+      canvas.width = Math.max(1, Math.round(w * dpr));
+      canvas.height = Math.max(1, Math.round(h * dpr));
+      const ir = insetCanvas.getBoundingClientRect();
+      insetCanvas.width = Math.max(1, Math.round(ir.width * dpr));
+      insetCanvas.height = Math.max(1, Math.round(ir.height * dpr));
+      shots = shotsFor(mission, tl, w, h);
       drawnAt = -Infinity;
     };
+    let drawnAt = -Infinity;
     size();
     const resize = new ResizeObserver(size);
     resize.observe(frame);
-    void document.fonts?.ready.then(() => {
-      stillKey = '';
-    });
 
     let visible = true;
-    const seen = new IntersectionObserver(([e]) => {
-      visible = e.isIntersecting;
+    const seen = new IntersectionObserver(([entryState]) => {
+      visible = entryState.isIntersecting;
     });
     seen.observe(frame);
 
-    // The loader stays up until the drawing's first frame is on the canvas.
     const release = holdLoader();
-
-    let lastEngine = -1;
-    let lastNumbers = -Infinity;
     const started = performance.now();
     let last = started;
+    let lastWords = -Infinity;
+    let lastT = 0;
+    let lastEngine = -1;
+    let shownGroup: Group = 'launch';
+    let shownStep = -1;
     let raf = 0;
-
-    const write = () => {
-      const status = statusRef.current;
-      const text = run.status();
-      if (status && status.textContent !== text) status.textContent = text;
-      const button = buttonRef.current;
-      const label = run.button();
-      if (button && button.textContent !== label) button.textContent = label;
-      const numbers = run.working();
-      for (const key of Object.keys(numbers)) {
-        const el = values.current[key];
-        if (el && el.textContent !== numbers[key]) el.textContent = numbers[key];
-      }
-    };
 
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
-      const dt = Math.min(0.05, (now - last) / 1000);
+      const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
+      const pb = playback.current;
+      if (pb.running) {
+        pb.p = Math.min(tl.length, pb.p + dt);
+        if (pb.p >= tl.length) {
+          pb.running = false;
+          setMode('done');
+        }
+      }
+      const t = pb.started ? tl.missionAt(pb.p) : 0;
 
-      const { presses, releases } = edges.current;
-      edges.current = { presses: 0, releases: 0 };
-      const sounds = run.step(dt, { held: engine.current, pressed: presses > 0, released: releases > 0 });
-      for (const sound of sounds) {
-        if (sound === 'chime') audio.current?.chime();
-        else audio.current?.knock(sound);
+      // Sounds for the moments just passed, and the engines while they burn.
+      if (pb.running && t > lastT) {
+        for (const [id, sound] of SOUNDS) if (lastT < e[id] && t >= e[id]) sound === 'chime' ? audio.current?.chime() : audio.current?.knock(sound);
+      }
+      lastT = t;
+      const engine = pb.running ? Math.max(shipThrottle(t), t > e.separation && t < e.caught ? boosterThrottle(t) * 0.7 : 0) : 0;
+      if (Math.abs(engine - lastEngine) > 0.01) {
+        lastEngine = engine;
+        audio.current?.setThrust(engine);
       }
 
-      // The engine is heard only while it is pushing.
-      const level = run.engine();
-      if (Math.abs(level - lastEngine) > 0.01) {
-        lastEngine = level;
-        audio.current?.setThrust(level);
+      if (now - lastWords > WORDS_EVERY) {
+        lastWords = now;
+        const status = statusAt(mission, t, pb.started);
+        if (statusRef.current && statusRef.current.textContent !== status) statusRef.current.textContent = status;
+        const clock = rocketCopy.clock(fmt.clock(t));
+        if (clockRef.current && clockRef.current.textContent !== clock) clockRef.current.textContent = clock;
+        const g = groupAt(mission, t);
+        if (g !== shownGroup) {
+          shownGroup = g;
+          setGroup(g);
+        }
+        const numbers = workingAt(mission, t);
+        for (const key of Object.keys(numbers)) {
+          const el = values.current[key];
+          if (el && el.textContent !== numbers[key]) el.textContent = numbers[key];
+        }
+        let s = -1;
+        rocketCopy.phases.forEach((ph, i) => {
+          if (pb.started && t >= e[ph.at]) s = i;
+        });
+        if (s !== shownStep) {
+          shownStep = s;
+          setStep(s);
+        }
       }
 
-      if (now - lastNumbers > NUMBERS_EVERY) {
-        lastNumbers = now;
-        write();
-      }
-
-      // Out of view there is nothing to draw — and nothing for the loader to
-      // wait for.
       if (!visible) {
         release();
         return;
       }
-      // Reduced motion: the drawing moves on in steps, twice a second.
       if (reduced && now - drawnAt < 500) return;
       drawnAt = now;
 
-      // The still layer, redrawn only when the pencil boils (ten times a second).
       const boil = reduced ? 0 : Math.floor((now - started) / 100);
-      const key = `${canvas.width}x${canvas.height}:${boil}`;
-      if (key !== stillKey) {
-        const sctx = still.getContext('2d');
-        if (sctx) {
-          sctx.setTransform(1, 0, 0, 1, 0, 0);
-          sctx.clearRect(0, 0, still.width, still.height);
-          sctx.drawImage(backdrop, 0, 0);
-          sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-          run.still(sctx, pal, 1000 + boil * 31);
-        }
-        stillKey = key;
-      }
+      const seed = 1000 + boil * 31;
+      const flicker = reduced ? 0 : (now - started) / 1000;
+
+      const cam = cameraAt(shots, pb.p, t, reduced);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(still, 0, 0);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      run.moment(ctx, pal, { t: reduced ? 0 : (now - started) / 1000, seed: 3000 + boil * 17, reduced });
+      renderMain(ctx, { ...cam, w, h }, pal, mission, t, WORDS, seed, flicker, pb.started);
+
+      // The split view, while the booster is on its way home and a moment after.
+      const showInset = pb.started && t >= e.separation && t < e.caught + 25;
+      inset.dataset.shown = showInset ? 'true' : 'false';
+      if (showInset) {
+        const iw = insetCanvas.width / dpr;
+        const ih = insetCanvas.height / dpr;
+        ictx.setTransform(1, 0, 0, 1, 0, 0);
+        ictx.clearRect(0, 0, insetCanvas.width, insetCanvas.height);
+        ictx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        renderBooster(ictx, { ...boosterCamera(mission, t, iw, ih), w: iw, h: ih }, pal, mission, t, WORDS, seed + 7, flicker);
+      }
       release();
     };
-    raf = requestAnimationFrame(tick);
 
+    const shipThrottle = (t: number) => {
+      const s = mission.ship;
+      let i = 0;
+      let j = s.length - 1;
+      while (j - i > 1) {
+        const k = (i + j) >> 1;
+        if (s[k].t <= t) i = k;
+        else j = k;
+      }
+      return s[i].throttle;
+    };
+    const boosterThrottle = (t: number) => {
+      const s = mission.booster;
+      let i = 0;
+      let j = s.length - 1;
+      while (j - i > 1) {
+        const k = (i + j) >> 1;
+        if (s[k].t <= t) i = k;
+        else j = k;
+      }
+      return s[i].throttle;
+    };
+
+    raf = requestAnimationFrame(tick);
     return () => {
       release();
       cancelAnimationFrame(raf);
@@ -262,60 +288,52 @@ export function RocketPhysics() {
       seen.disconnect();
       audio.current?.setThrust(0);
     };
-  }, [run]);
+  }, [mission]);
 
-  const onKey = (down: boolean) => (event: React.KeyboardEvent) => {
-    if (event.key !== ' ' && event.key !== 'Enter') return;
-    event.preventDefault();
-    if (down && event.repeat) return;
-    fire(down);
+  const jump = (at: EventId) => {
+    if (!mission) return;
+    const tl = timelineFor(mission);
+    run(Math.max(0, tl.playbackAt(mission.events[at]) - 0.3));
   };
 
   const tone: Record<Tone, string> = { pull: styles.pull, push: styles.push, escape: styles.escape };
-  // What the words and numbers say before the loop first writes them: the
-  // chapter's opening state, so the page is complete without JavaScript too.
-  const opening = run.working();
+  const opening = mission ? workingAt(mission, 0) : {};
+  const label = rocketCopy.button[mode];
 
   return (
-    <section className={styles.entry} ref={entryRef} aria-labelledby="rocket-chapter">
+    <section className={styles.entry} ref={entryRef} aria-labelledby="rocket-trip">
       <div className={styles.stage}>
         <div className={styles.side}>
           <header className={styles.chapterHead}>
-            <p className={styles.chapterKicker}>
-              {rocketCopy.chapter} {state.chapter + 1}
-            </p>
-            <h2 className={styles.chapterTitle} id="rocket-chapter">
-              {copy.title}
+            <h2 className={styles.chapterTitle} id="rocket-trip">
+              {rocketCopy.title}
             </h2>
-            <p className={styles.lede}>{copy.lede}</p>
+            <p className={styles.lede}>{rocketCopy.lede}</p>
           </header>
           <div className={styles.panel}>
             <button
               type="button"
               className={styles.hold}
-              data-firing={state.firing ? '' : undefined}
-              data-cursor={rocketCopy.holdCursor}
-              onPointerDown={() => fire(true)}
-              onKeyDown={onKey(true)}
-              onKeyUp={onKey(false)}
-              onBlur={() => fire(false)}
-              onContextMenu={(e) => e.preventDefault()}
+              data-firing={mode === 'playing' ? '' : undefined}
+              data-cursor={rocketCopy.cursor}
+              disabled={!mission}
+              onClick={press}
             >
-              <span ref={buttonRef}>{run.button()}</span>
+              {label}
             </button>
             <p className={styles.status} aria-live="polite" ref={statusRef}>
-              {run.status()}
+              {rocketCopy.beats.ready}
             </p>
             <dl className={styles.working}>
-              {run.lines.map((line) => (
-                <div key={line.key} className={`${styles.line}${line.tone ? ` ${tone[line.tone]}` : ''}`}>
+              {GROUPS[group].map((line) => (
+                <div key={`${group}-${line.key}`} className={`${styles.line}${'tone' in line && line.tone ? ` ${tone[line.tone]}` : ''}`}>
                   <dt>{line.label}</dt>
                   <dd
                     ref={(el) => {
                       values.current[line.key] = el;
                     }}
                   >
-                    {opening[line.key]}
+                    {opening[line.key] ?? ''}
                   </dd>
                 </div>
               ))}
@@ -325,68 +343,58 @@ export function RocketPhysics() {
 
         <div className={styles.drawing}>
           <div className={styles.frame} ref={frameRef}>
-            <canvas className={styles.canvas} ref={canvasRef} role="img" aria-label={copy.drawing} />
+            <canvas className={styles.canvas} ref={canvasRef} role="img" aria-label={rocketCopy.drawing} />
+            <div className={styles.inset} ref={insetRef} data-shown="false" aria-hidden="true">
+              <canvas className={styles.canvas} ref={insetCanvasRef} />
+              <p className={styles.insetLabel}>{rocketCopy.split}</p>
+            </div>
+            <p className={styles.clock} ref={clockRef}>
+              {rocketCopy.clock(fmt.clock(0))}
+            </p>
             <button
               type="button"
               className={styles.sound}
-              aria-pressed={!state.isMuted}
+              aria-pressed={!isMuted}
               data-cursor={rocketCopy.sound}
-              onClick={() => dispatch({ type: 'toggleMute' })}
+              onClick={() => setMuted((m) => !m)}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
-                {state.isMuted ? (
-                  <path d="M16 9.5l5 5M21 9.5l-5 5" />
-                ) : (
-                  <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" />
-                )}
+                {isMuted ? <path d="M16 9.5l5 5M21 9.5l-5 5" /> : <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" />}
               </svg>
               {rocketCopy.sound}
             </button>
           </div>
 
+          <nav className={styles.deck} aria-label={rocketCopy.steps}>
+            <ol className={styles.tabs}>
+              {rocketCopy.phases.map((ph, i) => (
+                <li key={ph.at}>
+                  <button
+                    type="button"
+                    className={styles.tab}
+                    aria-current={i === step ? 'step' : undefined}
+                    disabled={!mission}
+                    onClick={() => jump(ph.at)}
+                  >
+                    {ph.label}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </nav>
+
           <div className={styles.notes}>
-            {copy.notes.map((note) => (
+            {rocketCopy.notes.map((note) => (
               <p key={note}>{note}</p>
             ))}
             {rocketCopy.glossary.map((note) => (
               <p key={note}>{note}</p>
             ))}
-            <p className={styles.leavesOut}>{copy.keptSimple}</p>
+            <p className={styles.leavesOut}>{rocketCopy.keptSimple}</p>
           </div>
         </div>
       </div>
-
-      <nav className={styles.deck} aria-label={rocketCopy.deck.label}>
-        {state.chapter > 0 ? (
-          <button type="button" className={styles.turn} onClick={() => dispatch({ type: 'chapter', index: state.chapter - 1 })}>
-            ← {rocketCopy.deck.previous}
-          </button>
-        ) : (
-          <span />
-        )}
-        <ol className={styles.tabs}>
-          {rocketChapters.map((c, i) => (
-            <li key={c.id}>
-              <button
-                type="button"
-                className={styles.tab}
-                aria-current={i === state.chapter ? 'step' : undefined}
-                onClick={() => dispatch({ type: 'chapter', index: i })}
-              >
-                {i + 1} · {c.title}
-              </button>
-            </li>
-          ))}
-        </ol>
-        {state.chapter < rocketChapters.length - 1 ? (
-          <button type="button" className={styles.turn} onClick={() => dispatch({ type: 'chapter', index: state.chapter + 1 })}>
-            {rocketCopy.deck.next} →
-          </button>
-        ) : (
-          <span />
-        )}
-      </nav>
     </section>
   );
 }

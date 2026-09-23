@@ -113,14 +113,97 @@ function bounds(pts: Pt[]) {
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
-/** A shape coloured in: a wash of `color`, then pencil strokes of it on top. */
-export function colourIn(ctx: CanvasRenderingContext2D, pts: Pt[], color: string, seed: number, gap = 5, angle = -Math.PI / 4) {
+/**
+ * A shape coloured in: a wash of `color`, then pencil strokes of it on top.
+ * Given `within` (usually the page), the strokes stop at its edges — a shape
+ * that runs far off the page is only shaded where it can be seen.
+ */
+export function colourIn(
+  ctx: CanvasRenderingContext2D,
+  pts: Pt[],
+  color: string,
+  seed: number,
+  gap = 5,
+  angle = -Math.PI / 4,
+  within?: { x: number; y: number; w: number; h: number },
+) {
   fill(ctx, pts, color, 0.55);
+  let area = bounds(pts);
+  if (within) {
+    const x0 = Math.max(area.x, within.x);
+    const y0 = Math.max(area.y, within.y);
+    const x1 = Math.min(area.x + area.w, within.x + within.w);
+    const y1 = Math.min(area.y + area.h, within.y + within.h);
+    if (x1 <= x0 || y1 <= y0) return;
+    area = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  }
   ctx.save();
   trace(ctx, pts);
   ctx.clip();
-  hatch(ctx, bounds(pts), gap, angle, { seed, color, width: 1.1, jitter: 0.5, alpha: 0.7 });
+  hatch(ctx, area, gap, angle, { seed, color, width: 1.1, jitter: 0.5, alpha: 0.7 });
   ctx.restore();
+}
+
+/* ------------------------------------------------------------------ *
+ * Shading big areas
+ * ------------------------------------------------------------------ */
+
+const tiles = new Map<string, CanvasPattern>();
+
+/** Tile size, in CSS pixels. */
+const TILE = 96;
+
+/**
+ * A pencil-hatched texture: diagonal strokes of `color`, `gap` pixels apart,
+ * drawn once into a tile that repeats without a seam. Shading a sky-sized
+ * area stroke by stroke costs tens of thousands of curve segments a frame; a
+ * texture costs one fill. `variant` picks one of a few wobbles, so a boiling
+ * drawing can still boil.
+ */
+export function texture(ctx: CanvasRenderingContext2D, color: string, gap: number, slope: 1 | -1, variant: number): CanvasPattern | null {
+  const dpr = Math.max(1, ctx.getTransform().a);
+  const key = `${color}|${gap}|${slope}|${variant % 3}|${dpr}`;
+  const found = tiles.get(key);
+  if (found) return found;
+  if (typeof document === 'undefined') return null;
+  const tile = document.createElement('canvas');
+  tile.width = tile.height = Math.round(TILE * dpr);
+  const t = tile.getContext('2d');
+  if (!t) return null;
+  t.scale(dpr, dpr);
+  // Lines x − slope·y = c, spaced so a whole number fit across the tile; each
+  // drawn three times, a tile apart, so strokes that leave one edge come back
+  // in at the other.
+  const n = Math.max(1, Math.round(TILE / (gap * Math.SQRT2)));
+  for (let k = 0; k < n; k += 1) {
+    for (const shift of [-TILE, 0, TILE]) {
+      const c = (k * TILE) / n + shift;
+      const a = slope === 1 ? { x: c, y: 0 } : { x: c, y: TILE };
+      const b = slope === 1 ? { x: c + TILE, y: TILE } : { x: c + TILE, y: 0 };
+      sketch(t, [a, b], { seed: 97 + k * 13 + (variant % 3) * 1000, color, width: 1.1, jitter: 0.35, alpha: 0.7 });
+    }
+  }
+  const pattern = ctx.createPattern(tile, 'repeat');
+  if (!pattern) return null;
+  pattern.setTransform(new DOMMatrix().scale(1 / dpr, 1 / dpr));
+  tiles.set(key, pattern);
+  return pattern;
+}
+
+/**
+ * A big shape coloured in: a wash of `color`, then the hatched texture over
+ * it, pinned to `anchor` on the page so the hatching moves with the world.
+ */
+export function shade(ctx: CanvasRenderingContext2D, pts: Pt[], color: string, gap: number, slope: 1 | -1, variant: number, anchor: Pt) {
+  fill(ctx, pts, color, 0.55);
+  const pattern = texture(ctx, color, gap, slope, variant);
+  if (!pattern) return;
+  const dpr = Math.max(1, ctx.getTransform().a);
+  const size = TILE;
+  pattern.setTransform(new DOMMatrix().translate(((anchor.x % size) + size) % size, ((anchor.y % size) + size) % size).scale(1 / dpr, 1 / dpr));
+  ctx.fillStyle = pattern;
+  trace(ctx, pts);
+  ctx.fill();
 }
 
 /** Handwriting with a paper-coloured halo, so it reads over any colour. */

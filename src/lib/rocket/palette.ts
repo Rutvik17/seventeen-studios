@@ -35,6 +35,9 @@ export type Palette = {
   push: string;
   pull: string;
   mark: string;
+  /** The Moon's grey, and the shade in its craters. */
+  moon: string;
+  moonShade: string;
 };
 
 /** The custom property each colour is read from, on the entry's container. */
@@ -59,6 +62,8 @@ export const PALETTE_VARS: Record<Exclude<keyof Palette, 'hand' | 'charcoal' | '
   push: '--rocket-push',
   pull: '--rocket-pull',
   mark: '--rocket-mark',
+  moon: '--rocket-moon',
+  moonShade: '--rocket-moon-shade',
 };
 
 /** The palette, read off the page: the entry's own colours, and the site's charcoal, muted, paper and handwriting. */

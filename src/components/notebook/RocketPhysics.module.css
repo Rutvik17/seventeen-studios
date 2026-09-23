@@ -27,6 +27,8 @@
   --rocket-push: #f06a00;
   --rocket-pull: #1f63d6;
   --rocket-mark: #0f9d8a;
+  --rocket-moon: #b9b6ad;
+  --rocket-moon-shade: #8a8578;
 
   margin-top: clamp(24px, 4vh, 44px);
   display: grid;
@@ -39,11 +41,6 @@
 .chapterHead {
   display: grid;
   gap: 8px;
-}
-.chapterKicker {
-  font-family: var(--font-hand), cursive;
-  font-size: clamp(22px, 1.8vw, 28px);
-  color: var(--rocket-red);
 }
 .chapterTitle {
   font-family: var(--font-display), sans-serif;
@@ -98,6 +95,51 @@
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+/* The split view: the booster's trip home, in a corner of the drawing. */
+.inset {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 38%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: var(--bg-raise);
+  border: 2px solid var(--fg);
+  border-radius: 6px;
+  box-shadow: 4px 4px 0 var(--rocket-mark);
+  transition: opacity 0.4s ease;
+}
+.inset[data-shown='false'] {
+  opacity: 0;
+  visibility: hidden;
+}
+.insetLabel {
+  position: absolute;
+  left: 8px;
+  bottom: 6px;
+  padding: 0 6px;
+  font-family: var(--font-hand), cursive;
+  font-size: 17px;
+  color: var(--fg);
+  background: rgba(255, 253, 246, 0.85);
+  border-radius: 4px;
+}
+
+/* The mission clock, in the drawing's lower corner. */
+.clock {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  padding: 2px 10px;
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--fg);
+  background: rgba(255, 253, 246, 0.88);
+  border: 1.5px solid var(--fg);
+  border-radius: 999px;
 }
 
 .sound {
@@ -235,25 +277,20 @@
 
 /* ---- the chapters ---- */
 
+/* The steps of the trip, under the drawing: each jumps to its moment. */
 .deck {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 12px;
-  padding-top: 18px;
-  border-top: 1.5px dashed rgba(29, 29, 33, 0.3);
+  margin-top: -8px;
 }
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
+  gap: 6px;
   list-style: none;
 }
 .tab {
-  padding: 6px 14px;
+  padding: 4px 12px;
   font-family: var(--font-hand), cursive;
-  font-size: 20px;
+  font-size: 19px;
   color: var(--fg);
   background: rgba(191, 227, 247, 0.7);
   border-radius: 8px 8px 0 0;
@@ -262,13 +299,8 @@
   color: #fff;
   background: var(--rocket-red);
 }
-.turn {
-  font-family: var(--font-hand), cursive;
-  font-size: 22px;
-  color: var(--accent);
-}
-.deck > .turn:last-child {
-  justify-self: end;
+.tab:disabled {
+  opacity: 0.5;
 }
 
 @media (max-width: 899px) {
@@ -277,6 +309,7 @@
     grid-template-areas:
       'head'
       'frame'
+      'deck'
       'controls'
       'notes';
     row-gap: 18px;
@@ -290,6 +323,10 @@
   }
   .frame {
     grid-area: frame;
+  }
+  .deck {
+    grid-area: deck;
+    margin-top: 0;
   }
   .panel {
     grid-area: controls;
@@ -310,9 +347,12 @@
     font-size: 17px;
     letter-spacing: -0.03em;
   }
-  .deck {
-    grid-template-columns: 1fr;
-    justify-items: center;
+  .inset {
+    width: 46%;
+  }
+  .insetLabel {
+    font-size: 14px;
+    white-space: nowrap;
   }
 }
 
