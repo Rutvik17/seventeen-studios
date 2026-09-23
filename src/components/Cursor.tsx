@@ -1,12 +1,28 @@
 'use client';
 
 /**
- * Custom cursor: an exact-tracking dot, a lagging ring, and a contextual
- * label driven by `data-cursor="…"` on whatever is hovered.
+ * The cursor is a pencil.
+ *
+ * The site is a sketchbook, so the pointer is the thing that draws in it: a
+ * pencil whose point sits exactly on the pointer. It leans the way it is being
+ * moved — the top trails behind the point, as a real pencil's does when you
+ * drag it across paper — and stands back up when the hand stops.
+ *
+ * (It used to leave a fading graphite line behind it. That read as a smear on
+ * every page rather than as drawing, and it went.)
+ *
+ * Over anything that does something, it does what a pencil does in a
+ * sketchbook: it circles it. A quick crimson loop is drawn round a link or a
+ * button (a long row gets underlined instead), the pencil lifts and leans in,
+ * and a handwritten label appears beside the point when the thing has a
+ * `data-cursor`. Pressing taps the pencil down.
+ *
+ * It used to be a blue dot inside a lagging ring — a good cursor for an
+ * instrument panel, and a stranger in a notebook.
  *
  * Only mounts on fine-pointer devices with motion enabled; everything falls
  * back to the native cursor otherwise (and `cursor: none` is applied by the
- * same class so touch users never lose their pointer).
+ * same class, so touch users never lose their pointer).
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -15,11 +31,28 @@ import { CURSOR_RESET_EVENT } from '@/lib/cursor';
 
 const HOVER_SELECTOR = 'a, button, [data-cursor], input, textarea, select';
 
+/** How far the pencil leans at most, degrees, and how quickly it rights itself. */
+const MAX_LEAN = 24;
+const SETTLE_MS = 90;
+/** How long the pencil takes to circle something, milliseconds. */
+const CIRCLE_MS = 380;
+const MARK = 'rgb(200, 35, 63)';
+
+/** A stable number from an element's size, so each thing is circled the same way every time. */
+function seedOf(r: DOMRect): number {
+  return (Math.round(r.width) * 73856093) ^ (Math.round(r.height) * 19349663);
+}
+function wobble(seed: number, i: number): number {
+  const h = Math.imul(seed ^ (i * 2654435761), 1597334677) >>> 0;
+  return (h / 4294967296) - 0.5;
+}
+
 export function Cursor() {
   const [enabled, setEnabled] = useState(false);
-  const dotRef = useRef<HTMLDivElement>(null);
-  const ringRef = useRef<HTMLDivElement>(null);
+  const pencilRef = useRef<HTMLDivElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
+  const leanRef = useRef<HTMLSpanElement>(null);
+  const marksRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (prefersReducedMotion()) return;
@@ -29,32 +62,104 @@ export function Cursor() {
 
   useEffect(() => {
     if (!enabled) return;
-    const dot = dotRef.current;
-    const ring = ringRef.current;
+    const pencil = pencilRef.current;
     const label = labelRef.current;
-    if (!dot || !ring || !label) return;
+    const lean = leanRef.current;
+    const marks = marksRef.current;
+    if (!pencil || !label || !lean || !marks) return;
+    const ctx = marks.getContext('2d');
+    if (!ctx) return;
 
     document.documentElement.classList.add('has-custom-cursor');
 
-    const dotX = gsap.quickSetter(dot, 'x', 'px');
-    const dotY = gsap.quickSetter(dot, 'y', 'px');
-    const ringX = gsap.quickTo(ring, 'x', { duration: 0.36, ease: 'power3.out' });
-    const ringY = gsap.quickTo(ring, 'y', { duration: 0.36, ease: 'power3.out' });
+    const setX = gsap.quickSetter(pencil, 'x', 'px');
+    const setY = gsap.quickSetter(pencil, 'y', 'px');
+    const tilt = gsap.quickTo(lean, 'rotation', { duration: 0.5, ease: 'power3.out' });
+    let lastX = 0;
+    let lastT = 0;
+    let settle = 0;
 
     let visible = false;
     let hovered: Element | null = null;
+    let raf = 0;
+    let dpr = 1;
+    let circledAt = 0;
+
+    const size = () => {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      marks.width = Math.round(window.innerWidth * dpr);
+      marks.height = Math.round(window.innerHeight * dpr);
+    };
+    size();
+
+    /**
+     * The mark round whatever is hovered: a loose loop that overshoots its own
+     * start, as a hand does, or an underline for anything long and flat.
+     */
+    const circle = (now: number) => {
+      if (!hovered) return false;
+      const r = hovered.getBoundingClientRect();
+      if (!r.width || !r.height) return false;
+      const u = Math.min(1, (now - circledAt) / CIRCLE_MS);
+      const p = 1 - (1 - u) ** 3;
+      const seed = seedOf(r);
+      ctx.strokeStyle = MARK;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const long = r.width > 420 || r.height > 130;
+      for (let pass = 0; pass < 2; pass += 1) {
+        ctx.globalAlpha = pass ? 0.35 : 0.85;
+        ctx.lineWidth = pass ? 1 : 1.7;
+        ctx.beginPath();
+        if (long) {
+          const y = r.bottom - 4 + pass * 2;
+          const steps = 24;
+          for (let i = 0; i <= steps * p; i += 1) {
+            const x = r.left + 6 + ((r.width - 12) * i) / steps;
+            const yy = y + wobble(seed + pass, i) * 3 + Math.sin(i * 0.5) * 1.2;
+            i ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy);
+          }
+        } else {
+          const cx = r.left + r.width / 2;
+          const cy = r.top + r.height / 2;
+          const rx = r.width / 2 + 12;
+          const ry = r.height / 2 + 9;
+          const start = -2.5 + wobble(seed, 99) * 0.6;
+          const turn = Math.PI * 2 * 1.1 * p;
+          const steps = 48;
+          for (let i = 0; i <= steps; i += 1) {
+            const a = start + (turn * i) / steps;
+            const k = 1 + wobble(seed + pass * 7, i) * 0.06 + (i / steps) * 0.05;
+            const x = cx + Math.cos(a) * rx * k + pass * 1.5;
+            const y = cy + Math.sin(a) * ry * k - pass;
+            i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+          }
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      return true;
+    };
+
+    /* One frame of the mark round whatever is hovered; the loop stops when nothing is. */
+    const paint = () => {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, marks.width, marks.height);
+      raf = circle(performance.now()) ? requestAnimationFrame(paint) : 0;
+    };
 
     const clear = () => {
       hovered = null;
-      ring.classList.remove('is-active', 'is-labelled');
+      pencil.classList.remove('is-active', 'is-labelled', 'is-pressed');
       label.textContent = '';
+      if (!raf) raf = requestAnimationFrame(paint);
     };
 
     /**
      * The hover state is derived from whatever is under the pointer, not
      * accumulated from over/out pairs. `pointerout` does not fire when the
      * hovered element is removed from the document, so a dialog closed from its
-     * own close button used to leave the ring stuck on that button's label —
+     * own close button used to leave the cursor stuck on that button's label —
      * deriving instead means the next pointer event always corrects it.
      */
     const applyHover = (target: Element | null) => {
@@ -64,13 +169,15 @@ export function Cursor() {
         return;
       }
       hovered = target;
+      circledAt = performance.now();
+      if (!raf) raf = requestAnimationFrame(paint);
       const text = target.getAttribute('data-cursor');
-      ring.classList.add('is-active');
+      pencil.classList.add('is-active');
       if (text) {
         label.textContent = text;
-        ring.classList.add('is-labelled');
+        pencil.classList.add('is-labelled');
       } else {
-        ring.classList.remove('is-labelled');
+        pencil.classList.remove('is-labelled');
         label.textContent = '';
       }
     };
@@ -81,12 +188,21 @@ export function Cursor() {
     const onMove = (event: PointerEvent) => {
       if (!visible) {
         visible = true;
-        gsap.to([dot, ring], { opacity: 1, duration: 0.3 });
+        gsap.to(pencil, { opacity: 1, duration: 0.3 });
       }
-      dotX(event.clientX);
-      dotY(event.clientY);
-      ringX(event.clientX);
-      ringY(event.clientY);
+      setX(event.clientX);
+      setY(event.clientY);
+
+      // Lean against the direction of travel, in proportion to the speed.
+      const now = performance.now();
+      const dt = Math.max(8, now - lastT);
+      const vx = ((event.clientX - lastX) / dt) * 16;
+      lastX = event.clientX;
+      lastT = now;
+      tilt(Math.max(-MAX_LEAN, Math.min(MAX_LEAN, -vx * 1.6)));
+      window.clearTimeout(settle);
+      settle = window.setTimeout(() => tilt(0), SETTLE_MS);
+
       applyHover(hoverTargetOf(event));
     };
 
@@ -94,26 +210,38 @@ export function Cursor() {
 
     const onOut = (event: PointerEvent) => {
       // Only clear when leaving the element actually being tracked; moving
-      // between children of one link should not flicker the ring.
+      // between children of one link should not flicker the label.
       if (hoverTargetOf(event) === hovered) clear();
     };
 
+    const onDown = () => pencil.classList.add('is-pressed');
+    const onUp = () => pencil.classList.remove('is-pressed');
+
     const onLeaveWindow = () => {
       visible = false;
-      gsap.to([dot, ring], { opacity: 0, duration: 0.2 });
+      tilt(0);
+      gsap.to(pencil, { opacity: 0, duration: 0.2 });
     };
 
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('pointerover', onOver);
     window.addEventListener('pointerout', onOut);
+    window.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointerup', onUp);
     window.addEventListener(CURSOR_RESET_EVENT, clear);
+    window.addEventListener('resize', size);
     document.addEventListener('pointerleave', onLeaveWindow);
 
     return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(settle);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerover', onOver);
       window.removeEventListener('pointerout', onOut);
+      window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('pointerup', onUp);
       window.removeEventListener(CURSOR_RESET_EVENT, clear);
+      window.removeEventListener('resize', size);
       document.removeEventListener('pointerleave', onLeaveWindow);
       document.documentElement.classList.remove('has-custom-cursor');
     };
@@ -123,9 +251,27 @@ export function Cursor() {
 
   return (
     <div aria-hidden="true">
-      <div className="cursor-dot" ref={dotRef} />
-      <div className="cursor-ring" ref={ringRef}>
-        <span className="cursor-ring__label" ref={labelRef} />
+      <canvas className="cursor-marks" ref={marksRef} />
+      <div className="cursor-pencil" ref={pencilRef}>
+        {/* Leans about the point: the wrapper's origin is the pointer. */}
+        <span className="cursor-pencil__lean" ref={leanRef}>
+        {/* Drawn with its point at (0, 0), so the point is the pointer. */}
+        <svg className="cursor-pencil__body" viewBox="-2 -44 46 46" width="46" height="46">
+          <g transform="rotate(-45)">
+            {/* graphite point */}
+            <path d="M0 0 L5 -2.4 L5 2.4 Z" fill="#1d1d21" />
+            {/* sharpened wood */}
+            <path d="M5 -2.4 L14 -5.5 L14 5.5 L5 2.4 Z" fill="#e6c89a" stroke="#1d1d21" strokeWidth="0.9" strokeLinejoin="round" />
+            {/* the painted body */}
+            <rect x="14" y="-5.5" width="30" height="11" fill="var(--accent)" stroke="#1d1d21" strokeWidth="0.9" />
+            <line x1="14" y1="0" x2="44" y2="0" stroke="#fbf8f1" strokeOpacity="0.35" strokeWidth="1.2" />
+            {/* ferrule and eraser */}
+            <rect x="44" y="-5.5" width="5" height="11" fill="#b9b3a2" stroke="#1d1d21" strokeWidth="0.9" />
+            <rect x="49" y="-5.5" width="6" height="11" rx="2" fill="var(--accent-2)" stroke="#1d1d21" strokeWidth="0.9" />
+          </g>
+        </svg>
+        </span>
+        <span className="cursor-pencil__label" ref={labelRef} />
       </div>
     </div>
   );

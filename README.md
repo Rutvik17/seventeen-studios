@@ -1,15 +1,19 @@
 # Seventeen Studios
 
-Rutvik Patel's engineering portfolio: a statically exported Next.js 14
-application built around interactive instruments rather than prose. Two double
-pendulums coming apart on the landing, a Monte Carlo risk desk on real market
-data, a character rigged on springs and inverse kinematics, a calculus demo you
-operate by dragging, and a founder page that draws itself in a sketchbook.
+Rutvik Patel's portfolio, made as one sketchbook. A statically exported Next.js
+14 application; everything drawn on it is drawn in code.
 
-Every figure on it is computed and shows its working — the landing fits the
-rate its pendulums diverge at and prints the energy its integrator loses, the
-risk desk prints its disagreement with the closed-form answer. Nothing is a
-screenshot.
+- **The cover and contents** — the landing: the title drawn in pencil and
+  cross-hatched, and a contents page with a doodle beside each chapter.
+- **The founder** — the book itself: a cover to open, a page per stretch of the
+  career, turned like paper, and the résumé in a pocket inside the back cover.
+- **The notebook** — blank pages, for now: a clean slate for what comes next.
+- **Grasp** — a calculus course you learn by dragging, being built on this site.
+
+The loader is a pencil drawing the 17. Every change of page is a sheet of paper
+turning. The cursor is the pencil: it leaves a faint line behind it and circles
+whatever you point at. The footer is the book's back endpaper — the bookplate
+that says who to return it to.
 
 Live: **https://rutvik17.github.io/seventeen-studios/**
 
@@ -76,65 +80,48 @@ string) — `next.config.js` already treats `/` and empty as "no base path".
 ```
 src/
   app/                     routes (App Router, all statically exported)
-    layout.tsx             fonts, metadata, global chrome
-    page.tsx               home — section composition
-    lab/                   working instruments — risk desk, companion rig
-    notebook/              writing: index + [slug] detail
-    products/              shipped software: index + [slug] detail
-    founder/               the sketchbook story, then the résumé downloads
+    page.tsx               the cover and contents
+    founder/               the book: cover, chapters, the résumé in the back pocket
+    notebook/              blank pages — a clean slate
+    grasp/                 Grasp: the chalkboard, the live derivative, the lessons
+    start/                 contact (the page email links fall back to)
     legal/                 privacy + terms ([slug])
-    start/                 contact
-    globals.css            the entire design system
+    globals.css            tokens, the chrome, and the shared page styles
   components/
-    Providers.tsx          Lenis + GSAP frame loop, ScrollTrigger sync
-    Transition.tsx         curtain page transitions + TransitionLink
-    Preloader.tsx          first-visit counter and column sweep
-    Cursor.tsx             dot / ring / contextual label
-    Nav.tsx, MenuOverlay   header and full-screen index
-    founder/               the sketchbook component and the page's styles
-    instruments/           the things that actually run
-    Prose.tsx              renders authored content blocks
-    motion/                Reveal, SplitText, Magnetic, Scramble
-    sections/              the home-page sections
-  content/                 all copy, as typed data (types.ts is the model)
-    market.json            real closes, written by scripts/fetch-market.mjs
+    Nav.tsx                the top edge: the mark and three index tabs
+    Footer.tsx             the back endpaper
+    Sheet.tsx              the shell of every simple page
+    Cursor.tsx             the pencil, its trail and its hover marks
+    Preloader.tsx          first visit: a pencil draws the mark, the sheet turns away
+    Transition.tsx         page-turn transitions + TransitionLink
+    loader/                the pencil-drawn mark
+    founder/               the book component and its styles
+    grasp/                 the chalkboard
+    instruments/           the derivative Grasp demonstrates
+    sections/Contents.tsx  the landing
+  content/                 all copy, as typed data
   lib/
-    pendulum.ts            the landing's double pendulums: RK4, energy, fitted divergence
-    sketchbook/            the founder story — geometry and timing, and the canvas painter
-    quant.ts               Monte Carlo, VaR, expected shortfall, Cholesky
-    calculus.ts            central differences + exact derivatives
-    physics.ts             springs, pendulums, two-bone IK, Verlet
-    companion.ts           Mochi's rig
-    gsap.ts, lenis.ts      animation and scroll singletons
-    text.ts, inline.tsx    split-text and inline markup helpers
+    sketchbook/            the book's drawings — geometry, chapters, the canvas painter
+    sketch/wordmark.ts     the landing's pencil-drawn, cross-hatched title
+    pageTurn.ts            the sheet that turns between pages
+    url.ts                 where the site lives — the one place it is written
+    calculus.ts            Grasp's numeric and exact derivatives
 scripts/
-  fetch-market.mjs         build-time price fetch (see below)
-  hooks/                   useMagnetic, useIsomorphicLayoutEffect
+  build-og.mjs             share cards, drawn from the site's own data
+  build-resume.mjs         the PDF and .docx résumé
 ```
 
 ### Content
 
-Every word on the site lives in `src/content` as typed data, not JSX. Adding a
-notebook entry means appending one object to `src/content/notebook.ts`; the
-index page, the footer, the site index overlay, the sitemap and the static route
-are all generated from it. The same is true of projects and products.
-
-Inline emphasis inside content strings uses a three-token subset resolved by
-`lib/inline.tsx`: `*accent*`, `_italic_` and `` `mono` ``.
+Every word lives in `src/content` as typed data, not JSX. The founder's book is
+`content/founder.ts`, and every fact in it comes from `content/resume.ts`.
 
 ### Anything that moves with the calendar
 
 `lib/time.ts` derives it from a fixed anchor rather than having it typed into
-the copy: years of experience, the copyright line, counts of things in a
-collection, and each notebook entry's reading time (measured from its own word
-count). Nothing needs editing when a year turns over.
-
-Dates of things that *happened* stay literal — the founding year, employment
-start and end dates, publication dates — because those are facts, not
-durations.
-
-The values resolve at build time, so `deploy.yml` also runs on the 1st of each
-month to keep a long-untouched site from sitting on a stale figure.
+the copy: years of experience and the copyright line. Dates of things that
+*happened* stay literal. The values resolve at build time, so the deploy
+workflow also runs weekly to keep a figure from going stale.
 
 ### The résumé
 
@@ -154,60 +141,16 @@ the body rather than a header, conventional headings, MM/YYYY dates — because
 it has to parse cleanly. The script fails loudly if either file is missing or
 suspiciously small.
 
-### Artwork
+### Link previews
 
-Everything drawn on this site is generated at runtime — the pendulums, the
-sketchbook and the instruments on canvas — so there is nothing to optimise and
-nothing to lay out late. The only raster assets are the two résumé files in `public/founder` and the
-share cards in `public/og`.
-
-### Motion
-
-- **Lenis** drives scroll from the GSAP ticker, so scroll and animation share
-  one frame loop.
-- **ScrollTrigger** handles reveals, the pinned horizontal gallery, the sticky
-  process stack and the scrubbed philosophy statement.
-- **Reduced motion is a first-class path**, not a switch-off: the preloader and
-  curtain are skipped, the pinned gallery becomes a normal scroller, the WebGL
-  field renders a single still frame, and content is never hidden behind an
-  animation that will not play.
-
----
-
-## Market data
-
-`scripts/fetch-market.mjs` runs as `prebuild` and writes `src/content/market.json`
-— two years of adjusted daily closes for six tickers, with annualised drift and
-volatility from log returns.
-
-It cannot run in the browser: the export is static with no server, and Yahoo
-sends no CORS headers, so a call from the page is blocked before our code runs.
-Fetching at build time is the only way to have real prices on a static host
-without standing up a proxy.
-
-The fetch never fails the build — any error keeps the committed fixture and
-exits zero. The deploy workflow reruns each weekday at 22:30 UTC, after the US
-close, so the figures refresh on their own.
-
-```bash
-npm run market      # refresh by hand
-```
+Every route names its own share card (`public/og/<name>.png`, drawn by
+`scripts/build-og.mjs`), and `scripts/verify-og.mjs` fails the build if one is
+missing. The address on the cards and in the sitemap comes from `lib/url.ts`.
 
 ---
 
 ## Notes on the content
 
 Nothing is invented. No clients, no testimonials, no metric that was not
-measured; a project's `status` says `Designing` or `In progress` when that is
-the truth. The career in `src/content/resume.ts` is a personal employment
-record, and every date in it is real.
-
-Explanatory writing follows one rule, borrowed from Grasp: assume the reader has
-never studied any of this. Every symbol is introduced before it is used, every
-equation is stated in words before symbols, and no jargon goes undefined.
-
-The founder page is a sketchbook that draws a story on itself — a book
-opening, a spark drawing a head, a block breaking it apart, the pieces coming
-back as a bridge — and ends on a card and the résumé. Every frame is a function
-of the time alone (`src/lib/sketchbook`), so skipping, replaying and the
-reduced-motion storyboard are all just other values of `t`.
+measured. The career in `src/content/resume.ts` is a personal employment record,
+and every date and number in the founder's book comes from it.

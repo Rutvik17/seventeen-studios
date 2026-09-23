@@ -55,23 +55,7 @@ export type Block =
       result?: string;
       /** What the answer means, once you have it. */
       soWhat?: string;
-    }
-  /**
-   * An interactive component, mounted inside the prose.
-   *
-   * A slot keyed by id rather than a rendered node, because content is data and
-   * must stay serialisable — see rule 3. `components/notebook/Embed.tsx` owns
-   * the id-to-component lookup.
-   */
-  | { type: 'embed'; component: EmbedId; caption?: string };
-
-/** Interactive pieces a notebook entry can mount. */
-export type EmbedId =
-  | 'derivative'
-  | 'risk'
-  | 'credit'
-  | 'spring'
-  | 'coin-flips';
+    };
 
 /**
  * Inline emphasis inside `text` uses a tiny markup subset resolved by

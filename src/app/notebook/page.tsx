@@ -1,68 +1,40 @@
 import type { Metadata } from 'next';
 import { ogImage } from '@/lib/og';
-import { entries } from '@/content/notebook';
-import { SplitText } from '@/components/motion/SplitText';
-import { Reveal } from '@/components/motion/Reveal';
-import { NotebookRows } from '@/components/notebook/NotebookRows';
-import { jsonLd, notebookSchema } from '@/lib/schema';
+import { Sheet } from '@/components/Sheet';
 
-/*
-  Written to match the six entries, and it had drifted from them: it named the
-  trace-width standard as IPC-2221 rather than IPC-2221A, and described the
-  calculus entry as "derivatives from scratch" after it had been retitled. A
-  description is the one piece of copy nobody sees on the page it belongs to,
-  which is exactly why it goes stale.
-*/
-const DESCRIPTION =
-  'Engineering lessons that start from nothing: circuit board design and IPC-2221A trace width, Monte Carlo simulation and value at risk, spring physics and two-bone inverse kinematics, what a derivative measures, credit risk decomposed into default and exposure, and logistic regression by gradient descent.';
+const DESCRIPTION = 'The notebook in Rutvik Patel’s sketchbook — blank pages for now, where the next things he builds are drawn first.';
 
 export const metadata: Metadata = {
   title: 'Notebook',
   description: DESCRIPTION,
-  openGraph: { title: 'Engineering lessons', description: DESCRIPTION, images: ogImage('notebook', "The six notebook lessons listed as coloured bands, each in its own palette") },
+  openGraph: {
+    title: 'Notebook — Seventeen Studios',
+    description: DESCRIPTION,
+    images: ogImage('notebook', 'A blank, ruled notebook page with a pencil resting on it'),
+  },
 };
 
 /**
- * The notebook index.
+ * The notebook: a clean slate.
  *
- * Tucked rows, the same component the work index uses. The whole page washes to
- * an entry's colour on hover, so the subject announces itself before a word of
- * the standfirst is read.
+ * Every earlier entry and instrument has been taken out so the notebook can
+ * start again in the sketchbook's own style. Until the first new page is
+ * drawn, this says so plainly rather than pretending otherwise.
  */
 export default function NotebookPage() {
-  /*
-    The header sits in a `.page` container and the rows do NOT. `.page` carries
-    a max-width and a gutter, so anything inside it can never reach the viewport
-    edge — the list has to be a sibling to run full bleed.
-  */
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLd(notebookSchema(entries)) }}
-      />
-      <div className="page page--head-only">
-        <header className="page-head page-head--flush">
-          <span className="mono-label">Notebook</span>
-          <SplitText as="h1" className="page-head__title" stagger={0.03} depth>
-            Lessons
-          </SplitText>
-          <Reveal className="page-head__lead">
-            {/*
-              "Lessons, not write-ups" was the site defending itself against a
-              charge nobody had made. What a reader needs here is what these
-              are and what they assume.
-            */}
-            <p>
-              Each one starts from nothing and ends with the thing built — the
-              maths, the physics and the code that produced it. No prior
-              knowledge is assumed beyond arithmetic.
-            </p>
-          </Reveal>
-        </header>
+    <Sheet
+      className="sheet--blank"
+      kicker="Notebook"
+      title="Blank pages."
+      lead={<p>This is where the next things I build get drawn first. Nothing here yet — the pencil is sharpened.</p>}
+    >
+      <div className="sheet__ruled" aria-hidden="true">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <span key={i} />
+        ))}
+        <span className="sheet__folio">p. 1</span>
       </div>
-
-      <NotebookRows entries={entries} />
-    </>
+    </Sheet>
   );
 }

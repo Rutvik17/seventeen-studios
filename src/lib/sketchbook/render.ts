@@ -46,6 +46,7 @@ import {
   type Pt,
   type Stroke,
 } from './geometry';
+import { SKETCH_BOX, type Drawing, type Pen, type SketchLabel } from './chapters';
 
 export type Palette = {
   paper: string;
@@ -221,7 +222,14 @@ function grain(colour: string, seed: number, density: number): HTMLCanvasElement
 
 type Particle = { from: Pt; to: Pt; vx: number; vy: number; spin: number; delay: number };
 
-export function createRenderer(canvas: HTMLCanvasElement, palette: Palette) {
+export type RendererOptions = {
+  /** The handwriting face's CSS font-family, for labels and the cover title. */
+  hand: string;
+  /** Written on the cover of the closed book: a title and a line under it. */
+  coverTitle: [string, string];
+};
+
+export function createRenderer(canvas: HTMLCanvasElement, palette: Palette, options: RendererOptions) {
   const ctx = canvas.getContext('2d')!;
   let dpr = 1;
   let width = 0;
@@ -455,6 +463,24 @@ export function createRenderer(canvas: HTMLCanvasElement, palette: Palette) {
     sketchNow(ctx, [{ x: spine + 10, y: top - 2 }, { x: spine + 10, y: top + h + 2 }], 8, charcoal, fade * 0.8, 1.6, span(drawn, 0.55, 0.75));
     const bandX = spine + Math.cos(angle) * w * 0.84;
     sketchNow(ctx, [{ x: bandX, y: top - lift * 0.84 - 4 }, { x: bandX, y: top + h + lift * 0.84 + 4 }], 9, charcoal, fade * closed, 2.2, span(drawn, 0.75, 1));
+
+    // The title, written on the cover while it is closed.
+    if (outside) {
+      const title = span(drawn, 0.7, 1) * (1 - span(open, 0, 0.25));
+      if (title > 0) {
+        const cx = (spine + freeX) / 2 + 6;
+        ctx.globalAlpha = fade * title;
+        ctx.fillStyle = palette.charcoal;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = `44px ${options.hand}`;
+        ctx.fillText(options.coverTitle[0], cx, top + h * 0.4);
+        ctx.font = `26px ${options.hand}`;
+        ctx.fillStyle = palette.ink;
+        ctx.fillText(options.coverTitle[1], cx, top + h * 0.4 + 44);
+        ctx.globalAlpha = 1;
+      }
+    }
 
     // Once open, the gutter.
     if (open > 0.5) {
@@ -789,61 +815,151 @@ export function createRenderer(canvas: HTMLCanvasElement, palette: Palette) {
     ctx.restore();
   }
 
-  function background(view: View, t: number) {
-    const img = sheet();
-    ctx.drawImage(img, (view.x / width) * img.width, (view.y / height) * img.height, (view.w / width) * img.width, (view.h / height) * img.height, view.x, view.y, view.w, view.h);
-    grid(view, easeInOut(span(t, T.gridIn[0], T.gridIn[1])));
+  /* ---------------- the chapters' own drawings ---------------- */
+
+  type PreparedDrawing = {
+    lines: { line: Prepared; paint: string | CanvasPattern; from: number; to: number }[];
+    labels: (SketchLabel & { at: number })[];
+  };
+
+  const paintFor = (pen: Pen): string | CanvasPattern =>
+    pen === 'charcoal' ? charcoal : pen === 'graphite' ? graphite : pen === 'ink' ? palette.ink : palette.accent;
+
+  /** Prepare a chapter drawing once: wobble fixed, and when each line is drawn. */
+  function prepareDrawing(d: Drawing, seed: number): PreparedDrawing {
+    const n = d.lines.length;
+    return {
+      lines: d.lines.map((l, i) => {
+        const from = (i / Math.max(1, n)) * 2.6;
+        return {
+          line: prepare(l.pts, { seed: seed + i, width: l.w, jitter: 1.1, overshoot: 5, passes: 2 }),
+          paint: paintFor(l.pen),
+          from,
+          to: from + 0.9,
+        };
+      }),
+      labels: d.labels.map((l, i) => ({ ...l, at: 2.2 + i * 0.3 })),
+    };
+  }
+
+  function sketch(d: PreparedDrawing, tau: number, view: View) {
+    const s = Math.min(view.w / SKETCH_BOX.w, view.h / SKETCH_BOX.h);
+    const ox = view.x + (view.w - SKETCH_BOX.w * s) / 2;
+    const oy = view.y + (view.h - SKETCH_BOX.h * s) / 2;
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.scale(s, s);
+    for (const l of d.lines) stroke(ctx, l.line, span(tau, l.from, l.to), l.paint, 1);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const l of d.labels) {
+      const a = span(tau, l.at, l.at + 0.5);
+      if (a <= 0) continue;
+      ctx.save();
+      ctx.translate(l.x, l.y);
+      ctx.rotate(l.rot ?? 0);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = l.pen === 'accent' ? palette.accent : l.pen === 'ink' ? palette.ink : palette.graphite;
+      ctx.font = `${l.size}px ${options.hand}`;
+      ctx.fillText(l.text, 0, 0);
+      ctx.restore();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------------- the book's frame ---------------- */
+
+  /** The fold down the middle of an open spread, and a hint of the page block. */
+  function gutter() {
+    const x = width / 2;
+    const g = ctx.createLinearGradient(x - 60, 0, x + 60, 0);
+    g.addColorStop(0, 'rgba(60, 45, 20, 0)');
+    g.addColorStop(0.45, 'rgba(60, 45, 20, 0.1)');
+    g.addColorStop(0.5, 'rgba(60, 45, 20, 0.22)');
+    g.addColorStop(0.55, 'rgba(60, 45, 20, 0.1)');
+    g.addColorStop(1, 'rgba(60, 45, 20, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - 60, 0, 120, height);
+  }
+
+  /**
+   * A page turning from a snapshot of the previous spread: the old page lies on
+   * the side the fold has not reached yet, its underside curls over, and it
+   * casts a shadow on the new one underneath.
+   */
+  function turnFrom(snap: HTMLCanvasElement, e: number, forward: boolean) {
+    const u = easeInOut(clamp01(e));
+    if (u >= 1) return;
+    const fold = forward ? width * (1 - u) : width * u;
+    const curl = Math.sin(Math.PI * u) * 46;
+    ctx.save();
+    ctx.beginPath();
+    if (forward) {
+      ctx.moveTo(0, 0);
+      ctx.lineTo(fold + curl, 0);
+      ctx.lineTo(fold - curl, height);
+      ctx.lineTo(0, height);
+    } else {
+      ctx.moveTo(width, 0);
+      ctx.lineTo(fold + curl, 0);
+      ctx.lineTo(fold - curl, height);
+      ctx.lineTo(width, height);
+    }
+    ctx.closePath();
+    ctx.save();
+    ctx.clip();
+    ctx.drawImage(snap, 0, 0, width, height);
+    ctx.restore();
+    const dir = forward ? 1 : -1;
+    const flap = Math.min(forward ? width - fold : fold, forward ? fold : width - fold) * 0.9;
+    const back = ctx.createLinearGradient(fold, 0, fold + flap * dir, 0);
+    back.addColorStop(0, palette.paperEdge);
+    back.addColorStop(1, palette.paper);
+    ctx.fillStyle = back;
+    ctx.beginPath();
+    ctx.moveTo(fold + curl, 0);
+    ctx.lineTo(fold + curl + flap * dir, 0);
+    ctx.lineTo(fold - curl + flap * dir * 0.92, height);
+    ctx.lineTo(fold - curl, height);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = palette.charcoal;
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    const shade = ctx.createLinearGradient(fold, 0, fold - 100 * dir, 0);
+    shade.addColorStop(0, 'rgba(60, 45, 20, 0.24)');
+    shade.addColorStop(1, 'rgba(60, 45, 20, 0)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(Math.min(fold, fold - 100 * dir) - curl, 0, 100 + curl * 2, height);
+    ctx.restore();
   }
 
   return {
     resize,
-    /** The page at `t` seconds, with the closing page turn `turn` (0..1) of the way over. */
-    draw(t: number, turn = 0) {
+    size: () => ({ width, height }),
+    prepareDrawing,
+    /** Start a frame: the sheet and its grid, filling the canvas. */
+    paper(gridAlpha = 1) {
       if (!width || !height) return;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const view = { x: 0, y: 0, w: width, h: height };
-      background(view, Math.min(t, END));
-      scene(Math.min(t, END), view);
-      turnPage(turn);
-    },
-    /**
-     * The storyboard: one frame from each of `times`, side by side on one sheet.
-     * What reduced motion gets instead of the performance.
-     */
-    storyboard(times: number[]) {
-      if (!width || !height) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const full = { x: 0, y: 0, w: width, h: height };
       ctx.drawImage(sheet(), 0, 0, width, height);
-      grid(full, 1);
-      const cols = width >= 900 ? times.length : 2;
-      const rows = Math.ceil(times.length / cols);
-      const gap = 14;
-      const cw = (width - gap * (cols + 1)) / cols;
-      const ch = (height - gap * (rows + 1)) / rows;
-      times.forEach((t, i) => {
-        const view = {
-          x: gap + (i % cols) * (cw + gap),
-          y: gap + Math.floor(i / cols) * (ch + gap),
-          w: cw,
-          h: ch,
-        };
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(view.x, view.y, view.w, view.h);
-        ctx.clip();
-        ctx.fillStyle = palette.paper;
-        ctx.fillRect(view.x, view.y, view.w, view.h);
-        background(view, t);
-        scene(t, view);
-        ctx.restore();
-        ctx.strokeStyle = palette.charcoal;
-        ctx.globalAlpha = 0.5;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(view.x + 0.5, view.y + 0.5, view.w - 1, view.h - 1);
-        ctx.globalAlpha = 1;
-      });
+      grid({ x: 0, y: 0, w: width, h: height }, gridAlpha);
     },
+    gutter,
+    /** The spark-and-bridge story at its own clock `t`, fitted into `view`. */
+    story(t: number, view: View) {
+      scene(Math.min(t, END), view);
+    },
+    sketch,
+    snapshot() {
+      const c = makeCanvas(canvas.width, canvas.height);
+      c.getContext('2d')!.drawImage(canvas, 0, 0);
+      return c;
+    },
+    turnFrom,
   };
 }
 

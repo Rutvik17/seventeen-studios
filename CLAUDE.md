@@ -31,6 +31,26 @@ say hello. All of it is deleted, and none of it should come back:
 
 ---
 
+## The style: one sketchbook
+
+The whole site is one sketchbook, and every new piece should read as a leaf of
+it rather than as a web page:
+
+- **Pages are sheets.** Simple pages use `components/Sheet.tsx` — gridded paper,
+  a crimson margin rule, a handwritten note above a Syne title.
+- **Handwriting labels, Syne names, DM Sans reads.** Caveat (`--font-hand`) for
+  notes, kickers and tabs; Syne for titles; DM Sans for body; JetBrains Mono
+  only for small print.
+- **The pencil is the cursor; the page turn is the transition; the pencil
+  drawing the 17 is the loader.** New motion should feel like drawing or turning
+  paper, not like an interface animating.
+- **The footer is the back endpaper**, and the nav is the book's three tabs.
+  Neither should grow into a site map.
+- **One name per thing.** The section is the *notebook* — never "lessons" or
+  "lab". Grasp lives on this site; it is not an app.
+
+---
+
 ## Non-negotiables
 
 1. **The export must stay static.** No server components that need a runtime, no
@@ -44,9 +64,9 @@ say hello. All of it is deleted, and none of it should come back:
    downloads were dead in production while every stylesheet loaded. Route paths
    do not need it; `TransitionLink` wraps `next/link`.
 3. **Content is data, not markup.** All copy lives in `src/content/*.ts` typed by
-   `src/content/types.ts`. Pages compose; they do not author. Adding a project or
-   a notebook entry is one object in one file — indexes, the footer, the site
-   index and the sitemap all follow automatically.
+   `src/content/types.ts`. Pages compose; they do not author. When the notebook
+   fills up again, an entry should be one object in one file, with the index and
+   the sitemap following automatically.
 4. **Never let an animation be able to hide content permanently.** Hidden states
    are applied by JavaScript, never by CSS, so content is visible if the bundle
    fails or never runs.
@@ -60,11 +80,6 @@ say hello. All of it is deleted, and none of it should come back:
    portfolio; they scan it and then play with whatever moves.
 7. **Every number on the site is computed, and its working is shown.** This is
    the site's whole differentiator and it is not negotiable:
-   - the landing's pendulums print the gap between them, the doubling time
-     fitted to that gap's growth, and the energy their integrator has lost
-     (`src/lib/pendulum.ts`);
-   - the risk desk prints its own disagreement with the closed-form answer
-     (`src/lib/quant.ts`);
    - Grasp's demo shows the numeric derivative beside the exact one, with the
      error (`src/lib/calculus.ts`).
 
@@ -118,7 +133,7 @@ the single source of truth — there is no second copy to keep in step.
 There used to be a mirror in `src/lib/tokens.ts` for consumers that cannot read
 CSS. It is gone, and how it went is the point: its last consumer disappeared
 with the founder portrait shader, and by then it had already drifted — it still
-claimed `bg: #faf9f5` against a stylesheet that says `#eceae4`. It failed
+claimed `bg: #faf9f5` against the stylesheet's value at the time. It failed
 exactly the way its own comment warned it would, silently, because both halves
 were internally consistent. If a WebGL material needs a palette colour again,
 read it once at runtime with `getComputedStyle(document.documentElement)
@@ -126,15 +141,15 @@ read it once at runtime with `getComputedStyle(document.documentElement)
 
 | Token | Value | Use |
 |-------|-------|-----|
-| `--bg` | `#eceae4` | page, warm paper grey |
-| `--bg-raise` | `#f8f7f4` | cards, panels |
-| `--bg-sunk` | `#e0ded6` | wells, code, insets |
-| `--fg` | `#14161a` | text, graphite |
-| `--fg-dim` | `rgba(20,22,26,.66)` | body copy |
-| `--muted` | `#767a82` | mono labels |
-| `--line` | `rgba(20,22,26,.12)` | hairlines |
-| `--accent` | `#1b4fe0` | plotter blue — the one accent |
-| `--accent-2` | `#b4622a` | copper, only where a drawing needs two readings |
+| `--bg` | `#f4efe3` | page, cream sketchbook paper |
+| `--bg-raise` | `#fbf8f1` | cards, panels |
+| `--bg-sunk` | `#e9e1cf` | wells, code, insets |
+| `--fg` | `#1d1d21` | text, charcoal |
+| `--fg-dim` | `rgba(29,29,33,.68)` | body copy |
+| `--muted` | `#7d7768` | mono labels |
+| `--line` | `rgba(29,29,33,.12)` | hairlines |
+| `--accent` | `#1f3a8a` | deep ink blue — the pen |
+| `--accent-2` | `#c8233f` | crimson — the one thing to do next, or a drawing's second reading |
 
 `--sketch-*` are the founder sketchbook's own colours (paper, graphite, charcoal,
 ink, one crimson). They are declared on the story in
@@ -156,30 +171,6 @@ should not drift.
 
 ---
 
-## Market data
-
-`scripts/fetch-market.mjs` runs as `prebuild` and writes `src/content/market.json`
-— two years of adjusted daily closes for six tickers, with annualised drift and
-volatility computed from **log** returns.
-
-**It cannot be fetched in the browser.** The export is static with no server, and
-Yahoo sends no CORS headers, so a call from the page is blocked before our code
-runs. Every "live ticker on a static site" tutorial either proxies through a
-server or is quietly broken.
-
-Rules:
-
-- **The fetch must never fail the build.** Any error logs a warning, leaves the
-  committed fixture in place and exits zero. A portfolio that fails to deploy
-  because a third party rate-limited us is worse than one showing yesterday's
-  prices.
-- **A partial fetch is discarded.** The risk desk compares assets; a table where
-  two names silently vanished invites a wrong conclusion.
-- The deploy workflow reruns each weekday at 22:30 UTC, after the US close.
-- Drift and volatility are **backward-looking descriptions, not forecasts**, and
-  anything consuming them says so.
-
----
 
 ## Animation rules
 
@@ -277,7 +268,7 @@ rather than pushing onto merged history.
 
 ```bash
 npm run typecheck
-npm run build          # runs the market fetch, then must produce out/
+npm run build          # must produce out/
 ```
 
 Then look at it in a browser at 1512px and 390px, with and without

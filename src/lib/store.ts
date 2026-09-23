@@ -15,18 +15,11 @@ interface UiState {
   /** Set once the preloader curtain has cleared. */
   entered: boolean;
   enter: () => void;
-  /** Full-screen index overlay. */
-  menuOpen: boolean;
-  setMenuOpen: (open: boolean) => void;
-  toggleMenu: () => void;
 }
 
 export const useUi = create<UiState>((set) => ({
   entered: false,
   enter: () => set({ entered: true }),
-  menuOpen: false,
-  setMenuOpen: (menuOpen) => set({ menuOpen }),
-  toggleMenu: () => set((state) => ({ menuOpen: !state.menuOpen })),
 }));
 
 /**
