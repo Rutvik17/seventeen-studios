@@ -5,12 +5,8 @@ import type { Block } from './types';
  *
  * ---
  *
- * **There are two privacy policies and that is deliberate.** The website and
- * the app are different products that handle different things, and one document
- * covering both would have to hedge every sentence until it said nothing. App
- * Store review reads the app's policy against the app's actual behaviour; a
- * policy that describes a website's cookies alongside it invites a rejection
- * for describing collection the app does not do.
+ * A privacy policy and terms, for this website — Grasp included, since it lives
+ * here rather than in an app store.
  *
  * **Every claim here is checkable against the source.** Grasp has no backend,
  * no accounts and no analytics — that is a recorded architectural decision with
@@ -19,7 +15,7 @@ import type { Block } from './types';
  * unused rights is the industry habit and it is dishonest: it describes a
  * product nobody built.
  *
- * **If the app ever starts collecting something, this file changes in the same
+ * **If the site ever starts collecting something, this file changes in the same
  * commit.** A policy that lags the software is worse than none, because it is
  * a specific false statement rather than an absent one.
  */
@@ -87,7 +83,7 @@ export const policies: Policy[] = [
       { type: 'h2', text: 'Grasp' },
       {
         type: 'p',
-        text: 'Grasp lives on this website and is free to use. There are no accounts and nothing to buy. It is being built in the open, so lessons arrive one at a time and may change as they do.',
+        text: 'Grasp lives on this website and is free to use. There are no accounts and nothing to buy. Lessons may be added or changed over time.',
       },
       { type: 'h2', text: 'What is not promised' },
       {

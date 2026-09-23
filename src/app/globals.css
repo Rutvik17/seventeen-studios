@@ -39,8 +39,6 @@
 
   /* The pen: deep ink blue. */
   --accent: #1f3a8a;
-  --accent-deep: #152a66;
-  --accent-soft: rgba(31, 58, 138, 0.09);
 
   /* The crimson — the second reading of a drawing, and the one thing to do next. */
   --accent-2: #c8233f;
@@ -61,24 +59,14 @@
     var(--grid-unit) var(--grid-unit),
     var(--grid-unit) var(--grid-unit);
 
-  --shadow-sm: 0 1px 2px rgba(20, 22, 26, 0.05), 0 2px 8px rgba(20, 22, 26, 0.04);
   --shadow-md: 0 2px 6px rgba(20, 22, 26, 0.06), 0 12px 32px rgba(20, 22, 26, 0.07);
-  --shadow-lg: 0 4px 12px rgba(20, 22, 26, 0.07), 0 28px 64px rgba(20, 22, 26, 0.09);
 
   --gutter: clamp(20px, 4.4vw, 76px);
   --max: 1680px;
-  /*
-    One reading column for a notebook entry, header and body alike. Sized so the
-    prose lands near 70 characters — comfortably inside the 45–75 the
-    typographic literature agrees on — with the gutter included, because both
-    consumers pad by it.
-  */
-  --entry-measure: min(94vw, 46rem);
   --radius: 3px;
   --radius-lg: 8px;
 
   --step-label: 11px;
-  --scroll-velocity: 0;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
@@ -106,10 +94,9 @@ html.is-locked body {
 
 body {
   /*
-    Plain paper. The grid that used to live here has moved to `.product-world`
-    — see the note on the token block. A studio that builds software is not a
-    sheet of graph paper, and putting one behind every page made the writing,
-    the work and the résumé all read as the same worksheet.
+    Plain paper. The grid belongs to the pages that are sheets (`.sheet`) and
+    to the founder book, which draw their own; laid behind everything, it made
+    every page read as the same worksheet.
   */
   background-color: var(--bg);
   color: var(--fg);
@@ -215,10 +202,6 @@ ol {
   line-height: 1.4;
 }
 
-.accent {
-  color: var(--accent);
-}
-
 em {
   font-style: italic;
 }
@@ -230,135 +213,6 @@ code {
   background: rgba(31, 58, 138, 0.07);
   padding: 0.1em 0.36em;
   border-radius: 2px;
-}
-
-.tag {
-  display: inline-block;
-  padding: 6px 13px 5px;
-  border: 1px solid var(--line);
-  border-radius: 100px;
-  font-family: var(--font-mono), monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--fg-dim);
-  white-space: nowrap;
-  transition: border-color 0.3s, color 0.3s;
-}
-.tag:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.magnetic {
-  display: inline-block;
-  will-change: transform;
-}
-
-.button {
-  --button-fg: var(--fg);
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 17px 30px;
-  border: 1px solid var(--line-strong);
-  border-radius: 100px;
-  font-family: var(--font-mono), monospace;
-  font-size: 12px;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--button-fg);
-  overflow: hidden;
-  transition: color 0.4s var(--ease-out), border-color 0.4s, gap 0.4s var(--ease-out);
-}
-.button i {
-  font-style: normal;
-  transition: transform 0.4s var(--ease-out);
-}
-.button::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--accent);
-  transform: translateY(101%);
-  transition: transform 0.5s var(--ease-in-out);
-  z-index: -1;
-}
-.button > * {
-  position: relative;
-  z-index: 1;
-}
-.button:hover {
-  gap: 18px;
-  border-color: var(--accent);
-}
-.button:hover i {
-  transform: translateX(4px);
-}
-
-/* Split-text machinery. */
-.char-word {
-  display: inline-block;
-  white-space: nowrap;
-  /* Propagates the container's perspective down to the glyphs for the
-     depth reveal. */
-  transform-style: preserve-3d;
-}
-/*
-  No `will-change` here either, and for the same reason as `.word` below.
-  See the long note there.
-
-  This one matters MORE, not less: `chars` is SplitText's default mode, so this
-  rule reaches almost every split heading on the site while `.word` reaches only
-  the handful that ask for it. Fixing `.word` alone left the same latent bug —
-  a permanently promoted layer that a parent's `background-clip: text` cannot
-  paint through — everywhere else, and left every character on the site holding
-  a compositing layer it stopped needing the moment its tween finished.
-*/
-.char {
-  display: inline-block;
-}
-.word-mask {
-  display: inline-block;
-  overflow: hidden;
-  vertical-align: bottom;
-  /*
-    0.2em, not the 0.06em this used to carry. The mask exists to hide a word
-    rising from below, and its `overflow: hidden` clips the bottom of the line
-    box just as happily — so g, p, y and j lost their tails wherever this was
-    used. Syne's descenders are deep and 0.06em did not reach them.
-
-    The negative margin gives the space straight back, so the padding changes
-    what is CLIPPED without changing what is LAID OUT.
-  */
-  padding-bottom: 0.2em;
-  margin-bottom: -0.2em;
-}
-/*
-  NO `will-change` HERE, AND ITS ABSENCE IS THE FIX FOR A REAL BUG.
-
-  `will-change: transform` promotes an element to its own compositing layer and
-  keeps it there — permanently, for every split word on the site, whether or not
-  anything is animating. The spec is explicit that it is a temporary hint.
-
-  It is what hid the founder page's closing heading. That heading paints a
-  gradient clipped to its own glyphs (`background-clip: text`, transparent
-  fill), and WebKit will not paint a parent's clipped background through a
-  promoted descendant layer. The words were present, selectable and read aloud
-  by screen readers while rendering as nothing — "I can only see it if I
-  highlight it".
-
-  A JS fix on tween completion is not enough on its own: words belonging to an
-  instance whose tween never runs — held behind the preloader gate, or never
-  scrolled into view — would keep the hint forever, and those are exactly the
-  ones a visitor sees first.
-
-  GSAP promotes what it is animating anyway; it writes `translate3d` during a
-  tween, which is the same hint applied only while it is true.
-*/
-.word {
-  display: inline-block;
 }
 
 /* ---------- Overlays: grain, cursor, progress --------------------- */
@@ -683,25 +537,12 @@ body:has([data-slate]) .nav.is-scrolled::before {
   background: linear-gradient(180deg, rgba(36, 60, 51, 0.94), rgba(36, 60, 51, 0));
 }
 
-/* ---------- Page shells ------------------------------------------------ */
-
-.page {
-  max-width: var(--max);
-  margin: 0 auto;
-  padding: clamp(110px, 16vh, 190px) var(--gutter) clamp(60px, 8vw, 120px);
-}
-
 /* ---------- Prose -------------------------------------------------------- */
 
 .prose {
   display: grid;
-  /*
-    An explicit `minmax(0, 1fr)` track. A grid with no `grid-template-columns`
-    gets one implicit `auto` column, and `auto` cannot shrink below its widest
-    child's min-content width — so a single wide embed (the risk desk, and before
-    it the board explorer) stretched the whole prose column past the viewport and took every
-    paragraph with it. That is why lesson text ran off the right on a phone.
-  */
+  /* `minmax(0, 1fr)`, not the implicit `auto` track, so one long unbroken
+     word cannot stretch the column past a phone's viewport. */
   grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   max-width: 68ch;
@@ -720,181 +561,14 @@ body:has([data-slate]) .nav.is-scrolled::before {
   line-height: 1.14;
   color: var(--fg);
 }
-.prose h3 {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 600;
-  font-size: clamp(17px, 1.6vw, 22px);
-  letter-spacing: -0.02em;
-  color: var(--fg);
-}
-.prose blockquote {
-  padding: clamp(20px, 2.4vw, 34px) 0 clamp(20px, 2.4vw, 34px)
-    clamp(20px, 2.4vw, 34px);
-  border-left: 2px solid var(--accent);
-}
-.prose blockquote p {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 600;
-  font-size: clamp(19px, 2.1vw, 28px);
-  line-height: 1.26;
-  letter-spacing: -0.03em;
-  color: var(--fg);
-}
-.prose blockquote cite {
-  display: block;
-  margin-top: 14px;
-  font-style: normal;
-}
-.prose__list {
-  display: grid;
-  gap: 12px;
-  counter-reset: prose-list;
-}
-.prose__list li {
-  position: relative;
-  padding-left: 34px;
-  color: var(--fg-dim);
-  font-size: clamp(15px, 1.1vw, 17px);
-}
-ul.prose__list li::before {
-  content: '';
-  position: absolute;
-  left: 6px;
-  top: 11px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-ol.prose__list li {
-  counter-increment: prose-list;
-}
-ol.prose__list li::before {
-  content: counter(prose-list, decimal-leading-zero);
-  position: absolute;
-  left: 0;
-  top: 2px;
-  font-family: var(--font-mono), monospace;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: var(--accent);
-}
-.prose__defs {
-  display: grid;
-  gap: 1px;
-  background: var(--line);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.prose__def {
-  background: var(--bg);
-  padding: clamp(16px, 1.8vw, 26px);
-  display: grid;
-  gap: 8px;
-}
-.prose__def dt {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: -0.02em;
-  color: var(--fg);
-}
-.prose__def dd {
-  color: var(--fg-dim);
-  font-size: 15px;
-}
-.prose__note {
-  display: grid;
-  gap: 10px;
-  padding: clamp(20px, 2.2vw, 30px);
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--accent);
-  border-radius: var(--radius);
-  background: var(--bg-raise);
-}
-.prose__note p {
-  font-size: 15px;
-}
-/*
-  Code blocks are inverted panels: light type on the ink colour.
-
-  They were unreadable — black on black. A leftover from the dark palette: the
-  block's background stayed dark (correct when the page was dark, where it read
-  as a slightly deeper well) while the text colour was updated to the new
-  near-black `--fg` when the theme flipped. Neither change was wrong on its own
-  and together they cancelled the block out entirely.
-
-  The background is a TOKEN now rather than a literal, so it cannot fall out of
-  step with the foreground again — and it matches `.rig__code`, which had it
-  right all along.
-*/
-.prose__code {
-  display: grid;
-  gap: 10px;
-  padding: clamp(18px, 2vw, 26px);
-  border-radius: var(--radius);
-  background: var(--fg);
-  overflow: hidden;
-}
-
-.prose__code .mono-label {
-  color: rgba(237, 232, 220, 0.55);
-}
-.prose__code pre {
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-.prose__code code {
-  display: block;
-  background: none;
-  padding: 0;
-  color: #ede8dc;
-  font-size: 12.5px;
-  line-height: 1.75;
-  white-space: pre;
-}
-.risk {
-  background: var(--bg);
-  padding: clamp(18px, 2.2vw, 30px);
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: clamp(14px, 2vw, 34px);
-}
-
-.stack {
-  display: grid;
-  gap: 22px;
-}
-.studio .section {
-  padding-left: 0;
-  padding-right: 0;
-}
 
 /* ==================================================================
    Responsive
    ================================================================== */
 
-@media (max-width: 1180px) {
-  .principles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .engagements {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 900px) {
-  .risk {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* Narrowest phones still in use — 320px logical width (iPhone SE 1st gen and
-   the small-Android floor). The header is the only thing that does not fit at
-   this size: wordmark 165 + gap 24 + index button 112 needs 301px of a 280px
-   content box. Buy the 21px back from the gap and the button's side padding
-   rather than dropping anything from the header. */
+   the small-Android floor): the mark and the three tabs fit only with a
+   tighter gap between them. */
 @media (max-width: 360px) {
   .nav {
     gap: 12px;
@@ -920,15 +594,6 @@ ol.prose__list li::before {
   }
 }
 
-.instrument {
-  margin-top: clamp(32px, 5vh, 64px);
-  padding: clamp(20px, 3vw, 40px);
-  background: var(--bg-raise);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-}
-
 /*
   THE INSTRUMENT SETS ITS OWN INK.
 
@@ -938,9 +603,9 @@ ol.prose__list li::before {
   out near-white on near-white — present, unreadable, and only on the one page
   where choosing a function is the point.
 
-  An instrument that can be embedded anywhere — this one also appears inside
-  notebook entries — cannot take its text colour from its surroundings. It
-  supplies its own background, so it has to supply the ink that goes on it.
+  An instrument that sits on slate as well as on paper cannot take its text
+  colour from its surroundings. It supplies its own background, so it has to
+  supply the ink that goes on it.
 */
 .deriv {
   background: var(--bg-raise);
@@ -1174,117 +839,9 @@ ol.prose__list li::before {
   font-size: 0.92em;
 }
 
-.rows {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
 /* ---- a defined word ---- */
 
-/*
-  Set apart from the prose rather than folded into a sentence, because the point
-  is that it cannot be skipped in the writing. A parenthetical is easy to leave
-  out when you already know the subject, and the reader who needed it has no way
-  to know it was ever missing.
-*/
-.prose__term {
-  border-left: 3px solid var(--accent);
-  padding: 2px 0 2px calc(var(--grid-unit) * 0.8);
-  margin: calc(var(--grid-unit) * 1.2) 0;
-}
-
-.prose__term dt {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 12.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 5px;
-}
-
-.prose__term dd {
-  font-size: 15.5px;
-  line-height: 1.6;
-  color: var(--fg-dim);
-}
-
 /* ---- an equation, in teaching order ---- */
-
-.equation {
-  margin: calc(var(--grid-unit) * 1.6) 0;
-  padding: calc(var(--grid-unit) * 1.1);
-  background: var(--bg-raise);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-}
-
-.equation__words {
-  font-size: 16px;
-  line-height: 1.55;
-  margin-bottom: calc(var(--grid-unit) * 0.8);
-}
-
-.equation__symbols {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: clamp(14px, 1.25vw, 18px);
-  line-height: 1.5;
-  color: var(--accent);
-  padding: calc(var(--grid-unit) * 0.6) 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  /* A formula that wraps mid-expression says something different. Let it
-     scroll instead — this is the one place horizontal scroll is correct. */
-  overflow-x: auto;
-  white-space: nowrap;
-}
-
-.equation__where {
-  margin-top: calc(var(--grid-unit) * 0.7);
-  display: grid;
-  gap: 8px;
-}
-
-.equation__where > div {
-  display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr);
-  gap: 12px;
-  align-items: baseline;
-}
-
-.equation__where dt {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 14px;
-  color: var(--accent);
-}
-
-.equation__where dd {
-  font-size: 14.5px;
-  line-height: 1.5;
-  color: var(--fg-dim);
-}
-
-.equation__substituted {
-  margin-top: calc(var(--grid-unit) * 0.8);
-  padding-top: calc(var(--grid-unit) * 0.7);
-  border-top: 1px solid var(--line);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: clamp(13px, 1.05vw, 15.5px);
-  font-variant-numeric: tabular-nums;
-  overflow-x: auto;
-}
-
-.equation__result {
-  color: var(--accent);
-  font-weight: 500;
-}
-
-.equation__so-what {
-  margin-top: calc(var(--grid-unit) * 0.7);
-  font-size: 14.5px;
-  line-height: 1.55;
-  color: var(--muted);
-}
 
 /* Visually hidden, still announced. */
 .sr-only {
@@ -1330,29 +887,8 @@ ol.prose__list li::before {
     a third of that, so the bands and bars become hairlines — a taller minimum
     gives the shape somewhere to exist.
   */
-  .instrument__svg,
   .deriv__svg {
     min-height: 190px;
-  }
-}
-
-@media (max-width: 700px) {
-
-  /*
-    Equations scroll horizontally rather than wrapping, which is correct — a
-    formula that wraps mid-expression says something different. But the scroll
-    needs to be discoverable, so the container gets a visible edge.
-  */
-  .equation__symbols,
-  .equation__substituted {
-    -webkit-overflow-scrolling: touch;
-    mask-image: linear-gradient(to right, #000 92%, transparent);
-  }
-
-  /* Code blocks are the other thing allowed its own scrollbar. */
-  .rig__code pre,
-  .prose__code pre {
-    font-size: 11.5px;
   }
 }
 
@@ -1362,7 +898,7 @@ ol.prose__list li::before {
 
 @media (max-width: 700px) {
   /*
-    SIDEWAYS SCROLL ON THE LESSON PAGES.
+    SIDEWAYS SCROLL ON PHONES.
 
     `overflow-x: hidden` on `body` does not reliably stop the page scrolling —
     the propagation rules between `html` and `body` mean the viewport can still

@@ -5,8 +5,8 @@
  *
  * Internal navigation is routed through `useNavigate()` so a curtain can cover
  * the viewport *before* the route changes, rather than after — the difference
- * between a deliberate transition and a flash. The curtain is four columns
- * that sweep up in sequence, with the studio mark riding the last one.
+ * between a deliberate transition and a flash. The curtain is a page turning
+ * over (`lib/pageTurn.ts`) with the loader's pencil drawing on it.
  *
  * Reduced-motion visitors and modifier-clicks (new tab, middle click) bypass
  * the whole mechanism and navigate normally.
@@ -55,15 +55,12 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
         A LINK TO THE PAGE YOU ARE ALREADY ON STILL HAS TO DO SOMETHING.
 
         This used to `return` here, and `TransitionLink` has already called
-        `preventDefault()` by the time it does — so the click was swallowed whole.
-        In the header that reads as a dead link; in the full-screen index it
-        reads as a broken app, because the overlay is still sitting there and
-        nothing you press will move it.
+        `preventDefault()` by the time it does — so the click was swallowed whole,
+        and a nav tab for the page you are on read as a dead link.
 
         Scrolling back to the top is what the rest of the web does with a
         self-referential link, and it is honest: you asked for this page, and
-        this is the top of it. Overlays close themselves — see `MenuOverlay`,
-        which no longer waits for a route change that is not coming.
+        this is the top of it.
       */
       if (href === pathname) {
         const lenis = getLenis();

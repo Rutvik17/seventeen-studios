@@ -3,14 +3,13 @@
  *
  * The founder page is the sketchbook itself: a cover, a prologue, a chapter for
  * each stretch of the career, and the résumé kept in a pocket inside the back
- * cover. It is written in the first person, and every fact in it — employers,
- * titles, dates, the measured outcomes — comes from `resume.ts`, the same
- * record the PDF and the .docx are generated from. Nothing here is invented;
- * where a chapter quotes a number, the résumé states it.
+ * cover. It is written in the first person. Titles and dates are read from
+ * `resume.ts`; every other fact — the measured outcomes, what each role
+ * involved — is the résumé's own, and where a chapter quotes a number, the
+ * résumé states it. Nothing here is invented.
  */
 
 import { asset } from '@/lib/asset';
-import { spell, yearsOfExperience } from '@/lib/time';
 import { resumeEducation, resumeExperience } from './resume';
 import type { DrawingId } from '@/lib/sketchbook/chapters';
 
@@ -76,7 +75,7 @@ export type BookPage = {
   pocket?: boolean;
 };
 
-const years = spell(yearsOfExperience());
+const city = founder.location.split(',')[0];
 
 export const book: BookPage[] = [
   {
@@ -84,7 +83,7 @@ export const book: BookPage[] = [
     tab: 'Cover',
     kicker: 'Sketchbook No. 17',
     title: founder.name,
-    body: `${founder.title} at ${founder.employer}, in Toronto. ${years[0].toUpperCase()}${years.slice(1)} years of work, one page at a time.`,
+    body: `${city}-based ${founder.title} at ${founder.employer}. My journey, one page at a time.`,
     scene: { kind: 'cover' },
     next: 'Open it',
   },
@@ -93,7 +92,7 @@ export const book: BookPage[] = [
     tab: 'Hello',
     kicker: 'First page',
     title: 'Hi, I’m Rutvik.',
-    body: 'I build the part of software people actually touch — the screens in front of big, complicated systems. I studied software engineering in Toronto and have been doing this ever since. This book is the short version.',
+    body: 'I’m a full-stack software engineer and a forward-deployed AI engineer, building agentic AI platforms. I studied software engineering in Toronto, and the pages that follow cover each role since.',
     meta: `${resumeEducation.credential.replace(/^Associate in Applied Science \(A\.A\.S\.\), /, '')} · ${resumeEducation.school} · ${month(resumeEducation.date)}`,
     scene: { kind: 'portrait' },
     next: `Kanata, ${year('Mitel')}`,
@@ -112,8 +111,8 @@ export const book: BookPage[] = [
     id: 'nuvalence',
     tab: year('Nuvalence'),
     kicker: `Consulting, ${year('Nuvalence')}`,
-    title: 'A car and a city.',
-    body: 'At Nuvalence I worked for two very different clients. For Ford, the frontend of their connected-vehicle platform — flows 30% faster. For New York City, a government system that cut manual processing by 40%. Both needed the same thing: a clear screen in front of something complicated.',
+    title: 'Ford, and New York City.',
+    body: 'At Nuvalence I worked on two client engagements. For Ford, I delivered the frontend architecture of the Connected Vehicle platform in React and Redux over Java microservices, improving user flows and page performance by 30%. For New York City, on a government web system that reduced manual processing by 40%, I led the migration to Thymeleaf and supported the project’s move to Spring Boot 3.0.',
     meta: meta('Nuvalence'),
     scene: { kind: 'sketch', drawing: 'nuvalence' },
     next: `Shop-Ware, ${year('Shop-Ware')}`,
@@ -123,7 +122,7 @@ export const book: BookPage[] = [
     tab: year('Shop-Ware'),
     kicker: `Shop-Ware, ${year('Shop-Ware')}`,
     title: 'From the first commit to an acquisition.',
-    body: 'I was Shop-Ware’s only mobile engineer. I built their React Native app from the first commit, for iOS and Android, made it load 20% faster, and set up how it shipped. The product was part of what the company was acquired for.',
+    body: 'I was Shop-Ware’s first mobile engineer. I built their React Native app from scratch, for iOS and Android, made it load 20% faster, and set up how it shipped. The product was part of what the company was acquired for.',
     meta: meta('Shop-Ware'),
     scene: { kind: 'sketch', drawing: 'shopware' },
     next: `EY, ${year('Ernst & Young')}`,
@@ -132,8 +131,8 @@ export const book: BookPage[] = [
     id: 'ey',
     tab: year('Ernst & Young'),
     kicker: `EY, ${year('Ernst & Young')} to now`,
-    title: 'Making enterprise AI make sense.',
-    body: 'At EY I lead the frontend of an agentic AI platform that global companies use for risk analysis, reporting and decisions. There is a lot of noise around AI. My job is the part people touch: clear, fast, and honest about what the machine did.',
+    title: 'Agentic AI, at enterprise scale.',
+    body: 'I work on an agentic AI platform that global enterprises use for risk analysis, reporting and decision support. I architected its multi-tenant Next.js interface over Python microservices on Azure, improving data-retrieval performance by 40%, and took its LLM-powered authoring features from prototype to production. I also drive its design system and frontend standards, and lead code review.',
     meta: meta('Ernst & Young', founder.title, founder.employer),
     scene: { kind: 'story', from: 9.4, to: 20.0 },
     next: 'Now',
@@ -143,7 +142,7 @@ export const book: BookPage[] = [
     tab: 'Now',
     kicker: 'Now',
     title: 'The rest of this book.',
-    body: 'What I build for myself goes in here. Grasp, a calculus course you learn by dragging, is being built on this site. The notebook is blank for now; it won’t be for long.',
+    body: 'From here on, I’m documenting my journey as I learn something new every day. The notebook is where it gets written down.',
     scene: { kind: 'sketch', drawing: 'studio' },
     next: 'The back pocket',
     links: [
@@ -166,7 +165,7 @@ export const book: BookPage[] = [
 export const founderPage = {
   /** What the canvas shows, for anyone who cannot see it. */
   description:
-    'A sketchbook. Its cover opens onto a pencil-and-coloured-pencil portrait of Rutvik, drawing itself; the chapters that follow draw three screens sharing one component library, a connected car and a city, a phone stamped "acquired", a swarm of scribbles breaking a drawing apart and the pieces coming back as a bridge, the 17 mark, and a pocket holding the résumé.',
+    'A sketchbook. Its cover opens onto a pencil-and-coloured-pencil portrait of Rutvik, drawing itself; the chapters that follow draw three screens sharing one component library, a Ford F-150 Raptor on the Brooklyn waterfront with the Brooklyn Bridge and Lower Manhattan behind it, a phone running a repair-shop inspection beside a car up on a lift, stamped "acquired", a swarm of scribbles breaking a drawing apart and the pieces coming back as a bridge, the 17 mark, and a pocket holding the résumé.',
   /** The photograph the first page's portrait is drawn from, in the browser. */
   portrait: asset('/founder/rutvik-patel.jpg'),
   back: 'back',

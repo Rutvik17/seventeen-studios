@@ -44,7 +44,10 @@ export default function LegalPage({ params }: Params) {
         <Prose blocks={policy.blocks} />
         <p className="sheet__aside">
           Anything unclear here is worth asking about.{' '}
-          <ContactLink subject={`${policy.title} — question`} data-cursor="Write" />.
+          <ContactLink subject={`${policy.title} — question`} data-cursor="Write">
+            Write to me
+          </ContactLink>
+          .
         </p>
       </div>
     </Sheet>

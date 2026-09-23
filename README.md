@@ -7,12 +7,12 @@ Rutvik Patel's portfolio, made as one sketchbook. A statically exported Next.js
   cross-hatched, and a contents page with a doodle beside each chapter.
 - **The founder** — the book itself: a cover to open, a page per stretch of the
   career, turned like paper, and the résumé in a pocket inside the back cover.
-- **The notebook** — blank pages, for now: a clean slate for what comes next.
-- **Grasp** — a calculus course you learn by dragging, being built on this site.
+- **The notebook** — where Rutvik documents what he learns, day by day.
+- **Grasp** — a calculus course you learn by dragging, on this site.
 
 The loader is a pencil drawing the 17. Every change of page is a sheet of paper
-turning. The cursor is the pencil: it leaves a faint line behind it and circles
-whatever you point at. The footer is the book's back endpaper — the bookplate
+turning. The cursor is a pencil that leans as it moves and circles whatever you
+can click. The footer is the book's back endpaper — the bookplate
 that says who to return it to.
 
 Live: **https://rutvik17.github.io/seventeen-studios/**
@@ -82,7 +82,7 @@ src/
   app/                     routes (App Router, all statically exported)
     page.tsx               the cover and contents
     founder/               the book: cover, chapters, the résumé in the back pocket
-    notebook/              blank pages — a clean slate
+    notebook/              the notebook
     grasp/                 Grasp: the chalkboard, the live derivative, the lessons
     start/                 contact (the page email links fall back to)
     legal/                 privacy + terms ([slug])
@@ -91,7 +91,7 @@ src/
     Nav.tsx                the top edge: the mark and three index tabs
     Footer.tsx             the back endpaper
     Sheet.tsx              the shell of every simple page
-    Cursor.tsx             the pencil, its trail and its hover marks
+    Cursor.tsx             the pencil and its hover marks
     Preloader.tsx          first visit: a pencil draws the mark, the sheet turns away
     Transition.tsx         page-turn transitions + TransitionLink
     loader/                the pencil-drawn mark
@@ -105,16 +105,19 @@ src/
     sketch/wordmark.ts     the landing's pencil-drawn, cross-hatched title
     pageTurn.ts            the sheet that turns between pages
     url.ts                 where the site lives — the one place it is written
+    sketch/portrait.ts     the founder's photo, redrawn in pencil and coloured pencil
     calculus.ts            Grasp's numeric and exact derivatives
 scripts/
   build-og.mjs             share cards, drawn from the site's own data
-  build-resume.mjs         the PDF and .docx résumé
+  verify-og.mjs            postbuild: every page names a share card that exists
+  verify-assets.mjs        postbuild: every file a page references is in out/
 ```
 
 ### Content
 
 Every word lives in `src/content` as typed data, not JSX. The founder's book is
-`content/founder.ts`, and every fact in it comes from `content/resume.ts`.
+`content/founder.ts`; its titles and dates are read from `content/resume.ts`,
+and every other fact in it is the résumé's own.
 
 ### Anything that moves with the calendar
 
@@ -125,21 +128,10 @@ workflow also runs weekly to keep a figure from going stale.
 
 ### The résumé
 
-`src/content/resume.ts` is the source for the two files in `public/founder`: a
-PDF to hand to a person, and a .docx for applicant tracking systems. The founder
-page offers both for download, with each file's size read from disk at build
-time. They are regenerated with:
-
-```bash
-npm i -D playwright        # only needed for the PDF step
-CHROMIUM_PATH=/path/to/chrome \
-  node --experimental-strip-types scripts/build-resume.mjs
-```
-
-The .docx is deliberately plain — single column, no tables, contact details in
-the body rather than a header, conventional headings, MM/YYYY dates — because
-it has to parse cleanly. The script fails loudly if either file is missing or
-suspiciously small.
+The two files in `public/founder` — a PDF to hand to a person and a .docx for
+applicant tracking systems — are the résumé as Rutvik keeps it, in Word. The
+founder page offers both, with each file's size read from disk at build time.
+To change the résumé, edit the .docx and export the PDF from it.
 
 ### Link previews
 
@@ -152,5 +144,5 @@ missing. The address on the cards and in the sitemap comes from `lib/url.ts`.
 ## Notes on the content
 
 Nothing is invented. No clients, no testimonials, no metric that was not
-measured. The career in `src/content/resume.ts` is a personal employment record,
-and every date and number in the founder's book comes from it.
+measured. Every date in the founder's book comes from `src/content/resume.ts`,
+and every number from the résumé.

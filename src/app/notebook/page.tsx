@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { ogImage } from '@/lib/og';
 import { Sheet } from '@/components/Sheet';
 
-const DESCRIPTION = 'The notebook in Rutvik Patel’s sketchbook — blank pages for now, where the next things he builds are drawn first.';
+const DESCRIPTION = 'The notebook in Rutvik Patel’s sketchbook, where he documents his journey as he learns something new every day.';
 
 export const metadata: Metadata = {
   title: 'Notebook',
@@ -26,8 +26,8 @@ export default function NotebookPage() {
     <Sheet
       className="sheet--blank"
       kicker="Notebook"
-      title="Blank pages."
-      lead={<p>This is where the next things I build get drawn first. Nothing here yet — the pencil is sharpened.</p>}
+      title="Something new, every day."
+      lead={<p>This is where I document my journey as I learn.</p>}
     >
       <div className="sheet__ruled" aria-hidden="true">
         {Array.from({ length: 7 }).map((_, i) => (

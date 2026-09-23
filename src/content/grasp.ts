@@ -16,7 +16,6 @@ export const graspInfo = {
   tagline: 'Calculus you can touch',
   summary:
     'A calculus course you learn by dragging, built right here on the site. Every idea is something you move rather than something you memorise, and no number appears without the working that produced it.',
-  status: 'Being built',
 } as const;
 
 export type Lesson = {

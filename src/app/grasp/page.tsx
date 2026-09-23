@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { ogImage } from '@/lib/og';
 import { graspInfo, graspModule, onTheWeb } from '@/content/grasp';
+import { spell } from '@/lib/time';
 import { Chalkboard } from '@/components/grasp/Chalkboard';
 import { DerivativeInstrument } from '@/components/instruments/DerivativeInstrument';
 import { TransitionLink } from '@/components/Transition';
@@ -74,8 +75,10 @@ export default function GraspPage() {
         </ol>
         <p className={styles.syllabusNote}>
           {onTheWeb === 0
-            ? 'Grasp is being built here, one lesson at a time. The derivative above is the first working piece; the nine lessons follow.'
-            : `${onTheWeb} of ${graspModule.lessons.length} lessons can be done here so far; the rest are being drawn.`}
+            ? `The derivative above is the first working piece; the ${spell(graspModule.lessons.length)} lessons follow it, one at a time.`
+            : onTheWeb < graspModule.lessons.length
+              ? `${onTheWeb} of ${graspModule.lessons.length} lessons can be done here so far; the rest are being drawn.`
+              : `All ${spell(graspModule.lessons.length)} lessons can be done here.`}
         </p>
       </section>
     </article>

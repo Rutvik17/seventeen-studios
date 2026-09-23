@@ -3,10 +3,9 @@
 /**
  * Small global UI store.
  *
- * Three pieces of state need to be readable from unrelated parts of the tree:
- * whether the preloader has finished (gates every entrance animation), whether
- * the index overlay is open, and whether a page transition is covering the
- * screen. Everything else stays local to its component.
+ * One piece of state needs to be readable from unrelated parts of the tree:
+ * whether the preloader has finished, which gates every entrance animation.
+ * Everything else stays local to its component.
  */
 
 import { create } from 'zustand';

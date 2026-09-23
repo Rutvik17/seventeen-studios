@@ -5,7 +5,7 @@
  * globals.css and nothing on this page reads a grasp-specific class from there.
  * The page owns a world the rest of the site does not have — a slate green
  * board — and keeping the selectors local is what stops that world leaking into
- * the studio's paper.
+ * the sketchbook's paper.
  */
 
 /* ---------- the board's world ------------------------------------- */
@@ -319,8 +319,8 @@
 /*
   The instrument keeps its own light palette. It is the one thing on the page
   the reader is meant to TOUCH, and a control that looks like part of the
-  drawing does not read as a control — it also appears inside notebook entries
-  on paper, so it cannot be restyled globally for this page's sake.
+  drawing does not read as a control, so it is not restyled to match the
+  board.
 
   What it gets here is a mount: the board's world recedes to a frame around it.
 */
@@ -422,59 +422,3 @@
 
 /* ---------- the way out ------------------------------------------- */
 
-.out {
-  padding: clamp(50px, 8vh, 110px) var(--gutter) clamp(90px, 14vh, 180px);
-  display: grid;
-  justify-items: center;
-  text-align: center;
-  gap: clamp(22px, 3vh, 38px);
-}
-
-.outLine {
-  font-family: var(--font-hand), 'Segoe Print', cursive;
-  font-weight: 600;
-  font-size: clamp(26px, 3.6vw, 46px);
-  line-height: 1.1;
-  color: var(--chalk);
-  max-width: 22ch;
-}
-
-/*
-  The button is chalk too — an outline drawn round the words, the way a teacher
-  boxes the thing that matters. Filled at rest would make it a web button
-  dropped onto a board.
-*/
-.learn {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
-  padding: 18px 34px;
-  border: 2px solid var(--chalk-accent);
-  border-radius: 40px;
-  font-family: var(--font-hand), 'Segoe Print', cursive;
-  font-weight: 700;
-  font-size: clamp(22px, 2.3vw, 30px);
-  color: var(--chalk-accent);
-  transition:
-    background 0.35s var(--ease-out),
-    color 0.35s var(--ease-out),
-    gap 0.35s var(--ease-out);
-}
-
-.learn:hover {
-  background: var(--chalk-accent);
-  color: var(--slate-deep);
-  gap: 22px;
-}
-
-.learn i {
-  font-style: normal;
-}
-
-.outNote {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--chalk-dim);
-}

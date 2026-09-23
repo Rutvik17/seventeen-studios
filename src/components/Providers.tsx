@@ -6,8 +6,6 @@
  * - Creates the Lenis instance and drives it from the GSAP ticker so scroll
  *   and animation share a single frame loop.
  * - Keeps ScrollTrigger in sync with Lenis's virtual scroll position.
- * - Publishes scroll velocity as a CSS custom property, which the marquee and
- *   the section rail read without needing to subscribe in React.
  */
 
 import { useEffect, type ReactNode } from 'react';
@@ -33,13 +31,7 @@ export function Providers({ children }: { children: ReactNode }) {
     const raf = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(raf);
 
-    const onScroll = (instance: Lenis) => {
-      ScrollTrigger.update();
-      document.documentElement.style.setProperty(
-        '--scroll-velocity',
-        Math.max(-3, Math.min(3, instance.velocity / 12)).toFixed(3),
-      );
-    };
+    const onScroll = () => ScrollTrigger.update();
     lenis.on('scroll', onScroll);
 
     return () => {
