@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { asset } from '@/lib/asset';
+import { site } from '@/content/studio';
 import { contactHref } from '@/lib/contact';
 
 /**
@@ -26,9 +26,9 @@ import { contactHref } from '@/lib/contact';
  *
  * WHAT A VISITOR WITHOUT JAVASCRIPT GETS
  *
- * A real link to `/start/`, the contact page, where the GitHub and LinkedIn
- * links work with no script at all. Not a dead `#`, not a button that does
- * nothing, not a tooltip saying "enable JavaScript".
+ * A real link to his LinkedIn, where he can be messaged with no script at all.
+ * Not a dead `#`, not a button that does nothing, not a tooltip saying "enable
+ * JavaScript".
  *
  * This is the part worth being careful about. The obvious implementation
  * renders `<a href="#">` and swaps it on mount, which looks identical in every
@@ -38,6 +38,9 @@ import { contactHref } from '@/lib/contact';
  * costs one attribute and removes the whole failure mode. It also means the
  * upgrade is genuinely an upgrade: mailto is the convenience, not the only door.
  */
+
+/** Where the link goes until the address is attached. */
+const FALLBACK = site.social.find((s) => s.label === 'LinkedIn')!.href;
 
 type ContactLinkProps = {
   className?: string;
@@ -61,15 +64,8 @@ export function ContactLink({
     el.href = contactHref();
   }, []);
 
-  /*
-    asset() on a ROUTE, unusually, and for the same reason it is used on files:
-    this href is written by hand rather than by next/link, so nothing rewrites
-    basePath for it. Before hydration replaces it with the mailto, a bare
-    "/start/" resolves against the domain root and 404s on every page that
-    carries a contact link.
-  */
   return (
-    <a ref={ref} href={asset('/start/')} className={className} {...rest}>
+    <a ref={ref} href={FALLBACK} className={className} {...rest}>
       {children}
     </a>
   );

@@ -209,7 +209,6 @@ function stageChalkboard() {
     <text x="${n(fx(at) + 18)}" y="${n(fy(curve.f(at)) - 16)}" fill="${CHALK_ACCENT}" font-family="Caveat, cursive" font-size="34" opacity="0.95">slope = 2x</text>`;
 }
 
-
 /** The mark, for pages whose subject is the site itself. */
 /** The notebook: a ruled page, blank, with a pencil resting across it. */
 function plateBlank(w, h, ink, accent) {
@@ -229,14 +228,6 @@ function plateBlank(w, h, ink, accent) {
     <text x="${w - 16}" y="${h - 22}" text-anchor="end" fill="${ink}" fill-opacity="0.5" font-family="Caveat, cursive" font-size="30">p. 1</text>`;
 }
 
-function plateMark(box, ink) {
-  const s = box * 0.62;
-  const h = (s / 36) * 26;
-  return `<g transform="translate(${(box - s) / 2}, ${(box - h) / 2}) scale(${s / 36})" fill="${ink}">
-    <path d="${LOGO.one}"/><path d="${LOGO.seven}"/>
-  </g>`;
-}
-
 /**
  * Every plate takes the same arguments so the renderer never special-cases one.
  * `(width, height, ink, accent)`.
@@ -244,7 +235,6 @@ function plateMark(box, ink) {
 const PLATES = {
   contents: (w, h, ink, accent) => plateContents(w, h, ink, accent),
   blank: (w, h, ink, accent) => plateBlank(w, h, ink, accent),
-  mark: (w, h, ink) => plateMark(Math.min(w, h), ink),
 };
 
 /** Plates that want a landscape box rather than the square the diagrams use. */
@@ -416,7 +406,6 @@ function html(card) {
  * What gets made
  * ------------------------------------------------------------------ */
 
-
 function cards() {
   const list = [
     {
@@ -458,17 +447,7 @@ function cards() {
       titleSize: 96,
       footRight: 'Learn calculus',
     },
-    {
-      file: 'start',
-      label: 'Contact',
-      title: 'Write to me.',
-      standfirst: 'Roles, questions, or something in the sketchbook.',
-      plate: 'mark',
-      titleSize: 72,
-      footRight: site.location,
-    },
   ];
-
 
   return list;
 }

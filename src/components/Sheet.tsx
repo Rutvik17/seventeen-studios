@@ -3,8 +3,8 @@ import type { ReactNode } from 'react';
 /**
  * A page of the sketchbook: gridded paper, a margin rule, a handwritten note at
  * the top and a title under it. Every simple page on the site is one of these,
- * so the notebook, contact and the 404 all read as leaves of the same book as
- * the landing and the founder page.
+ * so the notebook and the 404 read as leaves of the same book as the landing
+ * and the founder page.
  */
 export function Sheet({
   kicker,
