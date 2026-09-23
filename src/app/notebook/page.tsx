@@ -15,16 +15,12 @@ export const metadata: Metadata = {
 };
 
 /**
- * The notebook: a clean slate.
- *
- * Every earlier entry and instrument has been taken out so the notebook can
- * start again in the sketchbook's own style. Until the first new page is
- * drawn, this says so plainly rather than pretending otherwise.
+ * The notebook: ruled pages, in the sketchbook's own style. Entries, when they
+ * are written, belong in `src/content` and list here.
  */
 export default function NotebookPage() {
   return (
     <Sheet
-      className="sheet--blank"
       kicker="Notebook"
       title="Something new, every day."
       lead={<p>This is where I document my journey as I learn.</p>}

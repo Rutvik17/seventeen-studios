@@ -6,8 +6,8 @@
  * Every sketchbook has the same thing inside its back cover: a bookplate with
  * the owner's name and where to send the book if it is found. This is that
  * page — the name, the city, a way to write, and the two places he is
- * elsewhere — with the small print (the year, the legal pages) set along the
- * bottom edge the way a colophon is.
+ * elsewhere — with the small print (the book's number and the year) set along
+ * the bottom edge the way a colophon is.
  *
  * It replaced a four-column site map, a full-width wordmark and a legal row:
  * a web footer, bolted onto the bottom of a book. The book has three sections
@@ -17,8 +17,6 @@
 
 import { useEffect, useState } from 'react';
 import { site, endpaper } from '@/content/studio';
-import { policies } from '@/content/policies';
-import { TransitionLink } from './Transition';
 import { ContactLink } from './ContactLink';
 
 /**
@@ -51,13 +49,6 @@ export function Footer({ buildYear }: { buildYear: number }) {
       <div className="endpaper__edge">
         <span className="mono-label" suppressHydrationWarning>
           {endpaper.label} · © {year} {endpaper.owner}
-        </span>
-        <span className="endpaper__legal">
-          {policies.map((policy) => (
-            <TransitionLink key={policy.slug} href={`/legal/${policy.slug}/`} className="mono-label">
-              {policy.title.split(' — ')[0]}
-            </TransitionLink>
-          ))}
         </span>
       </div>
     </footer>

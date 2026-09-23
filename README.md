@@ -85,7 +85,6 @@ src/
     notebook/              the notebook
     grasp/                 Grasp: the chalkboard, the live derivative, the lessons
     start/                 contact (the page email links fall back to)
-    legal/                 privacy + terms ([slug])
     globals.css            tokens, the chrome, and the shared page styles
   components/
     Nav.tsx                the top edge: the mark and three index tabs

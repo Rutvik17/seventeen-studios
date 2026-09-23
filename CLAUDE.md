@@ -63,8 +63,8 @@ it rather than as a web page:
    `/seventeen-studios`. This shipped: the founder portrait and both résumé
    downloads were dead in production while every stylesheet loaded. Route paths
    do not need it; `TransitionLink` wraps `next/link`.
-3. **Content is data, not markup.** All copy lives in `src/content/*.ts` typed by
-   `src/content/types.ts`. Pages compose; they do not author. When the notebook
+3. **Content is data, not markup.** All copy lives in `src/content/*.ts`, typed
+   where it is declared. Pages compose; they do not author. When the notebook
    fills up again, an entry should be one object in one file, with the index and
    the sitemap following automatically.
 4. **Never let an animation be able to hide content permanently.** Hidden states
