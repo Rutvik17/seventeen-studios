@@ -1,45 +1,69 @@
 /**
  * Rutvik, as data.
  *
- * The identity the rest of the site states — the tab title, the share cards and
- * the panel on the landing's share image all read it from here.
- *
- * The founder page that used to render this record has been cleared for a
- * rebuild. The career itself lives in `resume.ts`, which is the source
- * `scripts/build-resume.mjs` generates the PDF and the .docx from.
+ * The identity the rest of the site states — the tab title, the share cards —
+ * and the few strings the founder page sets. The career itself lives in
+ * `resume.ts`, which is the source `scripts/build-resume.mjs` generates the PDF
+ * and the .docx from, and which the founder page lists from directly.
  */
+
+import { asset } from '@/lib/asset';
 
 export const founder = {
   name: 'Rutvik Patel',
   role: 'Software Engineer',
   location: 'Toronto, Canada',
+  /*
+    What the founder page's closing card reads. Not `role`: that is the site's
+    own sentence-case description of him; this is his title where he works.
+
+    THE EMPLOYER IS "EY", NOT "ERNST & YOUNG"
+    The firm rebranded in 2013. "EY" is not an abbreviation of the current name,
+    it IS the current name — the one on their letterhead and on ey.com — and
+    "Ernst & Young" is the older legal entity. The résumé's company header
+    carries the long form, which is where a reader meets the name cold; this is
+    the short form after first reference.
+  */
+  title: 'Senior Software Engineer',
+  employer: 'EY',
 } as const;
 
 /**
- * What the e-ink panel prints on the landing's share image.
+ * The founder page: a sketchbook that draws a story, then a card and the
+ * résumé.
  *
- * Deliberately not read from `founder.role`. That field is the site's own
- * description of him and reads in sentence case; this is firmware output on a
- * 5 x 7 bitmap font with no lowercase.
+ * The scene names are the only words on the story. They show as a running
+ * label while it plays, and as the captions of the storyboard that replaces the
+ * animation for anyone who has asked for reduced motion.
  */
-export const panelCard = {
-  /*
-    THE EMPLOYER IS "EY" ON EDITORIAL GROUNDS, NOT TECHNICAL ONES
-    The firm rebranded in 2013. "EY" is not an abbreviation of the current name,
-    it IS the current name — the one on their letterhead and on ey.com — and
-    "Ernst & Young" is the older legal entity. So this is the correct label even
-    where there is room for the longer one.
-
-    Worth stating, because the font has no `&` glyph and unknown glyphs fall back
-    to a space (`pixelfont.ts`), so the long form would print with a hole in it.
-    That looks like the reason and is not: at scale 2 "ERNST & YOUNG" measures
-    154 of the 286px available, so it would fit comfortably if an ampersand were
-    drawn. Adding one would not make it the right thing to print here.
-
-    The long form is not missing from the site — the résumé's company header
-    carries it, which is where a reader meets the name cold. This is the short
-    form after first reference.
-  */
-  role: 'Senior Software Engineer',
-  employer: 'EY',
+export const founderPage = {
+  scenes: [
+    'The blank page',
+    'The spark',
+    'The obstacle',
+    'The breakthrough',
+    'The finished page',
+  ],
+  /** What the canvas shows, for anyone who cannot see it. */
+  description:
+    'A sketchbook opens. A spark draws a head in profile with an idea inside it; a swarm of scribbles and ink drops breaks the drawing apart; the pieces reassemble as a clean drawing of a suspension bridge.',
+  cta: 'Turn Page to Enter',
+  skip: 'Skip',
+  replay: 'Replay',
+  resumeLabel: 'Résumé',
+  resumeTitle: 'The record',
+  downloads: [
+    {
+      format: 'PDF',
+      note: 'To read, print or forward',
+      href: asset('/founder/rutvik-patel-resume.pdf'),
+      file: 'public/founder/rutvik-patel-resume.pdf',
+    },
+    {
+      format: 'DOCX',
+      note: 'For applicant tracking systems',
+      href: asset('/founder/rutvik-patel-resume.docx'),
+      file: 'public/founder/rutvik-patel-resume.docx',
+    },
+  ],
 } as const;

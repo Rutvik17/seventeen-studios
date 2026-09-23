@@ -11,19 +11,19 @@ import type { EmbedId } from '@/content/types';
  * WHY A LOOKUP AND NOT A COMPONENT IN THE CONTENT
  *
  * Content is data (rule 3) and data has to stay serialisable. A notebook entry
- * says `{ type: 'embed', component: 'board3d' }` — a string — and this file is
+ * says `{ type: 'embed', component: 'risk' }` — a string — and this file is
  * the only place that knows what that string means. Putting the component
  * itself in the content file would make the content module import React, drag
- * three.js into every page that lists entries, and stop the content being
+ * every instrument into every page that lists entries, and stop the content being
  * something a script could read.
  *
  * ---
  *
  * EVERYTHING HERE IS LOADED ON DEMAND
  *
- * Each embed is a `dynamic()` import with `ssr: false`. Three.js alone is about
- * 150 KB; an article that mentions the board should not make a reader who never
- * scrolls to it pay for a renderer. `ssr: false` because these all touch the
+ * Each embed is a `dynamic()` import with `ssr: false`. An article that
+ * mentions an instrument should not make a reader who never scrolls to it pay
+ * for it. `ssr: false` because these all touch the
  * canvas or the window during mount, and a static export would otherwise try to
  * render them at build time and fail.
  *
@@ -36,16 +36,6 @@ const Placeholder = ({ label }: { label: string }) => (
   <div className="embed__placeholder">
     <span className="mono-label">{label}</span>
   </div>
-);
-
-const BoardExplorer = dynamic(
-  () => import('./BoardExplorer').then((m) => m.BoardExplorer),
-  { ssr: false, loading: () => <Placeholder label="Loading the board…" /> },
-);
-
-const TraceWidth = dynamic(
-  () => import('./TraceWidth').then((m) => m.TraceWidth),
-  { ssr: false, loading: () => <Placeholder label="Loading the calculator…" /> },
 );
 
 const DerivativeInstrument = dynamic(
@@ -73,10 +63,6 @@ const RigDemo = dynamic(
 
 export function Embed({ component }: { component: EmbedId }) {
   switch (component) {
-    case 'board3d':
-      return <BoardExplorer />;
-    case 'trace-width':
-      return <TraceWidth />;
     case 'derivative':
       return <DerivativeInstrument />;
     case 'risk':

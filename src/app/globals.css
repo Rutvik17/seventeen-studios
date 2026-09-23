@@ -45,21 +45,6 @@
   --accent-2: #b4622a;
   --accent-2-soft: rgba(180, 98, 42, 0.1);
 
-  /*
-    THE BOARD. A real soldermask green over FR-4, with the copper and the
-    exposed-drill colours a fabricator would actually produce. Kept as its own
-    group because the landing page is the only thing that uses them and they
-    must not drift into the interface.
-  */
-  --pcb-soldermask: #14483a;
-  --pcb-soldermask-hi: #1c6350;
-  --pcb-edge: #0c2f26;
-  --pcb-copper: #c9962f;
-  --pcb-pad: #d9ae4a;
-  --pcb-hole: #0a221c;
-  --pcb-silk: #e8efe9;
-  --pcb-body: #23262b;
-  --pcb-bezel: #2b2e33;
   /* The plane — Grasp's ground, defined here and applied only there. */
   --grid-unit: 24px;
   --grid-line: rgba(20, 22, 26, 0.05);
@@ -540,9 +525,10 @@ code {
 /* ---------- The loader ------------------------------------------- */
 
 /*
-  ONE LOADING SCREEN, THREE PLACES.
+  ONE LOADING SCREEN.
 
-  First visit, page transitions and the founder page's model all show this. They
+  First visit and page transitions both show this (the founder page's 3D model
+  was a third, and went with it). They
   used to show three unrelated things — a simulated boot log, a bare numeral, and
   a filling one — which made the site look like three sites that shared a
   typeface.
@@ -1183,8 +1169,8 @@ body:has([data-slate]):not(:has(.menu[data-open])) .nav.is-scrolled {
   /*
     An explicit `minmax(0, 1fr)` track. A grid with no `grid-template-columns`
     gets one implicit `auto` column, and `auto` cannot shrink below its widest
-    child's min-content width — so a single wide embed (the risk desk, the board
-    explorer) stretched the whole prose column past the viewport and took every
+    child's min-content width — so a single wide embed (the risk desk, and before
+    it the board explorer) stretched the whole prose column past the viewport and took every
     paragraph with it. That is why lesson text ran off the right on a phone.
   */
   grid-template-columns: minmax(0, 1fr);
@@ -1482,10 +1468,6 @@ ol.prose__list li::before {
     animation-iteration-count: 1 !important;
     transition-duration: 0.08s !important;
     scroll-behavior: auto !important;
-  }
-  .hero__cue-line,
-  .hero__pulse {
-    animation: none;
   }
   .marquee__track {
     transform: none;
@@ -2623,290 +2605,6 @@ html.no-js .exploded .exploded__svg {
 }
 
 /* ==================================================================
-   THE BOARD — landing
-   ================================================================== */
-
-/*
-  The outer element is the SCROLL TRACK; the stage inside it pins. Splitting the
-  two is what lets the board hold still and fully visible while it assembles,
-  rather than assembling on its way out of frame.
-*/
-.board-story {
-  position: relative;
-  height: 560vh;
-}
-
-.board-story__stage {
-  height: 100svh;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
-  grid-template-rows: auto 1fr auto;
-  gap: 0 clamp(16px, 3vw, 48px);
-  align-items: center;
-  padding: clamp(64px, 9vh, 104px) var(--gutter) clamp(28px, 5vh, 56px);
-  overflow: hidden;
-}
-
-/* Reduced motion and no-JS: nothing pins, so the track must collapse to the
-   drawing's own height or the page carries five viewports of nothing. */
-.board-story[data-static='true'] {
-  height: auto;
-}
-
-.board-story[data-static='true'] .board-story__stage {
-  height: auto;
-}
-
-/* ---- the wordmark ---- */
-
-/*
-  Pinned to the frame, edge to edge, at the largest size the viewport allows.
-  `clamp` on a vw basis rather than a fixed size: this is the site's signature
-  and it should always be the biggest thing on screen, at every width.
-*/
-.board-story__wordmark {
-  grid-column: 1 / -1;
-  font-family: var(--font-display), sans-serif;
-  font-weight: 800;
-  font-size: clamp(40px, 11.4vw, 190px);
-  line-height: 0.82;
-  letter-spacing: -0.035em;
-  text-transform: uppercase;
-  margin: 0;
-  pointer-events: none;
-  /* Descenders clip under sub-1 leading — pad, then pull the space back. */
-  padding-bottom: 0.06em;
-  margin-bottom: -0.06em;
-}
-
-.board-story__wordmark--top {
-  grid-row: 1;
-  justify-self: start;
-}
-
-.board-story__wordmark--bottom {
-  grid-row: 3;
-  justify-self: end;
-}
-
-.board-story__eyebrow {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: end;
-  justify-self: end;
-  color: var(--muted);
-  pointer-events: none;
-}
-
-.board-story__line {
-  grid-column: 1;
-  grid-row: 3;
-  align-self: center;
-  max-width: 26ch;
-  font-size: clamp(14px, 1vw, 17px);
-  color: var(--fg-dim);
-}
-
-/* ---- the drawing ---- */
-
-.board-story__canvas {
-  grid-column: 1;
-  grid-row: 2;
-  min-height: 0;
-  display: grid;
-  place-items: center;
-}
-
-.board-story__svg {
-  width: 100%;
-  height: 100%;
-  max-height: 62svh;
-  overflow: visible;
-}
-
-.board-story__silk {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 2px;
-  letter-spacing: 0.08em;
-  fill: var(--pcb-silk);
-  opacity: 0.75;
-}
-
-.board-story__ref {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 2.4px;
-  fill: var(--pcb-silk);
-}
-
-.board-story__ref-small {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 1.5px;
-  fill: var(--pcb-silk);
-  opacity: 0.7;
-}
-
-.board-story__pad {
-  fill: var(--pcb-pad);
-}
-
-.board-story__body {
-  fill: var(--pcb-body);
-}
-
-.board-story__pin1 {
-  fill: var(--pcb-silk);
-}
-
-/* Copper. Round joins matter: a mitre on a 45° corner is exactly the
-   over-etched acute angle real design rules forbid. */
-.board-story__trace {
-  fill: none;
-  stroke: var(--pcb-copper);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.board-story__trace--signal {
-  stroke: var(--pcb-copper);
-  opacity: 0.82;
-}
-
-.board-story__trace--ground {
-  stroke: #8a8f96;
-}
-
-/* The moving charge. Drawn over its own trace, never instead of it. */
-.board-story__flow {
-  fill: none;
-  stroke: #ffe9a8;
-  stroke-linecap: round;
-}
-
-.board-story__scope {
-  fill: rgba(10, 34, 28, 0.75);
-  stroke: var(--pcb-copper);
-  stroke-width: 0.15;
-}
-
-.board-story__wave {
-  fill: none;
-  stroke: #7fe3b0;
-  stroke-width: 0.28;
-  stroke-linecap: round;
-}
-
-/*
-  The flat-flex cable. A translucent tan band with copper conductors running
-  down it — which is what makes it read as a cable rather than as a drawn line.
-  The single thick stroke this replaced looked like a rope.
-*/
-.board-story__ribbon-body {
-  fill: #c79a68;
-  fill-opacity: 0.92;
-  stroke: #9c6f42;
-  stroke-width: 0.18;
-}
-
-.board-story__ribbon-wire {
-  fill: none;
-  stroke: #8a6134;
-  stroke-width: 0.34;
-  opacity: 0.55;
-}
-
-/* ---- the readout ---- */
-
-.board-story__readout {
-  grid-column: 2;
-  grid-row: 2;
-  align-self: center;
-  border-left: 1px solid var(--line);
-  padding-left: clamp(14px, 1.6vw, 26px);
-}
-
-.board-story__act {
-  color: var(--accent);
-}
-
-.board-story__act span {
-  color: var(--muted);
-  margin-right: 8px;
-}
-
-.board-story__caption {
-  font-size: clamp(16px, 1.3vw, 21px);
-  line-height: 1.3;
-  margin-top: 6px;
-  max-width: 22ch;
-}
-
-.board-story__calc {
-  margin-top: calc(var(--grid-unit) * 0.9);
-  padding-top: calc(var(--grid-unit) * 0.7);
-  border-top: 1px solid var(--line);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 12.5px;
-  line-height: 1.7;
-  /* Tabular figures: these numbers change as the reader scrolls and
-     proportional digits make the whole block shuffle sideways. */
-  font-variant-numeric: tabular-nums;
-}
-
-.board-story__calc dt {
-  color: var(--muted);
-  margin-bottom: 6px;
-}
-
-.board-story__calc strong {
-  color: var(--accent);
-}
-
-.board-story__note {
-  display: block;
-  margin-top: 8px;
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
-.board-story__acts {
-  list-style: none;
-  display: grid;
-  gap: 10px;
-  font-size: 14px;
-}
-
-@media (max-width: 1000px) {
-  /* The readout column cannot survive a narrow viewport without squeezing the
-     drawing into a strip. It goes under the board instead. */
-  .board-story__stage {
-    /* `minmax(0, 1fr)`, never a bare `1fr`. A bare `1fr` is `minmax(auto, 1fr)`,
-       so the column cannot shrink below its content's min-content width — and
-       the wordmark is one unbreakable word. At 390px that pinned the single
-       column to 476px inside a 350px box and pushed the readout, the drawing
-       and the calc block off the right edge together. */
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto 1fr auto auto;
-  }
-  .board-story__readout {
-    grid-column: 1;
-    grid-row: 4;
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    padding-left: 0;
-    padding-top: 12px;
-  }
-  .board-story__eyebrow,
-  .board-story__line {
-    display: none;
-  }
-  .board-story__wordmark--bottom {
-    grid-row: 3;
-  }
-}
-
-/* ==================================================================
    OUTRO + CONTACT
    ================================================================== */
 
@@ -3276,149 +2974,6 @@ html.no-js .exploded .exploded__svg {
   -webkit-line-clamp: none;
 }
 
-/* ==================================================================
-   SCROLL CUE
-   ================================================================== */
-
-/*
-  A pinned landing has one real usability failure: the page does not move on the
-  first wheel notch — the board changes instead — so a visitor can decide the
-  site is stuck.
-
-  It sits on the LEFT EDGE, vertical. Centred at the bottom it landed directly on
-  the STUDIOS wordmark and read as a mistake. Out here it is a gauge on the side
-  of an instrument, which is the same register as the rest of the drawing.
-*/
-.board-cue {
-  position: absolute;
-  left: calc(var(--gutter) * 0.34);
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  pointer-events: none;
-  z-index: 3;
-}
-
-.board-cue__label {
-  writing-mode: vertical-rl;
-  color: var(--muted);
-  letter-spacing: 0.22em;
-  white-space: nowrap;
-}
-
-/*
-  THE ARROW, DRAWN — the same one the Grasp board uses at the foot of its title
-  screen, down to the path data and the timing.
-
-  It replaced a segment travelling down a hairline rail. There is nothing wrong
-  with a rail, but a site with two scroll cues on it should not say the same
-  thing in two accents, and the drawn arrow is the one that carries meaning: it
-  is made by the same `stroke-dashoffset` mechanism as every curve on the
-  chalkboard, so the cue is the same material as the work.
-
-  Dash lengths are the paths' own. The shaft is 48 units; each leg of the head
-  is √(9² + 13²) ≈ 15.8, so 32 covers the pair.
-*/
-.board-cue__arrow {
-  width: 22px;
-  height: auto;
-  overflow: visible;
-  fill: none;
-  stroke: var(--muted);
-  stroke-width: 2.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  animation: board-cue-drift 2.8s var(--ease-out) infinite;
-}
-
-.board-cue__shaft {
-  stroke-dasharray: 48;
-  animation: board-cue-shaft 2.8s var(--ease-out) infinite;
-}
-
-.board-cue__head {
-  stroke-dasharray: 32;
-  animation: board-cue-head 2.8s var(--ease-out) infinite;
-}
-
-@keyframes board-cue-shaft {
-  0% {
-    stroke-dashoffset: 48;
-    opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  46% {
-    stroke-dashoffset: 0;
-  }
-  76% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 0;
-  }
-}
-
-@keyframes board-cue-head {
-  0%,
-  36% {
-    stroke-dashoffset: 32;
-    opacity: 0;
-  }
-  42% {
-    opacity: 1;
-  }
-  64% {
-    stroke-dashoffset: 0;
-  }
-  76% {
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 0;
-  }
-}
-
-@keyframes board-cue-drift {
-  0% {
-    transform: translateY(-5px);
-  }
-  70%,
-  100% {
-    transform: translateY(5px);
-  }
-}
-
-/*
-  A repeating drift is a vestibular offender, and this is the only thing on the
-  landing that never stops moving. Reduced motion gets it drawn, still, saying
-  the same thing.
-*/
-@media (prefers-reduced-motion: reduce) {
-  .board-cue__arrow,
-  .board-cue__shaft,
-  .board-cue__head {
-    animation: none;
-  }
-  .board-cue__shaft,
-  .board-cue__head {
-    stroke-dashoffset: 0;
-  }
-}
-
-@media (max-width: 1000px) {
-  .board-cue {
-    display: none;
-  }
-}
-
 /* The products index already has a page header, so its row list should not
    add another block of top padding under it. */
 .section-rows--flush {
@@ -3710,202 +3265,6 @@ html.no-js .exploded .exploded__svg {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   color: var(--muted);
-}
-
-/* ==================================================================
-   THE BOARD EXPLORER
-   ================================================================== */
-
-.explorer {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
-  gap: clamp(16px, 2.4vw, 36px);
-  align-items: start;
-}
-
-.explorer__stage {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  background: var(--bg-sunk);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  cursor: grab;
-  /* Vertical drags must still scroll the page — the board only turns on
-     horizontal movement, and stealing pan-y would trap a phone reader. */
-  touch-action: pan-y;
-}
-
-.explorer__stage:active {
-  cursor: grabbing;
-}
-
-.explorer__canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.explorer__spots {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-/*
-  Hotspots are real buttons, positioned each frame from a 3D projection. Their
-  `transform` and `opacity` are written directly by the frame loop — never set
-  here, or the two fight and the labels jitter.
-*/
-.explorer__spot {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: var(--bg-raise);
-  border: 1px solid var(--line-strong);
-  box-shadow: var(--shadow-sm);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.06em;
-  color: var(--fg);
-  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
-  will-change: transform, opacity;
-}
-
-.explorer__spot.is-active,
-.explorer__spot:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-
-.explorer__spot-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.explorer__hint {
-  position: absolute;
-  left: 50%;
-  bottom: 12px;
-  transform: translateX(-50%);
-  color: var(--muted);
-  pointer-events: none;
-}
-
-.explorer__panel {
-  padding: calc(var(--grid-unit) * 0.9);
-  background: var(--bg-raise);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  /* Follows the reader down while they click through parts on a tall screen. */
-  position: sticky;
-  top: 96px;
-}
-
-.explorer__ref {
-  color: var(--accent);
-}
-
-.explorer__name {
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(19px, 1.8vw, 26px);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  margin: 4px 0 8px;
-}
-
-.explorer__is {
-  font-size: 15px;
-  line-height: 1.55;
-}
-
-.explorer__facts {
-  margin-top: calc(var(--grid-unit) * 0.9);
-  display: grid;
-  gap: calc(var(--grid-unit) * 0.7);
-}
-
-.explorer__facts dt {
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-
-.explorer__facts dd {
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--fg-dim);
-}
-
-.explorer__spec {
-  margin-top: calc(var(--grid-unit) * 0.9);
-  padding-top: calc(var(--grid-unit) * 0.7);
-  border-top: 1px solid var(--line);
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 10px;
-}
-
-.explorer__spec strong {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 15px;
-  color: var(--accent);
-}
-
-/*
-  Always in the document, not a fallback that appears when something breaks —
-  so the entry can be read without WebGL, without a pointer, and by a screen
-  reader that will never see the canvas.
-*/
-.explorer__all {
-  grid-column: 1 / -1;
-  margin-top: 6px;
-  border-top: 1px solid var(--line);
-  padding-top: calc(var(--grid-unit) * 0.7);
-}
-
-.explorer__all summary {
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.explorer__all dl {
-  margin-top: calc(var(--grid-unit) * 0.8);
-  display: grid;
-  gap: calc(var(--grid-unit) * 0.6);
-}
-
-.explorer__all dt {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 12.5px;
-  color: var(--accent);
-}
-
-.explorer__all dd {
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--fg-dim);
-  max-width: 70ch;
-}
-
-@media (max-width: 900px) {
-  .explorer {
-    /* `minmax(0, 1fr)`, not a bare `1fr`: a bare one is `minmax(auto, 1fr)`
-       and cannot shrink below its widest unbreakable child, so the column
-       — and everything in it — overflows the phone instead of fitting. */
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .explorer__panel {
-    position: static;
-  }
 }
 
 /* ==================================================================
@@ -4333,11 +3692,7 @@ html.no-js .exploded .exploded__svg {
     grid-column: 1 / -1;
   }
 
-  /* The board's readout column sits under the drawing here and does not need
-     to hold a monospace block at desktop measure. */
-  .board-story__calc {
-    font-size: 11.5px;
-  }
+  
 }
 
 @media (max-width: 700px) {
@@ -4358,53 +3713,11 @@ html.no-js .exploded .exploded__svg {
     display: none;
   }
 
-  /*
-    THE BOARD STORY.
+  
 
-    560vh of pinned scroll is a long way to travel on a phone for a drawing that
-    is a third the size. The five acts still run; they simply need less thumb.
-  */
-  .board-story {
-    height: 340vh;
-  }
+  
 
-  .board-story__stage {
-    padding-top: clamp(56px, 12vh, 88px);
-  }
-
-  /*
-    The wordmark is the site's signature and should still dominate, but at 11.4vw
-    it lands at 44px on a phone — smaller than the row titles below it, which
-    inverts the hierarchy.
-  */
-  .board-story__wordmark {
-    font-size: clamp(46px, 15vw, 72px);
-  }
-
-  /*
-    THE READOUT COMES OFF ON A PHONE.
-
-    On desktop it is the point of the page — the working beside the drawing, the
-    thing that makes the board checkable rather than decorative. On a phone it
-    is stacked UNDER the board in a single column, so the two of them are
-    dividing one screen between them: the act caption and its calculation take
-    roughly a third of the viewport, and what is left is a wordmark and a
-    circuit board squeezed into the gap. Everything was legible and nothing had
-    any room.
-
-    So the phone keeps the two things that survive being small — the wordmark
-    and the board — and drops the column of figures, which needs a measure it
-    cannot have here. The desktop page is where the argument is made; this is
-    the reading version of the site.
-  */
-  .board-story__readout {
-    display: none;
-  }
-
-  /* With the readout gone the drawing can have the room it was sharing. */
-  .board-story__svg {
-    max-height: 58svh;
-  }
+  
 
   /*
     THE BAR RUNS OUT OF ROOM BEFORE THE ROUTES DO.
@@ -4456,20 +3769,6 @@ html.no-js .exploded .exploded__svg {
 }
 
 @media (max-width: 560px) {
-  /*
-    The explorer's 4:3 stage is 292px tall at this width, which is not enough to
-    turn a board in. Squarer gives the object room without pushing the panel
-    below the fold.
-  */
-  .explorer__stage {
-    aspect-ratio: 1 / 1;
-  }
-
-  .explorer__spot {
-    font-size: 9.5px;
-    padding: 2px 6px;
-  }
-
   /*
     The holdings table keeps its price column here; at 5.5rem it is the one
     figure that stays comparable down a column, and losing it would leave a
@@ -4760,45 +4059,6 @@ html.no-js .exploded .exploded__svg {
 
 @media (max-width: 700px) {
   /*
-    THE WORDMARK OVERFLOWED, AND THE FIRST FIX GUESSED.
-
-    It was sized by a `vw` clamp against an ESTIMATED glyph advance of 0.82em,
-    chosen as a supposed worst case. The estimate was 27% low, so the word still
-    ran off the screen. Measured on a clone at a 100px reference — the same
-    technique `FitText` uses, and for the same reason — Syne ExtraBold sets
-    "SEVENTEEN" at 1016px, i.e. 10.16x the font size, and "STUDIOS" at 7.31x.
-    Every number below comes from that measurement rather than from a guess.
-
-    Inside the gutter, fitting SEVENTEEN means 350 / 10.16 = 34.4px — smaller
-    than the 35.1px row titles underneath, which is the hierarchy inversion this
-    block was originally written to avoid. So on a phone the lockup goes
-    full-bleed instead (see the narrower query below): it is the treatment the
-    footer wordmark already uses, it reads as deliberate rather than clipped,
-    and it buys back the size.
-  */
-  .board-story__wordmark {
-    font-size: min(8.4vw, 54px);
-    max-width: 100%;
-  }
-
-  /*
-    THE BOARD PAINTED OVER THE WORDS.
-
-    `.board-story__svg` carries `overflow: visible`, so anything the drawing
-    puts outside its box — the display panel sits well above the board in the
-    viewBox — lands on top of whatever grid row is above it. On a phone that row
-    is the wordmark.
-
-    Clipping the canvas cell fixes it without touching the drawing, and it is
-    safe: the geometry check in `scripts/verify-drawing.mjs` already asserts
-    that nothing legitimately leaves the frame, so there is nothing outside the
-    viewBox worth showing.
-  */
-  .board-story__canvas {
-    overflow: hidden;
-  }
-
-  /*
     SIDEWAYS SCROLL ON THE LESSON PAGES.
 
     `overflow-x: hidden` on `body` does not reliably stop the page scrolling —
@@ -4818,131 +4078,6 @@ html.no-js .exploded .exploded__svg {
      at this width. */
   .page-head__title {
     font-size: clamp(34px, 11vw, 52px);
-  }
-}
-
-/* ==================================================================
-   PHONES — the landing lockup goes full-bleed
-   ==================================================================
-
-   Last in the file on purpose. The `max-width: 700px` block above also sets
-   `.board-story__wordmark`'s font-size, and at equal specificity the later rule
-   wins — so this has to come after it or the phone size is silently ignored,
-   which is exactly what happened on the first attempt.
-*/
-
-@media (max-width: 560px) {
-  /*
-    Edge to edge, cancelling the stage's gutter with a negative inline margin
-    rather than `width: 100vw` — `100vw` counts a classic scrollbar and would
-    overflow by its width on any browser that still draws one.
-
-    9.6vw sizes SEVENTEEN (10.16x its font size, measured on a clone at a 100px
-    reference) to the full viewport with a little air: 312px of 320, 380px of
-    390, 546px of 560. That lands it above the 35.1px row titles below it, which
-    is the hierarchy the in-gutter sizing could not hold.
-  */
-  .board-story__wordmark {
-    margin-inline: calc(var(--gutter) * -1);
-    max-width: none;
-    font-size: 9.6vw;
-  }
-}
-
-/* ==================================================================
-   THE BOARD'S READOUT — a reserved height, and a drawing that stays in its row
-   ==================================================================
-
-   Two faults, one symptom: on a phone the board climbed over the wordmarks as
-   the story ran.
-
-   1. The working block under the caption is a different height on every act
-      (192px on 01, 384px on 05). In the single-column phone layout the readout
-      is a grid ROW, so every act change resized the drawing's row and moved the
-      board. Every act is now rendered and stacked in one cell, so the block is
-      as tall as the tallest act throughout and nothing moves.
-
-   2. `.board-story__svg` sets `height: 100%`, which does not resolve against an
-      auto-height parent — so the drawing fell back to its intrinsic ratio
-      (350px wide against a 108x154 viewBox is 499px tall) and was pinned at the
-      `max-height` of 46svh = 388px regardless of the row it was in. Once the row
-      shrank past that it simply painted outside itself, over the type. Capping
-      it at the row's own height keeps it where it belongs.
-
-   Desktop is deliberately untouched by both: there the readout is a side column
-   that never sizes the drawing's row, and its rows are already constant at every
-   act.
-*/
-
-.board-story__working {
-  display: grid;
-}
-
-/*
-  Removed from layout on desktop, so the side panel is only ever as tall as the
-  act being shown and its border does not stretch.
-*/
-.board-story__slot {
-  display: none;
-}
-
-.board-story__slot[data-current] {
-  display: block;
-}
-
-@media (max-width: 1000px) {
-  /*
-    All slots occupy the same cell so the block reserves the tallest. Hidden with
-    `visibility`, not `display`, so they still contribute their height — and
-    `visibility: hidden` also takes them out of the accessibility tree, which
-    matters inside an `aria-live` region.
-  */
-  .board-story__slot {
-    display: block;
-    grid-area: 1 / 1;
-    visibility: hidden;
-  }
-
-  .board-story__slot[data-current] {
-    visibility: visible;
-  }
-
-  /*
-    The drawing may never be taller than the row it sits in. `min()` keeps the
-    existing 46svh ceiling as well, so the board does not grow on a short, wide
-    phone held sideways.
-  */
-  /*
-    The canvas must take its height FROM the row rather than from its content.
-    `min-height: 0` only lets the row shrink; the item itself still laid out at
-    the drawing's intrinsic 499px and hung out of the bottom. A grid item's
-    percentage height resolves against its grid area, which is definite, so this
-    pins the canvas to the row — and gives `max-height: 100%` below something
-    real to resolve against, which it did not have before.
-  */
-  .board-story__canvas {
-    height: 100%;
-    position: relative;
-  }
-
-  /*
-    Positioned rather than sized by percentages. `height: 100%` and
-    `max-height: 100%` both go through percentage resolution against a centred
-    grid item, which did not hold: the canvas was correctly pinned to its 269px
-    row and the drawing still laid out at 388px and hung 175px out of the bottom,
-    across the lower wordmark and into the readout.
-
-    `inset: 0` makes the drawing's box the canvas's box by definition, with no
-    percentage to resolve, and `preserveAspectRatio` (the default `xMidYMid
-    meet`) then scales the whole viewBox to fit inside it. The drawing cannot
-    paint outside the row it belongs to.
-  */
-  .board-story__svg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    max-height: none;
   }
 }
 
@@ -4975,19 +4110,217 @@ html.no-js .exploded .exploded__svg {
 .instrument__value.is-up { color: var(--accent); }
 .instrument__value.is-down { color: var(--accent-2); }
 
-/* ---- the trades ---- */
-
-@media (max-width: 700px) {
-  /* Shares and the running balance are the first things to go on a phone. */
-}
-
 /* ---- where the Mondays went ---- */
-
-/* What came out the far end. */
-@media (max-width: 640px) {
-  /* The bar is decoration once the row has to wrap; the count is the fact. */
-}
 
 /* ---- focusing a trade ---- */
 
 /* The rows are the way to the trades on the chart, so they look like it. */
+
+/* ==================================================================
+   THE LANDING — two pendulums, and the working beside them
+   ================================================================== */
+
+/*
+  One screen, no pinning: the pendulums keep swinging on their own clock, so
+  there is nothing for the scroll to drive. Wordmark top and bottom, the drawing
+  between, the readout in the right-hand column.
+*/
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0 clamp(16px, 3vw, 48px);
+  padding: clamp(64px, 9vh, 104px) var(--gutter) clamp(28px, 5vh, 56px);
+  overflow: hidden;
+}
+
+/*
+  Pinned to the frame, edge to edge, at the largest size the viewport allows.
+  This is the site's signature and it should always be the biggest thing on
+  screen, at every width.
+*/
+.hero__wordmark {
+  grid-column: 1 / -1;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: clamp(40px, 11.4vw, 190px);
+  line-height: 0.82;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  margin: 0;
+  pointer-events: none;
+  position: relative;
+  z-index: 1;
+  /* Descenders clip under sub-1 leading — pad, then pull the space back. */
+  padding-bottom: 0.06em;
+  margin-bottom: -0.06em;
+}
+
+.hero__wordmark--top {
+  grid-row: 1;
+  justify-self: start;
+}
+
+.hero__wordmark--bottom {
+  grid-row: 3;
+  justify-self: end;
+}
+
+.hero__eyebrow {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
+  justify-self: end;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.hero__line {
+  grid-column: 1;
+  grid-row: 3;
+  align-self: center;
+  max-width: 26ch;
+  font-size: clamp(14px, 1vw, 17px);
+  color: var(--fg-dim);
+}
+
+.hero__stage {
+  grid-column: 1;
+  grid-row: 2;
+  min-height: 0;
+  position: relative;
+}
+
+/*
+  `pan-y`, not `none`. A phone has to be able to scroll past the landing with a
+  thumb that happens to start on the drawing, so touch drags scroll the page and
+  a tap is what releases the pendulums.
+*/
+.hero__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.hero__canvas:active {
+  cursor: grabbing;
+}
+
+.hero__readout {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  display: grid;
+  gap: 18px;
+  padding-left: clamp(16px, 2vw, 28px);
+  border-left: 1px solid var(--line);
+}
+
+.hero__caption {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  font-size: clamp(18px, 1.5vw, 24px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.hero__figures {
+  display: grid;
+  gap: 14px;
+}
+
+.hero__figure dt {
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.hero__figure dd {
+  display: grid;
+  gap: 2px;
+}
+
+.hero__figure strong {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 500;
+  font-size: clamp(17px, 1.3vw, 21px);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+
+.hero__figure:nth-child(2) strong {
+  color: var(--accent);
+}
+
+.hero__note {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--fg-dim);
+}
+
+.hero__hint {
+  color: var(--muted);
+}
+
+@media (max-width: 1000px) {
+  /*
+    `minmax(0, 1fr)`, never a bare `1fr`: the wordmark is one unbreakable word,
+    and a bare `1fr` cannot shrink below its min-content width.
+  */
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(52svh, 1fr) auto auto;
+  }
+  .hero__readout {
+    grid-column: 1;
+    grid-row: 4;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding-left: 0;
+    padding-top: 16px;
+    margin-top: 20px;
+  }
+  .hero__figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 20px;
+  }
+  .hero__eyebrow,
+  .hero__line {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .hero {
+    padding-top: clamp(56px, 12vh, 88px);
+  }
+  /*
+    Syne ExtraBold sets "SEVENTEEN" at 10.16x its font size (measured on a clone
+    at a 100px reference). Inside the gutter that is too small to outrank the
+    row titles below it, so on a phone the lockup goes full-bleed instead.
+  */
+  .hero__wordmark {
+    font-size: min(8.4vw, 54px);
+    max-width: 100%;
+  }
+  .hero__note {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  /*
+    Edge to edge, cancelling the gutter with a negative inline margin rather than
+    `width: 100vw`, which counts a classic scrollbar. 9.6vw sizes SEVENTEEN to
+    the viewport with a little air: 380px of 390.
+  */
+  .hero__wordmark {
+    margin-inline: calc(var(--gutter) * -1);
+    max-width: none;
+    font-size: 9.6vw;
+  }
+}

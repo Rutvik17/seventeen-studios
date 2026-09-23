@@ -1,0 +1,377 @@
+/*
+ * The founder page.
+ *
+ * Isolated in a module so the page can change without touching the rest of the
+ * site. The sketchbook's palette is declared here, on the story itself, rather
+ * than in globals.css: it is the drawing's own colours — paper, graphite,
+ * charcoal, ink and one crimson — and like the landing's old board colours it
+ * must not leak into the interface. The renderer reads them back with
+ * `getComputedStyle`, so they are written down exactly once.
+ */
+
+.story {
+  --sketch-paper: #f3ead5;
+  --sketch-paper-edge: #d8c59e;
+  --sketch-graphite: #34343a;
+  --sketch-charcoal: #1d1d21;
+  --sketch-ink: #1f3a8a;
+  --sketch-accent: #c8233f;
+
+  position: relative;
+  height: 100svh;
+  min-height: 560px;
+  /* The colour the canvas paints, so there is paper before it does — and if it never does. */
+  background: var(--sketch-paper);
+  color: var(--sketch-charcoal);
+  overflow: hidden;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- the running scene label and the controls ---- */
+
+.scene,
+.controls {
+  position: absolute;
+  bottom: clamp(18px, 4vh, 36px);
+  z-index: 2;
+  color: var(--sketch-graphite);
+}
+
+.scene {
+  left: var(--gutter);
+}
+
+.controls {
+  right: var(--gutter);
+}
+
+.controls button {
+  color: inherit;
+  padding: 8px 0;
+  border-bottom: 1px solid currentColor;
+}
+
+/* ---- the card ---- */
+
+.card {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: clamp(14px, 2.4vh, 26px);
+  padding: 0 var(--gutter);
+  text-align: center;
+  pointer-events: none;
+}
+
+.name {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: clamp(44px, 9vw, 150px);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  margin: 0;
+  /* Descenders clip under sub-1 leading — pad, then pull the space back. */
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.title {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 0.7em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: clamp(12px, 1.1vw, 15px);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sketch-graphite);
+}
+
+.sep {
+  color: var(--sketch-accent);
+}
+
+.cta {
+  position: relative;
+  pointer-events: auto;
+  margin-top: clamp(10px, 3vh, 34px);
+  display: inline-grid;
+  place-items: center;
+  width: 280px;
+  max-width: 100%;
+  height: 64px;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  color: var(--sketch-charcoal);
+}
+
+.cta > span {
+  position: relative;
+}
+
+.outline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.outline path {
+  fill: none;
+  stroke: var(--sketch-charcoal);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.outline path + path {
+  stroke-width: 1;
+  opacity: 0.55;
+}
+
+/*
+  The pulse: a crimson halo breathing behind the drawn outline, once the outline
+  has finished drawing (`data-live` is set by the script at that moment). The
+  accent appears in the story only at the breakthrough, and here — the only
+  thing on the page that asks to be done next.
+*/
+.cta::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 6px;
+  opacity: 0;
+}
+
+.cta[data-live]::before {
+  animation: sketchPulse 2.2s ease-in-out infinite;
+}
+
+.cta:hover .outline path,
+.cta:focus-visible .outline path {
+  stroke: var(--sketch-accent);
+}
+
+@keyframes sketchPulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(200, 35, 63, 0.32);
+  }
+  60% {
+    opacity: 1;
+    box-shadow: 0 0 0 16px rgba(200, 35, 63, 0);
+  }
+}
+
+/*
+  REDUCED MOTION — the storyboard.
+
+  Nothing is layered: the sheet of four frames, their captions, then the card,
+  one after another down the page. The pulse is a repeating movement and comes
+  off; the crimson outline says the same thing still.
+*/
+.story[data-static] {
+  height: auto;
+  min-height: 0;
+  padding: clamp(80px, 12vh, 120px) var(--gutter) clamp(40px, 8vh, 80px);
+}
+
+.story[data-static] .stage {
+  position: relative;
+  height: clamp(320px, 48vw, 460px);
+}
+
+.story[data-static] .card {
+  position: static;
+  padding-top: clamp(32px, 6vh, 64px);
+}
+
+.story[data-static] .cta .outline path:first-child {
+  stroke: var(--sketch-accent);
+}
+
+.captions {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+  padding: 0 14px;
+  color: var(--sketch-graphite);
+}
+
+@media (max-width: 899px) {
+  .story[data-static] .stage {
+    height: clamp(420px, 110vw, 620px);
+  }
+  .captions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta[data-live]::before {
+    animation: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .story {
+    height: 88svh;
+  }
+  .scene {
+    display: none;
+  }
+}
+
+/* ==================================================================
+   THE RÉSUMÉ
+   ================================================================== */
+
+.resume {
+  padding: clamp(80px, 14vh, 160px) var(--gutter) clamp(80px, 12vh, 140px);
+  max-width: var(--max);
+  margin: 0 auto;
+  display: grid;
+  gap: clamp(40px, 7vh, 72px);
+  /* Lenis and anchor jumps land here, below the fixed header. */
+  scroll-margin-top: 40px;
+}
+
+.resumeHead {
+  display: grid;
+  gap: 12px;
+}
+
+.resumeHead h2 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: clamp(40px, 6vw, 88px);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  padding-bottom: 0.08em;
+}
+
+.resumeHead :global(.mono-label) {
+  color: var(--muted);
+}
+
+.downloads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(12px, 2vw, 24px);
+}
+
+.download {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 8px 16px;
+  padding: clamp(20px, 3vw, 36px);
+  background: var(--bg-raise);
+  border-radius: var(--radius-lg, 14px);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.download:hover,
+.download:focus-visible {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.format {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: clamp(34px, 4.4vw, 64px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+}
+
+.arrow {
+  font-size: clamp(22px, 2.4vw, 32px);
+  line-height: 1;
+  color: var(--fg);
+}
+
+.meta {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  color: var(--fg-dim);
+  font-size: 15px;
+}
+
+.meta :global(.mono-label) {
+  color: var(--muted);
+}
+
+.roles {
+  list-style: none;
+  display: grid;
+  border-top: 1px solid var(--line);
+}
+
+.role {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 6px 24px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.roleTitle {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  font-size: clamp(18px, 1.6vw, 24px);
+  letter-spacing: -0.02em;
+}
+
+.roleCompany {
+  color: var(--fg-dim);
+}
+
+.roleDates {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .downloads {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .role {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .roleCompany {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .roleDates {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

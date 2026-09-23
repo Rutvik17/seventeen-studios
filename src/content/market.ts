@@ -57,7 +57,8 @@ export type Asset = {
 };
 
 /**
- * The companion's sentiment model, fitted at build time.
+ * The sentiment model, fitted at build time — the subject of the logistic
+ * regression lesson in the notebook.
  *
  * A logistic regression over four price-derived features, trained by gradient
  * descent on all six names and evaluated on a chronological hold-out. The
@@ -124,23 +125,3 @@ export type MarketData = {
 };
 
 export const market = raw as MarketData;
-
-export const assetBySymbol = (symbol: string): Asset | undefined =>
-  market.assets.find((a) => a.symbol === symbol);
-
-/**
- * How the companion should feel about a move.
- *
- * Bands are in units of the asset's OWN daily volatility, not fixed
- * percentages — which is the only way this can be honest across these six
- * names. A 3% day is unremarkable for Rocket Lab at 92% annualised and a
- * significant event for Alphabet at 32%; a fixed threshold would have Mochi
- * permanently alarmed about one and asleep through the other.
- *
- * Daily sigma is the annual figure divided by √252, because variance adds with
- * time and standard deviation therefore grows with its square root.
- */
-export function sigmasFor(asset: Asset, changePercent: number, tradingDays = 252): number {
-  const dailySigma = (asset.volatility / Math.sqrt(tradingDays)) * 100;
-  return dailySigma === 0 ? 0 : changePercent / dailySigma;
-}

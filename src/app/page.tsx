@@ -1,4 +1,4 @@
-import { BoardStory } from '@/components/sections/BoardStory';
+import { Hero } from '@/components/sections/Hero';
 import { Marquee } from '@/components/Marquee';
 import { ProjectIndex } from '@/components/sections/ProjectIndex';
 import { Outro } from '@/components/sections/Outro';
@@ -7,7 +7,7 @@ import { marqueeItems } from '@/content/studio';
 /**
  * The landing.
  *
- * Three things, in this order: a board that builds itself, the list of what has
+ * Three things, in this order: two pendulums coming apart, the list of what has
  * been built, and one question.
  *
  * There is no manifesto, no process diagram, no set of principles and no
@@ -19,7 +19,7 @@ import { marqueeItems } from '@/content/studio';
 export default function HomePage() {
   return (
     <>
-      <BoardStory />
+      <Hero />
       <Marquee items={marqueeItems} />
       <ProjectIndex />
       <Outro />
