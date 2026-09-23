@@ -105,11 +105,12 @@ export const projects: Project[] = [
     status: 'Designing',
     stack: ['ESP32-C3', 'E-ink', 'KiCad', 'C++'],
     /*
-      The founder page, where the same device is built as an object rather than
-      drawn. This used to point at `/#top` — back to the top of the page the
-      card is already on — which looked like a link and did nothing.
+      The notebook entry that designs this board — trace widths, crystal load
+      capacitors and battery life, each worked from its formula. It pointed at
+      the founder page, which built the device in 3D, until that page was
+      cleared for a rebuild.
     */
-    href: '/founder/',
+    href: '/notebook/designing-a-circuit-board/',
     color: '#d3e3da',
     ink: '#123f33',
   },

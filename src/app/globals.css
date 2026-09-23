@@ -4416,10 +4416,9 @@ html.no-js .exploded .exploded__svg {
     What stays is the three routes that are read: the notebook, the lab and
     Grasp. Contact and the founder page come off, and neither is lost — the
     Index button opens the full site overlay, the footer carries contact in
-    two forms, and the founder page is still linked from the work list below.
-    They are the two the bar can most afford to drop: one is a destination
-    people arrive at from a link rather than hunt for in a header, and the
-    other is a 600vh scroll story.
+    two forms, and the founder page is currently empty. They are the two the
+    bar can most afford to drop: one is a destination people arrive at from a
+    link rather than hunt for in a header, and the other has nothing on it yet.
   */
   .nav__link[data-label='contact'],
   .nav__link[data-label='founder'] {

@@ -3,8 +3,9 @@
 /**
  * The loader, wherever a loader is needed.
  *
- * One component, three callers: the first-visit preloader, the page-transition
- * curtain, and the founder page waiting on its model. They used to be three
+ * One component, two callers: the first-visit preloader and the page-transition
+ * curtain. (A third, the founder page waiting on its model, went with that
+ * page's 3D scene.) They used to be three
  * different screens — a boot log with a progress rail on first load, a bare "17"
  * on route changes, and the filling numeral on the founder page — so the site
  * appeared to have three loading states that had nothing to do with each other.
