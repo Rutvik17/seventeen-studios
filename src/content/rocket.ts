@@ -1,171 +1,91 @@
 /**
- * The words on the rocket-physics entry: four chapters on one page. The
- * numbers beside them are computed by `lib/rocket/`; nothing here states a
- * figure — where a line needs one, it is a function the chapter fills in.
+ * The words on the rocket-physics entry: one trip, pad to Moon. The numbers
+ * beside them are computed by `lib/rocket/`; nothing here states a figure —
+ * where a line needs one, it is a function the page fills in.
  */
 
-/** Shared by every chapter. */
 export const rocketCopy = {
-  chapter: 'Chapter',
-  holdCursor: 'Hold',
+  title: 'From the Pad to the Moon',
+  lede: 'Press lift off and follow one rocket all the way: up through the air, into orbit, three days across to the Moon and down onto it — while its booster turns round and flies home to be caught.',
+  drawing: 'A pencil drawing of the trip: a rocket climbing from its launch tower, into orbit round the Earth, across to the Moon and down onto it.',
+  split: 'The booster, flying home',
   sound: 'Sound',
-  deck: { label: 'Chapters', previous: 'Previous chapter', next: 'Next chapter' },
-  /** The arrows drawn on a rocket. */
-  arrows: { thrust: 'push', weight: 'pull' },
+  cursor: 'Go',
+  button: { ready: 'Lift off', playing: 'Pause', paused: 'Play', done: 'Watch again' },
+  clock: (time: string) => `T+ ${time}`,
   up: 'up',
   down: 'down',
   groundHolds: 'the ground holds it up',
-  fullPower: 'at full power',
-  highest: 'highest',
-  /** The words every chapter's numbers are written in. */
-  glossary: [
-    'A newton (N) measures a push or a pull. A kilonewton (kN) is 1,000 newtons.',
-    'm/s² is how much faster something goes every second. Gravity pulls with less of it the higher you go.',
-    '√ means square root: the number that, multiplied by itself, makes the number inside.',
+  steps: 'Steps of the trip',
+
+  /** The strip of steps under the drawing; each jumps to its moment. */
+  phases: [
+    { at: 'liftoff', label: 'Lift-off' },
+    { at: 'separation', label: 'Separation' },
+    { at: 'boostback', label: 'Booster home' },
+    { at: 'orbit', label: 'Orbit' },
+    { at: 'docked', label: 'Refuel' },
+    { at: 'moonBurn', label: 'To the Moon' },
+    { at: 'descent', label: 'Landing' },
   ],
-} as const;
 
-/** Marks up the height ruler, with how high each one is. */
-const landmarks = [
-  { km: 11, label: 'airliners' },
-  { km: 100, label: 'space begins' },
-  { km: 400, label: 'space station' },
-] as const;
+  /** Dashed heights on the sky. */
+  heights: [
+    { km: 11, label: 'airliners · 11 km' },
+    { km: 100, label: 'space begins · 100 km' },
+  ],
+  earth: 'Earth',
+  moon: 'Moon',
+  /** The arrows beside the rocket at lift-off. */
+  arrows: { push: 'push', pull: 'pull' },
 
-export const liftOffCopy = {
-  id: 'lift-off',
-  title: 'The Invisible Anchor',
-  lede: 'Gravity pulls everything toward the middle of the Earth. A rocket lifts off only when its engine pushes harder than that pull. When the engine stops, gravity slows it and brings it back down. Only a rocket faster than escape speed never returns.',
-  drawing: 'A pencil drawing of a rocket on a launch pad, with Earth below and a height ruler up the side.',
-  button: 'Hold to fire the engine',
-  landmarks,
-  /**
-   * What the rocket is doing, in one short line. Which one shows is decided by
-   * the forces, not the button: push against pull, and which way it is going.
-   */
-  status: {
-    ready: 'On the pad. Gravity pulls it down; the ground holds it up.',
-    straining: 'The engine is on, but not pushing harder than gravity yet.',
-    climbing: 'The push beats the pull, so it climbs faster and faster.',
-    slowing: 'The engine is on, but gravity is still winning. The climb is slowing.',
-    fastEnough: 'Faster than escape speed! Let go now and it never comes back.',
-    coasting: 'Engine off. Gravity is slowing it down.',
-    above: 'Out of sight, but too slow to escape. Gravity will bring it back.',
-    falling: 'Falling back. Fire the engine to slow it down.',
-    braking: 'The engine is slowing the fall.',
-    landed: (speed: string) => `Back on the ground, landing at ${speed}.`,
-    escaped: 'Escaped! Gravity can slow it down, but never bring it back.',
+  /** What is happening, one line at a time. */
+  beats: {
+    ready: 'On the pad. The engines must push harder than gravity pulls.',
+    liftoff: 'Lift-off! The push beats the pull.',
+    climb: 'Tipping east as it climbs: going sideways is what will keep it up.',
+    separation: (height: string) => `${height} up, above almost all the air: the booster lets go.`,
+    toOrbit: 'The ship keeps burning, flatter and faster, while the booster flies home.',
+    caught: 'Caught! The tower’s arms close round the booster.',
+    orbit: 'Engine off. Fast enough sideways to keep falling round the Earth: in orbit.',
+    refuel: 'Its tanks are nearly empty, so a tanker docks and fills them.',
+    moonBurn: 'Burn! Almost fast enough to escape the Earth — the Moon’s pull will do the rest.',
+    coast: 'Coasting to the Moon. Gravity does all the steering.',
+    arrive: 'Behind the Moon, a braking burn. Without it, the ship would fly straight past.',
+    moonOrbit: (lap: string) => `Circling the Moon, once every ${lap}.`,
+    dip: 'A small burn, to swoop down to 15 km on the far side.',
+    descent: 'Down to the ground, slowing all the way.',
+    landed: (time: string) => `Touchdown on the Moon, ${time} after lift-off.`,
   },
+
   /** The working, line by line, in words first. */
   working: {
     weight: 'Gravity’s pull (weight) = mass × gravity',
-    thrust: 'Engine’s push (thrust)',
+    thrust: 'Engines’ push',
     net: 'Push − pull',
-    escape: 'Escape speed = √(2 × gravity × distance from Earth’s centre)',
     motion: 'Speed and height',
-    faster: 'faster than escape speed',
-    slower: 'slower than escape speed',
+    circle: 'Speed to circle the Earth here = √(gravity × distance from Earth’s centre)',
+    sideways: 'Ship’s speed sideways',
+    booster: 'Booster: speed and height',
+    caughtAt: (time: string) => `caught by the tower at T+ ${time}`,
+    fuel: 'Fuel in the ship’s tanks',
+    speed: 'Speed',
+    escape: 'Escape speed here = √(2 × gravity × distance from Earth’s centre)',
+    toMoon: 'Distance to the Moon',
+    moonGravity: 'Gravity at the Moon’s surface',
+    share: (share: string) => `${share} of Earth’s`,
+    circleMoon: 'Speed to circle the Moon here = √(its gravity there × distance from its centre)',
+    moonHeight: 'Speed and height above the Moon',
   },
-  notes: ['Most rockets never need escape speed: chapter three goes sideways instead, and chapter four comes back on purpose.'],
-  keptSimple: 'Kept simple: the rocket flies straight up, time is sped up, and there is no air, no spinning Earth and no fuel getting used up.',
-} as const;
 
-export const stagingCopy = {
-  id: 'staging',
-  title: 'Lighter and Faster',
-  lede: 'Most of a rocket is fuel. As the engine burns it, the rocket gets lighter, so the same push speeds it up more and more. An empty tank is only dead weight, so rockets are built in stages: when one runs dry, it drops off and the next engine takes over.',
-  drawing: 'A pencil drawing of a two-stage rocket on a launch pad, with a fuel gauge in each stage.',
-  button: 'Hold to fire the engine',
-  landmarks,
-  status: {
-    ready: 'Two stages on the pad, full of fuel.',
-    straining: 'The engine is on, but not pushing harder than gravity yet.',
-    first: 'Stage one is burning fuel: lighter every second, so faster every second.',
-    dropped: 'Stage one is empty. It drops away, and stage two takes over.',
-    second: 'Stage two is burning, with no empty tank to carry.',
-    slowing: 'The engine is on, but gravity is still winning. The climb is slowing.',
-    burnout: (speed: string) => `Every drop of fuel used: top speed ${speed}.`,
-    coasting: 'Engine off. Gravity is slowing it down.',
-    falling: 'Falling back: going straight up, even two stages are too slow to escape.',
-    landed: (speed: string) => `Back on the ground, landing at ${speed}.`,
-  },
-  working: {
-    mass: 'Mass: rocket and the fuel left in it',
-    net: 'Push − pull',
-    speedUp: 'Speed gained each second = (push − pull) ÷ mass',
-    motion: 'Speed and height',
-    compare: 'Top speed, burning all the fuel',
-    twoStages: 'two stages',
-    oneStage: 'one stage',
-  },
-  notes: ['Falcon 9 is built the same way, in two stages. Its first stage is the one that comes back to land, in chapter four.'],
-  keptSimple: 'Kept simple: it flies straight up, time is sped up, and there is no air.',
-} as const;
-
-export const orbitCopy = {
-  id: 'orbit',
-  title: 'Falling Around the World',
-  lede: 'Isaac Newton imagined a cannon on a mountain so tall it pokes out of the air. Fire it gently and the ball curves down to the ground. Fire it faster and it lands further away, until it goes so fast that the ground curves away beneath it as fast as it falls. It never lands: it is in orbit.',
-  drawing: 'A pencil drawing of the whole Earth, with a cannon on a very tall mountain at the top.',
-  button: 'Hold to load the cannon',
-  release: 'Let go to fire',
-  ring: (height: string) => `space station · ${height}`,
-  cannon: 'Newton’s cannon',
-  status: {
-    ready: (height: string) => `The cannon is ${height} up, as high as the space station flies. Hold to load it.`,
-    falls: 'Too slow: it would curve down to the ground.',
-    orbits: 'Fast enough to keep falling around the Earth.',
-    escapes: 'Faster than escape speed: it would leave for good.',
-    flying: 'Curving down towards the ground…',
-    leaving: 'Faster than escape speed: it is leaving for good.',
-    landed: (distance: string) => `Landed ${distance} round the Earth.`,
-    orbiting: (time: string) => `In orbit: once round the Earth every ${time}.`,
-    escaped: 'Gone for good: gravity can slow it, but never bring it back.',
-  },
-  working: {
-    speed: 'Speed of the throw',
-    circle: 'Speed to circle at this height = √(gravity × distance from Earth’s centre)',
-    escape: 'Escape speed = √(2 × gravity × distance from Earth’s centre)',
-    where: 'Where it goes',
-    lands: (distance: string) => `lands ${distance} away`,
-    orbits: (time: string) => `round the Earth every ${time}`,
-    escapes: 'away for good',
-  },
-  notes: ['The space station does exactly this: always falling, but moving sideways so fast that it keeps missing the Earth.'],
-  keptSimple: 'Kept simple: there is no air, and no mountain is that tall — Everest is under 9 km.',
-} as const;
-
-export const landingCopy = {
-  id: 'landing',
-  title: 'Coming Home',
-  lede: 'A reusable booster falls back from high above the sea and lands on a ship. Its engine can slow it down but cannot hold it still, so the burn has to be timed: zero speed just as the legs touch the deck. Too early and it stops in mid-air; too late and it hits hard.',
-  drawing: 'A pencil drawing of a rocket booster falling towards a landing ship at sea.',
-  button: { ready: 'Drop the booster', flying: 'Hold to fire the engine', down: 'Drop it again' },
-  status: {
-    ready: (height: string) => `The booster is ${height} up. Drop it, then fire the engine to land it.`,
-    falling: 'Falling. Fire when the distance it needs to stop reaches its height.',
-    braking: 'The engine is slowing the fall.',
-    rising: 'Going back up: let go!',
-    empty: 'Out of fuel, and still in the air.',
-    soft: (speed: string) => `A soft landing, at ${speed}.`,
-    hard: (speed: string) => `Touched down at ${speed}: too hard.`,
-  },
-  working: {
-    weight: 'Gravity’s pull (weight) = mass × gravity',
-    net: 'Push − pull',
-    stop: 'Distance needed to stop = speed² ÷ (2 × slowing)',
-    fuel: 'Fuel left',
-    motion: 'Speed and height',
-    atFullPower: 'at full power',
-    cannotStop: 'it cannot stop',
-  },
   notes: [
-    'speed² means speed × speed. Slowing is how much speed the engine takes off each second, at full power.',
-    'Falcon 9’s first stage lands like this, on a ship at sea or back on land.',
+    'A made-up trip, built from real steps. SpaceX already catches Starship’s booster with the tower’s arms; refuelling in orbit and landing Starship on the Moon are planned, not yet done. The way to the Moon is Apollo 11’s.',
+    'The rocket is Starship-sized: a 71 m booster and a 50 m ship. A meganewton (MN) is a million newtons of push, and a tonne (t) is 1,000 kg.',
   ],
-  keptSimple: 'Kept simple: there is no air. A real booster also uses the air to slow down before it fires.',
+  glossary: [
+    'm/s² is how much faster something goes every second. Gravity pulls with less of it the higher you go.',
+    '√ means square root: the number that, multiplied by itself, makes the number inside.',
+  ],
+  keptSimple: 'Kept simple: a flat slice through space, a simple sky, and no spin of the Earth or Moon. One tanker visit stands in for the several a real trip would need.',
 } as const;
 
-/** The chapters, in order. */
-export const rocketChapters = [liftOffCopy, stagingCopy, orbitCopy, landingCopy] as const;
-export type RocketChapterId = (typeof rocketChapters)[number]['id'];
