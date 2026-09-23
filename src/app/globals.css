@@ -1247,10 +1247,46 @@ body:has([data-slate]) .nav.is-scrolled::before {
   text-underline-offset: 7px;
 }
 
-/* The blank notebook: ruled lines waiting, and a folio. */
+/* The notebook's entries, each written on a ruled line. */
+.sheet__entries {
+  margin-top: clamp(40px, 8vh, 80px);
+  max-width: 46rem;
+  display: grid;
+  list-style: none;
+}
+.sheet__entry {
+  display: grid;
+  gap: 4px;
+  padding: 16px 0 14px;
+  border-bottom: 1px solid rgba(31, 58, 138, 0.22);
+}
+.sheet__entry-title {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: clamp(24px, 2.4vw, 34px);
+  letter-spacing: -0.03em;
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 6px;
+  transition: text-decoration-color 0.25s;
+}
+.sheet__entry:hover .sheet__entry-title,
+.sheet__entry:focus-visible .sheet__entry-title {
+  text-decoration-color: var(--accent-2);
+}
+.sheet__entry-summary {
+  max-width: 56ch;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--fg-dim);
+}
+
+/* Blank ruled lines under the entries, and a folio. */
 .sheet__ruled {
   position: relative;
-  margin-top: clamp(40px, 8vh, 80px);
+  margin-top: 34px;
   max-width: 46rem;
   display: grid;
   gap: 34px;
