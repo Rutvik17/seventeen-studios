@@ -7,7 +7,10 @@
  *   volume shaken by filtered noise — a random gain that turns a hum into a
  *   crackling rumble — plus a band of noise for the roar. All of it follows
  *   the throttle.
- * - A chime when the rocket escapes: a pentatonic arpeggio of sine tones.
+ * - A chime when something is won — an escape, an orbit, a soft landing: a
+ *   pentatonic arpeggio of sine tones.
+ * - A knock: a stage coming apart or the cannon firing (a clunk), or
+ *   something hitting the ground (a thud) — a burst of the noise, filtered.
  *
  * Browsers only allow sound after the visitor does something, so this is
  * created from inside a press, never on load.
@@ -18,6 +21,7 @@ export type RocketAudio = {
   /** Engine power, 0 to 1. */
   setThrust(level: number): void;
   chime(): void;
+  knock(kind: 'clunk' | 'thud'): void;
   suspend(): void;
   resume(): void;
   dispose(): void;
@@ -167,6 +171,33 @@ export function createRocketAudio(muted: boolean): RocketAudio | null {
           tone.stop(at + 1.5);
         });
       });
+    },
+    knock(kind) {
+      const t = ctx.currentTime + 0.01;
+      const decay = kind === 'thud' ? 0.45 : 0.22;
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(kind === 'thud' ? 0.7 : 0.45, t + 0.006);
+      env.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+      env.connect(master);
+      const burst = ctx.createBufferSource();
+      burst.buffer = noiseBuffer;
+      const tone = ctx.createBiquadFilter();
+      tone.type = 'lowpass';
+      tone.frequency.value = kind === 'thud' ? 240 : 1100;
+      burst.connect(tone);
+      tone.connect(env);
+      burst.start(t, Math.random());
+      burst.stop(t + decay + 0.05);
+      if (kind === 'thud') {
+        // The ground's answer: a low thump under the noise.
+        const thump = ctx.createOscillator();
+        thump.frequency.setValueAtTime(90, t);
+        thump.frequency.exponentialRampToValueAtTime(40, t + decay);
+        thump.connect(env);
+        thump.start(t);
+        thump.stop(t + decay + 0.05);
+      }
     },
     suspend() {
       void ctx.suspend();
