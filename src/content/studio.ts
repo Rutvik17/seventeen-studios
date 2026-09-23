@@ -28,34 +28,21 @@
  * whatever moves.
  */
 
-import { foundedYear, spellCapitalised, yearsOfExperience } from '@/lib/time';
-import { resumeHeader } from './resume';
+import { spellCapitalised, yearsOfExperience } from '@/lib/time';
 
 export const site = {
   name: 'Seventeen Studios',
-  wordmark: 'SEVENTEEN',
-  wordmarkSecond: 'STUDIOS',
-  tagline: 'The sketchbook of Rutvik Patel.',
   description:
     'Seventeen Studios is Rutvik Patel’s sketchbook — a software engineer’s work, drawn in pencil: the founder’s story, a notebook, and Grasp.',
-  founded: String(foundedYear()),
   location: 'Toronto, Canada',
-  timezone: 'America/Toronto',
-  timezoneLabel: 'ET',
   /*
     There is deliberately no `email` field. It is assembled on the client by
     `lib/contact.ts` so the address never lands in the static export — see the
     note there.
   */
-  /*
-    Built from the résumé's header rather than written out again here:
-    `resumeHeader` is the canonical contact record — it is what the generated
-    PDF and DOCX print — and these are the same values with a scheme on the
-    front, so the two cannot drift.
-  */
   social: [
-    { label: 'GitHub', href: `https://${resumeHeader.github}` },
-    { label: 'LinkedIn', href: `https://${resumeHeader.linkedin}` },
+    { label: 'GitHub', href: 'https://github.com/Rutvik17' },
+    { label: 'LinkedIn', href: 'https://linkedin.com/in/rutvik1702' },
   ],
 } as const;
 
@@ -103,14 +90,14 @@ export const chapters: Chapter[] = [
   {
     numeral: 'II',
     title: 'Notebook',
-    note: 'Blank pages, for now. The next things I build get drawn here first.',
+    note: 'Where I document my journey, learning something new every day.',
     href: '/notebook/',
     doodle: 'notebook',
   },
   {
     numeral: 'III',
     title: 'Grasp',
-    note: 'Calculus you learn by dragging it — being built right here, on this site.',
+    note: 'Calculus you learn by dragging it, right here on this site.',
     href: '/grasp/',
     doodle: 'tangent',
   },

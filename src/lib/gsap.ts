@@ -24,12 +24,3 @@ export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') return false;
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
-
-/**
- * Refresh ScrollTrigger once layout has settled — fonts and generative SVGs
- * change measured heights after first paint, which invalidates pin distances.
- */
-export function refreshScrollTriggers(): void {
-  if (typeof window === 'undefined') return;
-  requestAnimationFrame(() => ScrollTrigger.refresh());
-}

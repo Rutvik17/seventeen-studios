@@ -11,17 +11,16 @@
  *
  * ---
  *
- * WHY THIS IS ON THE PRODUCT PAGE
+ * WHY THIS IS ON THE GRASP PAGE
  *
- * The page previously described the app. A page about an app whose entire claim
- * is "you will understand this because you moved it" cannot be a page you only
- * read — that is the claim failing on its own front door. So the argument is
- * made the way the product makes it, and the copy underneath explains what just
- * happened rather than promising it.
+ * A page about a course whose entire claim is "you will understand this because
+ * you moved it" cannot be a page you only read — that is the claim failing on
+ * its own front door. So the argument is made the way the course makes it, and
+ * the copy underneath explains what just happened rather than promising it.
  *
  * ---
  *
- * THE RULES THE APP HOLDS, HELD HERE TOO
+ * THE RULES GRASP HOLDS ITSELF TO
  *
  * - Every number shows its working with the live values substituted. Never a
  *   bare `2.80` — always `rise ÷ run = 1.40 ÷ 0.50 = 2.80`.

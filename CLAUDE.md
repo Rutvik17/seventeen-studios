@@ -87,16 +87,22 @@ it rather than as a web page:
    less than no figure at all. Never hard-code a result that a formula in the
    repository could produce.
 8. **Nothing invented.** No clients, no testimonials, no metrics that were not
-   measured. `status` on a project says `Designing` or `In progress` when that is
-   the truth; presenting an intention as a shipped product is the fastest way to
-   lose a technical reader. The career record lives in `src/content/resume.ts`
-   and everything in it is real; the founder page lists it and offers the PDF
-   and .docx built from it.
+   measured, and no role described bigger than it was — presenting an intention
+   as shipped, or "worked on" as "led", is the fastest way to lose a technical
+   reader. The career's titles and dates live in
+   `src/content/resume.ts`; the résumé itself is the Word document in
+   `public/founder` (PDF and .docx), kept by hand. Everything in both is real.
 9. **Never type a calendar-dependent value into the copy.** Durations, "now"
-   years, counts of things in a collection and reading times all come from
-   `src/lib/time.ts` or are derived from the data itself. Dates of events that
+   years and counts of things in a collection all come from `src/lib/time.ts`
+   or are derived from the data itself. Dates of events that
    happened stay literal. If you add a value that would be wrong next January,
    derive it.
+10. **Never write copy that describes the site's current state.** "Blank for
+    now", "the first entry isn't written yet", "being built on this site" —
+    each is wrong the day the state changes, and nobody remembers to go back
+    and edit it. Say what a thing *is* and what it is for. Where the state
+    genuinely has to show (which Grasp lessons are open), render it from the
+    data, with a branch for every case, including "all done".
 
 ---
 
@@ -202,8 +208,8 @@ should not drift.
 - Anything that changes page height (an accordion, a filter) must call
   `ScrollTrigger.refresh()` afterwards or pinned sections below will mis-measure.
 - Do not read `getLenis()` during a child's mount effect — child effects run
-  before the provider's. Use `onLenis()` from `@/lib/lenis`, or a native
-  `scroll` listener (Lenis scrolls the window).
+  before the provider's. Use a native `scroll` listener (Lenis scrolls the
+  window).
 - Entrance animations gate on `useUi(state => state.entered)`, which the
   preloader sets. Without that gate they play behind the curtain.
 - **Never `setPointerCapture` on pointerdown** in a drag interaction. Capture
@@ -232,9 +238,7 @@ should not drift.
 - **Removing a hovered element does not fire `pointerout`.** Closing a dialog
   from its own close button left the custom cursor stuck reading "Close" over
   the page behind it. `Cursor` re-derives its hover state from every
-  `pointermove` so it self-corrects, and `resetCursor()` (`@/lib/cursor`) clears
-  it immediately — call that whenever a labelled control unmounts under the
-  pointer.
+  `pointermove`, so it corrects itself on the next movement.
 
 ---
 

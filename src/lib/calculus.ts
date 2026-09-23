@@ -18,12 +18,9 @@
  * Every function here therefore ships the hand-differentiated form beside it, so
  * the page can print both and the error between them. The reader watches a
  * finite difference agree with calculus to six decimals while they drag — which
- * is the entire claim the product makes about itself, made checkable in the one
- * place a sceptical reader is standing.
- *
- * It is the same device as the analytic cross-check in `lib/quant.ts`, and for
- * the same reason: a number you can verify is worth more than a number you are
- * asked to believe.
+ * is the entire claim Grasp makes about itself, made checkable in the one place
+ * a sceptical reader is standing. A number you can verify is worth more than a
+ * number you are asked to believe.
  *
  * ---
  *

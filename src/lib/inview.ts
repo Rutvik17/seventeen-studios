@@ -5,8 +5,8 @@
  *
  * WHY NOT SCROLLTRIGGER
  *
- * `Reveal` and `SplitText` both hide their content and then play it back with a
- * `once: true` ScrollTrigger. That is the right tool for anything scrubbed
+ * The site's first reveal components hid their content and played it back with
+ * a `once: true` ScrollTrigger. That is the right tool for anything scrubbed
  * against scroll position, and the wrong one for "has this appeared yet" — and
  * the difference is not academic, because when a ScrollTrigger's position is
  * computed wrongly the content it is holding stays hidden FOREVER.
@@ -26,7 +26,7 @@
  * account of whether the element is in the viewport: no measurement of ours, no
  * refresh to go stale, no dependence on which thing is driving the scroll. It
  * also fires immediately for something already on screen when observation
- * starts, which removes the special case `Reveal` was carrying by hand.
+ * starts, which removes a special case the old reveals carried by hand.
  *
  * ---
  *

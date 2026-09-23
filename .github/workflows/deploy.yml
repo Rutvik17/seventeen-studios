@@ -21,21 +21,15 @@ on:
   push:
     branches: [main]
   # Calendar-derived copy goes stale in a static export and rebuilding fixes it:
-  # years of experience and the copyright line are computed at build time by
-  # `src/lib/time.ts` and freeze at the moment of the build.
-  #
-  # That is now the only reason this is scheduled. It used to be daily because
-  # the run also refetched prices, fundamentals and macro for the trading
-  # engine; with that gone, weekly is more than enough to keep a year label
-  # honest.
+  # years of experience and the copyright year are computed at build time by
+  # `src/lib/time.ts` and freeze at the moment of the build. Weekly is enough to
+  # keep them honest.
   schedule:
     - cron: '30 22 * * 1'
   # Lets you publish a build by hand from the Actions tab.
   workflow_dispatch:
 
-# Read-only on contents: this workflow builds and publishes, and no longer
-# pushes anything back. It used to commit the price and membership archive the
-# trading engine depended on, and both went when that work was scrapped.
+# Read-only on contents: this workflow builds and publishes, and never pushes.
 permissions:
   contents: read
   pages: write
@@ -50,8 +44,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # A shallow clone is enough now. Full history was here so the archive
-      # step could rebase when main moved under it, and that step is gone.
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4

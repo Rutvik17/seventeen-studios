@@ -27,7 +27,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { gsap, prefersReducedMotion } from '@/lib/gsap';
-import { CURSOR_RESET_EVENT } from '@/lib/cursor';
 
 const HOVER_SELECTOR = 'a, button, [data-cursor], input, textarea, select';
 
@@ -228,7 +227,6 @@ export function Cursor() {
     window.addEventListener('pointerout', onOut);
     window.addEventListener('pointerdown', onDown);
     window.addEventListener('pointerup', onUp);
-    window.addEventListener(CURSOR_RESET_EVENT, clear);
     window.addEventListener('resize', size);
     document.addEventListener('pointerleave', onLeaveWindow);
 
@@ -240,7 +238,6 @@ export function Cursor() {
       window.removeEventListener('pointerout', onOut);
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointerup', onUp);
-      window.removeEventListener(CURSOR_RESET_EVENT, clear);
       window.removeEventListener('resize', size);
       document.removeEventListener('pointerleave', onLeaveWindow);
       document.documentElement.classList.remove('has-custom-cursor');

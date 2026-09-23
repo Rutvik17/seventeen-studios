@@ -16,7 +16,7 @@
  * nothing running behind it. `opengraph-image.tsx` and `next/og` both want a
  * request to render on, so neither is available. Generating ahead of time and
  * committing the result is not a workaround here; it is the only shape that
- * fits, and it is the same one `build-resume.mjs` uses for the résumé.
+ * fits.
  *
  * ---
  *
@@ -31,12 +31,6 @@
  * looks at again after the day it is made, and a hand-drawn approximation of a
  * curve would sit there misrepresenting the page for years. Deriving it means
  * the picture is wrong only if the page is wrong.
- *
- * NO LIVE MARKET FIGURE APPEARS ON ANY CARD. `market.json` is refetched in
- * `prebuild`, so a dollar amount baked into a committed PNG would be stale
- * within a week and there is no build step that would ever catch it. The risk
- * cards show the distribution and the constants that produced it — the path
- * count and the confidence level — which do not move.
  */
 
 import { spawn } from 'node:child_process';
@@ -99,84 +93,10 @@ const n = (v) => Number(v.toFixed(2));
  * functions of the site's own data, so a plate changes when the page does.
  */
 
-/**
- * A plot frame: maths coordinates in, pixel coordinates out.
- *
- * Every curve plate shares it so they all sit on the same optical grid, which
- * is what makes six different diagrams read as one family.
- */
-function frame(box, domain, range, pad = 26) {
-  const [x0, x1] = domain;
-  const [y0, y1] = range;
-  const w = box - pad * 2;
-  const h = box - pad * 2;
-  return {
-    x: (v) => pad + ((v - x0) / (x1 - x0)) * w,
-    y: (v) => pad + h - ((v - y0) / (y1 - y0)) * h,
-  };
-}
-
 function polyline(pts, stroke, width = 3, extra = '') {
   const d = pts.map((p, i) => `${i ? 'L' : 'M'}${n(p[0])} ${n(p[1])}`).join(' ');
   return `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" ${extra}/>`;
 }
-
-/** Axes with ticks, drawn only where the data actually sits. */
-function axes(f, domain, range, ink, ticks = {}) {
-  const dim = `${ink}38`;
-  const parts = [
-    `<line x1="${n(f.x(domain[0]))}" y1="${n(f.y(0))}" x2="${n(f.x(domain[1]))}" y2="${n(f.y(0))}" stroke="${dim}" stroke-width="2"/>`,
-    `<line x1="${n(f.x(0))}" y1="${n(f.y(range[0]))}" x2="${n(f.x(0))}" y2="${n(f.y(range[1]))}" stroke="${dim}" stroke-width="2"/>`,
-  ];
-  for (const t of ticks.x ?? []) {
-    parts.push(
-      `<line x1="${n(f.x(t))}" y1="${n(f.y(0) - 5)}" x2="${n(f.x(t))}" y2="${n(f.y(0) + 5)}" stroke="${dim}" stroke-width="2"/>`,
-    );
-  }
-  for (const t of ticks.y ?? []) {
-    parts.push(
-      `<line x1="${n(f.x(0) - 5)}" y1="${n(f.y(t))}" x2="${n(f.x(0) + 5)}" y2="${n(f.y(t))}" stroke="${dim}" stroke-width="2"/>`,
-    );
-  }
-  return parts.join('');
-}
-
-/**
- * f(x) = x² with the tangent at x = 1.
- *
- * The curve, the domain and the slope all come from `CURVES[0]` and its `exact`
- * derivative, so the tangent's gradient is the one the lesson teaches: f′(1) = 2.
- */
-function plateCurve(box, ink, accent = ACCENT) {
-  const curve = CURVES[0];
-  const domain = [-3, 3];
-  const range = [-1.4, 9.4];
-  const f = frame(box, domain, range);
-
-  const pts = [];
-  for (let x = domain[0]; x <= domain[1] + 1e-9; x += 0.05) {
-    pts.push([f.x(x), f.y(curve.f(x))]);
-  }
-
-  const at = 1;
-  const slope = curve.exact(at);
-  const span = 1.5;
-  const tangent = [
-    [f.x(at - span), f.y(curve.f(at) - slope * span)],
-    [f.x(at + span), f.y(curve.f(at) + slope * span)],
-  ];
-
-  return [
-    axes(f, domain, range, ink, { x: [-2, -1, 1, 2], y: [1, 4, 9] }),
-    polyline(tangent, accent, 3),
-    polyline(pts, ink, 4),
-    `<circle cx="${n(f.x(at))}" cy="${n(f.y(curve.f(at)))}" r="7" fill="${accent}"/>`,
-  ].join('');
-}
-
-
-
-
 
 /* ------------------------------------------------------------------ *
  * The contents page
@@ -323,7 +243,6 @@ function plateMark(box, ink) {
  * `(width, height, ink, accent)`.
  */
 const PLATES = {
-  curve: (w, h, ink, accent) => plateCurve(Math.min(w, h), ink, accent),
   contents: (w, h, ink, accent) => plateContents(w, h, ink, accent),
   blank: (w, h, ink, accent) => plateBlank(w, h, ink, accent),
   mark: (w, h, ink) => plateMark(Math.min(w, h), ink),
@@ -524,8 +443,8 @@ function cards() {
     {
       file: 'notebook',
       label: 'Notebook',
-      title: 'Blank pages.',
-      standfirst: 'Where the next things get drawn first. Nothing here yet — the pencil is sharpened.',
+      title: 'Something new, every day.',
+      standfirst: 'The notebook where Rutvik documents his journey as he learns.',
       plate: 'blank',
       footRight: 'Notebook',
     },
@@ -533,7 +452,7 @@ function cards() {
       file: 'grasp',
       label: `Grasp · ${graspModule.position}`,
       title: graspInfo.name,
-      standfirst: `${graspInfo.tagline}. ${graspModule.lessons.length} lessons that build the derivative from steepness, being built on this site.`,
+      standfirst: `${graspInfo.tagline}. ${graspModule.lessons.length} lessons that build the derivative from steepness.`,
       stage: stageChalkboard,
       ground: SLATE,
       onDark: true,

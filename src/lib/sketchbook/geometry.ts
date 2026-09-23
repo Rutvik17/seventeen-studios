@@ -56,7 +56,6 @@ export const T = {
   bookDrawn: 1.3,
   bookOpen: 2.6,
   zoomEnd: 3.6,
-  gridIn: [3.2, 4.4],
   sparkIn: [4.4, 5.0],
   headDrawn: 8.8,
   ideaDrawn: 10.0,
@@ -69,15 +68,7 @@ export const T = {
   clean: [17.0, 19.2],
   wash: [17.8, 20.2],
   settle: [20.2, 21.4],
-  card: 20.8,
-  button: 21.8,
 } as const;
-
-/** Which scene `t` is in, 0-based. */
-export function sceneAt(t: number): number {
-  for (let i = SCENES.length - 2; i >= 0; i -= 1) if (t >= SCENES[i]) return i;
-  return 0;
-}
 
 export const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 /** Where `t` is between `a` and `b`, as 0..1. */

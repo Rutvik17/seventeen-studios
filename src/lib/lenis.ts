@@ -1,39 +1,24 @@
 /**
  * Lenis smooth-scroll singleton.
  *
- * Held outside React so overlays (menu, preloader) can lock and release the
- * page without threading a ref through the tree.
+ * Held outside React so the preloader can lock and release the page without
+ * threading a ref through the tree.
+ *
+ * Don't read `getLenis()` in a child's mount effect: React runs child effects
+ * before the provider's, so it is still null there. Listen for the window's
+ * native `scroll` event instead — Lenis scrolls the window.
  */
 
 import type Lenis from 'lenis';
 
 let instance: Lenis | null = null;
 
-type Listener = (lenis: Lenis) => void;
-const listeners = new Set<Listener>();
-
 export function setLenis(next: Lenis | null): void {
   instance = next;
-  if (next) listeners.forEach((listener) => listener(next));
 }
 
 export function getLenis(): Lenis | null {
   return instance;
-}
-
-/**
- * Run `listener` as soon as Lenis exists — immediately if it already does.
- *
- * React runs child effects before parent effects, so a component that reaches
- * for `getLenis()` on mount finds nothing: the provider that creates it has
- * not run yet. Subscribing removes that ordering dependency.
- *
- * Returns an unsubscribe function.
- */
-export function onLenis(listener: Listener): () => void {
-  listeners.add(listener);
-  if (instance) listener(instance);
-  return () => listeners.delete(listener);
 }
 
 /** Lock page scrolling. Safe to call before Lenis has mounted. */

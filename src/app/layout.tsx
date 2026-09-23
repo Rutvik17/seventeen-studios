@@ -97,7 +97,7 @@ export const metadata: Metadata = {
     it with twenty tabs open, half of them other candidates, and the one string
     they need in order to know which tab is which is the name of the person
     whose work it is. The brand still owns the page: it is the mark in the
-    header and the wordmark across the footer.
+    header.
 
     The keywords went with it. "Engineering studio", "software consultancy" and
     "creative engineering" were bidding for agency traffic — the exact thing
@@ -110,19 +110,19 @@ export const metadata: Metadata = {
   description: site.description,
   keywords: [
     'software engineer',
-    'frontend engineer',
+    'full-stack engineer',
+    'forward-deployed AI engineer',
+    'agentic AI',
     'engineering portfolio',
     'React',
     'TypeScript',
-    'WebGL',
   ],
   authors: [{ name: site.name }],
   /*
     THESE ARE THE LANDING'S, AND EVERY PAGE THAT DOES NOT OVERRIDE THEM GETS
-    THEM TOO. That is how metadata inheritance works in the App Router, and it
-    is why `og:title` on the lab and on the Grasp course both read "Seventeen
-    Studios" — those routes set a `title` and no `openGraph`, so their own title
-    never reached the share card and the brand name overrode it.
+    THEM TOO. That is how metadata inheritance works in the App Router: a route
+    that set a `title` and no `openGraph` once shared as "Seventeen Studios",
+    because its own title never reached the share card.
 
     Fixed in two halves: this now carries the landing's real title rather than
     the brand's, and every static route below sets its own `openGraph` from the

@@ -2,10 +2,10 @@
 
 import { useEffect, useRef } from 'react';
 import { asset } from '@/lib/asset';
-import { contactHref, CONTACT_LABEL } from '@/lib/contact';
+import { contactHref } from '@/lib/contact';
 
 /**
- * A link to the studio's inbox that does not put the address in the export.
+ * A link to Rutvik's inbox that does not put the address in the export.
  *
  * ---
  *
@@ -26,9 +26,9 @@ import { contactHref, CONTACT_LABEL } from '@/lib/contact';
  *
  * WHAT A VISITOR WITHOUT JAVASCRIPT GETS
  *
- * A real link to `/start/` — the studio's contact page, which has a working
- * brief form on it. Not a dead `#`, not a button that does nothing, not a
- * tooltip saying "enable JavaScript".
+ * A real link to `/start/`, the contact page, where the GitHub and LinkedIn
+ * links work with no script at all. Not a dead `#`, not a button that does
+ * nothing, not a tooltip saying "enable JavaScript".
  *
  * This is the part worth being careful about. The obvious implementation
  * renders `<a href="#">` and swaps it on mount, which looks identical in every
@@ -43,7 +43,8 @@ type ContactLinkProps = {
   /** Prefills the email subject once the link has upgraded. */
   subject?: string;
   className?: string;
-  children?: React.ReactNode;
+  /** The words on the link — required, so no page falls back to a stock label. */
+  children: React.ReactNode;
 } & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'children'>;
 
 export function ContactLink({
@@ -67,12 +68,12 @@ export function ContactLink({
     asset() on a ROUTE, unusually, and for the same reason it is used on files:
     this href is written by hand rather than by next/link, so nothing rewrites
     basePath for it. Before hydration replaces it with the mailto, a bare
-    "/start/" resolves against the domain root and 404s — on twenty-one pages,
-    which is every page carrying a contact link.
+    "/start/" resolves against the domain root and 404s on every page that
+    carries a contact link.
   */
   return (
     <a ref={ref} href={asset('/start/')} className={className} {...rest}>
-      {children ?? CONTACT_LABEL}
+      {children}
     </a>
   );
 }
