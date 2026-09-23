@@ -82,6 +82,10 @@ it rather than as a web page:
    the site's whole differentiator and it is not negotiable:
    - Grasp's demo shows the numeric derivative beside the exact one, with the
      error (`src/lib/calculus.ts`).
+   - The rocket entry prints Earth's pull, the engine's push and escape speed
+     with the live numbers substituted (`src/lib/rocket/physics.ts`), and
+     `scripts/verify-rocket.mjs` holds the model to published figures on every
+     build.
 
    A figure that cannot be checked by a reader who knows the subject is worth
    less than no figure at all. Never hard-code a result that a formula in the
