@@ -251,16 +251,16 @@ let globePicture = '';
 
 /**
  * The globe as the entry draws it — its own code (`src/lib/globe/render.ts`),
- * its own crayon map and its own colours, read from its stylesheet — turned
+ * its own paint map and its own colours, read from its stylesheet — turned
  * to Africa and Europe, `size` pixels square, as a PNG data URL.
  */
 async function drawGlobe(size) {
   const css = readFileSync(path.join(root, 'src/components/notebook/Globe.module.css'), 'utf8');
   const vars = Object.fromEntries([...css.matchAll(/--globe-([a-z]+):\s*([^;]+);/g)].map(([, name, value]) => [name, value.trim()]));
-  const sheet = `data:image/webp;base64,${readFileSync(path.join(root, 'public/notebook/earth/crayon-2048.webp')).toString('base64')}`;
+  const sheet = `data:image/webp;base64,${readFileSync(path.join(root, 'public/notebook/earth/paint-2048.webp')).toString('base64')}`;
   const page = `<!doctype html><html><head><script type="importmap">{"imports":{"@/":"/src/"}}</script></head>
 <body style="margin:0"><canvas id="back"></canvas><canvas id="globe"></canvas><script type="module">
-import { CRAYONS } from '@/lib/globe/colours';
+import { PAINTS } from '@/lib/globe/colours';
 import { createScene } from '@/lib/globe/render';
 import { sheetFrom } from '@/lib/globe/sheet';
 const vars = ${JSON.stringify(vars)};
@@ -268,7 +268,7 @@ const picture = new Image();
 picture.src = ${JSON.stringify(sheet)};
 await picture.decode();
 const globe = document.getElementById('globe');
-const scene = createScene(document.getElementById('back'), globe, { paper: vars.paper, dusk: vars.dusk, graphite: vars.graphite, shadow: vars.shadow, crayons: CRAYONS.map((c) => vars[c]) }, sheetFrom(picture, 2048));
+const scene = createScene(document.getElementById('back'), globe, { paper: vars.paper, dusk: vars.dusk, graphite: vars.graphite, shadow: vars.shadow, paints: PAINTS.map((c) => vars[c]) }, sheetFrom(picture, 2048));
 scene.resize(${size}, ${size}, 2);
 scene.draw(-20);
 window.picture = globe.toDataURL('image/png');

@@ -1,5 +1,5 @@
 /**
- * One frame of the globe: its soft shadow on the paper, the crayon wrapped
+ * One frame of the globe: its soft shadow on the ground, the paint wrapped
  * onto the ball, the pencil over it, and the lamp's light on all of it.
  *
  * WRAPPING THE MAP ONTO THE BALL. For every pixel of the disc, the map's row
@@ -16,7 +16,7 @@
 
 import { rng, type Pt } from '@/lib/sketchbook/geometry';
 import { marks, type Line, type Marks } from './marks';
-import { makePaper, makeTooth } from './paper';
+import { makeGround } from './ground';
 import type { Sheet } from './sheet';
 import { fromScreen, LAMP, TILT, toScreen } from './view';
 
@@ -28,8 +28,8 @@ export type GlobePalette = {
   dusk: string;
   graphite: string;
   shadow: string;
-  /** One per crayon, in `CRAYONS` order. */
-  crayons: string[];
+  /** One per paint, in `PAINTS` order. */
+  paints: string[];
 };
 
 export type Scene = {
@@ -56,16 +56,15 @@ type Table = {
   light: Uint8Array;
   warm: Uint8Array;
   edge: Uint8Array;
-  tooth: Uint8Array;
   image: ImageData;
   out: Uint32Array;
   canvas: HTMLCanvasElement;
 };
 
 /**
- * The globe, on two canvases: `back` holds the paper, drawn once for each
+ * The globe, on two canvases: `back` holds the ground, drawn once for each
  * size, and `canvas` everything that moves, drawn over it every frame. The
- * crayon is `sheet`, the world map already coloured (`sheet.ts`).
+ * paint is `sheet`, the world map already coloured (`sheet.ts`).
  */
 export function createScene(back: HTMLCanvasElement, canvas: HTMLCanvasElement, pal: GlobePalette, sheet: Sheet): Scene {
   const ctx = canvas.getContext('2d')!;
@@ -83,7 +82,7 @@ export function createScene(back: HTMLCanvasElement, canvas: HTMLCanvasElement, 
   function build() {
     back.width = canvas.width;
     back.height = canvas.height;
-    back.getContext('2d')!.drawImage(makePaper(canvas.width, canvas.height, pal.paper, pal.dusk), 0, 0);
+    back.getContext('2d')!.drawImage(makeGround(canvas.width, canvas.height, pal.paper, pal.dusk), 0, 0);
     hatching = null;
     const { cx, cy, r } = place();
     const R = r * dpr;
@@ -130,7 +129,6 @@ export function createScene(back: HTMLCanvasElement, canvas: HTMLCanvasElement, 
         n += 1;
       }
     }
-    const tooth = makeTooth(size, index.subarray(0, n));
     const glob = document.createElement('canvas');
     glob.width = glob.height = size;
     const image = new ImageData(size, size);
@@ -145,7 +143,6 @@ export function createScene(back: HTMLCanvasElement, canvas: HTMLCanvasElement, 
       light: light.subarray(0, n),
       warm: warm.subarray(0, n),
       edge: edge.subarray(0, n),
-      tooth,
       image,
       out: new Uint32Array(image.data.buffer),
       canvas: glob,
@@ -163,13 +160,13 @@ export function createScene(back: HTMLCanvasElement, canvas: HTMLCanvasElement, 
     });
   }
 
-  /** The crayon, wrapped onto the ball, lit, and with the paper's tooth in it. */
+  /** The paint, wrapped onto the ball and lit. */
   function wrap(spin: number) {
     const tb = table!;
     const W = sheet.width;
     const shift = ((Math.round((spin / 360) * W) % W) + W) % W;
     const levels = sheet.levels;
-    const { index, row, col, level, light, warm, edge, tooth, out } = tb;
+    const { index, row, col, level, light, warm, edge, out } = tb;
     for (let i = 0; i < index.length; i += 1) {
       const L = level[i];
       let c = col[i] - shift;
@@ -186,7 +183,7 @@ export function createScene(back: HTMLCanvasElement, canvas: HTMLCanvasElement, 
       const r = Math.min(255, (((texel & 255) * k) >> 8) + hi);
       const g = Math.min(255, ((((texel >>> 8) & 255) * k * 0.985) >> 8) + ((hi * 0.9) | 0));
       const b = Math.min(255, ((((texel >>> 16) & 255) * k * 0.95) >> 8) + ((hi * 0.65) | 0));
-      const alpha = (((a * tooth[i]) >> 8) * edge[i]) >> 8;
+      const alpha = (a * edge[i]) >> 8;
       out[index[i]] = ((alpha << 24) | (b << 16) | (g << 8) | r) >>> 0;
     }
     tb.canvas.getContext('2d')!.putImageData(tb.image, 0, 0);
@@ -290,7 +287,7 @@ export function createScene(back: HTMLCanvasElement, canvas: HTMLCanvasElement, 
     ctx.fillRect(cx - r * 1.3, cy - r * 1.3, r * 2.8, r * 2.8);
     ctx.globalAlpha = 1;
 
-    // The crayon.
+    // The paint.
     wrap(spin);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(tb.canvas, tb.x0, tb.y0);

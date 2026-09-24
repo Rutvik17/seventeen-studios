@@ -8,15 +8,15 @@
 
   It used to be acid green on near-black, which was the palette from the dark,
   agency-era version of this site and had been wrong for months — the site is
-  warm paper and crayon. A paper tile reads on light browser chrome and on
-  dark, which a transparent mark would not. The 7's marigold is a shade deeper
-  than the crayon's, so it holds at 16 pixels on the cream.
+  warm paper and paint. A paper tile reads on light browser chrome and on
+  dark, which a transparent mark would not. Both strokes are the mark's
+  ultramarine, `--paint-1`.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <rect width="64" height="64" rx="14" fill="#f2e7d2"/>
   <!-- Centred: the numerals are 36 x 26, scaled 1.2 and offset to the middle. -->
   <g transform="translate(9.6 16.4) scale(1.2)" fill="none" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M4.6 8.4C6.9 6.8 9 4.6 10.9 1.9C10.5 9.6 10.1 17.2 9.5 24.2" stroke="#2b7cc6"/>
-    <path d="M16.4 3.8C20.6 2.8 26.2 2.3 32.8 2.2C30.6 8.6 27 15.8 24 24.2" stroke="#e0922a"/>
+    <path d="M4.6 8.4C6.9 6.8 9 4.6 10.9 1.9C10.5 9.6 10.1 17.2 9.5 24.2" stroke="#2b3f9e"/>
+    <path d="M16.4 3.8C20.6 2.8 26.2 2.3 32.8 2.2C30.6 8.6 27 15.8 24 24.2" stroke="#2b3f9e"/>
   </g>
 </svg>

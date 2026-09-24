@@ -661,7 +661,7 @@ const CITIES: Record<CityId, (g: Drawing, width: number) => void> = {
 };
 
 /**
- * Each city's three coloured pencils, from the crayon box (`--crayon-n`): its
+ * Each city's three coloured pencils, from the paint box (`--paint-n`): its
  * landmarks, its streets, its shading and water. A few colours a city, and a
  * different few for the next, so the cover is colourful over time without ever
  * being a spectrum at once.

@@ -1,6 +1,6 @@
 /**
  * Postbuild check for the globe (`src/lib/globe/`): that its world is the
- * real one — land and sea where they are, each crayon where the ground is
+ * real one — land and sea where they are, each paint where the ground is
  * that colour — and that every city sketched with its continent is on the
  * right one, on either side of every line drawn between continents.
  *
@@ -14,7 +14,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { coastOf, continentOf, CONTINENT_IDS } from '../src/lib/globe/continents.ts';
-import { crayonAt, crayonIndex, isLand, marks } from '../src/lib/globe/marks.ts';
+import { paintAt, paintIndex, isLand, marks } from '../src/lib/globe/marks.ts';
 
 const failures = [];
 const check = (ok, message) => {
@@ -34,7 +34,7 @@ const places = [
 ];
 for (const [name, lon, lat, land] of places) check(isLand(lon, lat) === land, `${name} should be ${land ? 'land' : 'sea'}`);
 
-// Each crayon where the ground really is that colour.
+// Each paint where the ground really is that colour.
 const colours = [
   ['the Sahara', 12, 23, ['desert']],
   ['central Australia', 133, -25, ['rock', 'desert']],
@@ -45,8 +45,8 @@ const colours = [
   ['the open Pacific', -150, 0, ['deep']],
 ];
 for (const [name, lon, lat, want] of colours) {
-  const got = crayonAt(lon, lat);
-  check(want.some((w) => crayonIndex(w) === got), `${name} should be coloured ${want.join(' or ')}`);
+  const got = paintAt(lon, lat);
+  check(want.some((w) => paintIndex(w) === got), `${name} should be coloured ${want.join(' or ')}`);
 }
 
 // Cities on the continent they are on — close to every line between two.
@@ -99,16 +99,16 @@ for (const line of coasts) {
 // A few specks of ocean islands (Hawaii, the Azores) belong to no continent.
 check(lost / points < 0.02, `${lost} of ${points} coast points belong to no continent`);
 
-// The crayon pictures the page loads: there, and coloured with today's crayons.
+// The paint pictures the page loads: there, and coloured with today's paints.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-for (const width of [3072, 2048]) check(existsSync(path.join(root, `public/notebook/earth/crayon-${width}.webp`)), `public/notebook/earth/crayon-${width}.webp is missing — run node scripts/make-globe-sheet.mjs`);
+for (const width of [3072, 2048]) check(existsSync(path.join(root, `public/notebook/earth/paint-${width}.webp`)), `public/notebook/earth/paint-${width}.webp is missing — run node scripts/make-globe-sheet.mjs`);
 const css = readFileSync(path.join(root, 'src/components/notebook/Globe.module.css'), 'utf8');
 const now = Object.fromEntries([...css.matchAll(/--globe-([a-z]+):\s*(#[0-9a-fA-F]{3,6})\s*;/g)].map(([, name, value]) => [name, value.toLowerCase()]));
-const then = JSON.parse(readFileSync(path.join(root, 'public/notebook/earth/crayons.json'), 'utf8'));
-check(JSON.stringify(now) === JSON.stringify(then), 'the crayon colours in Globe.module.css have changed since the globe was coloured — run node scripts/make-globe-sheet.mjs');
+const then = JSON.parse(readFileSync(path.join(root, 'public/notebook/earth/paints.json'), 'utf8'));
+check(JSON.stringify(now) === JSON.stringify(then), 'the paint colours in Globe.module.css have changed since the globe was coloured — run node scripts/make-globe-sheet.mjs');
 
 if (failures.length) {
   console.error(`globe: ${failures.length} problem${failures.length === 1 ? '' : 's'}:\n  ${[...new Set(failures)].slice(0, 20).join('\n  ')}`);
   process.exit(1);
 }
-console.log(`globe: the world checks out — land, sea and crayons where they are, ${cities.length} cities on their continents, ${points - lost} of ${points} coast points on one`);
+console.log(`globe: the world checks out — land, sea and paints where they are, ${cities.length} cities on their continents, ${points - lost} of ${points} coast points on one`);

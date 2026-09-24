@@ -3,17 +3,18 @@
 Rutvik Patel's portfolio, made as one sketchbook. A statically exported Next.js
 14 application; everything drawn on it is drawn in code.
 
-- **The cover and contents** — the landing: the title handwritten in two
-  crayons, the world's cities sketched in coloured pencil beside it one after
-  another, and a contents page with a doodle beside each chapter.
+- **The cover and contents** — the landing: the title painted in ultramarine,
+  the world's cities sketched in coloured pencil over painted skies beside it
+  one after another, and a contents page with a doodle beside each chapter.
 - **The founder** — the book itself: a cover to open, a page per stretch of the
   career, turned like paper, and the résumé in a pocket inside the back cover.
 - **The notebook** — where Rutvik documents what he learns, day by day.
 - **Grasp** — a calculus course you learn by dragging, on this site.
 
-Everything is handwritten — Caveat for titles and notes, Shantell Sans for
-reading — except Grasp's chalkboard, which keeps its own faces. The loader is a
-crayon writing the 17. Every change of page is a sheet of paper
+Every page lies on one painted ground, a canvas brushed over in soft acrylic,
+with paint and pencil on top. Everything is handwritten — Caveat for titles
+and notes, Shantell Sans for reading — except Grasp's chalkboard, which keeps
+its own faces. The loader is a brush painting the 17. Every change of page is a sheet of paper
 turning. The cursor is a pencil that leans as it moves and circles whatever you
 can click. The footer is the book's back endpaper — the bookplate
 that says who to return it to.
@@ -93,9 +94,9 @@ src/
     Footer.tsx             the back endpaper
     Sheet.tsx              the shell of every simple page, with a way back for notebook entries
     Cursor.tsx             the pencil and its hover marks
-    Preloader.tsx          every full load: a crayon writes the mark until the page is ready
+    Preloader.tsx          every full load: a brush paints the mark until the page is ready
     Transition.tsx         page-turn transitions + TransitionLink
-    loader/                the mark, written in crayon
+    loader/                the mark, painted
     founder/               the book component and its styles
     grasp/                 the chalkboard
     instruments/           the derivative Grasp demonstrates
@@ -104,24 +105,26 @@ src/
     sections/Skyline.tsx   the cities beside the landing's title, drawn one after another
     IndexList.tsx          every list of pages to turn to — the contents, the notebook
     DrawIn.tsx             a little drawing — an underline, an arrow — that draws itself in
+  assets/ground/           the painted ground every page lies on (made by scripts/make-ground.mjs)
   content/                 all copy, as typed data
   lib/
-    sketchbook/            the book's drawings — geometry, chapters, the canvas painter, and the pencil every sketch is drawn with
-    sketch/wordmark.ts     the landing's title, handwritten in crayon letter by letter
+    sketchbook/            the book's drawings — geometry, chapters, the canvas painter — and the pencil, the brush and the painted ground everything is made with
+    sketch/wordmark.ts     the landing's title, painted letter by letter
     sketch/skylines.ts     the cities, landmark by landmark, as pencil marks
     pageTurn.ts            the sheet that turns between pages
     ready.ts               holds the loader until every self-painting part has painted
     url.ts                 where the site lives — the one place it is written
     sketch/portrait.ts     the founder's photo, redrawn in pencil and coloured pencil
     calculus.ts            Grasp's numeric and exact derivatives
-    globe/                 the Earth we live on: coastlines and crayon data, the view, the crayon map, the globe, the continents
+    globe/                 the Earth we live on: coastlines and colour data, the view, the painted map, the globe, the continents
 scripts/
   build-og.mjs             share cards, drawn from the site's own data
   verify-og.mjs            postbuild: every page names a share card that exists
   verify-assets.mjs        postbuild: every file a page references is in out/
-  verify-globe.mjs         postbuild: the globe's world is the real one, and its crayon pictures are up to date
-  make-globe-data.mjs      the globe's coastlines and crayon map, from Natural Earth and NASA's Blue Marble (run by hand)
-  make-globe-sheet.mjs     the globe's world, coloured in crayon once, as the pictures the page loads (run by hand)
+  verify-globe.mjs         postbuild: the globe's world is the real one, and its painted pictures are up to date
+  make-globe-data.mjs      the globe's coastlines and colour map, from Natural Earth and NASA's Blue Marble (run by hand)
+  make-globe-sheet.mjs     the globe's world, painted once, as the pictures the page loads (run by hand)
+  make-ground.mjs          the painted ground every page lies on, from the `--ground-*` tints (run by hand)
   chrome.mjs               headless Chrome, for the scripts that draw
   scene-server.mjs         serves the site's own TypeScript to that browser, so scripts draw with the pages' code
 ```
@@ -139,10 +142,10 @@ that object.
 The globe draws the real world. Its coastlines are Natural Earth's 1:110m land
 (public domain), and the colour of every half-degree of it is read from NASA's
 Blue Marble (public domain); `scripts/make-globe-data.mjs` turns the two into
-`src/lib/globe/land.ts` and `colours.ts`. The world is then coloured in crayon
+`src/lib/globe/land.ts` and `colours.ts`. The world is then painted in acrylic
 once, by `scripts/make-globe-sheet.mjs`, into `public/notebook/earth/` — the
 page loads that picture rather than spending seconds colouring the world on
-every visit. Change the marks, the data or the `--globe-*` crayon colours and
+every visit. Change the marks, the data or the `--globe-*` paint colours and
 run it again; `verify-globe.mjs` fails the build until you do.
 
 ### Content

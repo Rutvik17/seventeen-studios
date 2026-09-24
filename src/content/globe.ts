@@ -5,7 +5,7 @@
  */
 
 export const globeCopy = {
-  drawing: 'A hand-drawn globe on cream paper, with pencil coastlines and crayon land and sea, turning slowly',
+  drawing: 'A globe painted in acrylic on an ochre ground, with pencil coastlines, turning slowly',
   drag: 'Drag the globe to spin it.',
   turn: { left: 'Turn left', right: 'Turn right' },
   pick: 'Sketch a continent',
@@ -18,5 +18,5 @@ export const globeCopy = {
     oceania: 'Oceania',
     'south-america': 'South America',
   },
-  sketched: (name: string) => `${name}, sketched in pencil and coloured in crayon`,
+  sketched: (name: string) => `${name}, sketched in pencil and painted in acrylic`,
 } as const;

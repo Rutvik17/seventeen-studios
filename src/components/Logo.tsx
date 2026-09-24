@@ -1,7 +1,7 @@
 /**
- * The mark: seventeen, as a number, handwritten — two strokes of crayon, the 1
- * in the blue and the 7 in the marigold, the two crayons the cover's title is
- * written in. The nav carries it, the loader writes it, the tab shows it.
+ * The mark: seventeen, as a number, handwritten — two strokes of a brush in
+ * ultramarine (`--paint-1`), the paint the cover's title is written in. The nav
+ * carries it, the loader paints it, the tab shows it.
  *
  * DRAWN, NOT SET
  *
@@ -30,5 +30,5 @@ export const LOGO_ONE = 'M4.6 8.4C6.9 6.8 9 4.6 10.9 1.9C10.5 9.6 10.1 17.2 9.5 
 /** The 7: the bar across, then the long stroke down to the baseline. */
 export const LOGO_SEVEN = 'M16.4 3.8C20.6 2.8 26.2 2.3 32.8 2.2C30.6 8.6 27 15.8 24 24.2';
 
-/** How wide the crayon is, in the viewBox's units. */
+/** How wide the brush is, in the viewBox's units. */
 export const MARK_STROKE = 3.3;

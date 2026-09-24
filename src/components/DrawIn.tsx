@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * A little drawing in pencil or crayon — an underline, an arrow — that draws
+ * A little drawing in pencil or paint — an underline, an arrow — that draws
  * itself in once the page is uncovered, stroke by stroke.
  *
  * Its paths are drawn from the start; only the script hides them, just before

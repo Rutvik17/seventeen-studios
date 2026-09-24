@@ -4,11 +4,12 @@
  * The cities beside the cover's title, drawn in coloured pencil one after
  * another on the same line of ground "Studios" stands on.
  *
- * Each city takes its landmarks' outlines first, then the streets round them,
- * then windows, shading and water; its name is written under the ground. Once
- * it has stood a moment it is rubbed out — faded, as graphite goes under an
- * eraser — while the next is already being sketched in, and the ground line
- * never moves, so the page is never empty and nothing jumps.
+ * Each city's sky is brushed in first, in pale acrylic; then its landmarks'
+ * outlines, the streets round them, then windows, shading and water; its name
+ * is written under the ground. Once it has stood a moment it is rubbed out —
+ * faded, as graphite goes under an eraser — while the next is already being
+ * painted and sketched in, and the ground line never moves, so the page is
+ * never empty and nothing jumps.
  *
  * Only where the cover has room: `box` is the space the title leaves, and is
  * null on a narrow screen.
@@ -24,6 +25,8 @@ import { prefersReducedMotion } from '@/lib/gsap';
 import { useUi } from '@/lib/store';
 import { skylines } from '@/content/studio';
 import { grain, prepare, stroke, type Prepared } from '@/lib/sketchbook/pencil';
+import { paintStroke, shade } from '@/lib/sketchbook/brush';
+import { rng } from '@/lib/sketchbook/geometry';
 import { drawCity, PENCILS, TALLEST, type Mark } from '@/lib/sketch/skylines';
 
 /** Where the drawing goes, in the title's box, in CSS pixels. */
@@ -32,13 +35,15 @@ export type SkylineBox = { left: number; width: number; height: number; ground: 
 /** Seconds: the ground line; one city's drawing; how long it stands; the handover. */
 const TIMING = { ground: 1.1, draw: 6.5, hold: 3.2, fade: 1.8 };
 const STILL = { ground: 0, draw: 0, hold: 7, fade: 1.2 };
+/** Seconds for a city's sky to be brushed in. */
+const SKY_IN = 0.9;
 /** Seconds for the old city's name to go, before the new one is written. */
 const NAME_OUT = 0.5;
 /** How fast the pencil moves, in CSS pixels a second. */
 const SPEED = 520;
 
 type Laid = { lines: Prepared[]; lengths: number[]; total: number; mark: Mark; start: number; end: number };
-type City = { index: number; laid: Laid[]; done: HTMLCanvasElement; baked: Uint8Array; name: string; ink: string[] };
+type City = { index: number; laid: Laid[]; done: HTMLCanvasElement; sky: HTMLCanvasElement; baked: Uint8Array; name: string; ink: string[] };
 
 /** Stroke a bundle of lines up to `u` of their joint length. */
 function strokeAll(ctx: CanvasRenderingContext2D, l: Laid, u: number, paint: CanvasPattern | string) {
@@ -138,11 +143,39 @@ export function Skyline({ box, delay }: { box: SkylineBox | null; delay: number 
       return laid;
     };
 
+    /**
+     * The city's sky, painted before it is drawn: loose strokes of acrylic
+     * across the room above the ground, pale — its shading pencil's colour
+     * high up, warming to its landmarks' colour down by the horizon.
+     */
+    const paintSky = (ink: string[], seed: number) => {
+      const c = sheet();
+      const g = c.getContext('2d')!;
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const rand = rng(seed * 13 + 5);
+      const top = box.ground * 0.06;
+      const bottom = box.ground + 6;
+      const rows = 8;
+      const band = ((bottom - top) / rows) * 1.6;
+      for (let r = 0; r < rows; r += 1) {
+        const y = top + ((r + 0.5) * (bottom - top)) / rows;
+        // Ragged at both ends, and narrower towards the top, as a sky gets
+        // brushed in loosely round what will stand in it.
+        const inset = (1 - r / rows) * 0.18 + rand() * 0.1;
+        const x0 = box.width * inset * rand();
+        const x1 = box.width * (1 - inset * rand());
+        const pts = Array.from({ length: 9 }, (_, i) => ({ x: x0 + ((x1 - x0) * i) / 8, y: y + Math.sin((i / 8) * Math.PI * (1 + rand())) * band * 0.06 }));
+        const colour = r < rows - 3 ? shade(ink[2], 0.8 + r * 0.015) : shade(ink[0], 0.82);
+        paintStroke(g, r % 2 ? pts.reverse() : pts, { width: band, colour, seed: seed * 50 + r, alpha: 0.62, streak: 0.05, dry: 0.4, edge: false });
+      }
+      return c;
+    };
+
     const open = (index: number): City => {
       const k = index % skylines.length;
       const laid = plan(k);
-      const ink = PENCILS[skylines[k].id].map((n) => token(`--crayon-${n}`));
-      return { index, laid, done: sheet(), baked: new Uint8Array(laid.length), name: skylines[k].name, ink };
+      const ink = PENCILS[skylines[k].id].map((n) => token(`--paint-${n}`));
+      return { index, laid, done: sheet(), sky: paintSky(ink, k), baked: new Uint8Array(laid.length), name: skylines[k].name, ink };
     };
 
     /** Put down, for good, every mark of `city` finished by `tau`. */
@@ -221,9 +254,20 @@ export function Skyline({ box, delay }: { box: SkylineBox | null; delay: number 
       bake(current, Math.max(0, tau));
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, W, H);
+      // The skies first — the old one going, the new one brushed in from the
+      // left — then the ground line over them, then the drawings.
+      const a = previous && fading ? fading * fading * (3 - 2 * fading) : 0;
+      if (previous && a) {
+        ctx.globalAlpha = a;
+        ctx.drawImage(previous.sky, 0, 0);
+        ctx.globalAlpha = 1;
+      }
+      if (tau >= 0) {
+        const across = reduced ? W : Math.min(1, tau / SKY_IN) * W;
+        if (across > 0) ctx.drawImage(current.sky, 0, 0, across, H, 0, 0, across, H);
+      }
       ctx.drawImage(ground, 0, 0);
-      if (previous && fading) {
-        const a = fading * fading * (3 - 2 * fading);
+      if (previous && a) {
         ctx.globalAlpha = a;
         ctx.drawImage(previous.done, 0, 0);
         ctx.globalAlpha = 1;

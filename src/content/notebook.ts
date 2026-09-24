@@ -23,7 +23,7 @@ export const notebook: NotebookEntry[] = [
     title: 'Earth we live on',
     summary: 'It’s more water than land.',
     date: '2026-09-24',
-    cardAlt: 'A hand-drawn globe on cream paper: pencil coastlines, green and gold crayon land and a cerulean crayon sea',
+    cardAlt: 'A globe painted in acrylic: pencil coastlines, green and ochre land and a deep blue sea',
   },
 ];
 
