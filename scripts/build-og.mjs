@@ -42,9 +42,7 @@ import { fileURLToPath } from 'node:url';
 import { careerStart, founder } from '../src/content/founder.ts';
 import { site, chapters } from '../src/content/studio.ts';
 import { graspInfo, graspModule } from '../src/content/grasp.ts';
-import { notebook } from '../src/content/notebook.ts';
-import { formatDate, spell } from '../src/lib/time.ts';
-import { rocketParts } from '../src/lib/rocket/shape.ts';
+import { spell } from '../src/lib/time.ts';
 import { CURVES } from '../src/lib/calculus.ts';
 import { bridge, cableY, PAGE, SUN } from '../src/lib/sketchbook/geometry.ts';
 import { SITE_HOST } from '../src/lib/url.ts';
@@ -236,45 +234,7 @@ function plateBlank(w, h, ink, accent) {
  * Every plate takes the same arguments so the renderer never special-cases one.
  * `(width, height, ink, accent)`.
  */
-/**
- * The rocket-physics entry: its rocket, from the same outline the page draws,
- * standing on the curve of the Earth with its engine lit.
- */
-function plateRocket(w, h, ink, accent) {
-  const crimson = '#c8233f';
-  const paper = '#fbf8f1';
-  const H = h * 0.5;
-  const cx = w * 0.5;
-  const ground = h * 0.84;
-  const base = ground - H * 0.34;
-  const r = rocketParts(cx, base, H);
-  const d = (pts) => `M${pts.map((p) => `${n(p.x)} ${n(p.y)}`).join(' L')} Z`;
-  const R = w * 1.6;
-  const stars = [[0.12, 0.12], [0.28, 0.32], [0.84, 0.1], [0.9, 0.38], [0.16, 0.52], [0.74, 0.24]]
-    .map(([u, v]) => `<path d="M${n(u * w - 6)} ${n(v * h)} h12 M${n(u * w)} ${n(v * h - 6)} v12" stroke="${accent}" stroke-width="2.5" stroke-linecap="round"/>`)
-    .join('');
-  const flameTip = ground - H * 0.04;
-  const flame = `M${n(cx - H * 0.08)} ${n(base)} Q${n(cx - H * 0.08)} ${n((base + flameTip) / 2)} ${n(cx)} ${n(flameTip)} Q${n(cx + H * 0.08)} ${n((base + flameTip) / 2)} ${n(cx + H * 0.08)} ${n(base)} Z`;
-  const puffs = [-1, 1]
-    .flatMap((side) => [0.2, 0.36].map((u, i) => ({ x: cx + side * u * H, y: ground - H * (0.05 + i * 0.02), r: H * (0.07 + i * 0.03) })))
-    .map((p) => `<circle cx="${n(p.x)}" cy="${n(p.y)}" r="${n(p.r)}" fill="${paper}" stroke="${ink}" stroke-opacity="0.55" stroke-width="2.5"/>`)
-    .join('');
-  return `
-    ${stars}
-    <circle cx="${n(w / 2)}" cy="${n(ground + R)}" r="${n(R)}" fill="${accent}" fill-opacity="0.32" stroke="${ink}" stroke-width="3"/>
-    <path d="${flame}" fill="${crimson}" fill-opacity="0.9"/>
-    ${puffs}
-    <path d="${d(r.finLeft)}" fill="${crimson}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
-    <path d="${d(r.finRight)}" fill="${crimson}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
-    <path d="${d(r.hull)}" fill="${paper}" stroke="${ink}" stroke-width="3.5" stroke-linejoin="round"/>
-    <path d="${d(r.nose)}" fill="${crimson}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
-    <path d="${d(r.stripe)}" fill="${crimson}" stroke="${ink}" stroke-width="2.5"/>
-    <path d="${d(r.nozzle)}" fill="${ink}" fill-opacity="0.7" stroke="${ink}" stroke-width="2.5"/>
-    <circle cx="${n(r.window.centre.x)}" cy="${n(r.window.centre.y)}" r="${n(r.window.radius)}" fill="${accent}" fill-opacity="0.45" stroke="${ink}" stroke-width="3"/>`;
-}
-
 const PLATES = {
-  'rocket-physics': (w, h, ink, accent) => plateRocket(w, h, ink, accent),
   contents: (w, h, ink, accent) => plateContents(w, h, ink, accent),
   blank: (w, h, ink, accent) => plateBlank(w, h, ink, accent),
 };
@@ -489,14 +449,6 @@ function cards() {
       titleSize: 96,
       footRight: `${graspModule.position} · ${graspModule.title}`,
     },
-    ...notebook.map((entry) => ({
-      file: `notebook-${entry.slug}`,
-      label: 'Notebook',
-      title: entry.title,
-      standfirst: entry.summary,
-      plate: entry.slug in PLATES ? entry.slug : 'blank',
-      footRight: formatDate(entry.date),
-    })),
   ];
 
   return list;
