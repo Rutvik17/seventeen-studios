@@ -254,7 +254,7 @@ export function Cursor() {
             <path d="M5 -2.4 L14 -5.5 L14 5.5 L5 2.4 Z" fill="#e6c89a" stroke="#1d1d21" strokeWidth="0.9" strokeLinejoin="round" />
             {/* the painted body */}
             <rect x="14" y="-5.5" width="30" height="11" fill="var(--accent)" stroke="#1d1d21" strokeWidth="0.9" />
-            <line x1="14" y1="0" x2="44" y2="0" stroke="#fbf8f1" strokeOpacity="0.35" strokeWidth="1.2" />
+            <line x1="14" y1="0" x2="44" y2="0" stroke="#faf3e5" strokeOpacity="0.35" strokeWidth="1.2" />
             {/* ferrule and eraser */}
             <rect x="44" y="-5.5" width="5" height="11" fill="#b9b3a2" stroke="#1d1d21" strokeWidth="0.9" />
             <rect x="49" y="-5.5" width="6" height="11" rx="2" fill="var(--accent-2)" stroke="#1d1d21" strokeWidth="0.9" />

@@ -50,8 +50,8 @@ it rather than as a web page:
   cover's title, one per row down a list. Never a whole spectrum in one place —
   a title with every letter a different colour read as a rainbow flag, not a
   sketchbook.
-- **The pencil is the cursor; the page turn is the transition; the pencil
-  drawing the 17 is the loader.** New motion should feel like drawing or turning
+- **The pencil is the cursor; the page turn is the transition; a crayon
+  writing the 17 is the loader.** New motion should feel like drawing or turning
   paper, not like an interface animating.
 - **The footer is the back endpaper**, and the nav is the book's three tabs.
   Neither should grow into a site map.
@@ -156,9 +156,9 @@ read it once at runtime with `getComputedStyle(document.documentElement)
 
 | Token | Value | Use |
 |-------|-------|-----|
-| `--bg` | `#f4efe3` | page, cream sketchbook paper |
-| `--bg-raise` | `#fbf8f1` | cards, panels |
-| `--bg-sunk` | `#e9e1cf` | wells, code, insets |
+| `--bg` | `#f2e7d2` | page, warm cream sketchbook paper |
+| `--bg-raise` | `#faf3e5` | cards, panels |
+| `--bg-sunk` | `#e6d9bf` | wells, code, insets |
 | `--fg` | `#1d1d21` | text, charcoal |
 | `--fg-dim` | `rgba(29,29,33,.68)` | body copy |
 | `--muted` | `#7d7768` | mono labels |

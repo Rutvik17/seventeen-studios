@@ -25,9 +25,9 @@
 
 :root {
   /* Paper: cream, with enough warmth to read as a page rather than a screen. */
-  --bg: #f4efe3;
-  --bg-raise: #fbf8f1;
-  --bg-sunk: #e9e1cf;
+  --bg: #f2e7d2;
+  --bg-raise: #faf3e5;
+  --bg-sunk: #e6d9bf;
 
   /* Charcoal. */
   --fg: #1d1d21;
@@ -365,6 +365,7 @@ code {
 }
 
 .pencil-mark {
+  position: relative;
   width: clamp(180px, 22vw, 340px);
   /* The mark's own proportions — 36 x 26. */
   aspect-ratio: 36 / 26;
@@ -374,16 +375,22 @@ code {
   height: 100%;
   overflow: visible;
 }
+/* The strokes carry the paper's tooth; the crayon, on its own sheet above, does not. */
+.pencil-mark__wax {
+  -webkit-mask: var(--crayon-tooth) 0 0 / 200px 200px;
+  mask: var(--crayon-tooth) 0 0 / 200px 200px;
+}
+.pencil-mark__hand {
+  position: absolute;
+  inset: 0;
+}
 .pencil-mark__line {
   fill: none;
-  stroke: var(--fg);
-  stroke-width: 0.55;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 .pencil-mark__line--light {
-  stroke-width: 0.3;
-  opacity: 0.45;
+  opacity: 0.55;
 }
 .pencil-mark__tip {
   transition: opacity 0.3s;
@@ -500,17 +507,29 @@ html:not(.is-loading) .preloader {
   align-items: center;
   color: var(--fg);
 }
-/* The mark in pencil: outlined and hatched, like the loader draws it. */
+/* The mark in crayon, as the loader writes it: the 1 blue, the 7 marigold. */
 .nav__logo {
   display: block;
   height: 26px;
   width: auto;
   overflow: visible;
-  transition: transform 0.4s var(--ease-out), color 0.3s;
+  -webkit-mask: var(--crayon-tooth) 0 0 / 120px 120px;
+  mask: var(--crayon-tooth) 0 0 / 120px 120px;
+  transition: transform 0.4s var(--ease-out);
+}
+.nav__stroke {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nav__stroke--1 {
+  stroke: var(--mark-1, var(--crayon-1));
+}
+.nav__stroke--2 {
+  stroke: var(--mark-2, var(--crayon-2));
 }
 .nav__mark:hover .nav__logo {
   transform: rotate(-4deg) scale(1.06);
-  color: var(--accent);
 }
 
 /* The three index tabs, in handwriting. */
@@ -567,6 +586,11 @@ body:has([data-slate]) .nav__mark,
 body:has([data-slate]) .nav__tab,
 body:has([data-slate]) .nav__tab.is-active {
   color: #eef1e6;
+}
+/* On the board the mark is chalk: white, and the yellow chalk for the 7. */
+body:has([data-slate]) .nav__logo {
+  --mark-1: #eef1e6;
+  --mark-2: #f0d266;
 }
 body:has([data-slate]) .nav.is-scrolled::before {
   background: linear-gradient(180deg, rgba(36, 60, 51, 0.94), rgba(36, 60, 51, 0));
@@ -961,14 +985,16 @@ body:has([data-slate]) .nav.is-scrolled::before {
   font-family: var(--font-hand), cursive;
   color: var(--fg-dim);
 }
-/* The label on the cover: a slip of paper, taped on a little crooked. */
+/* The label on the cover: a slip of paper, taped on a little crooked — what
+   the book is, and whose, written on it. */
 .book-cover__shelfmark {
   position: relative;
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.3em;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1em;
   margin-left: 0.5em;
-  padding: 0.12em 0.8em 0.2em;
+  padding: 0.16em 0.9em 0.42em;
   font-size: clamp(22px, 1.9vw, 30px);
   line-height: 1.1;
   color: var(--fg);
@@ -1007,7 +1033,8 @@ body:has([data-slate]) .nav.is-scrolled::before {
 }
 .book-cover__owner {
   position: relative;
-  font-size: clamp(20px, 1.7vw, 26px);
+  font-size: 0.66em;
+  color: var(--fg-dim);
 }
 /* Underlined once, quickly, in red crayon. */
 .book-cover__underline {
@@ -1064,14 +1091,19 @@ body:has([data-slate]) .nav.is-scrolled::before {
    with a band of crayon — hatched, as crayon goes on. */
 .book-cover__line {
   max-width: 30ch;
-  margin: clamp(26px, 4.5vh, 50px) 0 clamp(48px, 9vh, 96px) auto;
+  margin: clamp(18px, 3.5vh, 40px) 0 clamp(48px, 9vh, 96px);
   font-family: var(--font-hand), cursive;
   font-size: clamp(27px, 2.6vw, 42px);
   line-height: 1.2;
   color: var(--accent);
-  text-align: right;
   transform: rotate(-1.4deg);
-  transform-origin: right center;
+  transform-origin: left center;
+}
+/* The cities, in the room the title leaves beside it. */
+.book-cover__skyline {
+  position: absolute;
+  top: 0;
+  pointer-events: none;
 }
 .book-cover__motto {
   padding: 0 0.12em;
@@ -1139,13 +1171,7 @@ body:has([data-slate]) .nav.is-scrolled::before {
   }
 }
 
-@media (max-width: 700px) {
-  .book-cover__line {
-    text-align: left;
-    margin-left: 0;
-    transform-origin: left center;
-  }
-}
+
 
 /* ==================================================================
    LISTS — every list of pages to turn to (the contents, the notebook)

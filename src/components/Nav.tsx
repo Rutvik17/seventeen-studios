@@ -19,7 +19,7 @@ import { usePathname } from 'next/navigation';
 import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { nav } from '@/content/studio';
-import { LOGO_ONE, LOGO_SEVEN, LOGO_VIEWBOX } from '@/components/Logo';
+import { LOGO_ONE, LOGO_SEVEN, LOGO_VIEWBOX, MARK_STROKE } from '@/components/Logo';
 import { useUi } from '@/lib/store';
 import { TransitionLink } from './Transition';
 
@@ -70,16 +70,8 @@ export function Nav() {
     <header className="nav" ref={ref}>
       <TransitionLink href="/" className="nav__mark" aria-label="Seventeen Studios — contents" data-cursor="Contents">
         <svg viewBox={LOGO_VIEWBOX} className="nav__logo" aria-hidden="true" overflow="visible">
-          <defs>
-            <pattern id="nav-hatch" width="1.4" height="1.4" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
-              <line x1="0" y1="0" x2="0" y2="1.4" stroke="currentColor" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          {[LOGO_ONE, LOGO_SEVEN].map((d) => (
-            <g key={d}>
-              <path d={d} fill="url(#nav-hatch)" opacity="0.7" />
-              <path d={d} fill="none" stroke="currentColor" strokeWidth="0.9" strokeLinejoin="round" />
-            </g>
+          {[LOGO_ONE, LOGO_SEVEN].map((d, i) => (
+            <path key={d} d={d} className={`nav__stroke nav__stroke--${i + 1}`} strokeWidth={MARK_STROKE} />
           ))}
         </svg>
       </TransitionLink>

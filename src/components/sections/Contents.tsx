@@ -26,13 +26,14 @@
  * Same page, nothing moving.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from '@/lib/gsap';
 import { useUi } from '@/lib/store';
 import { onceInView } from '@/lib/inview';
 import { chapters, cover, type Chapter } from '@/content/studio';
 import { IndexList } from '@/components/IndexList';
 import { DrawIn } from '@/components/DrawIn';
+import { Skyline, type SkylineBox } from '@/components/sections/Skyline';
 import { drawWordmark, layoutWordmark, prepareWordmark, type WordmarkArt, type WordmarkLayout } from '@/lib/sketch/wordmark';
 
 const LINES = [
@@ -45,6 +46,8 @@ const WORD_CRAYONS = [1, 2];
 
 /** Seconds for the crayons to write the title, at a steady hand's pace. */
 const WRITE_SECONDS = 3.2;
+/** The narrowest room beside the title worth drawing a city in, in CSS pixels. */
+const SKYLINE_MIN = 300;
 
 /** The small drawings beside each chapter, in a 120 x 80 box. */
 const DOODLES: Record<Chapter['doodle'], string[]> = {
@@ -83,6 +86,7 @@ export function Contents() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const list = useRef<HTMLOListElement>(null);
   const entered = useUi((s) => s.entered);
+  const [skyline, setSkyline] = useState<SkylineBox | null>(null);
 
   /* ---- the doodles: armed hidden by script, drawn when seen ---- */
   useEffect(() => {
@@ -108,7 +112,7 @@ export function Contents() {
     const colours = WORD_CRAYONS.map((i) => tokens.getPropertyValue(`--crayon-${i}`).trim());
     let width = 0;
     let dpr = 1;
-    let layout: WordmarkLayout = { size: 0, height: 0, places: [] };
+    let layout: WordmarkLayout = { size: 0, height: 0, places: [], right: 0 };
     let art: WordmarkArt | null = null;
     let start = 0;
     let raf = 0;
@@ -126,6 +130,19 @@ export function Contents() {
       canvas.height = Math.round(layout.height * dpr);
       canvas.style.height = `${layout.height}px`;
       art = prepareWordmark(LINES, family, width, layout, dpr, colours);
+
+      // The room the title leaves to its right, for the cities: from just past
+      // the lettering to the edge, standing on the last line's baseline.
+      // A city is drawn no wider than it looks right for its height, and sits
+      // at the right-hand edge.
+      const ground = Math.round(layout.places[layout.places.length - 1].y);
+      const room = Math.min(width - Math.round(layout.right + Math.max(28, width * 0.025)), Math.round(ground * 1.7));
+      setSkyline((was) => {
+        if (room < SKYLINE_MIN) return null;
+        const next = { left: width - room, width: room, height: ground + 48, ground };
+        const same = was && Object.entries(next).every(([k, v]) => Math.abs(was[k as keyof SkylineBox] - v) < 2);
+        return same ? was : next;
+      });
     };
 
     const paint = (p: number) => {
@@ -185,13 +202,15 @@ export function Contents() {
     <section className="book-cover" id="top" ref={root}>
       <header className="book-cover__head">
         <p className="book-cover__shelfmark">
-          {cover.shelfmark.name} <strong>{cover.shelfmark.number}</strong>
-        </p>
-        <p className="book-cover__owner">
-          {cover.owner}
-          <DrawIn className="book-cover__underline" viewBox="0 0 300 12" delay={0.2}>
-            <path pathLength={1} d="M3 7C52 3.5 104 9 160 6S258 3.5 297 7" />
-          </DrawIn>
+          <span>
+            {cover.shelfmark.name} <strong>{cover.shelfmark.number}</strong>
+          </span>
+          <span className="book-cover__owner">
+            {cover.owner}
+            <DrawIn className="book-cover__underline" viewBox="0 0 300 12" delay={0.2}>
+              <path pathLength={1} d="M3 7C52 3.5 104 9 160 6S258 3.5 297 7" />
+            </DrawIn>
+          </span>
         </p>
       </header>
 
@@ -200,6 +219,7 @@ export function Contents() {
           <span>{cover.wordmarkTop}</span> <span>{cover.wordmarkBottom}</span>
         </h1>
         <canvas className="book-cover__canvas" ref={canvasRef} aria-hidden="true" />
+        <Skyline box={skyline} delay={WRITE_SECONDS * 0.8} />
       </div>
 
       <p className="book-cover__line">

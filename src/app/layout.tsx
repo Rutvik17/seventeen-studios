@@ -168,7 +168,7 @@ export const metadata: Metadata = {
   mobile browser chrome near-black above a washi background.
 */
 export const viewport: Viewport = {
-  themeColor: '#f2ede1',
+  themeColor: '#f2e7d2',
   colorScheme: 'light',
 };
 

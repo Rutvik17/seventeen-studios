@@ -16,8 +16,11 @@ import { grain } from '@/lib/sketchbook/pencil';
 
 type Line = { text: string; align: 'left' | 'right' };
 
-/** The type size, where each line sits (its left end on the baseline), and the height it all needs. */
-export type WordmarkLayout = { size: number; height: number; places: { x: number; y: number }[] };
+/**
+ * The type size, where each line sits (its left end on the baseline), the
+ * height it all needs, and how far right the lettering reaches.
+ */
+export type WordmarkLayout = { size: number; height: number; places: { x: number; y: number }[]; right: number };
 
 /** One letter's back-and-forth path, in page pixels, and how long it is. */
 type Scribble = { pts: Float32Array; length: number };
@@ -36,8 +39,12 @@ export type WordmarkArt = {
 const WEIGHT = 700;
 /** How far the hand leans: the tangent of 8°. */
 const SLANT = Math.tan((8 * Math.PI) / 180);
-/** The largest the title is written, in CSS pixels, however wide the page. */
-const LARGEST = 230;
+/**
+ * The largest the title is written: up to 230 pixels, or on a wide page a
+ * share of its width. Past that it stops filling the width, and leaves the
+ * room beside it to the cities (`Skyline`); on a phone it fills the width.
+ */
+const LARGEST = { px: 230, share: 0.15 };
 /** How far the second line starts in, as a fraction of the first line's width. */
 const INDENT = 0.4;
 
@@ -56,7 +63,7 @@ export function layoutWordmark(
   const descent = Math.max(...ms.map((m) => m.actualBoundingBoxDescent)) / 100;
   // A line's reach, per unit of size: its own width, and how far its tops lean out.
   const reach = (m: TextMetrics) => m.width / 100 + ascent * SLANT + 0.08;
-  const size = Math.floor(Math.min(LARGEST, width / Math.max(...ms.map(reach))));
+  const size = Math.floor(Math.min(Math.max(LARGEST.px, width * LARGEST.share), width / Math.max(...ms.map(reach))));
   const lineHeight = size * 0.84;
   const first = size * (ascent + 0.06);
   const places = lines.map((line, i) => {
@@ -67,7 +74,8 @@ export function layoutWordmark(
         : Math.min(width - w - size * (ascent * SLANT + 0.06), (ms[0].width / 100) * size * INDENT);
     return { x, y: first + lineHeight * i };
   });
-  return { size, height: first + lineHeight * (lines.length - 1) + size * (descent + 0.1), places };
+  const right = Math.max(...places.map((p, i) => p.x + (ms[i].width / 100) * size)) + size * (ascent * SLANT + 0.06);
+  return { size, height: first + lineHeight * (lines.length - 1) + size * (descent + 0.1), places, right };
 }
 
 export function drawWordmark(

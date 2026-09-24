@@ -3,14 +3,17 @@
 Rutvik Patel's portfolio, made as one sketchbook. A statically exported Next.js
 14 application; everything drawn on it is drawn in code.
 
-- **The cover and contents** — the landing: the title drawn in pencil and
-  cross-hatched, and a contents page with a doodle beside each chapter.
+- **The cover and contents** — the landing: the title handwritten in two
+  crayons, the world's cities sketched in coloured pencil beside it one after
+  another, and a contents page with a doodle beside each chapter.
 - **The founder** — the book itself: a cover to open, a page per stretch of the
   career, turned like paper, and the résumé in a pocket inside the back cover.
 - **The notebook** — where Rutvik documents what he learns, day by day.
 - **Grasp** — a calculus course you learn by dragging, on this site.
 
-The loader is a pencil drawing the 17. Every change of page is a sheet of paper
+Everything is handwritten — Caveat for titles and notes, Shantell Sans for
+reading — except Grasp's chalkboard, which keeps its own faces. The loader is a
+crayon writing the 17. Every change of page is a sheet of paper
 turning. The cursor is a pencil that leans as it moves and circles whatever you
 can click. The footer is the book's back endpaper — the bookplate
 that says who to return it to.
@@ -90,18 +93,22 @@ src/
     Footer.tsx             the back endpaper
     Sheet.tsx              the shell of every simple page, with a way back for notebook entries
     Cursor.tsx             the pencil and its hover marks
-    Preloader.tsx          every full load: a pencil draws the mark until the page is ready
+    Preloader.tsx          every full load: a crayon writes the mark until the page is ready
     Transition.tsx         page-turn transitions + TransitionLink
-    loader/                the pencil-drawn mark
+    loader/                the mark, written in crayon
     founder/               the book component and its styles
     grasp/                 the chalkboard
     instruments/           the derivative Grasp demonstrates
     notebook/              the entries' drawings — the globe, and the continents sketched beside it
     sections/Contents.tsx  the landing
+    sections/Skyline.tsx   the cities beside the landing's title, drawn one after another
+    IndexList.tsx          every list of pages to turn to — the contents, the notebook
+    DrawIn.tsx             a little drawing — an underline, an arrow — that draws itself in
   content/                 all copy, as typed data
   lib/
     sketchbook/            the book's drawings — geometry, chapters, the canvas painter, and the pencil every sketch is drawn with
-    sketch/wordmark.ts     the landing's pencil-drawn, cross-hatched title
+    sketch/wordmark.ts     the landing's title, handwritten in crayon letter by letter
+    sketch/skylines.ts     the cities, landmark by landmark, as pencil marks
     pageTurn.ts            the sheet that turns between pages
     ready.ts               holds the loader until every self-painting part has painted
     url.ts                 where the site lives — the one place it is written

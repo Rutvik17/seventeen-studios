@@ -27,7 +27,7 @@ export default function NotebookPage() {
     <Sheet
       kicker="Notebook"
       title="Something new, every day."
-      lead={<p>This is where I document my journey as I learn.</p>}
+      lead={<p>My sketchbook.</p>}
     >
       <IndexList
         cursor="Read"

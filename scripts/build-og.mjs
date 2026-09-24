@@ -67,7 +67,7 @@ const outDir = path.join(root, 'public', 'og');
 const W = 1200;
 const H = 630;
 
-const PAPER = '#f4efe3';
+const PAPER = '#f2e7d2';
 const GRAPHITE = '#1d1d21';
 const ACCENT = '#1f3a8a';
 const SLATE = '#2d4a3f';
@@ -219,7 +219,7 @@ function plateBlank(w, h, ink, accent) {
   const lines = [];
   for (let y = 70; y < h - 20; y += 44) lines.push(`<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="${accent}" stroke-opacity="0.3" stroke-width="1.5"/>`);
   return `
-    <rect width="${w}" height="${h}" fill="#fbf8f1" stroke="${ink}" stroke-opacity="0.2"/>
+    <rect width="${w}" height="${h}" fill="#faf3e5" stroke="${ink}" stroke-opacity="0.2"/>
     <line x1="40" y1="0" x2="40" y2="${h}" stroke="#c8233f" stroke-opacity="0.35" stroke-width="1.5"/>
     ${lines.join('')}
     <g transform="translate(${w * 0.28}, ${h * 0.72}) rotate(-24)">
