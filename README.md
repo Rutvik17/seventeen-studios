@@ -82,7 +82,7 @@ src/
   app/                     routes (App Router, all statically exported)
     page.tsx               the cover and contents
     founder/               the book: cover, chapters, the résumé in the back pocket
-    notebook/              the notebook, and a folder per entry (rocket-physics/)
+    notebook/              the notebook
     grasp/                 Grasp: the chalkboard, the live derivative, the lessons
     globals.css            tokens, the chrome, and the shared page styles
   components/
@@ -96,34 +96,21 @@ src/
     founder/               the book component and its styles
     grasp/                 the chalkboard
     instruments/           the derivative Grasp demonstrates
-    notebook/              the entries' working parts — the rocket trip's player: canvases, button, clock, sound
     sections/Contents.tsx  the landing
   content/                 all copy, as typed data
   lib/
     sketchbook/            the book's drawings — geometry, chapters, the canvas painter
     sketch/wordmark.ts     the landing's pencil-drawn, cross-hatched title
-    sketch/pencil.ts       coloured-pencil strokes, washes and handwriting for canvas drawings
     pageTurn.ts            the sheet that turns between pages
     ready.ts               holds the loader until every self-painting part has painted
     url.ts                 where the site lives — the one place it is written
     sketch/portrait.ts     the founder's photo, redrawn in pencil and coloured pencil
     calculus.ts            Grasp's numeric and exact derivatives
-    rocket/                the rocket entry: Earth's gravity, number formatting, colours, sound
-    rocket/mission/        the trip, flown once: bodies, the rocket, the integrator, guidance, playback, words
-    rocket/scene/          the trip, drawn: camera, rockets, Earth and Moon, the frame renderer
 scripts/
   build-og.mjs             share cards, drawn from the site's own data
   verify-og.mjs            postbuild: every page names a share card that exists
   verify-assets.mjs        postbuild: every file a page references is in out/
-  verify-rocket.mjs        postbuild: the rocket's physics against published figures
 ```
-
-### Notebook entries
-
-An entry is one object in `src/content/notebook.ts` — title, summary, the date
-it was written — and a folder at `app/notebook/<slug>/` for its page. The
-notebook page lists it, the sitemap includes it and `npm run og` draws its
-share card, all from that object.
 
 ### Content
 

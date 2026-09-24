@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "typecheck": "tsc --noEmit",
-    "postbuild": "node scripts/verify-og.mjs && node scripts/verify-assets.mjs && node --experimental-strip-types --no-warnings --import ./scripts/alias-register.mjs scripts/verify-rocket.mjs",
+    "postbuild": "node scripts/verify-og.mjs && node scripts/verify-assets.mjs",
     "og": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/build-og.mjs"
   },
   "dependencies": {
