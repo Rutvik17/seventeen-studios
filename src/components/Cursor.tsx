@@ -13,9 +13,12 @@
  *
  * Over anything that does something, it does what a pencil does in a
  * sketchbook: it circles it. A quick crimson loop is drawn round a link or a
- * button (a long row gets underlined instead), the pencil lifts and leans in,
- * and a handwritten label appears beside the point when the thing has a
- * `data-cursor`. Pressing taps the pencil down.
+ * button, the pencil lifts and leans in, and a handwritten label appears
+ * beside the point when the thing has a `data-cursor`. Pressing taps the
+ * pencil down. Anything long or large — a row of a list, a drawing — gets no
+ * mark: the rows colour themselves in (`IndexList`), and for a drawing the
+ * label says enough. (Long things used to be underlined in crimson; a red rule
+ * under every row read as a warning, not a pencil.)
  *
  * It used to be a blue dot inside a lagging ring — a good cursor for an
  * instrument panel, and a stranger in a notebook.
@@ -93,7 +96,7 @@ export function Cursor() {
 
     /**
      * The mark round whatever is hovered: a loose loop that overshoots its own
-     * start, as a hand does, or an underline for anything long and flat.
+     * start, as a hand does — for something small enough to circle.
      */
     const circle = (now: number) => {
       if (!hovered) return false;
@@ -105,34 +108,24 @@ export function Cursor() {
       ctx.strokeStyle = MARK;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      const long = r.width > 420 || r.height > 130;
+      if (r.width > 420 || r.height > 130) return false;
       for (let pass = 0; pass < 2; pass += 1) {
         ctx.globalAlpha = pass ? 0.35 : 0.85;
         ctx.lineWidth = pass ? 1 : 1.7;
         ctx.beginPath();
-        if (long) {
-          const y = r.bottom - 4 + pass * 2;
-          const steps = 24;
-          for (let i = 0; i <= steps * p; i += 1) {
-            const x = r.left + 6 + ((r.width - 12) * i) / steps;
-            const yy = y + wobble(seed + pass, i) * 3 + Math.sin(i * 0.5) * 1.2;
-            i ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy);
-          }
-        } else {
-          const cx = r.left + r.width / 2;
-          const cy = r.top + r.height / 2;
-          const rx = r.width / 2 + 12;
-          const ry = r.height / 2 + 9;
-          const start = -2.5 + wobble(seed, 99) * 0.6;
-          const turn = Math.PI * 2 * 1.1 * p;
-          const steps = 48;
-          for (let i = 0; i <= steps; i += 1) {
-            const a = start + (turn * i) / steps;
-            const k = 1 + wobble(seed + pass * 7, i) * 0.06 + (i / steps) * 0.05;
-            const x = cx + Math.cos(a) * rx * k + pass * 1.5;
-            const y = cy + Math.sin(a) * ry * k - pass;
-            i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-          }
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const rx = r.width / 2 + 12;
+        const ry = r.height / 2 + 9;
+        const start = -2.5 + wobble(seed, 99) * 0.6;
+        const turn = Math.PI * 2 * 1.1 * p;
+        const steps = 48;
+        for (let i = 0; i <= steps; i += 1) {
+          const a = start + (turn * i) / steps;
+          const k = 1 + wobble(seed + pass * 7, i) * 0.06 + (i / steps) * 0.05;
+          const x = cx + Math.cos(a) * rx * k + pass * 1.5;
+          const y = cy + Math.sin(a) * ry * k - pass;
+          i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
         }
         ctx.stroke();
       }
@@ -261,7 +254,7 @@ export function Cursor() {
             <path d="M5 -2.4 L14 -5.5 L14 5.5 L5 2.4 Z" fill="#e6c89a" stroke="#1d1d21" strokeWidth="0.9" strokeLinejoin="round" />
             {/* the painted body */}
             <rect x="14" y="-5.5" width="30" height="11" fill="var(--accent)" stroke="#1d1d21" strokeWidth="0.9" />
-            <line x1="14" y1="0" x2="44" y2="0" stroke="#fbf8f1" strokeOpacity="0.35" strokeWidth="1.2" />
+            <line x1="14" y1="0" x2="44" y2="0" stroke="#faf3e5" strokeOpacity="0.35" strokeWidth="1.2" />
             {/* ferrule and eraser */}
             <rect x="44" y="-5.5" width="5" height="11" fill="#b9b3a2" stroke="#1d1d21" strokeWidth="0.9" />
             <rect x="49" y="-5.5" width="6" height="11" rx="2" fill="var(--accent-2)" stroke="#1d1d21" strokeWidth="0.9" />

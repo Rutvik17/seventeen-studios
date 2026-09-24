@@ -3,10 +3,10 @@
 /**
  * THE LANDING — the sketchbook's contents page.
  *
- * The site is one sketchbook and this is where it opens: the title drawn in
- * pencil and hatched in, one line about what is inside, and the contents. Each
- * chapter is a page you can turn to, with a small drawing of what is on it that
- * draws itself when it comes into view and again when you point at it.
+ * The site is one sketchbook and this is where it opens: the title written
+ * across it in crayon, one line about what is inside, and the contents. Each chapter is a page you can turn to, with a small drawing of
+ * what is on it that draws itself when it comes into view and again when you
+ * point at it.
  *
  * It replaced two double pendulums with a readout. They were a demonstration
  * without a story; this is the story's table of contents, and the
@@ -22,27 +22,32 @@
  *
  * REDUCED MOTION
  *
- * The title appears already drawn and does not shimmer; the doodles are drawn
- * from the start. Same page, nothing moving.
+ * The title appears already written; the doodles are drawn from the start.
+ * Same page, nothing moving.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from '@/lib/gsap';
 import { useUi } from '@/lib/store';
 import { onceInView } from '@/lib/inview';
 import { chapters, cover, type Chapter } from '@/content/studio';
-import { TransitionLink } from '@/components/Transition';
-import { drawWordmark, hatchedLetters, layoutWordmark } from '@/lib/sketch/wordmark';
+import { IndexList } from '@/components/IndexList';
+import { DrawIn } from '@/components/DrawIn';
+import { Skyline, type SkylineBox } from '@/components/sections/Skyline';
+import { drawWordmark, layoutWordmark, prepareWordmark, type WordmarkArt, type WordmarkLayout } from '@/lib/sketch/wordmark';
 
 const LINES = [
   { text: cover.wordmarkTop, align: 'left' as const },
   { text: cover.wordmarkBottom, align: 'right' as const },
 ];
 
-/** Seconds for the pencil to draw and hatch the title. */
-const DRAW_SECONDS = 2.6;
-/** Stop-motion rate of the shimmer, frames per second. */
-const BOIL_FPS = 5;
+/** Which crayon from the box (`--crayon-n`) colours in each line of the title. */
+const WORD_CRAYONS = [1, 2];
+
+/** Seconds for the crayons to write the title, at a steady hand's pace. */
+const WRITE_SECONDS = 3.2;
+/** The narrowest room beside the title worth drawing a city in, in CSS pixels. */
+const SKYLINE_MIN = 300;
 
 /** The small drawings beside each chapter, in a 120 x 80 box. */
 const DOODLES: Record<Chapter['doodle'], string[]> = {
@@ -81,6 +86,7 @@ export function Contents() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const list = useRef<HTMLOListElement>(null);
   const entered = useUi((s) => s.entered);
+  const [skyline, setSkyline] = useState<SkylineBox | null>(null);
 
   /* ---- the doodles: armed hidden by script, drawn when seen ---- */
   useEffect(() => {
@@ -90,7 +96,7 @@ export function Contents() {
     return onceInView(el, () => el.classList.add('is-drawn'), { enter: 0.05 });
   }, []);
 
-  /* ---- the title, in pencil ---- */
+  /* ---- the title, written in crayon ---- */
   useEffect(() => {
     const canvas = canvasRef.current;
     const h1 = title.current;
@@ -99,18 +105,21 @@ export function Contents() {
     if (!ctx) return;
 
     const reduced = prefersReducedMotion();
-    const ink = getComputedStyle(h1).color;
     const family = getComputedStyle(h1).fontFamily;
+    // One crayon a word — the blue, then the marigold — read from the
+    // stylesheet rather than written down twice.
+    const tokens = getComputedStyle(document.documentElement);
+    const colours = WORD_CRAYONS.map((i) => tokens.getPropertyValue(`--crayon-${i}`).trim());
     let width = 0;
     let dpr = 1;
-    let layout = { size: 0, lineHeight: 0, height: 0 };
-    let hatch: HTMLCanvasElement | null = null;
+    let layout: WordmarkLayout = { size: 0, height: 0, places: [], right: 0 };
+    let art: WordmarkArt | null = null;
     let start = 0;
-    let boil = 0;
-    let lastBoil = 0;
     let raf = 0;
     let visible = true;
     let cancelled = false;
+
+    const progress = (now: number) => (reduced ? 1 : start ? Math.min(1, (now - start) / 1000 / WRITE_SECONDS) : 0);
 
     const measure = () => {
       width = canvas.parentElement?.clientWidth ?? 0;
@@ -120,32 +129,40 @@ export function Contents() {
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(layout.height * dpr);
       canvas.style.height = `${layout.height}px`;
-      hatch = hatchedLetters(LINES, family, width, layout, dpr, ink);
+      art = prepareWordmark(LINES, family, width, layout, dpr, colours);
+
+      // The room the title leaves to its right, for the cities: from just past
+      // the lettering to the edge, standing on the last line's baseline.
+      // A city is drawn no wider than it looks right for its height, and sits
+      // at the right-hand edge.
+      const ground = Math.round(layout.places[layout.places.length - 1].y);
+      const room = Math.min(width - Math.round(layout.right + Math.max(28, width * 0.025)), Math.round(ground * 1.7));
+      setSkyline((was) => {
+        if (room < SKYLINE_MIN) return null;
+        const next = { left: width - room, width: room, height: ground + 48, ground };
+        const same = was && Object.entries(next).every(([k, v]) => Math.abs(was[k as keyof SkylineBox] - v) < 2);
+        return same ? was : next;
+      });
     };
 
-    const paint = (progress: number) => {
-      if (!hatch) return;
+    const paint = (p: number) => {
+      if (!art) return;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, layout.height);
-      drawWordmark(ctx, { lines: LINES, family, width, layout, progress, boil, ink, hatch });
+      drawWordmark(ctx, { width, layout, progress: p, art });
     };
 
+    // Written once, then left alone: nothing runs after the last stroke.
     const frame = (now: number) => {
       raf = 0;
       if (!start) start = now;
-      const t = (now - start) / 1000 / DRAW_SECONDS;
-      const u = Math.min(1, t);
-      const eased = u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
-      if (now - lastBoil > 1000 / BOIL_FPS) {
-        boil += 1;
-        lastBoil = now;
-      }
-      paint(eased);
-      if (visible && !document.hidden) raf = requestAnimationFrame(frame);
+      const p = progress(now);
+      paint(p);
+      if (p < 1 && visible && !document.hidden) raf = requestAnimationFrame(frame);
     };
 
     const sync = () => {
-      if (reduced || !entered) return;
+      if (reduced || !entered || progress(performance.now()) >= 1) return;
       if (visible && !document.hidden && !raf) raf = requestAnimationFrame(frame);
     };
 
@@ -155,7 +172,7 @@ export function Contents() {
     });
     const sizes = new ResizeObserver(() => {
       measure();
-      paint(reduced ? 1 : start ? Math.min(1, (performance.now() - start) / 1000 / DRAW_SECONDS) : 0);
+      paint(progress(performance.now()));
     });
 
     document.fonts.ready.then(() => {
@@ -184,8 +201,17 @@ export function Contents() {
   return (
     <section className="book-cover" id="top" ref={root}>
       <header className="book-cover__head">
-        <p className="book-cover__shelfmark">{cover.shelfmark}</p>
-        <p className="book-cover__owner">{cover.owner}</p>
+        <p className="book-cover__shelfmark">
+          <span>
+            {cover.shelfmark.name} <strong>{cover.shelfmark.number}</strong>
+          </span>
+          <span className="book-cover__owner">
+            {cover.owner}
+            <DrawIn className="book-cover__underline" viewBox="0 0 300 12" delay={0.2}>
+              <path pathLength={1} d="M3 7C52 3.5 104 9 160 6S258 3.5 297 7" />
+            </DrawIn>
+          </span>
+        </p>
       </header>
 
       <div className="book-cover__title">
@@ -193,29 +219,20 @@ export function Contents() {
           <span>{cover.wordmarkTop}</span> <span>{cover.wordmarkBottom}</span>
         </h1>
         <canvas className="book-cover__canvas" ref={canvasRef} aria-hidden="true" />
+        <Skyline box={skyline} delay={WRITE_SECONDS * 0.8} />
       </div>
 
-      <p className="book-cover__line">{cover.line}</p>
+      <p className="book-cover__line">
+        {cover.line} <span className="book-cover__motto">{cover.motto}</span>
+      </p>
 
       <nav className="contents" aria-label={cover.contents}>
         <h2 className="contents__head">{cover.contents}</h2>
-        <ol className="contents__list" ref={list}>
-          {chapters.map((c) => (
-            <li key={c.href}>
-              <TransitionLink href={c.href} className="contents__row" data-cursor={cover.cursor}>
-                <span className="contents__numeral">{c.numeral}</span>
-                <span className="contents__text">
-                  <span className="contents__title">{c.title}</span>
-                  <span className="contents__note">{c.note}</span>
-                </span>
-                <Doodle kind={c.doodle} />
-                <span className="contents__arrow" aria-hidden="true">
-                  →
-                </span>
-              </TransitionLink>
-            </li>
-          ))}
-        </ol>
+        <IndexList
+          listRef={list}
+          cursor={cover.cursor}
+          items={chapters.map((c, i) => ({ key: c.href, href: c.href, mark: String(i + 1), title: c.title, note: c.note, art: <Doodle kind={c.doodle} /> }))}
+        />
       </nav>
     </section>
   );

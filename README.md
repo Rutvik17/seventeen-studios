@@ -3,14 +3,17 @@
 Rutvik Patel's portfolio, made as one sketchbook. A statically exported Next.js
 14 application; everything drawn on it is drawn in code.
 
-- **The cover and contents** — the landing: the title drawn in pencil and
-  cross-hatched, and a contents page with a doodle beside each chapter.
+- **The cover and contents** — the landing: the title handwritten in two
+  crayons, the world's cities sketched in coloured pencil beside it one after
+  another, and a contents page with a doodle beside each chapter.
 - **The founder** — the book itself: a cover to open, a page per stretch of the
   career, turned like paper, and the résumé in a pocket inside the back cover.
 - **The notebook** — where Rutvik documents what he learns, day by day.
 - **Grasp** — a calculus course you learn by dragging, on this site.
 
-The loader is a pencil drawing the 17. Every change of page is a sheet of paper
+Everything is handwritten — Caveat for titles and notes, Shantell Sans for
+reading — except Grasp's chalkboard, which keeps its own faces. The loader is a
+crayon writing the 17. Every change of page is a sheet of paper
 turning. The cursor is a pencil that leans as it moves and circles whatever you
 can click. The footer is the book's back endpaper — the bookplate
 that says who to return it to.
@@ -82,35 +85,65 @@ src/
   app/                     routes (App Router, all statically exported)
     page.tsx               the cover and contents
     founder/               the book: cover, chapters, the résumé in the back pocket
-    notebook/              the notebook
+    notebook/              the notebook, and a folder per entry (earth-we-live-on/)
     grasp/                 Grasp: the chalkboard, the live derivative, the lessons
     globals.css            tokens, the chrome, and the shared page styles
   components/
     Nav.tsx                the top edge: the mark and three index tabs
     Footer.tsx             the back endpaper
-    Sheet.tsx              the shell of every simple page
+    Sheet.tsx              the shell of every simple page, with a way back for notebook entries
     Cursor.tsx             the pencil and its hover marks
-    Preloader.tsx          every full load: a pencil draws the mark until the page is ready
+    Preloader.tsx          every full load: a crayon writes the mark until the page is ready
     Transition.tsx         page-turn transitions + TransitionLink
-    loader/                the pencil-drawn mark
+    loader/                the mark, written in crayon
     founder/               the book component and its styles
     grasp/                 the chalkboard
     instruments/           the derivative Grasp demonstrates
+    notebook/              the entries' drawings — the globe, and the continents sketched beside it
     sections/Contents.tsx  the landing
+    sections/Skyline.tsx   the cities beside the landing's title, drawn one after another
+    IndexList.tsx          every list of pages to turn to — the contents, the notebook
+    DrawIn.tsx             a little drawing — an underline, an arrow — that draws itself in
   content/                 all copy, as typed data
   lib/
-    sketchbook/            the book's drawings — geometry, chapters, the canvas painter
-    sketch/wordmark.ts     the landing's pencil-drawn, cross-hatched title
+    sketchbook/            the book's drawings — geometry, chapters, the canvas painter, and the pencil every sketch is drawn with
+    sketch/wordmark.ts     the landing's title, handwritten in crayon letter by letter
+    sketch/skylines.ts     the cities, landmark by landmark, as pencil marks
     pageTurn.ts            the sheet that turns between pages
     ready.ts               holds the loader until every self-painting part has painted
     url.ts                 where the site lives — the one place it is written
     sketch/portrait.ts     the founder's photo, redrawn in pencil and coloured pencil
     calculus.ts            Grasp's numeric and exact derivatives
+    globe/                 the Earth we live on: coastlines and crayon data, the view, the crayon map, the globe, the continents
 scripts/
   build-og.mjs             share cards, drawn from the site's own data
   verify-og.mjs            postbuild: every page names a share card that exists
   verify-assets.mjs        postbuild: every file a page references is in out/
+  verify-globe.mjs         postbuild: the globe's world is the real one, and its crayon pictures are up to date
+  make-globe-data.mjs      the globe's coastlines and crayon map, from Natural Earth and NASA's Blue Marble (run by hand)
+  make-globe-sheet.mjs     the globe's world, coloured in crayon once, as the pictures the page loads (run by hand)
+  chrome.mjs               headless Chrome, for the scripts that draw
+  scene-server.mjs         serves the site's own TypeScript to that browser, so scripts draw with the pages' code
 ```
+
+### Notebook entries
+
+An entry is one object in `src/content/notebook.ts` — title, summary, the date
+it was written — and a folder at `app/notebook/<slug>/` for its page, which
+passes `notebookBack` to its `Sheet` for the way back. The notebook page lists
+it, the sitemap includes it and `npm run og` draws its share card, all from
+that object.
+
+### The globe's data
+
+The globe draws the real world. Its coastlines are Natural Earth's 1:110m land
+(public domain), and the colour of every half-degree of it is read from NASA's
+Blue Marble (public domain); `scripts/make-globe-data.mjs` turns the two into
+`src/lib/globe/land.ts` and `colours.ts`. The world is then coloured in crayon
+once, by `scripts/make-globe-sheet.mjs`, into `public/notebook/earth/` — the
+page loads that picture rather than spending seconds colouring the world on
+every visit. Change the marks, the data or the `--globe-*` crayon colours and
+run it again; `verify-globe.mjs` fails the build until you do.
 
 ### Content
 

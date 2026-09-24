@@ -33,8 +33,7 @@
  * the picture is wrong only if the page is wrong.
  */
 
-import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, statSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -42,10 +41,13 @@ import { fileURLToPath } from 'node:url';
 import { careerStart, founder } from '../src/content/founder.ts';
 import { site, chapters } from '../src/content/studio.ts';
 import { graspInfo, graspModule } from '../src/content/grasp.ts';
-import { spell } from '../src/lib/time.ts';
+import { notebook } from '../src/content/notebook.ts';
+import { formatDate, spell } from '../src/lib/time.ts';
 import { CURVES } from '../src/lib/calculus.ts';
 import { bridge, cableY, PAGE, SUN } from '../src/lib/sketchbook/geometry.ts';
 import { SITE_HOST } from '../src/lib/url.ts';
+import { fileUrl, openPage } from './chrome.mjs';
+import { serveScenes } from './scene-server.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = path.join(root, 'public', 'og');
@@ -65,7 +67,7 @@ const outDir = path.join(root, 'public', 'og');
 const W = 1200;
 const H = 630;
 
-const PAPER = '#f4efe3';
+const PAPER = '#f2e7d2';
 const GRAPHITE = '#1d1d21';
 const ACCENT = '#1f3a8a';
 const SLATE = '#2d4a3f';
@@ -105,7 +107,7 @@ function polyline(pts, stroke, width = 3, extra = '') {
 
 /**
  * The landing's own contents, from the same `chapters` the page lists: a
- * handwritten heading, then each chapter's numeral and title on a dashed rule.
+ * handwritten heading, then each chapter's number and title on a dashed rule.
  */
 function plateContents(w, h, ink, accent) {
   const rowH = (h - 96) / chapters.length;
@@ -113,7 +115,7 @@ function plateContents(w, h, ink, accent) {
     .map((c, i) => {
       const y = 96 + i * rowH + rowH / 2;
       return `
-        <text x="0" y="${n(y + 10)}" fill="${accent}" font-family="Caveat, cursive" font-size="40">${esc(c.numeral)}</text>
+        <text x="0" y="${n(y + 10)}" fill="${accent}" font-family="Caveat, cursive" font-size="40">${i + 1}</text>
         <text x="64" y="${n(y + 10)}" fill="${ink}" font-family="Syne, sans-serif" font-weight="700" font-size="34" letter-spacing="-1">${esc(c.title)}</text>
         <line x1="0" y1="${n(y + rowH / 2)}" x2="${w}" y2="${n(y + rowH / 2)}" stroke="${ink}" stroke-opacity="0.3" stroke-width="1.5" stroke-dasharray="5 6"/>`;
     })
@@ -217,7 +219,7 @@ function plateBlank(w, h, ink, accent) {
   const lines = [];
   for (let y = 70; y < h - 20; y += 44) lines.push(`<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="${accent}" stroke-opacity="0.3" stroke-width="1.5"/>`);
   return `
-    <rect width="${w}" height="${h}" fill="#fbf8f1" stroke="${ink}" stroke-opacity="0.2"/>
+    <rect width="${w}" height="${h}" fill="#faf3e5" stroke="${ink}" stroke-opacity="0.2"/>
     <line x1="40" y1="0" x2="40" y2="${h}" stroke="#c8233f" stroke-opacity="0.35" stroke-width="1.5"/>
     ${lines.join('')}
     <g transform="translate(${w * 0.28}, ${h * 0.72}) rotate(-24)">
@@ -237,7 +239,56 @@ function plateBlank(w, h, ink, accent) {
 const PLATES = {
   contents: (w, h, ink, accent) => plateContents(w, h, ink, accent),
   blank: (w, h, ink, accent) => plateBlank(w, h, ink, accent),
+  'earth-we-live-on': (w, h) => `<image href="${globePicture}" x="0" y="0" width="${w}" height="${h}"/>`,
 };
+
+/* ------------------------------------------------------------------ *
+ * The globe
+ * ------------------------------------------------------------------ */
+
+/** A frame of the notebook's globe, set by `main` before the cards are drawn. */
+let globePicture = '';
+
+/**
+ * The globe as the entry draws it — its own code (`src/lib/globe/render.ts`),
+ * its own crayon map and its own colours, read from its stylesheet — turned
+ * to Africa and Europe, `size` pixels square, as a PNG data URL.
+ */
+async function drawGlobe(size) {
+  const css = readFileSync(path.join(root, 'src/components/notebook/Globe.module.css'), 'utf8');
+  const vars = Object.fromEntries([...css.matchAll(/--globe-([a-z]+):\s*([^;]+);/g)].map(([, name, value]) => [name, value.trim()]));
+  const sheet = `data:image/webp;base64,${readFileSync(path.join(root, 'public/notebook/earth/crayon-2048.webp')).toString('base64')}`;
+  const page = `<!doctype html><html><head><script type="importmap">{"imports":{"@/":"/src/"}}</script></head>
+<body style="margin:0"><canvas id="back"></canvas><canvas id="globe"></canvas><script type="module">
+import { CRAYONS } from '@/lib/globe/colours';
+import { createScene } from '@/lib/globe/render';
+import { sheetFrom } from '@/lib/globe/sheet';
+const vars = ${JSON.stringify(vars)};
+const picture = new Image();
+picture.src = ${JSON.stringify(sheet)};
+await picture.decode();
+const globe = document.getElementById('globe');
+const scene = createScene(document.getElementById('back'), globe, { paper: vars.paper, dusk: vars.dusk, graphite: vars.graphite, shadow: vars.shadow, crayons: CRAYONS.map((c) => vars[c]) }, sheetFrom(picture, 2048));
+scene.resize(${size}, ${size}, 2);
+scene.draw(-20);
+window.picture = globe.toDataURL('image/png');
+</script></body></html>`;
+  const server = await serveScenes({ '/globe.html': page });
+  const browser = await openPage({ width: size, height: size });
+  try {
+    await browser.navigate(`${server.url}/globe.html`);
+    for (let i = 0; i < 100; i += 1) {
+      const url = await browser.evaluate('window.picture || null');
+      if (url) return url;
+      if (browser.errors.length) throw new Error(browser.errors.join('\n'));
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    throw new Error('the globe was not drawn');
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+}
 
 /** Plates that want a landscape box rather than the square the diagrams use. */
 const PLATE_BOX = {
@@ -449,6 +500,14 @@ function cards() {
       titleSize: 96,
       footRight: `${graspModule.position} · ${graspModule.title}`,
     },
+    ...notebook.map((entry) => ({
+      file: `notebook-${entry.slug}`,
+      label: 'Notebook',
+      title: entry.title,
+      standfirst: entry.summary,
+      plate: entry.slug in PLATES ? entry.slug : 'blank',
+      footRight: formatDate(entry.date),
+    })),
   ];
 
   return list;
@@ -457,63 +516,6 @@ function cards() {
 /* ------------------------------------------------------------------ *
  * Rendering
  * ------------------------------------------------------------------ */
-
-const CHROME_CANDIDATES = [
-  process.env.CHROMIUM_PATH,
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium',
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-].filter(Boolean);
-
-function findChrome() {
-  const found = CHROME_CANDIDATES.find((p) => existsSync(p));
-  if (!found) {
-    throw new Error(
-      'No Chrome found. Set CHROMIUM_PATH to a Chrome or Chromium executable.',
-    );
-  }
-  return found;
-}
-
-/** Minimal CDP client — one socket, promise per message id. */
-class Devtools {
-  constructor(ws) {
-    this.ws = ws;
-    this.id = 0;
-    this.pending = new Map();
-    ws.addEventListener('message', (event) => {
-      const msg = JSON.parse(event.data);
-      const entry = this.pending.get(msg.id);
-      if (!entry) return;
-      this.pending.delete(msg.id);
-      msg.error ? entry.reject(new Error(msg.error.message)) : entry.resolve(msg.result);
-    });
-  }
-
-  send(method, params = {}, sessionId) {
-    const id = ++this.id;
-    return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
-      this.ws.send(JSON.stringify({ id, method, params, sessionId }));
-    });
-  }
-}
-
-async function waitForEndpoint(port, timeoutMs = 20000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      const res = await fetch(`http://127.0.0.1:${port}/json/version`);
-      if (res.ok) return (await res.json()).webSocketDebuggerUrl;
-    } catch {
-      /* not listening yet */
-    }
-    await new Promise((r) => setTimeout(r, 120));
-  }
-  throw new Error('Chrome did not open a debugging port.');
-}
 
 async function main() {
   const filter = process.argv[2];
@@ -526,61 +528,16 @@ async function main() {
   }
 
   mkdirSync(outDir, { recursive: true });
+  if (wanted.some((c) => c.plate === 'earth-we-live-on')) globePicture = await drawGlobe(420);
   const tmp = mkdtempSync(path.join(os.tmpdir(), 'og-'));
-  const profile = mkdtempSync(path.join(os.tmpdir(), 'og-profile-'));
-  const port = 9400 + Math.floor(Math.random() * 400);
-
-  const chrome = spawn(
-    findChrome(),
-    [
-      '--headless=new',
-      `--remote-debugging-port=${port}`,
-      `--user-data-dir=${profile}`,
-      '--no-first-run',
-      '--no-default-browser-check',
-      '--disable-extensions',
-      '--hide-scrollbars',
-      '--force-device-scale-factor=1',
-      '--font-render-hinting=none',
-      'about:blank',
-    ],
-    { stdio: 'ignore' },
-  );
+  const page = await openPage({ width: W, height: H });
 
   let failures = 0;
   try {
-    const wsUrl = await waitForEndpoint(port);
-    const socket = new WebSocket(wsUrl);
-    await new Promise((resolve, reject) => {
-      socket.addEventListener('open', resolve, { once: true });
-      socket.addEventListener('error', reject, { once: true });
-    });
-    const cdp = new Devtools(socket);
-
-    const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank' });
-    const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
-
-    await cdp.send('Page.enable', {}, sessionId);
-    await cdp.send('Emulation.setDeviceMetricsOverride',
-      { width: W, height: H, deviceScaleFactor: 1, mobile: false }, sessionId);
-
     for (const card of wanted) {
       const file = path.join(tmp, `${card.file}.html`);
       writeFileSync(file, html(card), 'utf8');
-
-      const loaded = new Promise((resolve) => {
-        const onEvent = (event) => {
-          const msg = JSON.parse(event.data);
-          if (msg.sessionId === sessionId && msg.method === 'Page.loadEventFired') {
-            socket.removeEventListener('message', onEvent);
-            resolve();
-          }
-        };
-        socket.addEventListener('message', onEvent);
-      });
-
-      await cdp.send('Page.navigate', { url: pathToUrl(file) }, sessionId);
-      await loaded;
+      await page.navigate(fileUrl(file));
 
       /*
         Webfonts load asynchronously and a screenshot taken before they arrive
@@ -588,46 +545,24 @@ async function main() {
         ship by accident. Waiting on `document.fonts.ready` is the only reliable
         gate; the extra frame is for the SVG to paint.
       */
-      await cdp.send('Runtime.evaluate', {
-        expression: `document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))) `,
-        awaitPromise: true,
-      }, sessionId);
-
-      const shot = await cdp.send('Page.captureScreenshot',
-        { format: 'png', captureBeyondViewport: false }, sessionId);
+      await page.evaluate('document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))))');
 
       const dest = path.join(outDir, `${card.file}.png`);
-      writeFileSync(dest, Buffer.from(shot.data, 'base64'));
+      writeFileSync(dest, await page.screenshot());
       const kb = (statSync(dest).size / 1024).toFixed(0);
       console.log(`  ${card.file}.png`.padEnd(46) + `${kb} KB`);
     }
-
-    socket.close();
   } catch (error) {
     failures++;
     console.error(error);
   } finally {
-    chrome.kill();
+    await page.close();
     rmSync(tmp, { recursive: true, force: true });
-    /*
-      Best effort. Chrome's crash handler holds a lock on the profile for a
-      moment after the process is signalled, and on Windows that surfaces as
-      EBUSY — which would otherwise fail a run whose seventeen images had all
-      been written successfully. It is a temp directory; the OS reclaims it.
-    */
-    try {
-      rmSync(profile, { recursive: true, force: true });
-    } catch {
-      /* left for the OS */
-    }
   }
 
   if (failures) process.exit(1);
-  console.log(`\n${wanted.length} card${wanted.length === 1 ? '' : 's'} -> public/og/`);
-}
-
-function pathToUrl(p) {
-  return 'file:///' + p.replace(/\\/g, '/').replace(/^\//, '');
+  console.log(`
+${wanted.length} card${wanted.length === 1 ? '' : 's'} -> public/og/`);
 }
 
 main();

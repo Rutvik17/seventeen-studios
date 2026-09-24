@@ -29,6 +29,7 @@
  */
 
 
+import type { CityId } from '@/lib/sketch/skylines';
 import { founder } from './founder';
 
 export const site = {
@@ -61,17 +62,33 @@ export const nav = [
  * page you can turn to, with a small drawing of what is on it.
  */
 export const cover = {
-  wordmarkTop: 'SEVENTEEN',
-  wordmarkBottom: 'STUDIOS',
-  shelfmark: 'Sketchbook No. 17',
+  wordmarkTop: 'Seventeen',
+  wordmarkBottom: 'Studios',
+  /** The label on the cover: what the book is, and which one. */
+  shelfmark: { name: 'Sketchbook', number: 'No. 17' },
   owner: 'kept by Rutvik Patel, Toronto',
-  line: 'A software engineer’s sketchbook. Sketching one page at a time.',
+  /** One line about what is inside, and the second half of it picked out in crayon. */
+  line: 'A software engineer’s sketchbook.',
+  motto: 'Sketching one page at a time.',
   contents: 'Contents',
   cursor: 'Turn to it',
 } as const;
 
+/**
+ * The cities drawn beside the cover's title, in the order they are drawn —
+ * home first. Their drawings are in `lib/sketch/skylines.ts`.
+ */
+export const skylines: { id: CityId; name: string }[] = [
+  { id: 'toronto', name: 'Toronto' },
+  { id: 'new-york', name: 'New York' },
+  { id: 'london', name: 'London' },
+  { id: 'paris', name: 'Paris' },
+  { id: 'dubai', name: 'Dubai' },
+  { id: 'tokyo', name: 'Tokyo' },
+  { id: 'sydney', name: 'Sydney' },
+];
+
 export type Chapter = {
-  numeral: string;
   title: string;
   note: string;
   href: string;
@@ -81,21 +98,18 @@ export type Chapter = {
 
 export const chapters: Chapter[] = [
   {
-    numeral: 'I',
     title: 'The founder',
     note: 'My journey',
     href: '/founder/',
     doodle: 'head',
   },
   {
-    numeral: 'II',
     title: 'Notebook',
-    note: 'Learning something new every day',
+    note: 'Things I imagine',
     href: '/notebook/',
     doodle: 'notebook',
   },
   {
-    numeral: 'III',
     title: 'Grasp',
     note: 'Learning calculus',
     href: '/grasp/',
