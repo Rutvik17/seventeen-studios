@@ -2,7 +2,7 @@
  * Writes the drawn globe's two data files, from two public-domain sources:
  *
  *   src/lib/globe/land.ts     the coastlines, for the pencil
- *   src/lib/globe/colours.ts  which crayon each half-degree of the world gets
+ *   src/lib/globe/colours.ts  which paint each half-degree of the world gets
  *
  *   curl -sSLO https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_land.geojson
  *   curl -sSLO https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57752/land_shallow_topo_2048.jpg
@@ -15,15 +15,15 @@
  *
  * COLOURS — NASA's Blue Marble (Visible Earth), a picture of the whole Earth
  * put together from satellite photographs, without clouds. Every half-degree
- * cell is averaged and given the crayon it looks most like:
+ * cell is averaged and given the paint it looks most like:
  *
  * - Land or sea is decided by the coastlines above, not by the picture, so a
- *   crayon can never disagree with the pencil line.
- * - A land cell's crayon is the nearest, in CIE Lab colour, of reference
+ *   paint can never disagree with the pencil line.
+ * - A land cell's paint is the nearest, in CIE Lab colour, of reference
  *   colours read off the same picture at places whose ground is known — the
- *   Amazon is rainforest, the Sahara desert, Greenland ice — so the crayons
+ *   Amazon is rainforest, the Sahara desert, Greenland ice — so the paints
  *   come from the picture, not from a guess at what it shows.
- * - The sea is one navy in the picture, so its crayon follows the distance to
+ * - The sea is one navy in the picture, so its paint follows the distance to
  *   land instead: pale along the coasts, cerulean over the shelves, deep
  *   further out — the way maps and globes have always coloured it — and the
  *   picture's own light shallows (the Bahamas, the reefs) stay pale.
@@ -116,13 +116,13 @@ for (const feature of JSON.parse(readFileSync(geojson, 'utf8')).features) {
 const COLS = 720;
 const ROWS = 360;
 
-/** The crayons, in the order `colours.ts` numbers them. */
-const CRAYONS = ['deep', 'sea', 'shallow', 'forest', 'grass', 'savanna', 'desert', 'rock', 'tundra', 'ice'];
+/** The paints, in the order `colours.ts` numbers them. */
+const PAINTS = ['deep', 'sea', 'shallow', 'forest', 'grass', 'savanna', 'desert', 'rock', 'tundra', 'ice'];
 const SEA = new Set([0, 1, 2]);
 
 /**
- * Places whose ground is known, and the crayon for it: the picture's colour
- * there becomes that crayon's reference. [lon, lat] of each box's middle.
+ * Places whose ground is known, and the paint for it: the picture's colour
+ * there becomes that paint's reference. [lon, lat] of each box's middle.
  */
 const REFERENCES = {
   forest: [[-63, -4], [22, 0], [-72, 2], [113, 0], [-95, 54], [105, 60]],
@@ -207,7 +207,7 @@ for (const [name, places] of Object.entries(REFERENCES)) {
       }
     }
     if (!n) throw new Error(`reference ${name} at ${lon}, ${lat} has no land under it`);
-    refs.push({ crayon: CRAYONS.indexOf(name), lab: sum.map((s) => s / n) });
+    refs.push({ paint: PAINTS.indexOf(name), lab: sum.map((s) => s / n) });
   }
 }
 
@@ -217,7 +217,7 @@ for (let i = 0; i < classes.length; i += 1) {
   const row = Math.floor(i / COLS);
   // Antarctica is ice all over, whatever its shading in the picture.
   if (90 - (row + 0.5) * (180 / ROWS) < -60) {
-    classes[i] = CRAYONS.indexOf('ice');
+    classes[i] = PAINTS.indexOf('ice');
     continue;
   }
   let best = Infinity;
@@ -225,13 +225,13 @@ for (let i = 0; i < classes.length; i += 1) {
     const d = (labs[i][0] - r.lab[0]) ** 2 + (labs[i][1] - r.lab[1]) ** 2 + (labs[i][2] - r.lab[2]) ** 2;
     if (d < best) {
       best = d;
-      classes[i] = r.crayon;
+      classes[i] = r.paint;
     }
   }
 }
 
-// Tidy speckle on land: twice, each cell takes the crayon most of its
-// neighbourhood has, so the colouring comes in patches a crayon could lay.
+// Tidy speckle on land: twice, each cell takes the paint most of its
+// neighbourhood has, so the colouring comes in patches a paint could lay.
 for (let pass = 0; pass < 2; pass += 1) {
   const next = classes.slice();
   for (let row = 0; row < ROWS; row += 1) {
@@ -298,7 +298,7 @@ for (let i = 0; i < classes.length; i += 1) {
   classes[i] = shallows || distance[i] <= 1.2 ? 2 : distance[i] <= 5 ? 1 : 0;
 }
 
-// Written a row at a time, as runs: a crayon's letter, then the run's length in base 36.
+// Written a row at a time, as runs: a paint's letter, then the run's length in base 36.
 const rows = [];
 for (let row = 0; row < ROWS; row += 1) {
   let line = '';
@@ -312,7 +312,7 @@ for (let row = 0; row < ROWS; row += 1) {
   rows.push(line);
 }
 
-const counts = CRAYONS.map((name, k) => `${name} ${classes.filter((c) => c === k).length}`).join(', ');
+const counts = PAINTS.map((name, k) => `${name} ${classes.filter((c) => c === k).length}`).join(', ');
 const points = rings.reduce((n, r) => n + r.length, 0);
 
 writeFileSync(
@@ -331,18 +331,18 @@ export const LAND: readonly (readonly number[])[] = ${JSON.stringify(rings.map((
 writeFileSync(
   out('colours.ts'),
   `/**
- * Which crayon each half-degree of the world is coloured with, from NASA's
+ * Which paint each half-degree of the world is coloured with, from NASA's
  * Blue Marble. Generated by \`scripts/make-globe-data.mjs\`; edit the script,
  * not this file.
  *
  * ${COLS} columns from 180° W eastwards, ${ROWS} rows from 90° N southwards. Each row is
- * a list of runs, \`.\`-separated: a crayon's letter (a = the first of
- * \`CRAYONS\`) and how many cells it runs for, in base 36.
+ * a list of runs, \`.\`-separated: a paint's letter (a = the first of
+ * \`PAINTS\`) and how many cells it runs for, in base 36.
  *
  * Cells: ${counts}.
  */
 
-export const CRAYONS = ${JSON.stringify(CRAYONS)} as const;
+export const PAINTS = ${JSON.stringify(PAINTS)} as const;
 
 export const COLOUR_GRID: { cols: number; rows: number; runs: readonly string[] } = { cols: ${COLS}, rows: ${ROWS}, runs: ${JSON.stringify(rows)} };
 `,

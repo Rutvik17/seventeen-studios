@@ -1,18 +1,18 @@
 /**
- * The wordmark, handwritten across the page in crayon: one crayon a word, each
- * letter filled in with close back-and-forth strokes, one letter after
- * another, the way a name gets written big on the first page of a sketchbook.
- * The hand leans a little, and no two letters sit quite the same — each is
- * turned, raised and sized a hair differently. The wax skips over the paper's
- * tooth, and the letters' edges waver as a hand's do.
+ * The wordmark, handwritten across the page in acrylic: ultramarine, each
+ * letter filled in with back-and-forth strokes of a brush (`brush.ts`), one
+ * letter after another, the way a name gets painted big on the first page of a
+ * sketchbook. The hand leans a little, and no two letters sit quite the same —
+ * each is turned, raised and sized a hair differently. The bristles leave their
+ * streaks, and the letters' edges waver as a hand's do.
  *
  * The finished lettering is painted once, off screen; writing it is a mask
  * over it — the same back-and-forth path, stroked a little wider, grown along
- * its length — so the colour appears exactly where the crayon has been.
+ * its length — so the colour appears exactly where the brush has been.
  */
 
 import { rng } from '@/lib/sketchbook/geometry';
-import { grain } from '@/lib/sketchbook/pencil';
+import { paintStroke } from '@/lib/sketchbook/brush';
 
 type Line = { text: string; align: 'left' | 'right' };
 
@@ -31,11 +31,11 @@ export type WordmarkArt = {
   reveal: HTMLCanvasElement;
   scribbles: Scribble[];
   total: number;
-  /** How wide the crayon is, in CSS pixels. */
+  /** How far apart the brush's strokes are, in CSS pixels. */
   nib: number;
 };
 
-/** Bold, as a crayon pressed hard. */
+/** Bold, as a loaded brush. */
 const WEIGHT = 700;
 /** How far the hand leans: the tangent of 8°. */
 const SLANT = Math.tan((8 * Math.PI) / 180);
@@ -90,7 +90,7 @@ export function drawWordmark(
   }
   if (progress <= 0) return;
 
-  // The mask: every letter's path up to where the crayon has got to.
+  // The mask: every letter's path up to where the brush has got to.
   const dpr = art.reveal.width / width;
   const r = art.reveal.getContext('2d')!;
   r.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -155,8 +155,8 @@ function clipToBox(cx: number, cy: number, ux: number, uy: number, box: Box) {
 
 /**
  * Everything that does not change from frame to frame: the finished lettering
- * at device resolution — one crayon a line, from `colours` — and the path the
- * crayon takes through each letter.
+ * at device resolution, in `paint`, and the path the brush takes through each
+ * letter.
  */
 export function prepareWordmark(
   lines: Line[],
@@ -164,21 +164,21 @@ export function prepareWordmark(
   width: number,
   layout: WordmarkLayout,
   dpr: number,
-  colours: string[],
+  paint: string,
 ): WordmarkArt {
   const { size } = layout;
   const font = fontAt(size, family);
   const W = Math.max(1, Math.round(width * dpr));
   const H = Math.max(1, Math.round(layout.height * dpr));
   const rand = rng(17);
-  const nib = Math.max(2, size / 26);
+  const nib = Math.max(3, size / 18);
 
   // Each letter: where it sits and how it is turned, and its path — strokes at
-  // a slant of the letter's own, a crayon's width apart, joined end to end so
+  // a slant of the letter's own, a brush's width apart, joined end to end so
   // the hand never lifts inside a letter.
   const measure = sheet(1, 1, 1).g;
   measure.font = font;
-  type Letter = { ch: string; line: number; frame: DOMMatrix; box: Box };
+  type Letter = { ch: string; frame: DOMMatrix; box: Box };
   const letters: Letter[] = [];
   lines.forEach((line, i) => {
     const { x: ox, y: oy } = layout.places[i];
@@ -199,11 +199,11 @@ export function prepareWordmark(
         y0: -m.actualBoundingBoxAscent - pad,
         y1: m.actualBoundingBoxDescent + pad,
       };
-      letters.push({ ch, line: i, frame, box });
+      letters.push({ ch, frame, box });
     });
   });
 
-  const scribbles: (Scribble & { line: number })[] = letters.map(({ line, frame, box }) => {
+  const scribbles: Scribble[] = letters.map(({ frame, box }) => {
     const angle = -1.05 + (rand() - 0.5) * 0.35;
     const ux = Math.cos(angle);
     const uy = Math.sin(angle);
@@ -228,45 +228,26 @@ export function prepareWordmark(
     }
     let length = 0;
     for (let k = 2; k < pts.length; k += 2) length += Math.hypot(pts[k] - pts[k - 2], pts[k + 1] - pts[k - 1]);
-    return { pts: Float32Array.from(pts), length, line };
+    return { pts: Float32Array.from(pts), length };
   });
 
-  // The wax: each path stroked with a crayon, a little unevenly, then gone
-  // over once more, lightly, across it — from the start of each stroke to the
-  // start of the next, which the back-and-forth has put on the letter's other side.
-  const wax = sheet(W, H, dpr);
-  const w = wax.g;
-  w.lineCap = 'round';
-  w.lineJoin = 'round';
+  // The paint: each stroke of each letter's path laid with the brush — the
+  // long strokes across the letter, not the short turns at its edges — a
+  // little wider than the gap between them, so they overlap and cover.
+  const wet = sheet(W, H, dpr);
+  let k = 0;
   for (const s of scribbles) {
-    w.strokeStyle = colours[s.line % colours.length];
     const { pts } = s;
-    for (let k = 2; k < pts.length; k += 2) {
-      w.globalAlpha = 0.78 + rand() * 0.22;
-      w.lineWidth = nib * (0.8 + rand() * 0.35);
-      w.beginPath();
-      w.moveTo(pts[k - 2], pts[k - 1]);
-      w.lineTo(pts[k], pts[k + 1]);
-      w.stroke();
+    for (let i = 0; i + 3 < pts.length; i += 4) {
+      const ax = pts[i];
+      const ay = pts[i + 1];
+      const bx = pts[i + 2];
+      const by = pts[i + 3];
+      const line = Array.from({ length: 7 }, (_, t) => ({ x: ax + ((bx - ax) * t) / 6, y: ay + ((by - ay) * t) / 6 }));
+      paintStroke(wet.g, line, { width: nib * 1.5, colour: paint, seed: 1000 + k, streak: 0.16, dry: 0.12 });
+      k += 1;
     }
-    w.globalAlpha = 0.35;
-    w.lineWidth = nib * 0.8;
-    w.beginPath();
-    for (let k = 0; k + 5 < pts.length; k += 4) {
-      w.moveTo(pts[k], pts[k + 1]);
-      w.lineTo(pts[k + 4], pts[k + 5]);
-    }
-    w.stroke();
   }
-  // The paper's tooth, where the wax skipped over it — specks a crayon's
-  // grain across, not a screen's pixel.
-  w.setTransform(1, 0, 0, 1, 0, 0);
-  w.globalAlpha = 0.6;
-  w.globalCompositeOperation = 'destination-out';
-  const tooth = w.createPattern(grain('#000', 29, 0.22), 'repeat')!;
-  tooth.setTransform(new DOMMatrix().scale(Math.max(1, dpr * 0.75)));
-  w.fillStyle = tooth;
-  w.fillRect(0, 0, W, H);
 
   // The letters, each where its frame puts it, their edges wavering: cut
   // into thin bands, each nudged sideways by a slow wander and a quick tremor.
@@ -287,9 +268,9 @@ export function prepareWordmark(
     face.g.drawImage(upright.canvas, 0, y, W, band, dx, y, W, band);
   }
 
-  // The wax, kept only inside the letters.
+  // The paint, kept only inside the letters.
   face.g.globalCompositeOperation = 'source-in';
-  face.g.drawImage(wax.canvas, 0, 0);
+  face.g.drawImage(wet.canvas, 0, 0);
 
   const total = scribbles.reduce((sum, s) => sum + s.length, 0);
   return { face: face.canvas, reveal: sheet(W, H, 1).canvas, scribbles, total, nib };

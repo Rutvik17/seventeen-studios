@@ -2,7 +2,7 @@
 
 /**
  * Beside the globe: a button for each continent, and that continent sketched
- * on the page in pencil and coloured in crayon (`lib/globe/sketch.ts`) — the
+ * on the page in pencil and coloured in paint (`lib/globe/sketch.ts`) — the
  * first one as the page comes into view, then whichever is chosen.
  *
  * With reduced motion the sketch appears finished.
@@ -35,7 +35,7 @@ export function Continents() {
     still.current = prefersReducedMotion();
     const pal = readGlobePalette(holder);
     const hand = getComputedStyle(document.documentElement).getPropertyValue('--font-hand').trim() || 'cursive';
-    const s = createContinentSketch(canvas, { graphite: pal.graphite, crayons: pal.crayons, hand });
+    const s = createContinentSketch(canvas, { graphite: pal.graphite, paints: pal.paints, hand });
     sketch.current = s;
     const size = () => {
       const b = holder.getBoundingClientRect();

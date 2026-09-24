@@ -36,22 +36,32 @@ say hello. All of it is deleted, and none of it should come back:
 The whole site is one sketchbook, and every new piece should read as a leaf of
 it rather than as a web page:
 
-- **Pages are sheets.** Simple pages use `components/Sheet.tsx` — gridded paper,
-  a crimson margin rule, a handwritten note above a title written in crayon.
+- **Everything is acrylic and pencil on a painted ground.** Every page lies on
+  one ground, a canvas brushed over in soft pale acrylic (`--ground-*`, baked
+  once by `scripts/make-ground.mjs` into `src/assets/ground/`). Paint goes on
+  it — washes of colour behind titles and drawings, painted titles — and the
+  drawing goes on the paint, in pencil. There is no grid and no woven texture:
+  graph paper made every page a worksheet, and a canvas weave read as sacking.
+- **Pages are sheets.** Simple pages use `components/Sheet.tsx` — a crimson
+  margin rule, a handwritten note above a title painted over a wash.
 - **Everything is handwritten.** Caveat (`--font-hand`, and `--font-display`
   after it) for titles, notes, kickers and tabs; Shantell Sans (`--font-write`,
   behind `--font-body` and `--font-mono`) for anything read at length and the
   small print, with its informality and bounce axes turned up. Titles are
-  *written in crayon* — the `--crayon-tooth` mask over the text, and on the
-  cover a canvas that scribbles each letter in. Syne is kept only for the
+  *painted* — the `--paint-bristle` mask over the text, over a `--paint-swash`
+  wash — and on the cover a canvas brushes each letter in (`brush.ts`). Syne is kept only for the
   outlined numbers down a list. Grasp's board is the exception: it restores DM
   Sans and JetBrains Mono on its own root and keeps Caveat as chalk.
-- **Colour comes from the crayon box, a few at a time.** Two crayons for the
-  cover's title, one per row down a list. Never a whole spectrum in one place —
-  a title with every letter a different colour read as a rainbow flag, not a
-  sketchbook.
-- **The pencil is the cursor; the page turn is the transition; a crayon
-  writing the 17 is the loader.** New motion should feel like drawing or turning
+- **Colour comes from the paint box, a few at a time.** One paint for the
+  cover's title and the mark (ultramarine), one per row down a list, three
+  pencils a city. Never a whole spectrum in one place — a title with every
+  letter a different colour read as a rainbow flag, not a sketchbook.
+- **One brush and one pencil.** Everything painted is painted by
+  `src/lib/sketchbook/brush.ts` (a body, bristle streaks, ragged dry ends, a
+  raised edge); everything drawn by `pencil.ts`. A new drawing uses both
+  rather than inventing a third hand.
+- **The pencil is the cursor; the page turn is the transition; a brush
+  painting the 17 is the loader.** New motion should feel like drawing or turning
   paper, not like an interface animating.
 - **The footer is the back endpaper**, and the nav is the book's three tabs.
   Neither should grow into a site map.
@@ -165,7 +175,8 @@ read it once at runtime with `getComputedStyle(document.documentElement)
 | `--line` | `rgba(29,29,33,.12)` | hairlines |
 | `--accent` | `#1f3a8a` | deep ink blue — the pen |
 | `--accent-2` | `#c8233f` | crimson — the one thing to do next, or a drawing's second reading |
-| `--crayon-1` … `-5` | `#2b7cc6` `#f2a93b` `#3f9e4a` `#e4553f` `#7b57c8` | the crayon box: blue, marigold, green, red, violet — the colours a row, a title or a scribble is coloured in |
+| `--paint-1` … `-5` | `#2b3f9e` `#eba42c` `#3f7d3a` `#cf3f2c` `#5a3a8e` | the paint box, acrylic: ultramarine (the mark and the title), cadmium yellow, sap green, cadmium red, dioxazine violet |
+| `--ground-1` … `-5` | `#f8f0e0` … | the tints the painted ground is brushed in — change them and run `scripts/make-ground.mjs` |
 
 `--sketch-*` are the founder sketchbook's own colours (paper, graphite, charcoal,
 ink, one crimson). They are declared on the story in

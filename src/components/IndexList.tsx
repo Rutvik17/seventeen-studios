@@ -3,10 +3,11 @@ import { TransitionLink } from '@/components/Transition';
 
 /**
  * A list of pages to turn to — the contents on the landing, the notebook's
- * entries — every one the same way, lettered like the cover's title: each row
- * in its own crayon, its number outlined in pencil and hatched in with that
- * colour a little off register, its title in block letters of that colour, and the row coloured in with it when you point at it. The crayons
- * take turns down the list (`--crayon-1` … `-5`).
+ * entries — every one the same way: each row in its own paint, its number
+ * outlined in pencil and painted in a little off register, its title painted in
+ * that colour over a wash of it, and the row washed with it when you point at
+ * it. The paints take turns down the list (`--paint-1` … `-5`), unless an item
+ * names its own.
  */
 
 export type IndexItem = {
@@ -20,16 +21,18 @@ export type IndexItem = {
   label?: string;
   /** A little drawing at the end of the row. */
   art?: ReactNode;
+  /** Which paint (`--paint-n`) the row is in, when it means something — otherwise they take turns. */
+  paint?: number;
 };
 
-/** How many crayons the rows take turns with. */
-const CRAYONS = 5;
+/** How many paints the rows take turns with. */
+const PAINTS = 5;
 
 export function IndexList({ items, cursor, listRef }: { items: IndexItem[]; cursor: string; listRef?: Ref<HTMLOListElement> }) {
   return (
     <ol className="index" ref={listRef}>
       {items.map((item, i) => (
-        <li key={item.key} style={{ ['--c' as string]: `var(--crayon-${(i % CRAYONS) + 1})` }}>
+        <li key={item.key} style={{ ['--c' as string]: `var(--paint-${item.paint ?? (i % PAINTS) + 1})` }}>
           <TransitionLink href={item.href} className="index__row" data-cursor={cursor}>
             <span className="index__mark">
               <span className="index__ink" aria-hidden="true">

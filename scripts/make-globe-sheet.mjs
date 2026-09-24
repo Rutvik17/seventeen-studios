@@ -1,19 +1,19 @@
 /**
- * Colours the globe's world map in crayon, once, and saves it as the pictures
+ * Colours the globe's world map in paint, once, and saves it as the pictures
  * the page loads:
  *
- *   public/notebook/earth/crayon-3072.webp   for large screens
- *   public/notebook/earth/crayon-2048.webp   for small ones
- *   public/notebook/earth/crayons.json       the crayon colours they were coloured with
+ *   public/notebook/earth/paint-3072.webp   for large screens
+ *   public/notebook/earth/paint-2048.webp   for small ones
+ *   public/notebook/earth/paints.json       the paint colours they were coloured with
  *
  *   node scripts/make-globe-sheet.mjs
  *
  * The colouring is the page's own code (`paintSheet` in `src/lib/globe/sheet.ts`,
- * with the marks from `marks.ts`), run in headless Chrome, with the crayon
+ * with the marks from `marks.ts`), run in headless Chrome, with the paint
  * colours read from `Globe.module.css` — the one place they are written. It
  * is the same every time, so there is no reason for every visitor's browser
  * to spend seconds doing it. Run it again whenever the marks, the colour data
- * or the crayon colours change; `verify-globe.mjs` fails the build if the
+ * or the paint colours change; `verify-globe.mjs` fails the build if the
  * colours in the stylesheet no longer match the ones the pictures were made with.
  */
 
@@ -27,8 +27,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.join(root, 'public/notebook/earth');
 const WIDTHS = [3072, 2048];
 
-/** The crayon colours, as the stylesheet declares them. */
-export function crayonColours() {
+/** The paint colours, as the stylesheet declares them. */
+export function paintColours() {
   const css = readFileSync(path.join(root, 'src/components/notebook/Globe.module.css'), 'utf8');
   const colours = {};
   for (const [, name, value] of css.matchAll(/--globe-([a-z]+):\s*(#[0-9a-fA-F]{3,6})\s*;/g)) colours[name] = value.toLowerCase();
@@ -36,15 +36,15 @@ export function crayonColours() {
 }
 
 async function main() {
-  const colours = crayonColours();
+  const colours = paintColours();
   const page = `<!doctype html><html><head>
 <script type="importmap">{"imports":{"@/":"/src/"}}</script></head><body><script type="module">
-import { CRAYONS } from '@/lib/globe/colours';
+import { PAINTS } from '@/lib/globe/colours';
 import { marks } from '@/lib/globe/marks';
 import { paintSheet } from '@/lib/globe/sheet';
 const colours = ${JSON.stringify(colours)};
 window.paint = (width) => {
-  const sheet = paintSheet(width, marks().patches, CRAYONS.map((c) => colours[c]));
+  const sheet = paintSheet(width, marks().patches, PAINTS.map((c) => colours[c]));
   // Laid on the paper, so the picture needs no see-through parts: flecks of
   // transparency cost far more to store than the same flecks in paper colour.
   const c = document.createElement('canvas');
@@ -67,11 +67,11 @@ window.ready = true;
     mkdirSync(out, { recursive: true });
     for (const width of WIDTHS) {
       const url = await browser.evaluate(`window.paint(${width})`);
-      const file = path.join(out, `crayon-${width}.webp`);
+      const file = path.join(out, `paint-${width}.webp`);
       writeFileSync(file, Buffer.from(url.split(',')[1], 'base64'));
       console.log(`  ${path.relative(root, file)}  ${(statSync(file).size / 1024).toFixed(0)} KB`);
     }
-    writeFileSync(path.join(out, 'crayons.json'), `${JSON.stringify(colours, null, 2)}\n`);
+    writeFileSync(path.join(out, 'paints.json'), `${JSON.stringify(colours, null, 2)}\n`);
   } finally {
     await browser.close();
     await server.close();

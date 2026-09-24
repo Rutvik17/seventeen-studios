@@ -5,30 +5,31 @@
  * (`lib/sketchbook/pencil.ts`), the lines to its neighbours dashed in, and a
  * scale bar to finish.
  *
- * Then it is coloured in the way a child colours a map: one crayon at a
- * time, lightest first — the ice, the deserts, the grassland, then the
- * forests — each scribbled back and forth over its own ground, wandering from
- * patch to patch to the nearest one not yet done. Each crayon goes only where
- * the ground is its colour, from the same map as the globe, so a scribble
- * that strays over the next colour's ground leaves it for that crayon.
+ * Then it is painted in: one paint at a time, lightest first — the ice, the
+ * deserts, the grassland, then the forests — each brushed back and forth over
+ * its own ground in short strokes (`lib/sketchbook/brush.ts`), wandering from
+ * patch to patch to the nearest one not yet done. Each paint goes only where
+ * the ground is its colour, from the same map as the globe, so a stroke that
+ * strays over the next colour's ground leaves it for that paint.
  *
  * `draw(now)` paints the sketch as it stands `now` into it: the pencil is
- * drawn fresh each frame; the crayon is laid onto its own layer as its
- * scribbles come due, and only ever added to.
+ * drawn fresh each frame; the paint is laid onto its own layer, a stroke at a
+ * time as each comes due, and only ever added to.
  */
 
 import { clamp01, easeOut, rng, span, type Pt } from '@/lib/sketchbook/geometry';
 import { grain, prepare, stroke, type Prepared } from '@/lib/sketchbook/pencil';
+import { paintStroke } from '@/lib/sketchbook/brush';
 import { borders, CENTRES, coastOf, continentOf, equalArea, regionOf, type ContinentId } from './continents';
 import { LAND } from './land';
-import { crayonAt, crayonIndex, isLand, isSea, landCrayonNear, type CrayonName } from './marks';
+import { paintAt, paintIndex, isLand, isSea, landPaintNear, type PaintName } from './marks';
 
 const EARTH_KM = 6371;
 
 export type SketchPalette = {
   graphite: string;
-  /** One per crayon, in `CRAYONS` order. */
-  crayons: string[];
+  /** One per paint, in `PAINTS` order. */
+  paints: string[];
   /** The handwriting face's CSS font-family. */
   hand: string;
 };
@@ -42,12 +43,15 @@ const WHEN = {
   scale: [4.3, 4.8],
 } as const;
 
-/** The crayons in the order they are picked up: lightest first, as colouring in goes. */
-const ORDER: readonly CrayonName[] = ['ice', 'desert', 'savanna', 'grass', 'tundra', 'rock', 'forest'];
+/** The paints in the order they are picked up: lightest first, as colouring in goes. */
+const ORDER: readonly PaintName[] = ['ice', 'desert', 'savanna', 'grass', 'tundra', 'rock', 'forest'];
 
 /** How far apart the scribbles are, px, and how long each takes, seconds. */
 const SPACING = 11;
 const SCRIBBLE = 0.32;
+/** Each scribble's strokes, back and forth, and the points along each. */
+const STROKES = 4;
+const STEPS = 5;
 
 /** A seed for each continent, so each is coloured the same way every time. */
 const SEED: Record<ContinentId, number> = { africa: 11, antarctica: 12, asia: 13, europe: 14, 'north-america': 15, oceania: 16, 'south-america': 17 };
@@ -55,8 +59,8 @@ const SEED: Record<ContinentId, number> = { africa: 11, antarctica: 12, asia: 13
 /** How long the last sketch takes to fade when another is chosen, seconds. */
 const FADE = 0.3;
 
-/** One scribble: a crayon's back-and-forth path, which of its steps lie on its own ground, and when it is drawn. */
-type Scribble = { crayon: number; pts: Pt[]; mine: Uint8Array; start: number };
+/** One scribble: a paint's back-and-forth path, which of its steps lie on its own ground, and when it is drawn. */
+type Scribble = { paint: number; pts: Pt[]; mine: Uint8Array; start: number };
 
 type Drawn = {
   id: ContinentId;
@@ -70,13 +74,6 @@ type Drawn = {
   scale: { km: number; px: number };
 };
 
-type Rgb = [number, number, number];
-const rgb = (hex: string): Rgb => {
-  const n = parseInt(hex.trim().replace('#', ''), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-};
-const toward = (c: Rgb, to: Rgb, u: number) => `rgb(${c.map((v, i) => Math.round(v + (to[i] - v) * u)).join(', ')})`;
-
 /** A round distance for the scale bar, near a quarter of the sketch's width. */
 function niceKm(km: number): number {
   const steps = [100, 200, 250, 500, 1000, 1500, 2000, 2500, 5000];
@@ -89,18 +86,13 @@ const along = (s: Scribble, tau: number) => clamp01((tau - s.start) / SCRIBBLE);
 export function createContinentSketch(canvas: HTMLCanvasElement, pal: SketchPalette) {
   const ctx = canvas.getContext('2d')!;
   const graphite = ctx.createPattern(grain(pal.graphite, 21, 1.4), 'repeat')!;
-  const colours = pal.crayons.map(rgb);
-  // Crayon: the colour laid on as specks with gaps between — the sketchbook's
-  // own grain — so the paper shows through the wax.
-  const wax = pal.crayons.map((c, i) => ctx.createPattern(grain(c.trim(), 400 + i, 2.2), 'repeat')!);
-  const darker = colours.map((c) => toward(c, [30, 20, 40], 0.3));
   let w = 1;
   let h = 1;
   let dpr = 1;
   let current: Drawn | null = null;
   let started = 0;
   let still = false;
-  /** The crayon so far, and how far along it is. */
+  /** The paint so far, and how far along it is. */
   const layer = document.createElement('canvas');
   let colouredTo = -1;
   /** The last sketch, as it stood when the next was chosen, fading out. */
@@ -150,7 +142,7 @@ export function createContinentSketch(canvas: HTMLCanvasElement, pal: SketchPale
       return { line: prepare(pts, { seed: 300 + i, width: 1.7, jitter: 0.9, overshoot: 4, passes: 2 }), from, to: from + Math.max(0.12, (lengths[i] / total) * (c1 - c0)) };
     });
 
-    // Where the crayon may go: the land, inside this continent's region.
+    // Where the paint may go: the land, inside this continent's region.
     const land = new Path2D();
     for (const ring of LAND) {
       for (let i = 0; i < ring.length; i += 2) {
@@ -177,13 +169,13 @@ export function createContinentSketch(canvas: HTMLCanvasElement, pal: SketchPale
     };
     const region = regionOf(id);
 
-    // The crayon. Places a scribble apart over the continent, each given to
-    // the crayon of the ground under it.
+    // The paint. Places a scribble apart over the continent, each given to
+    // the paint of the ground under it.
     const r = rng(SEED[id]);
-    const crayonOf = (p: Pt) => {
+    const paintOf = (p: Pt) => {
       const g = ground(p);
-      const k = crayonAt(g.lon, g.lat);
-      return isSea(k) ? landCrayonNear(g.lon, g.lat) : k;
+      const k = paintAt(g.lon, g.lat);
+      return isSea(k) ? landPaintNear(g.lon, g.lat) : k;
     };
     const spots = new Map<number, Pt[]>();
     for (let y = oy - maxY * s; y <= oy - minY * s; y += SPACING) {
@@ -191,14 +183,14 @@ export function createContinentSketch(canvas: HTMLCanvasElement, pal: SketchPale
         const p = { x: x + (r() - 0.5) * SPACING * 0.6, y: y + (r() - 0.5) * SPACING * 0.6 };
         const g = ground(p);
         if (continentOf(g.lon, g.lat) !== id || !isLand(g.lon, g.lat)) continue;
-        const k = crayonOf(p);
+        const k = paintOf(p);
         if (!spots.has(k)) spots.set(k, []);
         spots.get(k)!.push(p);
       }
     }
-    // Each crayon in turn, for a share of the time as big as its share of the
+    // Each paint in turn, for a share of the time as big as its share of the
     // ground, going from wherever it starts to the nearest patch not yet done.
-    const order = ORDER.map(crayonIndex).filter((k) => spots.has(k));
+    const order = ORDER.map(paintIndex).filter((k) => spots.has(k));
     for (const k of spots.keys()) if (!order.includes(k)) order.push(k);
     const count = [...spots.values()].reduce((n, list) => n + list.length, 0) || 1;
     const [k0, k1] = WHEN.colour;
@@ -212,7 +204,7 @@ export function createContinentSketch(canvas: HTMLCanvasElement, pal: SketchPale
       const n = todo.length;
       for (let j = 0; j < n; j += 1) {
         todo.splice(todo.indexOf(here), 1);
-        scribbles.push(scribbleAt(here, k, angle + (r() - 0.5) * 0.4, at + (j / n) * share, r, crayonOf));
+        scribbles.push(scribbleAt(here, k, angle + (r() - 0.5) * 0.4, at + (j / n) * share, r, paintOf));
         if (todo.length) here = todo.reduce((a, b) => (Math.hypot(b.x - here.x, b.y - here.y) < Math.hypot(a.x - here.x, a.y - here.y) ? b : a));
       }
       at += share;
@@ -235,31 +227,30 @@ export function createContinentSketch(canvas: HTMLCanvasElement, pal: SketchPale
   }
 
   /**
-   * A scribble round `c`: four strokes back and forth at `angle`, a little
+   * A scribble round `c`: `STROKES` strokes back and forth at `angle`, a little
    * longer than the gap to the next, with the wobble of a hand — and which of
-   * its steps are over ground of crayon `k`.
+   * its steps are over ground of paint `k`.
    */
-  function scribbleAt(c: Pt, k: number, angle: number, start: number, r: () => number, crayonOf: (p: Pt) => number): Scribble {
+  function scribbleAt(c: Pt, k: number, angle: number, start: number, r: () => number, paintOf: (p: Pt) => number): Scribble {
     const [ux, uy] = [Math.cos(angle), -Math.sin(angle)];
     const [nx, ny] = [-uy, ux];
     const pts: Pt[] = [];
-    const lines = 4;
     const gap = 3.4;
-    for (let j = 0; j < lines; j += 1) {
-      const off = (j - (lines - 1) / 2) * gap;
+    for (let j = 0; j < STROKES; j += 1) {
+      const off = (j - (STROKES - 1) / 2) * gap;
       const reach = SPACING * 0.95 + r() * 3;
       const [a, b] = j % 2 ? [reach, -reach] : [-reach, reach];
-      for (let q = 0; q <= 4; q += 1) {
-        const u = a + ((b - a) * q) / 4;
+      for (let q = 0; q <= STEPS - 1; q += 1) {
+        const u = a + ((b - a) * q) / (STEPS - 1);
         const wob = (r() - 0.5) * 1.2;
         pts.push({ x: c.x + ux * u + nx * (off + wob), y: c.y + uy * u + ny * (off + wob) });
       }
     }
     const mine = Uint8Array.from(pts, (p, i) => {
       const next = pts[Math.min(i + 1, pts.length - 1)];
-      return crayonOf({ x: (p.x + next.x) / 2, y: (p.y + next.y) / 2 }) === k ? 1 : 0;
+      return paintOf({ x: (p.x + next.x) / 2, y: (p.y + next.y) / 2 }) === k ? 1 : 0;
     });
-    return { crayon: k, pts, mine, start };
+    return { paint: k, pts, mine, start };
   }
 
   /** Clips to the land of this continent. */
@@ -274,7 +265,11 @@ export function createContinentSketch(canvas: HTMLCanvasElement, pal: SketchPale
     }
   }
 
-  /** Lays on the crayon from where it had got to up to `tau`. */
+  /**
+   * Lays on the paint from where it had got to up to `tau`: each of a
+   * scribble's strokes, whole, once it is due — only the stretches of it over
+   * its own ground.
+   */
   function colour(c: Drawn, tau: number) {
     if (tau <= colouredTo) return;
     const from = colouredTo;
@@ -283,34 +278,25 @@ export function createContinentSketch(canvas: HTMLCanvasElement, pal: SketchPale
     g.save();
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     clipToContinent(g, c);
-    g.lineCap = 'round';
-    g.lineJoin = 'round';
-    for (const sc of c.scribbles) {
-      if (sc.start > tau || sc.start + SCRIBBLE < from) continue;
-      // The steps of the path newly drawn since the last frame.
-      const last = sc.pts.length - 1;
-      const i0 = Math.floor(along(sc, from) * last);
-      const i1 = Math.ceil(along(sc, tau) * last);
-      for (let i = i0; i < i1; i += 1) {
-        if (!sc.mine[i]) continue;
-        const a = sc.pts[i];
-        const b = sc.pts[i + 1];
-        g.globalAlpha = 0.95;
-        g.strokeStyle = wax[sc.crayon];
-        g.lineWidth = 4.6;
-        g.beginPath();
-        g.moveTo(a.x, a.y);
-        g.lineTo(b.x, b.y);
-        g.stroke();
-        g.globalAlpha = 0.22;
-        g.strokeStyle = darker[sc.crayon];
-        g.lineWidth = 1.1;
-        g.beginPath();
-        g.moveTo(a.x + 1.4, a.y + 1);
-        g.lineTo(b.x + 1.4, b.y + 1);
-        g.stroke();
+    c.scribbles.forEach((sc, n) => {
+      for (let j = 0; j < STROKES; j += 1) {
+        const due = sc.start + (SCRIBBLE * (j + 1)) / STROKES;
+        if (due <= from || due > tau) continue;
+        let run: Pt[] = [];
+        const lay = () => {
+          if (run.length > 1) paintStroke(g, run, { width: 5.6, colour: pal.paints[sc.paint], seed: n * 11 + j, streak: 0.12, dry: 0.22 });
+          run = [];
+        };
+        // The segments along this stroke: STEPS points, so one fewer segments.
+        for (let i = j * STEPS; i < (j + 1) * STEPS - 1; i += 1) {
+          if (sc.mine[i]) {
+            if (!run.length) run.push(sc.pts[i]);
+            run.push(sc.pts[i + 1]);
+          } else lay();
+        }
+        lay();
       }
-    }
+    });
     g.restore();
   }
 

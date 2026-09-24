@@ -3,10 +3,11 @@
 /**
  * THE LANDING — the sketchbook's contents page.
  *
- * The site is one sketchbook and this is where it opens: the title written
- * across it in crayon, one line about what is inside, and the contents. Each chapter is a page you can turn to, with a small drawing of
- * what is on it that draws itself when it comes into view and again when you
- * point at it.
+ * The site is one sketchbook and this is where it opens: the title painted
+ * across it in ultramarine, the world's cities drawn beside it, one line about
+ * what is inside, and the contents. Each chapter is a page you can turn to,
+ * with a small drawing of what is on it that draws itself when it comes into
+ * view and again when you point at it.
  *
  * It replaced two double pendulums with a readout. They were a demonstration
  * without a story; this is the story's table of contents, and the
@@ -41,10 +42,7 @@ const LINES = [
   { text: cover.wordmarkBottom, align: 'right' as const },
 ];
 
-/** Which crayon from the box (`--crayon-n`) colours in each line of the title. */
-const WORD_CRAYONS = [1, 2];
-
-/** Seconds for the crayons to write the title, at a steady hand's pace. */
+/** Seconds for the brush to write the title, at a steady hand's pace. */
 const WRITE_SECONDS = 3.2;
 /** The narrowest room beside the title worth drawing a city in, in CSS pixels. */
 const SKYLINE_MIN = 300;
@@ -96,7 +94,7 @@ export function Contents() {
     return onceInView(el, () => el.classList.add('is-drawn'), { enter: 0.05 });
   }, []);
 
-  /* ---- the title, written in crayon ---- */
+  /* ---- the title, painted ---- */
   useEffect(() => {
     const canvas = canvasRef.current;
     const h1 = title.current;
@@ -106,10 +104,9 @@ export function Contents() {
 
     const reduced = prefersReducedMotion();
     const family = getComputedStyle(h1).fontFamily;
-    // One crayon a word — the blue, then the marigold — read from the
-    // stylesheet rather than written down twice.
-    const tokens = getComputedStyle(document.documentElement);
-    const colours = WORD_CRAYONS.map((i) => tokens.getPropertyValue(`--crayon-${i}`).trim());
+    // The title's one paint, ultramarine, read from the stylesheet rather than
+    // written down twice.
+    const ultramarine = getComputedStyle(document.documentElement).getPropertyValue('--paint-1').trim();
     let width = 0;
     let dpr = 1;
     let layout: WordmarkLayout = { size: 0, height: 0, places: [], right: 0 };
@@ -129,7 +126,7 @@ export function Contents() {
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(layout.height * dpr);
       canvas.style.height = `${layout.height}px`;
-      art = prepareWordmark(LINES, family, width, layout, dpr, colours);
+      art = prepareWordmark(LINES, family, width, layout, dpr, ultramarine);
 
       // The room the title leaves to its right, for the cities: from just past
       // the lettering to the edge, standing on the last line's baseline.

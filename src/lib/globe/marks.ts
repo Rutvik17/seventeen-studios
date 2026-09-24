@@ -1,7 +1,7 @@
 /**
  * The globe's world and its marks, made once from a fixed seed so the globe
  * is the same drawing every time: the pencil lines (the coastlines and the
- * meridians) and the crayon patches (scribbles of colour over the whole
+ * meridians) and the paint patches (scribbles of colour over the whole
  * world, each in the colour of the ground under it).
  *
  * Nothing here touches the page, so `scripts/verify-globe.mjs` can check the
@@ -9,7 +9,7 @@
  */
 
 import { rng } from '@/lib/sketchbook/geometry';
-import { COLOUR_GRID, CRAYONS } from './colours';
+import { COLOUR_GRID, PAINTS } from './colours';
 import { LAND } from './land';
 
 const DEG = Math.PI / 180;
@@ -18,11 +18,11 @@ const DEG = Math.PI / 180;
  * The world
  * ------------------------------------------------------------------ */
 
-export type CrayonName = (typeof CRAYONS)[number];
-export const crayonIndex = (name: CrayonName) => CRAYONS.indexOf(name);
+export type PaintName = (typeof PAINTS)[number];
+export const paintIndex = (name: PaintName) => PAINTS.indexOf(name);
 
-/** The first three crayons are the sea's. */
-export const isSea = (crayon: number) => crayon <= 2;
+/** The first three paints are the sea's. */
+export const isSea = (paint: number) => paint <= 2;
 
 let grid: Uint8Array | null = null;
 
@@ -43,25 +43,25 @@ function cells(): Uint8Array {
   return out;
 }
 
-/** The crayon for the ground (or sea) at (lon, lat). */
-export function crayonAt(lon: number, lat: number): number {
+/** The paint for the ground (or sea) at (lon, lat). */
+export function paintAt(lon: number, lat: number): number {
   const { cols, rows } = COLOUR_GRID;
   const col = Math.floor((((((lon + 180) % 360) + 360) % 360) / 360) * cols);
   const row = Math.max(0, Math.min(rows - 1, Math.floor(((90 - lat) / 180) * rows)));
   return cells()[row * cols + Math.min(cols - 1, col)];
 }
 
-/** The nearest land crayon to (lon, lat) — for a coast or island finer than the colour grid. */
-export function landCrayonNear(lon: number, lat: number): number {
+/** The nearest land paint to (lon, lat) — for a coast or island finer than the colour grid. */
+export function landPaintNear(lon: number, lat: number): number {
   for (let ring = 0; ring <= 3; ring += 1) {
     for (let dy = -ring; dy <= ring; dy += 1) {
       for (let dx = -ring; dx <= ring; dx += 1) {
-        const k = crayonAt(lon + dx * 0.5, lat + dy * 0.5);
+        const k = paintAt(lon + dx * 0.5, lat + dy * 0.5);
         if (!isSea(k)) return k;
       }
     }
   }
-  return crayonIndex('grass');
+  return paintIndex('grass');
 }
 
 /** Whether (lon, lat) is inside one of the coastlines. */
@@ -133,7 +133,7 @@ function meridians(): Line[] {
 }
 
 /* ------------------------------------------------------------------ *
- * Crayon
+ * Paint
  * ------------------------------------------------------------------ */
 
 export type Patch = {
@@ -143,20 +143,20 @@ export type Patch = {
   sea: boolean;
   /** The scribble: one path, back and forth, [lon, lat, …]. */
   pts: Float32Array;
-  /** The crayon each point's stretch of the path is drawn in. */
-  crayon: Uint8Array;
+  /** The paint each point's stretch of the path is drawn in. */
+  paint: Uint8Array;
   /** The direction the scribble's lines run, radians from east towards north. */
   angle: number;
-  /** How wide the crayon's mark is, degrees of arc. */
+  /** How wide the paint's mark is, degrees of arc. */
   width: number;
 };
 
 /**
- * A crayon's neighbour in the box, for a line or two in each patch: the sea
+ * A paint's neighbour in the box, for a line or two in each patch: the sea
  * shades between its blues, and the land between the colours either side of
  * it, so no patch is one flat colour.
  */
-const COMPANION: Record<CrayonName, CrayonName> = {
+const COMPANION: Record<PaintName, PaintName> = {
   deep: 'sea',
   sea: 'deep',
   shallow: 'sea',
@@ -204,20 +204,20 @@ function patch(lon: number, lat: number, sea: boolean, base: number, size: 'sea'
   const [long, lines, gap, width] =
     size === 'sea' ? [9 + r() * 2, 7 + Math.floor(r() * 2), 1.1, 1.45] : size === 'land' ? [6.5 + r() * 2, 6 + Math.floor(r() * 3), 0.95, 1.25] : [3, 4, 0.7, 1.0];
   const pts = scribble(lon, lat, angle, long, lines, gap, r);
-  // Each line of the scribble takes the crayon of the ground under its middle —
+  // Each line of the scribble takes the paint of the ground under its middle —
   // unless that is the other side of a coast — and now and then its neighbour.
-  const crayon = new Uint8Array(pts.length / 2);
-  const perLine = Math.floor(crayon.length / lines);
+  const paint = new Uint8Array(pts.length / 2);
+  const perLine = Math.floor(paint.length / lines);
   for (let j = 0; j < lines; j += 1) {
     const from = j * perLine;
-    const to = j === lines - 1 ? crayon.length : from + perLine;
+    const to = j === lines - 1 ? paint.length : from + perLine;
     const mid = Math.floor((from + to) / 2);
-    let k = crayonAt(pts[2 * mid], pts[2 * mid + 1]);
+    let k = paintAt(pts[2 * mid], pts[2 * mid + 1]);
     if (isSea(k) !== sea) k = base;
-    if (r() < 0.22) k = crayonIndex(COMPANION[CRAYONS[k]]);
-    crayon.fill(k, from, to);
+    if (r() < 0.22) k = paintIndex(COMPANION[PAINTS[k]]);
+    paint.fill(k, from, to);
   }
-  return { lon, lat, sea, pts: Float32Array.from(pts), crayon, angle, width };
+  return { lon, lat, sea, pts: Float32Array.from(pts), paint, angle, width };
 }
 
 /** Patches over the whole world, spread evenly over the ball (a Fibonacci lattice), and one more on every small island. */
@@ -229,7 +229,7 @@ function patches(r: () => number): Patch[] {
     const y = 1 - (2 * (i + 0.5)) / N;
     const lat = Math.asin(y) / DEG + (r() - 0.5) * 2;
     const lon = ((((golden * i) / DEG + (r() - 0.5) * 3) % 360) + 360) % 360 - 180;
-    const k = crayonAt(lon, lat);
+    const k = paintAt(lon, lat);
     out.push(patch(lon, lat, isSea(k), k, isSea(k) ? 'sea' : 'land', r));
   }
   for (const ring of LAND) {
@@ -239,7 +239,7 @@ function patches(r: () => number): Patch[] {
     let lon = lons.reduce((a, b) => a + b, 0) / lons.length;
     let lat = lats.reduce((a, b) => a + b, 0) / lats.length;
     if (!isLand(lon, lat)) [lon, lat] = [lons[0], lats[0]];
-    out.push(patch(lon, lat, false, landCrayonNear(lon, lat), 'island', r));
+    out.push(patch(lon, lat, false, landPaintNear(lon, lat), 'island', r));
   }
   return out;
 }

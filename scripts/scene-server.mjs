@@ -1,6 +1,6 @@
 /**
  * Serves the site's own TypeScript to a browser, so a script can draw with
- * the code the pages draw with — the globe's crayon map is coloured this way
+ * the code the pages draw with — the globe's map and the pages' ground are painted this way
  * (`make-globe-sheet.mjs`).
  *
  *   const server = await serveScenes({ '/page.html': html });

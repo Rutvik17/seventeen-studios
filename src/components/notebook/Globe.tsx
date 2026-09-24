@@ -2,7 +2,7 @@
 
 /**
  * The globe of the notebook entry "Earth we live on": the world in pencil and
- * crayon, turning. Drag it to spin it. The drawing is `lib/globe/render.ts`;
+ * paint, turning. Drag it to spin it. The drawing is `lib/globe/render.ts`;
  * this component only keeps the clock and the reader's hand.
  *
  * The globe turns at one steady speed, drawn frame by frame (`FPS`); a drag
@@ -19,14 +19,14 @@ import { globeCopy } from '@/content/globe';
 import { asset } from '@/lib/asset';
 import { holdLoader } from '@/lib/ready';
 import { prefersReducedMotion } from '@/lib/gsap';
-import { CRAYONS } from '@/lib/globe/colours';
+import { PAINTS } from '@/lib/globe/colours';
 import { createScene, type GlobePalette, type Scene } from '@/lib/globe/render';
 import { sheetFrom } from '@/lib/globe/sheet';
 import { FPS, spinAt } from '@/lib/globe/view';
 import styles from './Globe.module.css';
 
 /**
- * The crayon map, coloured when the site is built (`scripts/make-globe-sheet.mjs`):
+ * The paint map, coloured when the site is built (`scripts/make-globe-sheet.mjs`):
  * the larger for a globe big enough on the screen to show its detail.
  */
 const SHEETS = [
@@ -45,7 +45,7 @@ export function readGlobePalette(entry: HTMLElement): GlobePalette {
     dusk: v('--globe-dusk'),
     graphite: v('--globe-graphite'),
     shadow: v('--globe-shadow'),
-    crayons: CRAYONS.map((c) => v(`--globe-${c}`)),
+    paints: PAINTS.map((c) => v(`--globe-${c}`)),
   };
 }
 
@@ -75,7 +75,7 @@ export function Globe() {
     let gone = false;
     const picture = new Image();
     picture.decoding = 'async';
-    picture.src = asset(`/notebook/earth/crayon-${width}.webp`);
+    picture.src = asset(`/notebook/earth/paint-${width}.webp`);
     picture
       .decode()
       .then(() => {

@@ -2,28 +2,32 @@
  * The notebook entry "Earth we live on": the globe, and the continents
  * sketched beside it.
  *
- * `--globe-*` are the drawings' paper, pencil and crayons, declared here, on
+ * `--globe-*` are the drawings' ground, pencil and paints, declared here, on
  * the entry, and read back by the canvases with getComputedStyle — written
  * down once. They colour these drawings and nothing else on the site. The
- * crayon names match `CRAYONS` in `lib/globe/colours.ts`.
+ * paint names match `PAINTS` in `lib/globe/colours.ts`.
  */
 
 .entry {
-  --globe-paper: #f4ead3;
+  /* The ground behind the globe: yellow ochre, brushed in (`render.ts`). */
+  --globe-paper: #ecd6a8;
   --globe-dusk: #6b4a2b;
   --globe-graphite: #33323a;
   --globe-shadow: rgba(84, 58, 34, 0.42);
 
-  --globe-deep: #1d4f9c;
-  --globe-sea: #2b7cc6;
-  --globe-shallow: #6ec0e8;
-  --globe-forest: #2e7a3c;
-  --globe-grass: #6db33f;
-  --globe-savanna: #c8b33e;
-  --globe-desert: #eab94e;
-  --globe-rock: #cc7a3a;
-  --globe-tundra: #97a36c;
-  --globe-ice: #dfe9f3;
+  /* The world's paints, acrylic: ultramarine, cobalt and cerulean for the
+     sea; sap and permanent green; yellow ochre, Naples yellow and burnt
+     sienna; olive; and titanium white with a touch of blue for the ice. */
+  --globe-deep: #243f8f;
+  --globe-sea: #2f6fb3;
+  --globe-shallow: #6aaed6;
+  --globe-forest: #3a6b35;
+  --globe-grass: #6c9f3c;
+  --globe-savanna: #c9a646;
+  --globe-desert: #e2b45c;
+  --globe-rock: #b8653a;
+  --globe-tundra: #8f9463;
+  --globe-ice: #e8eef2;
 
   margin-top: clamp(24px, 4vh, 44px);
   display: grid;
@@ -120,6 +124,16 @@
 .sketch {
   position: relative;
   aspect-ratio: 1;
+}
+/* The ground the continent is painted on: a loose wash of the shallow sea. */
+.sketch::before {
+  content: '';
+  position: absolute;
+  inset: 12% 0 10%;
+  background-color: var(--globe-shallow);
+  opacity: 0.32;
+  -webkit-mask: var(--paint-swash) center / 100% 100% no-repeat;
+  mask: var(--paint-swash) center / 100% 100% no-repeat;
 }
 
 @media (max-width: 860px) {

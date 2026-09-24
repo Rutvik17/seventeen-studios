@@ -44,11 +44,27 @@
   --accent-2: #c8233f;
   --accent-2-soft: rgba(200, 35, 63, 0.1);
 
-  /* Crayon strokes to colour a row in with, as a mask for the crayon's colour. */
-  --scribble-wash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Cg stroke='black' stroke-linecap='square'%3E%3Cpath d='M-2 20L20 -2' stroke-width='6'/%3E%3Cpath d='M-2 2L2 -2M16 20L20 16' stroke-width='6'/%3E%3Cpath d='M-2 11L11 -2M7 20L20 7' stroke-width='2.2'/%3E%3C/g%3E%3C/svg%3E");
-  /* Crayon, as a mask for text written in it: the wax laid on in streaks,
-     and the paper's tooth showing through where it skipped. */
-  --crayon-tooth: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='c' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.55' numOctaves='2' seed='7' stitchTiles='stitch' result='s'/%3E%3CfeColorMatrix in='s' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.7 1.78' result='streak'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' seed='2' stitchTiles='stitch' result='t'/%3E%3CfeColorMatrix in='t' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -4 3.05' result='tooth'/%3E%3CfeComposite in='streak' in2='tooth' operator='arithmetic' k1='1'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23c)'/%3E%3C/svg%3E");
+  /*
+    ACRYLIC.
+
+    Every page is laid on a painted ground: the cream brushed over with soft,
+    pale strokes in these tints — `scripts/make-ground.mjs` paints it, once,
+    from these values. Paint goes on top of it — washes of colour behind the
+    titles and the drawings, and the titles themselves — and the drawing goes
+    on top of the paint, in pencil.
+  */
+  --ground-1: #f8f0e0;
+  --ground-2: #eedcbd;
+  --ground-3: #f2dcc8;
+  --ground-4: #efe3cc;
+  --ground-5: #f2e3c0;
+
+  /* Brushed paint, as a mask for text painted in it: the bristles' streaks
+     along the stroke, and the canvas's tooth where the paint skipped. */
+  --paint-bristle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='b' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.005 0.42' numOctaves='2' seed='6' stitchTiles='stitch' result='s'/%3E%3CfeColorMatrix in='s' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.5 1.72' result='streak'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' seed='3' stitchTiles='stitch' result='t'/%3E%3CfeColorMatrix in='t' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -5 4.4' result='tooth'/%3E%3CfeComposite in='streak' in2='tooth' operator='arithmetic' k1='1'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23b)'/%3E%3C/svg%3E");
+  /* One loose stroke of a wide brush, ragged at its ends and streaked along
+     it — the shape of a wash, as a mask for its colour. */
+  --paint-swash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cfilter id='r' x='-5%25' y='-25%25' width='110%25' height='150%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035 0.12' numOctaves='3' seed='5' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='16' xChannelSelector='R' yChannelSelector='G' result='d'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004 0.28' numOctaves='2' seed='8' result='s'/%3E%3CfeColorMatrix in='s' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.3 1.45' result='streak'/%3E%3CfeComposite in='d' in2='streak' operator='arithmetic' k1='1'/%3E%3C/filter%3E%3Cpath d='M16 52C80 30 300 26 386 44C394 58 384 72 362 75C262 82 122 80 22 71C8 66 7 57 16 52Z' filter='url(%23r)'/%3E%3C/svg%3E");
 
   /*
     Everything is handwritten. `--font-hand` (Caveat) and `--font-write`
@@ -60,27 +76,18 @@
   --font-body: var(--font-write);
   --font-mono: var(--font-write);
 
-  /* The crayon box: the colours lists and scribbles take turns with. */
-  --crayon-1: #2b7cc6;
-  --crayon-2: #f2a93b;
-  --crayon-3: #3f9e4a;
-  --crayon-4: #e4553f;
-  --crayon-5: #7b57c8;
+  /* The paint box: acrylics — ultramarine, cadmium yellow, sap green, cadmium
+     red, dioxazine violet. Lists take turns with them; ultramarine is the mark's. */
+  --paint-1: #2b3f9e;
+  --paint-2: #eba42c;
+  --paint-3: #3f7d3a;
+  --paint-4: #cf3f2c;
+  --paint-5: #5a3a8e;
 
-  /* The plane — Grasp's ground, defined here and applied only there. */
+  /* The unit and rule Grasp's derivative demo is measured and ruled in — the
+     graph paper is gone from every other page, but a graph keeps its grid. */
   --grid-unit: 24px;
-  --grid-line: rgba(20, 22, 26, 0.05);
   --grid-line-major: rgba(20, 22, 26, 0.09);
-  --plane:
-    linear-gradient(var(--grid-line-major) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line-major) 1px, transparent 1px),
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  --plane-size:
-    calc(var(--grid-unit) * 5) calc(var(--grid-unit) * 5),
-    calc(var(--grid-unit) * 5) calc(var(--grid-unit) * 5),
-    var(--grid-unit) var(--grid-unit),
-    var(--grid-unit) var(--grid-unit);
 
   --shadow-md: 0 2px 6px rgba(20, 22, 26, 0.06), 0 12px 32px rgba(20, 22, 26, 0.07);
 
@@ -93,6 +100,37 @@
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/* ---------- Paint ------------------------------------------------ */
+
+/*
+  Painted titles: the letters in paint (the bristles' streaks, the canvas's
+  tooth), over a wash — one loose stroke of a wide brush in `--wash`, inside the
+  title's own box, because the texture masks the whole box and anything
+  outside it would be cut away.
+*/
+.contents__head,
+.sheet__title,
+.index__title,
+.book-cover__motto {
+  position: relative;
+  isolation: isolate;
+  -webkit-mask: var(--paint-bristle) 0 0 / 260px 260px;
+  mask: var(--paint-bristle) 0 0 / 260px 260px;
+}
+.contents__head::before,
+.sheet__title::before,
+.index__title::before,
+.book-cover__motto::before {
+  content: '';
+  position: absolute;
+  inset: var(--wash-inset, 16% 0 2%);
+  z-index: -1;
+  background-color: var(--wash, var(--paint-2));
+  opacity: var(--wash-alpha, 0.42);
+  -webkit-mask: var(--paint-swash) center / 100% 100% no-repeat;
+  mask: var(--paint-swash) center / 100% 100% no-repeat;
 }
 
 /* ---------- Reset ------------------------------------------------ */
@@ -117,9 +155,9 @@ html.is-locked body {
 
 body {
   /*
-    Plain paper. The grid belongs to the pages that are sheets (`.sheet`) and
-    to the founder book, which draw their own; laid behind everything, it made
-    every page read as the same worksheet.
+    The painted ground is laid behind everything (`body::before`), still while
+    the page moves over it. It replaced graph paper — a grid made every page
+    read as a worksheet — and then a woven canvas texture, which read as sacking.
   */
   background-color: var(--bg);
   color: var(--fg);
@@ -135,6 +173,24 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--bg) url('../assets/ground/wide.webp') center / cover no-repeat;
+  pointer-events: none;
+}
+@media (max-aspect-ratio: 1/1) {
+  body::before {
+    background-image: url('../assets/ground/tall.webp');
+  }
+}
+/* Grasp is a green board, always: no painted ground behind it, anywhere. */
+body:has([data-slate])::before {
+  display: none;
 }
 
 html.has-custom-cursor,
@@ -375,10 +431,10 @@ code {
   height: 100%;
   overflow: visible;
 }
-/* The strokes carry the paper's tooth; the crayon, on its own sheet above, does not. */
+/* The strokes carry the bristles' streaks; the brush, on its own sheet above, does not. */
 .pencil-mark__wax {
-  -webkit-mask: var(--crayon-tooth) 0 0 / 200px 200px;
-  mask: var(--crayon-tooth) 0 0 / 200px 200px;
+  -webkit-mask: var(--paint-bristle) 0 0 / 200px 200px;
+  mask: var(--paint-bristle) 0 0 / 200px 200px;
 }
 .pencil-mark__hand {
   position: absolute;
@@ -429,10 +485,13 @@ html:not(.is-loading) .preloader {
 .curtain__sheet {
   position: absolute;
   inset: 0;
-  background-color: var(--bg);
-  background-image: var(--plane);
-  background-size: var(--plane-size);
-  --grid-unit: 28px;
+  background: var(--bg) url('../assets/ground/wide.webp') center / cover no-repeat;
+}
+@media (max-aspect-ratio: 1/1) {
+  .preloader__sheet,
+  .curtain__sheet {
+    background-image: url('../assets/ground/tall.webp');
+  }
 }
 .curtain__sheet {
   clip-path: polygon(101% 0, 101% 0, 101% 100%, 101% 100%);
@@ -507,26 +566,21 @@ html:not(.is-loading) .preloader {
   align-items: center;
   color: var(--fg);
 }
-/* The mark in crayon, as the loader writes it: the 1 blue, the 7 marigold. */
+/* The mark in ultramarine, as the loader paints it. */
 .nav__logo {
   display: block;
   height: 26px;
   width: auto;
   overflow: visible;
-  -webkit-mask: var(--crayon-tooth) 0 0 / 120px 120px;
-  mask: var(--crayon-tooth) 0 0 / 120px 120px;
+  -webkit-mask: var(--paint-bristle) 0 0 / 120px 120px;
+  mask: var(--paint-bristle) 0 0 / 120px 120px;
   transition: transform 0.4s var(--ease-out);
 }
 .nav__stroke {
   fill: none;
+  stroke: var(--mark, var(--paint-1));
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-.nav__stroke--1 {
-  stroke: var(--mark-1, var(--crayon-1));
-}
-.nav__stroke--2 {
-  stroke: var(--mark-2, var(--crayon-2));
 }
 .nav__mark:hover .nav__logo {
   transform: rotate(-4deg) scale(1.06);
@@ -587,10 +641,9 @@ body:has([data-slate]) .nav__tab,
 body:has([data-slate]) .nav__tab.is-active {
   color: #eef1e6;
 }
-/* On the board the mark is chalk: white, and the yellow chalk for the 7. */
+/* On the board the mark is chalk. */
 body:has([data-slate]) .nav__logo {
-  --mark-1: #eef1e6;
-  --mark-2: #f0d266;
+  --mark: #eef1e6;
 }
 body:has([data-slate]) .nav.is-scrolled::before {
   background: linear-gradient(180deg, rgba(36, 60, 51, 0.94), rgba(36, 60, 51, 0));
@@ -958,9 +1011,6 @@ body:has([data-slate]) .nav.is-scrolled::before {
   position: relative;
   min-height: 100svh;
   padding: clamp(92px, 13vh, 132px) var(--gutter) clamp(56px, 10vh, 110px);
-  background-image: var(--plane);
-  background-size: var(--plane-size);
-  --grid-unit: 28px;
 }
 
 /* The margin rule, in ink, as on a real page. */
@@ -1023,12 +1073,12 @@ body:has([data-slate]) .nav.is-scrolled::before {
 }
 .book-cover__shelfmark::before {
   left: -0.78em;
-  background-color: var(--crayon-2);
+  background-color: var(--paint-2);
   transform: rotate(-34deg);
 }
 .book-cover__shelfmark::after {
   right: -0.78em;
-  background-color: var(--crayon-1);
+  background-color: var(--paint-1);
   transform: rotate(30deg);
 }
 .book-cover__owner {
@@ -1036,7 +1086,7 @@ body:has([data-slate]) .nav.is-scrolled::before {
   font-size: 0.66em;
   color: var(--fg-dim);
 }
-/* Underlined once, quickly, in red crayon. */
+/* Underlined once, quickly, in red. */
 .book-cover__underline {
   position: absolute;
   left: -2px;
@@ -1048,7 +1098,7 @@ body:has([data-slate]) .nav.is-scrolled::before {
 }
 .book-cover__underline path {
   fill: none;
-  stroke: var(--crayon-4);
+  stroke: var(--paint-4);
   stroke-width: 2.6;
   stroke-linecap: round;
   opacity: 0.85;
@@ -1065,11 +1115,10 @@ body:has([data-slate]) .nav.is-scrolled::before {
   font-weight: 700;
   font-size: min(24vw, 230px);
   line-height: 0.84;
-  color: var(--crayon-1);
+  color: var(--paint-1);
 }
 .book-cover__wordmark span:last-child {
   margin-left: min(34vw, 330px);
-  color: var(--crayon-2);
 }
 /* Once the pencil has the title, the set one steps aside — still read aloud. */
 .book-cover__wordmark[data-drawn] {
@@ -1088,7 +1137,7 @@ body:has([data-slate]) .nav.is-scrolled::before {
 }
 
 /* The line under the title, as a note in ink, its second half picked out
-   with a band of crayon — hatched, as crayon goes on. */
+   with a wash of yellow paint. */
 .book-cover__line {
   max-width: 30ch;
   margin: clamp(18px, 3.5vh, 40px) 0 clamp(48px, 9vh, 96px);
@@ -1106,11 +1155,10 @@ body:has([data-slate]) .nav.is-scrolled::before {
   pointer-events: none;
 }
 .book-cover__motto {
-  padding: 0 0.12em;
-  --band: color-mix(in srgb, var(--crayon-2) 80%, transparent);
-  background: repeating-linear-gradient(-58deg, var(--band) 0 2.5px, transparent 2.5px 4.6px) 0 88% / 100% 0.42em no-repeat;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
+  --wash-inset: 42% -0.1em -2%;
+  --wash-alpha: 0.55;
+  display: inline-block;
+  padding: 0 0.16em;
 }
 
 /* ---- contents ---- */
@@ -1118,18 +1166,16 @@ body:has([data-slate]) .nav.is-scrolled::before {
 .contents {
   max-width: 1180px;
 }
-/* Written like a page's title, smaller: charcoal crayon with a marigold gone
-   over it a hair off to the side, the paper's tooth showing through. */
+/* Painted like a page's title, smaller: charcoal over a wash of yellow. */
 .contents__head {
-  margin-bottom: clamp(6px, 1.4vh, 16px);
+  justify-self: start;
+  margin: 0 0 clamp(6px, 1.4vh, 16px) -0.3em;
+  padding: 0.04em 0.45em 0.1em 0.3em;
   font-family: var(--font-display), cursive;
   font-weight: 700;
   font-size: clamp(46px, 4.8vw, 78px);
   line-height: 1;
   color: var(--fg);
-  text-shadow: 0.04em 0.045em 0 color-mix(in srgb, var(--crayon-2) 80%, transparent);
-  -webkit-mask: var(--crayon-tooth) 0 0 / 240px 240px;
-  mask: var(--crayon-tooth) 0 0 / 240px 240px;
 }
 /* The doodles. Hidden starting state is armed by script only. */
 .doodle {
@@ -1177,11 +1223,10 @@ body:has([data-slate]) .nav.is-scrolled::before {
    LISTS — every list of pages to turn to (the contents, the notebook)
    ================================================================== */
 
-/* Each row in its own crayon (--c, set per row), lettered like the cover's
-   title: its number outlined in pencil and hatched in with the crayon a little
-   off register, its title in the crayon with a pencil-hatched shadow. Pointed
-   at, the row is coloured in, the number's colour slips back into register,
-   the shadow deepens, and the arrow takes the colour and moves on. */
+/* Each row in its own paint (--c, set per row): its number outlined in pencil
+   and painted in a little off register, its title painted in it over a wash
+   of it. Pointed at, the row gets a wash of its own, the number's paint slips
+   back into register, and the arrow takes the colour and moves on. */
 .index {
   list-style: none;
   display: grid;
@@ -1198,24 +1243,22 @@ body:has([data-slate]) .nav.is-scrolled::before {
   padding: clamp(14px, 2.2vh, 22px) clamp(8px, 1.2vw, 16px);
   border-bottom: 2px dashed color-mix(in srgb, var(--c) 40%, transparent);
 }
-/* The colouring in: crayon strokes of the row's colour, swept in from the left. */
+/* The wash: one stroke of the row's paint across it, brushed in from the left. */
 .index__row::before {
   content: '';
   position: absolute;
-  inset: 4px 0;
+  inset: 2px -1%;
   z-index: -1;
   background-color: var(--c);
-  opacity: 0.22;
-  -webkit-mask-image: var(--scribble-wash);
-  mask-image: var(--scribble-wash);
-  -webkit-mask-size: 18px 18px;
-  mask-size: 18px 18px;
-  clip-path: inset(0 100% 0 0 round 10px);
-  transition: clip-path 0.55s var(--ease-out);
+  opacity: 0.16;
+  -webkit-mask: var(--paint-swash) center / 100% 100% no-repeat;
+  mask: var(--paint-swash) center / 100% 100% no-repeat;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.6s var(--ease-out);
 }
 .index__row:hover::before,
 .index__row:focus-visible::before {
-  clip-path: inset(0 0 0 0 round 10px);
+  clip-path: inset(0 0 0 0);
 }
 .index__mark {
   grid-area: mark;
@@ -1239,9 +1282,9 @@ body:has([data-slate]) .nav.is-scrolled::before {
   inset: 0;
   z-index: -1;
   -webkit-text-stroke: 0;
-  background: repeating-linear-gradient(-55deg, var(--c) 0 2.4px, transparent 2.4px 4.6px);
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: var(--c);
+  -webkit-mask: var(--paint-bristle) 0 0 / 200px 200px;
+  mask: var(--paint-bristle) 0 0 / 200px 200px;
   transform: translate(0.06em, 0.05em);
   transition: transform 0.45s var(--ease-out);
 }
@@ -1265,18 +1308,19 @@ body:has([data-slate]) .nav.is-scrolled::before {
   text-transform: uppercase;
   color: var(--muted);
 }
-/* The title written in the row's crayon, pressed on hard enough to read, the
-   paper's tooth showing through the wax. Pointed at, it leans in. */
+/* The title painted in the row's colour, deep enough to read, over a wash of
+   it. Pointed at, it leans in. */
 .index__title {
+  --wash: var(--c);
+  --wash-alpha: 0.26;
   justify-self: start;
-  padding: 0.02em 0.1em 0.06em 0;
+  margin-left: -0.3em;
+  padding: 0.04em 0.4em 0.1em 0.3em;
   font-family: var(--font-display), cursive;
   font-weight: 700;
   font-size: clamp(38px, 4.6vw, 76px);
   line-height: 0.95;
-  color: color-mix(in srgb, var(--c) 78%, var(--fg));
-  -webkit-mask: var(--crayon-tooth) 0 0 / 240px 240px;
-  mask: var(--crayon-tooth) 0 0 / 240px 240px;
+  color: color-mix(in srgb, var(--c) 80%, var(--fg));
   transform-origin: left center;
   transition: transform 0.4s var(--ease-out);
 }
@@ -1422,9 +1466,6 @@ body:has([data-slate]) .nav.is-scrolled::before {
   position: relative;
   min-height: 78svh;
   padding: clamp(120px, 18vh, 190px) var(--gutter) clamp(60px, 10vh, 110px);
-  background-image: var(--plane);
-  background-size: var(--plane-size);
-  --grid-unit: 28px;
 }
 .sheet::before {
   content: '';
@@ -1478,18 +1519,15 @@ body:has([data-slate]) .nav.is-scrolled::before {
   color: var(--accent);
 }
 .sheet__title {
+  justify-self: start;
+  margin-left: -0.25em;
+  padding: 0.04em 0.35em 0.12em 0.25em;
   font-family: var(--font-display), cursive;
   font-weight: 700;
   font-size: clamp(56px, calc(7vw + 26px), 156px);
   line-height: 0.88;
-  padding-bottom: 0.08em;
   color: var(--fg);
   text-wrap: balance;
-  /* Written in crayon: a charcoal one, with a marigold gone over it a hair
-     off to the side, and the paper's tooth showing through both. */
-  text-shadow: 0.04em 0.045em 0 color-mix(in srgb, var(--crayon-2) 80%, transparent);
-  -webkit-mask: var(--crayon-tooth) 0 0 / 240px 240px;
-  mask: var(--crayon-tooth) 0 0 / 240px 240px;
 }
 /* The line under the title, as a note in the margin, with an arrow to what follows. */
 .sheet__lead {
@@ -1520,7 +1558,7 @@ body:has([data-slate]) .nav.is-scrolled::before {
 }
 .sheet__arrow path {
   fill: none;
-  stroke: var(--crayon-4);
+  stroke: var(--paint-4);
   stroke-width: 2.2;
   stroke-linecap: round;
   stroke-linejoin: round;

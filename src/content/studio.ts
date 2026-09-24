@@ -67,7 +67,7 @@ export const cover = {
   /** The label on the cover: what the book is, and which one. */
   shelfmark: { name: 'Sketchbook', number: 'No. 17' },
   owner: 'kept by Rutvik Patel, Toronto',
-  /** One line about what is inside, and the second half of it picked out in crayon. */
+  /** One line about what is inside, and the second half of it picked out with a wash of paint. */
   line: 'A software engineer’s sketchbook.',
   motto: 'Sketching one page at a time.',
   contents: 'Contents',
