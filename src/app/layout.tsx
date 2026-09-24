@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Syne, DM_Sans, JetBrains_Mono, Caveat } from 'next/font/google';
+import { Syne, DM_Sans, JetBrains_Mono, Caveat, Shantell_Sans } from 'next/font/google';
 import { Providers } from '@/components/Providers';
 import { TransitionProvider } from '@/components/Transition';
 import { Preloader } from '@/components/Preloader';
@@ -18,17 +18,25 @@ import './globals.css';
 /**
  * Root layout.
  *
- * Four typefaces, each with a job: Syne for display, DM Sans for reading,
- * JetBrains Mono for the labels, indices and metadata that give the site its
- * technical register — and Caveat, which is only ever chalk on Grasp's board.
- * All four are self-hosted by `next/font` at build time, so the static export
- * makes no third-party font requests.
+ * The site is a sketchbook, so everything in it is handwritten, in two hands:
+ * Caveat, a quick natural hand, for titles and notes (`--font-hand`, and
+ * `--font-display` after it), and Shantell Sans for everything meant to be
+ * read at length and the small print (`--font-write`, behind `--font-body` and
+ * `--font-mono`) — a marker hand drawn to stay legible small, whose informal
+ * axes are turned up in the stylesheet so its letters bounce like a person's.
+ *
+ * Grasp's board keeps the faces it was designed with — DM Sans, JetBrains Mono
+ * and Caveat as chalk — and puts them back on its own root. Syne survives only
+ * as the outlined numbers down the site's lists.
+ *
+ * All are self-hosted by `next/font` at build time, so the static export makes
+ * no third-party font requests.
  */
 
 const syne = Syne({
   subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
-  variable: '--font-display',
+  weight: ['800'],
+  variable: '--font-syne',
   display: 'swap',
 });
 
@@ -36,20 +44,19 @@ const dmSans = DM_Sans({
   subsets: ['latin'],
   weight: ['300', '400', '500'],
   style: ['normal', 'italic'],
-  variable: '--font-body',
+  variable: '--font-dm-sans',
   display: 'swap',
 });
 
 const mono = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '500'],
-  variable: '--font-mono',
+  variable: '--font-jetbrains',
   display: 'swap',
 });
 
 /*
-  Chalk. Used on exactly one page — Grasp's board — and loaded here because
-  `next/font` has to run at module scope in a server component.
+  The quick hand: titles, notes, and the chalk on Grasp's board.
 
   Caveat rather than one of the scratchier handwriting faces: a lesson has to be
   READ, and the rougher hands lose legibility at the size algebra needs. The
@@ -60,6 +67,14 @@ const hand = Caveat({
   subsets: ['latin'],
   weight: ['500', '600', '700'],
   variable: '--font-hand',
+  display: 'swap',
+});
+
+/* The reading hand. Variable, with its bounce and informality axes. */
+const write = Shantell_Sans({
+  subsets: ['latin'],
+  axes: ['BNCE', 'INFM'],
+  variable: '--font-write',
   display: 'swap',
 });
 
@@ -165,7 +180,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${syne.variable} ${dmSans.variable} ${mono.variable} ${hand.variable}`}
+      className={`${syne.variable} ${dmSans.variable} ${mono.variable} ${hand.variable} ${write.variable}`}
       suppressHydrationWarning
     >
       <head>

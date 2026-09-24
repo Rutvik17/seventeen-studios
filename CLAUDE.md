@@ -37,10 +37,19 @@ The whole site is one sketchbook, and every new piece should read as a leaf of
 it rather than as a web page:
 
 - **Pages are sheets.** Simple pages use `components/Sheet.tsx` — gridded paper,
-  a crimson margin rule, a handwritten note above a Syne title.
-- **Handwriting labels, Syne names, DM Sans reads.** Caveat (`--font-hand`) for
-  notes, kickers and tabs; Syne for titles; DM Sans for body; JetBrains Mono
-  only for small print.
+  a crimson margin rule, a handwritten note above a title written in crayon.
+- **Everything is handwritten.** Caveat (`--font-hand`, and `--font-display`
+  after it) for titles, notes, kickers and tabs; Shantell Sans (`--font-write`,
+  behind `--font-body` and `--font-mono`) for anything read at length and the
+  small print, with its informality and bounce axes turned up. Titles are
+  *written in crayon* — the `--crayon-tooth` mask over the text, and on the
+  cover a canvas that scribbles each letter in. Syne is kept only for the
+  outlined numbers down a list. Grasp's board is the exception: it restores DM
+  Sans and JetBrains Mono on its own root and keeps Caveat as chalk.
+- **Colour comes from the crayon box, a few at a time.** Two crayons for the
+  cover's title, one per row down a list. Never a whole spectrum in one place —
+  a title with every letter a different colour read as a rainbow flag, not a
+  sketchbook.
 - **The pencil is the cursor; the page turn is the transition; the pencil
   drawing the 17 is the loader.** New motion should feel like drawing or turning
   paper, not like an interface animating.
@@ -156,6 +165,7 @@ read it once at runtime with `getComputedStyle(document.documentElement)
 | `--line` | `rgba(29,29,33,.12)` | hairlines |
 | `--accent` | `#1f3a8a` | deep ink blue — the pen |
 | `--accent-2` | `#c8233f` | crimson — the one thing to do next, or a drawing's second reading |
+| `--crayon-1` … `-5` | `#2b7cc6` `#f2a93b` `#3f9e4a` `#e4553f` `#7b57c8` | the crayon box: blue, marigold, green, red, violet — the colours a row, a title or a scribble is coloured in |
 
 `--sketch-*` are the founder sketchbook's own colours (paper, graphite, charcoal,
 ink, one crimson). They are declared on the story in
@@ -167,13 +177,16 @@ theme a raised surface is *lighter* than its ground; in a light one it is whiter
 and **casts**. Swapping colours without swapping that rule produces flat,
 illegible cards — it has happened here once.
 
-Type: **Syne** (display, 500–800), **DM Sans** (body, 300–500), **JetBrains
-Mono** (labels, indices, metadata). All loaded via `next/font`, so the export
-makes no third-party font requests.
+Type: **Caveat** (titles and notes, 500–700) and **Shantell Sans** (reading and
+small print, variable, with its `BNCE` and `INFM` axes). **Syne** 800 only for
+list numbers; **DM Sans** and **JetBrains Mono** only on Grasp. All loaded via
+`next/font`, so the export makes no third-party font requests. Canvas text
+cannot set a variable font's axes, so anything a canvas writes gets its
+irregularity from the drawing (the cover turns, raises and sizes each letter
+itself), not from the face.
 
-Layout: `--gutter` for page padding, `--max` (1680px) for content width. Mono
-labels are 11px / 0.16em / uppercase — that pairing is the site's signature and
-should not drift.
+Layout: `--gutter` for page padding, `--max` (1680px) for content width. Small
+labels are 11px / 0.16em / uppercase.
 
 ---
 

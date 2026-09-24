@@ -26,6 +26,14 @@
 
   background: var(--slate);
   color: var(--chalk);
+
+  /* The board keeps the faces it was designed with; the rest of the site is
+     handwritten (see the tokens in globals.css). */
+  --font-display: var(--font-syne);
+  --font-body: var(--font-dm-sans);
+  --font-mono: var(--font-jetbrains);
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-variation-settings: normal;
 }
 
 /* ---------- the only chrome on the page --------------------------- */

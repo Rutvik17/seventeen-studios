@@ -61,17 +61,19 @@ export const nav = [
  * page you can turn to, with a small drawing of what is on it.
  */
 export const cover = {
-  wordmarkTop: 'SEVENTEEN',
-  wordmarkBottom: 'STUDIOS',
-  shelfmark: 'Sketchbook No. 17',
+  wordmarkTop: 'Seventeen',
+  wordmarkBottom: 'Studios',
+  /** The label on the cover: what the book is, and which one. */
+  shelfmark: { name: 'Sketchbook', number: 'No. 17' },
   owner: 'kept by Rutvik Patel, Toronto',
-  line: 'A software engineer’s sketchbook. Sketching one page at a time.',
+  /** One line about what is inside, and the second half of it picked out in crayon. */
+  line: 'A software engineer’s sketchbook.',
+  motto: 'Sketching one page at a time.',
   contents: 'Contents',
   cursor: 'Turn to it',
 } as const;
 
 export type Chapter = {
-  numeral: string;
   title: string;
   note: string;
   href: string;
@@ -81,21 +83,18 @@ export type Chapter = {
 
 export const chapters: Chapter[] = [
   {
-    numeral: 'I',
     title: 'The founder',
     note: 'My journey',
     href: '/founder/',
     doodle: 'head',
   },
   {
-    numeral: 'II',
     title: 'Notebook',
     note: 'Learning something new every day',
     href: '/notebook/',
     doodle: 'notebook',
   },
   {
-    numeral: 'III',
     title: 'Grasp',
     note: 'Learning calculus',
     href: '/grasp/',

@@ -1,0 +1,136 @@
+/*
+ * The notebook entry "Earth we live on": the globe, and the continents
+ * sketched beside it.
+ *
+ * `--globe-*` are the drawings' paper, pencil and crayons, declared here, on
+ * the entry, and read back by the canvases with getComputedStyle — written
+ * down once. They colour these drawings and nothing else on the site. The
+ * crayon names match `CRAYONS` in `lib/globe/colours.ts`.
+ */
+
+.entry {
+  --globe-paper: #f4ead3;
+  --globe-dusk: #6b4a2b;
+  --globe-graphite: #33323a;
+  --globe-shadow: rgba(84, 58, 34, 0.42);
+
+  --globe-deep: #1d4f9c;
+  --globe-sea: #2b7cc6;
+  --globe-shallow: #6ec0e8;
+  --globe-forest: #2e7a3c;
+  --globe-grass: #6db33f;
+  --globe-savanna: #c8b33e;
+  --globe-desert: #eab94e;
+  --globe-rock: #cc7a3a;
+  --globe-tundra: #97a36c;
+  --globe-ice: #dfe9f3;
+
+  margin-top: clamp(24px, 4vh, 44px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  column-gap: clamp(20px, 3vw, 48px);
+  row-gap: 28px;
+  align-items: start;
+  max-width: 1240px;
+}
+
+.globe {
+  display: grid;
+  gap: 12px;
+}
+.frame {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--globe-paper);
+  border: 2px solid var(--fg);
+  border-radius: 8px;
+  box-shadow: 7px 7px 0 rgba(107, 74, 43, 0.35);
+}
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.frame .canvas {
+  touch-action: pan-y;
+}
+.frame .canvas:focus-visible {
+  outline: 3px solid var(--globe-sea);
+  outline-offset: -3px;
+}
+.caption {
+  font-family: var(--font-hand), cursive;
+  font-size: 21px;
+  line-height: 1.2;
+  color: var(--globe-dusk);
+}
+.turns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.turns button {
+  padding: 6px 14px;
+  font-family: var(--font-hand), cursive;
+  font-size: 19px;
+  color: var(--fg);
+  background: var(--bg-raise);
+  border: 1.5px solid var(--fg);
+  border-radius: 999px;
+}
+
+/* The continents: a button for each, and the one chosen sketched on the page. */
+.continents {
+  display: grid;
+  gap: 14px;
+}
+.picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+.picks button {
+  padding: 6px 14px;
+  font-family: var(--font-hand), cursive;
+  font-size: 20px;
+  line-height: 1.15;
+  color: var(--fg);
+  background: var(--bg-raise);
+  border: 1.5px solid var(--fg);
+  border-radius: 999px;
+  box-shadow: 2px 2px 0 var(--fg);
+  transition: transform 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out), background-color 0.2s;
+}
+.picks button:hover {
+  background: #fff6dc;
+}
+.picks button:active {
+  box-shadow: 0 0 0 var(--fg);
+  transform: translate(2px, 2px);
+}
+.picks button[aria-pressed='true'] {
+  background: var(--globe-desert);
+}
+.picks button:focus-visible {
+  outline: 3px solid var(--globe-sea);
+  outline-offset: 3px;
+}
+.sketch {
+  position: relative;
+  aspect-ratio: 1;
+}
+
+@media (max-width: 860px) {
+  .entry {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .frame {
+    box-shadow: 5px 5px 0 rgba(107, 74, 43, 0.35);
+  }
+  .picks button {
+    font-size: 18px;
+    padding: 5px 12px;
+  }
+}
