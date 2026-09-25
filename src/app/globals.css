@@ -617,8 +617,7 @@ body:has([data-film]) {
   height: 100%;
   overflow: hidden;
 }
-body:has([data-film]) .endpaper,
-body:has([data-notebook]) .endpaper {
+body:has([data-film]) .endpaper {
   display: none;
 }
 
