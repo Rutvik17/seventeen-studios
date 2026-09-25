@@ -526,9 +526,15 @@ function IntervalsPanel({ p }: { p: Extract<Panel, { t: 'intervals' }> }) {
           <g key={i} className={styles.appear}>
             <rect x={x} y={i * rowH + 4} width={w} height={rowH - 8} rx={8} fill={c.fill} className={`${styles.wash} ${styles.shape}`} />
             <rect x={x} y={i * rowH + 4} width={w} height={rowH - 8} rx={8} fill="none" stroke={c.ink} className={`${styles.pencil} ${styles.shape}`} />
-            <text x={x + w + 6} y={i * rowH + 21} fontSize={16} fontWeight={700} fill={c.ink} className={styles.value}>
-              {r.label ?? `[${r.s}, ${r.e}]`}
-            </text>
+            {(() => {
+              const label = r.label ?? `[${r.s}, ${r.e}]`;
+              const right = x + w + 6 + tw(label, 16) <= W; // otherwise it goes on the strip's left
+              return (
+                <text x={right ? x + w + 6 : x - 6} y={i * rowH + 21} textAnchor={right ? 'start' : 'end'} fontSize={16} fontWeight={700} fill={c.ink} className={styles.value}>
+                  {label}
+                </text>
+              );
+            })()}
           </g>
         );
       })}
