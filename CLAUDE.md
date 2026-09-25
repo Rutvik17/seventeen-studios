@@ -60,9 +60,9 @@ it rather than as a web page:
   raised edge); everything drawn by `pencil.ts`. A new drawing uses both
   rather than inventing a third hand.
 - **The pencil is the cursor; the page turn is the transition; the loader is
-  Seventeen's headquarters in autumn** — a modern cantilevered pavilion with
-  triangular north lights, between two maples, sketched and painted as the
-  page gets ready (`lib/film/studio.ts`). **The mark is a maple leaf**,
+  the mark being made** — the maple leaf sketched in pencil and painted as
+  the page gets ready, swaying a little (`loader/LeafCanvas.tsx`). **The mark
+  is a maple leaf**,
   sketched and painted in autumn (`lib/film/leaf.ts`); the tab icon is the
   same outline, flat, on a paper tile.
 - **Every page lies on the watercolour paper** (`--paper`), the landing's
@@ -72,16 +72,15 @@ it rather than as a web page:
   written in the film's caption hand (Caveat 600, the current tab 700 with a
   straight pen underline).
   Neither should grow into a site map.
-- **The notebook is a real watercolour sketchbook.** Its index
-  (`lib/notebook/book.ts`) is drawn after one: a tall black hardback bound
-  along its TOP edge, rounded corners, an elastic band down the right, heavy
-  white cold-pressed pages with a tooth and no ruling. Pages turn up over the
-  top, as a top-bound sketchbook's do; scrolling turns them (a track and a
-  sticky stage). Cover, contents, then one page per entry — its painting, a
-  loose vignette fading into the paper (`DRAWINGS`, keyed by slug; Earth's is
-  `lib/notebook/globe.ts`, from the real coastlines and land cover), with its
-  title, date and line written under it. A new entry adds itself; give it a
-  painting.
+- **The notebook is a landscape watercolour sketchbook**
+  (`lib/notebook/book.ts`), lying horizontally and bound down its left side:
+  burnt-sienna cloth boards, a paper label, an elastic band, white
+  cold-pressed pages with a tooth and no ruling. Scrolling turns its pages
+  (a track and a sticky stage): cover, contents, then a spread per entry —
+  its title page on the left, its painting on the right (`DRAWINGS`, keyed
+  by slug; Earth's is `lib/notebook/globe.ts`, from the real coastlines and
+  land cover, lit from the upper left). On a tall screen one page fills the
+  width and the camera follows the turn.
 - **One name per thing.** The section is the *notebook* — never "lessons" or
   "lab". Grasp lives on this site; it is not an app.
 
