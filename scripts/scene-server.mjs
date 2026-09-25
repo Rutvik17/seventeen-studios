@@ -1,7 +1,7 @@
 /**
  * Serves the site's own TypeScript to a browser, so a script can draw with
- * the code the pages draw with — the globe's map and the pages' ground are painted this way
- * (`make-globe-sheet.mjs`).
+ * the code the pages draw with — the pages' ground is painted this way
+ * (`make-ground.mjs`).
  *
  *   const server = await serveScenes({ '/page.html': html });
  *   // open `${server.url}/page.html` in headless Chrome (`chrome.mjs`) …

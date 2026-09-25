@@ -19,15 +19,7 @@ export type NotebookEntry = {
   cardAlt: string;
 };
 
-export const notebook: NotebookEntry[] = [
-  {
-    slug: 'earth-we-live-on',
-    title: 'Earth we live on',
-    summary: 'It’s more water than land.',
-    date: '2026-09-24',
-    cardAlt: 'A globe painted in acrylic: pencil coastlines, green and ochre land and a deep blue sea',
-  },
-];
+export const notebook: NotebookEntry[] = [];
 
 /**
  * The notebook itself, as a book: what is written on its cover, inside the

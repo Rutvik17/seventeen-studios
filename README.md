@@ -86,7 +86,7 @@ src/
   app/                     routes (App Router, all statically exported)
     page.tsx               the landing: one full-screen film — Nvidia's campus from the air, in watercolour, through a year
     founder/               the book: cover, chapters, the résumé in the back pocket
-    notebook/              the notebook — a watercolour sketchbook turned by scrolling — and a folder per entry (earth-we-live-on/)
+    notebook/              the notebook — a watercolour sketchbook turned by scrolling — and a folder per entry
     grasp/                 Grasp: the chalkboard, the live derivative, the lessons
     globals.css            tokens, the chrome, and the shared page styles
   components/
@@ -101,7 +101,7 @@ src/
     founder/               the book component and its styles
     grasp/                 the chalkboard
     instruments/           the derivative Grasp demonstrates
-    notebook/              the notebook's book (NotebookBook), and the entries' drawings — the globe, and the continents sketched beside it
+    notebook/              the notebook's book (NotebookBook)
     film/Film.tsx          the landing's film: the canvas, its caption, the shots to jump between, a pause
     IndexList.tsx          every list of pages to turn to — the contents, the notebook
     DrawIn.tsx             a little drawing — an underline, an arrow — that draws itself in
@@ -116,15 +116,11 @@ src/
     url.ts                 where the site lives — the one place it is written
     sketch/portrait.ts     the founder's photo, redrawn in pencil and coloured pencil
     calculus.ts            Grasp's numeric and exact derivatives
-    notebook/              the sketchbook — its leaves, turns and scroll (book.ts) — and Earth in watercolour (globe.ts)
-    globe/                 the Earth we live on: coastlines and colour data, the view, the painted map, the globe, the continents
+    notebook/              the sketchbook — its leaves, turns, scroll and the drawings on its pages (book.ts)
 scripts/
   build-og.mjs             share cards, drawn from the site's own data
   verify-og.mjs            postbuild: every page names a share card that exists
   verify-assets.mjs        postbuild: every file a page references is in out/
-  verify-globe.mjs         postbuild: the globe's world is the real one, and its painted pictures are up to date
-  make-globe-data.mjs      the globe's coastlines and colour map, from Natural Earth and NASA's Blue Marble (run by hand)
-  make-globe-sheet.mjs     the globe's world, painted once, as the pictures the page loads (run by hand)
   make-ground.mjs          the painted ground every page lies on, from the `--ground-*` tints (run by hand)
   chrome.mjs               headless Chrome, for the scripts that draw
   scene-server.mjs         serves the site's own TypeScript to that browser, so scripts draw with the pages' code
@@ -137,17 +133,6 @@ it was written — and a folder at `app/notebook/<slug>/` for its page, which
 passes `notebookBack` to its `Sheet` for the way back. The notebook page lists
 it, the sitemap includes it and `npm run og` draws its share card, all from
 that object.
-
-### The globe's data
-
-The globe draws the real world. Its coastlines are Natural Earth's 1:110m land
-(public domain), and the colour of every half-degree of it is read from NASA's
-Blue Marble (public domain); `scripts/make-globe-data.mjs` turns the two into
-`src/lib/globe/land.ts` and `colours.ts`. The world is then painted in acrylic
-once, by `scripts/make-globe-sheet.mjs`, into `public/notebook/earth/` — the
-page loads that picture rather than spending seconds colouring the world on
-every visit. Change the marks, the data or the `--globe-*` paint colours and
-run it again; `verify-globe.mjs` fails the build until you do.
 
 ### Content
 
