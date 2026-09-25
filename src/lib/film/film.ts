@@ -217,7 +217,7 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
   let caption = '';
   let dark = false;
   let bleedSeeds: { x: number; y: number; delay: number; size: number }[] = [];
-  const cam = { x: 480, y: 500, zoom: 1.45 };
+  const cam = { x: 780, y: 560, zoom: 2.3 };
   let brushAt: [number, number, string] | null = null;
   let pencilAt: [number, number] | null = null;
 
@@ -402,7 +402,7 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
     mask.width = Math.ceil(cw / 8);
     mask.height = Math.ceil(ch / 8);
 
-    const want = Math.min(fit() * 1.15, 3000 / PAINTED.w);
+    const want = Math.min(fit() * 2, 3200 / PAINTED.w);
     if (!layers || want > bake * 1.3 || want < bake * 0.55) {
       const was = layers;
       bake = want;
@@ -443,9 +443,9 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
       // back as the drawing fills the page.
       cam:
         act === 'sketch' && pencilAt
-          ? { x: lerp(clamp(pencilAt[0], 380, 1220), 800, sketchP * sketchP), y: lerp(clamp(pencilAt[1], 330, 760), 500, sketchP * sketchP), zoom: 1.5 - sketchP * 0.38 }
+          ? { x: lerp(clamp(pencilAt[0], 560, 1150), 820, sketchP * sketchP), y: lerp(clamp(pencilAt[1], 400, 800), 545, sketchP * sketchP), zoom: 2.3 - sketchP * 0.7 }
           : act === 'sketch'
-            ? { x: 480, y: 500, zoom: 1.45 }
+            ? { x: 780, y: 560, zoom: 2.3 }
             : shots[0].camera,
       colour: smooth(0.1, 0.9, paintP),
       life: smooth(0.45, 0.85, sketchP),
@@ -618,12 +618,16 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
     const skyW = (id: SkyId) => (P.skyA === id ? 1 - P.skyT : 0) + (P.skyB === id ? P.skyT : 0);
     const nightSky = skyW('night');
     ctx.globalCompositeOperation = 'source-over';
-    weather.drawStars(ctx, cw, OY + 215 * S, (nightSky + skyW('dawn') * 0.3) * (1 - P.clouds * 0.4), dpr);
-    world();
-    weather.drawMoon(ctx, 1180, 110, nightSky + skyW('dawn') * 0.55);
+    // The sky's lights sit in the top of the frame, wherever the camera is:
+    // at this height the real sky is mostly out of the picture.
+    const cssW = cw / dpr;
+    const cssH = ch / dpr;
+    weather.drawStars(ctx, cw, ch * 0.24, (nightSky + skyW('dawn') * 0.3) * (1 - P.clouds * 0.4), dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    weather.drawMoon(ctx, cssW * 0.78, cssH * 0.14, nightSky + skyW('dawn') * 0.55);
     ctx.globalCompositeOperation = 'screen';
-    weather.drawSun(ctx, 1080, 212, skyW('dusk'), '255,170,95');
-    weather.drawSun(ctx, 330, 205, skyW('dawn') * 0.8, '255,196,160');
+    weather.drawSun(ctx, cssW * 0.7, cssH * 0.2, skyW('dusk'), '255,170,95');
+    weather.drawSun(ctx, cssW * 0.2, cssH * 0.18, skyW('dawn') * 0.8, '255,196,160');
     if (P.night > 0.03) {
       screen();
       ctx.globalAlpha = smooth(0.3, 1, P.night);
@@ -664,7 +668,7 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
     // Weather: the veil of rain over the distance, then the rain itself.
     ctx.globalCompositeOperation = 'source-over';
     screen();
-    weather.drawMist(ctx, cw, ch, OY + 300 * S, P.rain, dpr);
+    weather.drawMist(ctx, cw, ch, Math.max(ch * 0.2, OY + 300 * S), P.rain, dpr);
     weather.drawRain(ctx, cw, ch, P.rain, dpr);
     weather.drawSnow(ctx, cw, ch, P.snow, dpr);
     const flash = weather.flashAmount * P.lightning;

@@ -12,7 +12,7 @@
  * in the scene. Leaves fall in the world, from the tree they grew on.
  */
 
-import { proj, scaleAt, GROUND_SQUASH, type Campus, type Tree } from './campus';
+import { proj, scaleAt, GROUND_SQUASH, type Campus, type Strip, type Tree } from './campus';
 import { between, pick, rng, type Rng } from './random';
 import type { Pt } from './wash';
 
@@ -84,7 +84,7 @@ export class Weather {
   private r: Rng;
   private rain: RainLayer[] = [];
   private splashes: Splash[] = [];
-  private wet: [number, number, number, number][];
+  private wet: Strip[];
   private shafts: HTMLCanvasElement | null = null;
   private gust = 0;
   private flakes: Flake[] = [];
@@ -114,7 +114,7 @@ export class Weather {
     this.rain = [layer(1100, 10, 0.55, 0.7, 0.26, 0.7), layer(480, 22, 0.95, 1, 0.4, 0.85), layer(110, 64, 1.7, 1.6, 0.5, 1)];
     for (let k = 0; k < 360; k++) this.flakes.push({ x: r(), y: r(), v: between(r, 0.5, 1.2), s: between(r, 0.6, 1.8), p: r() * 6.28 });
     for (let k = 0; k < 220; k++) this.stars.push([r(), r(), between(r, 0.4, 1.4), r() * 6.28]);
-    for (let k = 0; k < 7; k++) this.birds.push({ x: between(r, -400, 1600), y: between(r, 170, 300), v: between(r, 50, 80), p: r() * 6.28, s: between(r, 0.8, 1.3) });
+    for (let k = 0; k < 7; k++) this.birds.push({ x: between(r, -400, 1600), y: between(r, 280, 400), v: between(r, 50, 80), p: r() * 6.28, s: between(r, 0.8, 1.3) });
   }
 
   update(dt: number, w: { leaves: number; petals: number; birds: number; lightning: number; rain: number }) {
@@ -129,9 +129,12 @@ export class Weather {
     let n = rate * dt + r();
     while (n >= 1) {
       n -= 1;
-      const [x0, y0, x1, y1] = pick(r, this.wet);
-      const x = between(r, x0, x1);
-      const y = between(r, y0, y1);
+      const { a, b, width } = pick(r, this.wet);
+      const t = r();
+      const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      const across = between(r, -0.5, 0.5) * width;
+      const x = a[0] + (b[0] - a[0]) * t - ((b[1] - a[1]) / l) * across;
+      const y = a[1] + (b[1] - a[1]) * t + ((b[0] - a[0]) / l) * across;
       const [sx, sy] = proj(x, y);
       if (sx < 40 || sx > 1560 || sy > 990) continue;
       const ripple = r() < 0.35;
@@ -181,7 +184,7 @@ export class Weather {
       b.p += dt * 9;
       if (b.x > 1800) {
         b.x = between(r, -600, -200);
-        b.y = between(r, 170, 300);
+        b.y = between(r, 280, 400);
       }
     }
 
@@ -208,7 +211,7 @@ export class Weather {
       }
       return pts;
     };
-    const main = fork(between(r, 200, 1400), 40, 290, 18);
+    const main = fork(between(r, 420, 1250), 170, 390, 14);
     const out = [main];
     // A few branches off the main stroke, shorter and fainter.
     for (let k = 0; k < 3; k++) {
@@ -287,7 +290,7 @@ export class Weather {
 
   /** A low sun: at dusk behind the right-hand hills, at dawn rising on the left. */
   drawSun(ctx: CanvasRenderingContext2D, x: number, y: number, amount: number, warm: string) {
-    if (amount < 0.02) return;
+    if (amount < 0.15) return;
     const g = ctx.createRadialGradient(x, y, 4, x, y, 260);
     g.addColorStop(0, `rgba(${warm},${0.55 * amount})`);
     g.addColorStop(0.15, `rgba(${warm},${0.25 * amount})`);
