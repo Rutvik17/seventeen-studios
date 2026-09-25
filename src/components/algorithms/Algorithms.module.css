@@ -89,15 +89,16 @@
   align-items: baseline;
   gap: 9px;
   padding: 3px 8px;
-  border-radius: 8px;
+  border-radius: 10px 6px 12px 5px / 7px 10px 6px 11px;
   font-size: 18px;
   line-height: 1.25;
   color: var(--fg);
   text-decoration: none;
   transition: background 0.2s;
 }
+/* A row is not circled by the pencil; it takes a wash of the yellow instead. */
 .item:hover {
-  background: #efe5d0;
+  background: radial-gradient(130% 160% at 35% 40%, rgba(235, 164, 44, 0.24), rgba(235, 164, 44, 0.12) 65%, rgba(235, 164, 44, 0.04));
 }
 .item[aria-current='page'] {
   background: #f3dca0;
@@ -310,6 +311,13 @@
   font-size: 19px;
   color: var(--muted);
   cursor: pointer;
+}
+.tab:hover,
+.copy:hover {
+  color: var(--fg);
+}
+.tab:hover {
+  border-bottom-color: rgba(235, 164, 44, 0.45);
 }
 .tab[aria-selected='true'] {
   border-bottom-color: #eba42c;

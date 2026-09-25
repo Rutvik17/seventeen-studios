@@ -1,13 +1,11 @@
 /**
- * Rutvik, as data — and the founder page's film.
+ * Rutvik, as data — and the founder page.
  *
- * The founder page is a film, painted like the landing's: Rutvik sketched
- * from his photograph and washed in watercolour, and then a story told the
- * same way, scene by scene — the 0s and 1s underneath everything, and the
- * GPU that AI runs on.
- * This file is its script: what each scene is called and what is written
- * under it. The drawings are `lib/founder/scenes.ts`; every number in the
- * captions is computed by `lib/founder/facts.ts`.
+ * The founder page is one painting, made like the landing's film: Rutvik
+ * sketched from a photograph of him and washed in watercolour, with what he
+ * does now written beside it. This file holds those words and the
+ * photographs; the painting is `lib/founder/portrait.ts`, run by
+ * `lib/founder/director.ts`.
  *
  * Facts about Rutvik — title, employer, what he works on — are the résumé's
  * own (`resume.ts`, and the documents in `public/founder`). Nothing here is
@@ -15,8 +13,6 @@
  */
 
 import { asset } from '@/lib/asset';
-import { resumeExperience } from './resume';
-import { CPU_CORES, race, SMS, typed, WARP } from '@/lib/founder/facts';
 
 export const founder = {
   name: 'Rutvik Patel',
@@ -33,63 +29,11 @@ export const founder = {
   focus: 'building agentic AI platforms',
 } as const;
 
-/** The year of the first role, from the résumé's timeline. */
-export const careerStart = resumeExperience[resumeExperience.length - 1].start.slice(3);
-
-export type SceneId = 'portrait' | 'binary' | 'gpu' | 'return';
-
-export interface Scene {
-  id: SceneId;
-  /** The label in the strip of scenes along the bottom. */
-  strip: string;
-  /** Written large, as a caption is. */
-  title: string;
-  /** Written under it, one line at a time. */
-  lines: string[];
-  /** Seconds the finished painting holds, alive, before the next begins. */
-  hold: number;
-}
-
-const firstKey = typed().find((c) => c.ch !== ' ')!;
-const rc = race();
-
-export const scenes: Scene[] = [
-  {
-    id: 'portrait',
-    strip: 'Rutvik',
-    title: founder.name,
-    lines: [`${founder.title}, ${founder.employer}.`, 'This is how the things I build actually work — from the bottom.'],
-    hold: 7,
-  },
-  {
-    id: 'binary',
-    strip: '0 and 1',
-    title: 'It is all 0s and 1s.',
-    lines: [
-      'Every line of code I write, every word on this page, every image — underneath, a computer only ever holds two things: 0 and 1.',
-      `Each character typed is stored as a number, and the number as eight 0s and 1s: '${firstKey.ch}' is ${firstKey.code}, ${firstKey.bits.join('')}.`,
-    ],
-    hold: 14,
-  },
-  {
-    id: 'gpu',
-    strip: 'the GPU',
-    title: 'The GPU: thousands of small cores.',
-    lines: [
-      'A graphics processor trades a few clever cores for thousands of simple ones, grouped into blocks NVIDIA calls streaming multiprocessors.',
-      `A kernel is one function, written in CUDA C++, run by every thread at once; each thread works out its own index i and adds one pair. Threads run in teams of ${WARP} called a warp: one instruction, ${WARP} pieces of data.`,
-      `In this sketch, ${SMS} × ${WARP} = ${rc.elements} additions happen in ${rc.gpuSteps} step; ${CPU_CORES} CPU cores, four at a time, need ${rc.cpuSteps}. Built to colour millions of pixels at once, the same sums turned out to be what AI needs.`,
-    ],
-    hold: 15,
-  },
-  {
-    id: 'return',
-    strip: 'now',
-    title: founder.name,
-    lines: [`${founder.title} at ${founder.employer}, and now an AI engineer — from the 0s and 1s up.`],
-    hold: 14,
-  },
-];
+/** What is written beside the portrait: his name, and what he does now. */
+export const now = {
+  title: founder.name,
+  lines: [`${founder.title} at ${founder.employer}, and now an AI engineer — from the 0s and 1s up.`],
+};
 
 /**
  * A photograph of Rutvik to paint from, with where his face (and, if they are
@@ -127,7 +71,7 @@ const photos: FounderPhoto[] = [
 
 export const founderFilm = {
   /** What the canvas shows, for anyone who cannot see it. */
-  description: `A watercolour film: ${founder.name}, sketched from a photograph of him and painted in, then a line of code typed and stored as 0s and 1s, and a GPU running thousands of threads at once — each sketched and painted in turn, and back to his portrait.`,
+  description: `${founder.name}, sketched in pencil from a photograph of him and painted in watercolour, with 0s and 1s rising off the page.`,
   /** The photographs the portrait is drawn from — one, at random, on each visit. */
   photos,
   contact: 'Write to me',

@@ -77,6 +77,7 @@ export function Nav() {
               key={item.href}
               href={item.href}
               className={`nav__tab${active ? ' is-active' : ''}`}
+              data-row
               aria-current={active ? 'page' : undefined}
             >
               {item.label}

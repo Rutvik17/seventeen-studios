@@ -18,7 +18,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   return {
     title: `${p.title} — Algorithms`,
     description,
-    openGraph: { title: `${p.title} — step by step`, description, images: ogImage('algorithms', `${p.title}, drawn step by step`) },
+    openGraph: { title: `${p.title} — step by step`, description, images: ogImage('algorithms-problem', 'A problem from the NeetCode 150 beside the list of all of them, its solution drawn step by step') },
   };
 }
 

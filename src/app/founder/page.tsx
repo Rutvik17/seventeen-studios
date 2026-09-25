@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     title: `${founder.name} — ${founder.title}, ${founder.employer}`,
     description: DESCRIPTION,
     type: 'profile',
-    images: ogImage('founder', `${founder.name}, ${founder.title} at ${founder.employer}`),
+    images: ogImage('founder', `${founder.name}, painted in watercolour from a photograph, with his name and what he does beside him`),
   },
 };
 

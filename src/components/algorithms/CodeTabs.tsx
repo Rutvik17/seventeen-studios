@@ -47,7 +47,7 @@ export function CodeTabs({ code }: { code: Code[] }) {
     <div className={styles.code}>
       <div className={styles.tabs} role="tablist" aria-label="Language">
         {code.map((c) => (
-          <button key={c.id} type="button" role="tab" aria-selected={c.id === shown.id} className={styles.tab} onClick={() => choose(c.id)}>
+          <button key={c.id} type="button" role="tab" aria-selected={c.id === shown.id} className={styles.tab} data-row onClick={() => choose(c.id)}>
             {c.label}
           </button>
         ))}

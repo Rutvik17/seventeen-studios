@@ -38,9 +38,11 @@ const paint = (r?: Role) => PAINT[r ?? 'base'];
 
 const W = 520;
 const PAD = 14;
-const text = (v: Val) => (v === null ? '∅' : typeof v === 'boolean' ? (v ? 'T' : 'F') : String(v));
+const text = (v: Val) => (v === null ? '∅' : String(v)); // true and false are spelled out, never T and F
 /** A rough width for text in the caption hand. */
 const tw = (s: string, size: number) => s.length * size * 0.46 + 4;
+/** The size at which a cell's text fits its width — never below the site's 16px. */
+const fit = (s: string, size: number, width: number) => Math.max(16, Math.min(size, (width - 4) / (s.length * 0.46)));
 
 /** The filters every panel shares: the wandering wash edge and a softer pencil. */
 export function VizDefs() {
@@ -144,7 +146,7 @@ function ArrayPanel({ p }: { p: Extract<Panel, { t: 'array' }> }) {
       {p.items.map((v, i) => (
         <g key={i} opacity={p.faded?.includes(i) ? 0.35 : 1} className={styles.fade}>
           <Cell x={x0 + i * cw + 2} y={2} w={cw - 4} h={46} role={p.marks?.[i]} />
-          <Label x={x0 + i * cw + cw / 2} y={32} size={size} role={p.marks?.[i] === 'done' ? 'done' : undefined}>
+          <Label x={x0 + i * cw + cw / 2} y={32} size={fit(text(v), size, cw - 4)} role={p.marks?.[i] === 'done' ? 'done' : undefined}>
             {text(v)}
           </Label>
           {idx && (
@@ -221,7 +223,7 @@ function GridPanel({ p }: { p: Extract<Panel, { t: 'grid' }> }) {
           return (
             <g key={`${i},${j}`}>
               <Cell x={x0 + j * s + 1.5} y={head + i * s + 1.5} w={s - 3} h={s - 3} role={role} r={4} />
-              <Label x={x0 + j * s + s / 2} y={head + i * s + s / 2 + size * 0.34} size={size}>
+              <Label x={x0 + j * s + s / 2} y={head + i * s + s / 2 + size * 0.34} size={v === null ? size : fit(text(v), size, s - 3)}>
                 {v === null ? '' : text(v)}
               </Label>
             </g>
@@ -289,7 +291,7 @@ function ResultsPanel({ p }: { p: Extract<Panel, { t: 'results' }> }) {
 function VarsPanel({ p }: { p: Extract<Panel, { t: 'vars' }> }) {
   const marks: Record<string, Role> = {};
   p.items.forEach((it) => it.role && (marks[it.k] = it.role));
-  return <Chips items={p.items.map((it) => ({ key: it.k, text: `${it.k} = ${typeof it.v === 'boolean' ? String(it.v) : text(it.v)}` }))} marks={marks} />;
+  return <Chips items={p.items.map((it) => ({ key: it.k, text: `${it.k} = ${text(it.v)}` }))} marks={marks} />;
 }
 
 function StackPanel({ p, queue }: { p: Extract<Panel, { t: 'stack' | 'queue' }>; queue?: boolean }) {

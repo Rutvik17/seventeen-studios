@@ -35,7 +35,7 @@ export function Footer({ buildYear }: { buildYear: number }) {
         <p className="endpaper__owner">{endpaper.owner}</p>
         <p className="endpaper__place">{endpaper.place}</p>
         <p className="endpaper__reach">
-          <ContactLink className="endpaper__write" data-cursor="Write">
+          <ContactLink className="endpaper__write" data-cursor="Write" data-cursor-accent="">
             {endpaper.write}
           </ContactLink>
           {site.social.map((item) => (

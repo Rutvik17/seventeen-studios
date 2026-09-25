@@ -71,7 +71,7 @@ export function ProblemList({ groups }: { groups: Group[] }) {
               <ol>
                 {g.problems.map((p) => (
                   <li key={p.slug}>
-                    <Link href={`/algorithms/${p.slug}/`} prefetch={false} className={styles.item} aria-current={p.slug === current ? 'page' : undefined}>
+                    <Link href={`/algorithms/${p.slug}/`} prefetch={false} className={styles.item} data-row aria-current={p.slug === current ? 'page' : undefined}>
                       <i className={styles[p.difficulty.toLowerCase()]} aria-label={p.difficulty} title={p.difficulty} />
                       {p.title}
                     </Link>

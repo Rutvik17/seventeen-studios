@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: TITLE,
     description: graspInfo.summary,
-    images: ogImage('grasp', 'A chalkboard with the parabola f(x) = x squared and its tangent, labelled slope = 2x'),
+    images: ogImage('grasp', 'Grasp, on a chalkboard: the parabola f(x) = x squared and its tangent, labelled slope = 2x'),
   },
 };
 
