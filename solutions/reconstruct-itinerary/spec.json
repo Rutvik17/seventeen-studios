@@ -1,0 +1,135 @@
+{
+  "method": "findItinerary",
+  "params": [
+    {
+      "name": "tickets",
+      "type": "list<list<string>>"
+    }
+  ],
+  "returns": "list<string>",
+  "cases": [
+    {
+      "in": [
+        [
+          [
+            "MUC",
+            "LHR"
+          ],
+          [
+            "JFK",
+            "MUC"
+          ],
+          [
+            "SFO",
+            "SJC"
+          ],
+          [
+            "LHR",
+            "SFO"
+          ]
+        ]
+      ],
+      "out": [
+        "JFK",
+        "MUC",
+        "LHR",
+        "SFO",
+        "SJC"
+      ],
+      "example": true
+    },
+    {
+      "in": [
+        [
+          [
+            "JFK",
+            "SFO"
+          ],
+          [
+            "JFK",
+            "ATL"
+          ],
+          [
+            "SFO",
+            "ATL"
+          ],
+          [
+            "ATL",
+            "JFK"
+          ],
+          [
+            "ATL",
+            "SFO"
+          ]
+        ]
+      ],
+      "out": [
+        "JFK",
+        "ATL",
+        "JFK",
+        "SFO",
+        "ATL",
+        "SFO"
+      ],
+      "example": true
+    },
+    {
+      "in": [
+        [
+          [
+            "JFK",
+            "KUL"
+          ],
+          [
+            "JFK",
+            "NRT"
+          ],
+          [
+            "NRT",
+            "JFK"
+          ]
+        ]
+      ],
+      "out": [
+        "JFK",
+        "NRT",
+        "JFK",
+        "KUL"
+      ]
+    },
+    {
+      "in": [
+        [
+          [
+            "JFK",
+            "AAA"
+          ],
+          [
+            "AAA",
+            "JFK"
+          ],
+          [
+            "JFK",
+            "BBB"
+          ],
+          [
+            "JFK",
+            "CCC"
+          ],
+          [
+            "CCC",
+            "JFK"
+          ]
+        ]
+      ],
+      "out": [
+        "JFK",
+        "AAA",
+        "JFK",
+        "CCC",
+        "JFK",
+        "BBB"
+      ]
+    }
+  ]
+}

@@ -10,11 +10,12 @@ import { tries } from './tries';
 import { heap } from './heap';
 import { backtracking } from './backtracking';
 import { graphs } from './graphs';
+import { advancedGraphs } from './advanced-graphs';
 
 export type { Category, Problem, Difficulty } from './types';
 
 /** Every category, in NeetCode's order. */
-export const categories: Category[] = [arraysHashing, twoPointers, slidingWindow, stack, binarySearch, linkedList, trees, tries, heap, backtracking, graphs];
+export const categories: Category[] = [arraysHashing, twoPointers, slidingWindow, stack, binarySearch, linkedList, trees, tries, heap, backtracking, graphs, advancedGraphs];
 
 export interface Listed extends Problem {
   category: string;

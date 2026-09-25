@@ -1,0 +1,74 @@
+{
+  "method": "alienOrder",
+  "params": [
+    {
+      "name": "words",
+      "type": "string[]"
+    }
+  ],
+  "returns": "string",
+  "compare": "alien",
+  "cases": [
+    {
+      "in": [
+        [
+          "wrt",
+          "wrf",
+          "er",
+          "ett",
+          "rftt"
+        ]
+      ],
+      "out": "wertf",
+      "example": true
+    },
+    {
+      "in": [
+        [
+          "z",
+          "x"
+        ]
+      ],
+      "out": "zx",
+      "example": true
+    },
+    {
+      "in": [
+        [
+          "z",
+          "x",
+          "z"
+        ]
+      ],
+      "out": "",
+      "example": true
+    },
+    {
+      "in": [
+        [
+          "abc",
+          "ab"
+        ]
+      ],
+      "out": ""
+    },
+    {
+      "in": [
+        [
+          "z",
+          "z"
+        ]
+      ],
+      "out": "z"
+    },
+    {
+      "in": [
+        [
+          "ab",
+          "adc"
+        ]
+      ],
+      "out": "abcd"
+    }
+  ]
+}
