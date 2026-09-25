@@ -15,8 +15,8 @@ Rutvik Patel's portfolio, made as one sketchbook. A statically exported Next.js
 Every page lies on watercolour paper, with pencil and paint on top. Everything
 is handwritten, in Caveat. The loader is the maple leaf being sketched and
 painted. Every change of page is a sheet of paper
-turning. The cursor is a pencil that leans as it moves and circles whatever you
-can click. The footer is the book's back endpaper — the bookplate
+turning. The cursor is the films' brush, leaning as it moves, and it lays a
+little watercolour wash under whatever you can click. The footer is the book's back endpaper — the bookplate
 that says who to return it to.
 
 Live: **https://rutvik17.github.io/seventeen-studios/**
@@ -94,7 +94,7 @@ src/
     Nav.tsx                the top edge: the mark and three index tabs
     Footer.tsx             the back endpaper
     Sheet.tsx              the shell of every simple page
-    Cursor.tsx             the pencil and its hover marks
+    Cursor.tsx             the brush and the washes it lays on hover
     Preloader.tsx          every full load: a brush paints the mark until the page is ready
     Transition.tsx         page-turn transitions + TransitionLink
     loader/                the loader: the maple leaf, sketched and painted as the page gets ready

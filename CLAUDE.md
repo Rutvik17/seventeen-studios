@@ -58,10 +58,12 @@ it rather than as a web page:
   everything drawn by `src/lib/film/pencil.ts`. The pencil and the brush seen
   at work are `src/lib/film/tools.ts`. A new drawing uses them rather than
   inventing a third hand.
-- **The pencil is the cursor** (`components/Cursor.tsx`): it circles what it
-  can act on in graphite, crimson only round the one thing to do next
-  (`data-cursor-accent`); rows of a list (`data-row`) wash themselves in
-  instead of being circled; over text it steps aside for the caret.
+- **The brush is the cursor** (`components/Cursor.tsx`) — the films' own
+  brush from `tools.ts`, not a pencil: the site is a painting. Over what it
+  can act on it lays a small wash (`wash.ts`, multiplied into the paper),
+  yellow, and crimson only under the one thing to do next
+  (`data-cursor-accent`); rows of a list (`data-row`) wash themselves in with
+  CSS instead; over text it steps aside for the caret.
 - **The page turn is the transition; the loader is
   the mark being made** — the maple leaf sketched in pencil and painted as
   the page gets ready, swaying a little (`loader/LeafCanvas.tsx`). **The mark

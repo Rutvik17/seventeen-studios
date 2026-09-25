@@ -146,7 +146,7 @@ html.has-custom-cursor,
 html.has-custom-cursor * {
   cursor: none !important;
 }
-/* Over text the pencil steps aside for the caret (`Cursor.tsx`). */
+/* Over text the brush steps aside for the caret (`Cursor.tsx`). */
 html.has-custom-cursor :is(input[type='search'], input[type='text'], textarea, pre, pre *) {
   cursor: text !important;
 }
@@ -262,19 +262,21 @@ code {
 }
 
 /*
-  The pencil. Its point is the pointer: the SVG is drawn with the point at
-  (0, 0) and offset by the viewBox origin, so no transform-origin arithmetic is
-  needed to keep the two together while it tilts.
+  The brush. Its tip is the pointer: the brush is drawn into its own little
+  canvas with the tip near its bottom-left corner (4px in, 4px up), and
+  the canvas is placed so that corner sits on the pointer.
 */
-.cursor-marks {
+.cursor-wash {
   position: fixed;
   inset: 0;
   width: 100vw;
   height: 100vh;
   z-index: 99999;
   pointer-events: none;
+  /* Paint on paper: the wash darkens what is under it and never covers it. */
+  mix-blend-mode: multiply;
 }
-.cursor-pencil {
+.cursor-brush {
   position: fixed;
   top: 0;
   left: 0;
@@ -283,48 +285,40 @@ code {
   opacity: 0;
   will-change: transform;
 }
-.cursor-pencil__lean {
+.cursor-brush__lean {
   position: absolute;
   left: 0;
   top: 0;
   transform-origin: 0 0;
+  transition: opacity 0.15s;
 }
-/*
-  Its size is pinned. The site-wide `svg { max-width: 100% }` resolves against
-  the lean wrapper, which has no in-flow content and so is 0px wide — left to
-  that rule the pencil is squashed to nothing, and only the circles it draws
-  are visible. That shipped.
-*/
-.cursor-pencil__body {
+/* Its size is pinned: the site-wide `canvas { max-width: 100% }` would resolve against the 0px-wide wrapper. */
+.cursor-brush__body {
   position: absolute;
-  left: -2px;
-  top: -44px;
-  width: 46px;
-  height: 46px;
+  left: -4px;
+  top: -46px;
+  width: 76px;
+  height: 50px;
   max-width: none;
-  overflow: visible;
-  transform-origin: 2px 44px;
+  transform-origin: 4px 46px;
   transition: transform 0.35s var(--ease-out);
   filter: drop-shadow(2px 3px 2px rgba(60, 45, 20, 0.18));
 }
-/* Over something that does something, the pencil lifts and leans in. */
-.cursor-pencil.is-active .cursor-pencil__body {
-  transform: rotate(-14deg) scale(1.12);
+/* Over something that does something, the brush lifts a little and leans in to paint. */
+.cursor-brush.is-active .cursor-brush__body {
+  transform: rotate(-12deg) scale(1.1);
 }
 /* Over text it steps aside, and the caret takes its place. */
-.cursor-pencil__lean {
-  transition: opacity 0.15s;
-}
-.cursor-pencil.is-away .cursor-pencil__lean,
-.cursor-pencil.is-away .cursor-pencil__label {
+.cursor-brush.is-away .cursor-brush__lean,
+.cursor-brush.is-away .cursor-brush__label {
   opacity: 0;
 }
-/* Pressing: the pencil taps down onto the page. */
-.cursor-pencil.is-pressed .cursor-pencil__body {
+/* Pressing: the brush presses down onto the paper. */
+.cursor-brush.is-pressed .cursor-brush__body {
   transform: rotate(-4deg) scale(0.94);
   transition-duration: 0.12s;
 }
-.cursor-pencil__label {
+.cursor-brush__label {
   position: absolute;
   left: 14px;
   top: 10px;
@@ -338,9 +332,9 @@ code {
   border-radius: 3px;
   opacity: 0;
   transform: translateY(4px);
-  transition: opacity 0.2s, transform 0.3s var(--ease-out), background-size 0.35s var(--ease-out) 0.08s;
+  transition: opacity 0.2s, transform 0.3s var(--ease-out);
 }
-.cursor-pencil.is-labelled .cursor-pencil__label {
+.cursor-brush.is-labelled .cursor-brush__label {
   opacity: 1;
   transform: none;
 }
