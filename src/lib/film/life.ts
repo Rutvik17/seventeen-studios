@@ -223,7 +223,7 @@ export class Life {
   }
 
   private person(ctx: CanvasRenderingContext2D, p: Person, [x, y]: Pt, alpha: number, env: { colour: number; rain: number; snow: number }) {
-    const h = 1.75 * scaleAt(p.px, p.py) * PERSON_SCALE;
+    const h = 1.75 * scaleAt(p.py) * PERSON_SCALE;
     const swing = p.standing ? 0 : Math.sin(p.phase);
     const hip = y - h * 0.46;
     const shoulder = y - h * 0.8;
@@ -413,7 +413,7 @@ export class Life {
       ctx.fill();
       // The pod's underglow on the road.
       const [cx, cy] = proj(x, y);
-      const s = scaleAt(x, y) * L;
+      const s = scaleAt(y) * L;
       const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, s * 1.2);
       glow.addColorStop(0, `rgba(120,230,255,${0.35 * a})`);
       glow.addColorStop(1, 'rgba(120,230,255,0)');

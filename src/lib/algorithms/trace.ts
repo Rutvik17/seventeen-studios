@@ -148,7 +148,7 @@ export const vars = (o: Record<string, Val | [Val, Role]>): Panel => ({
 export const results = (label: string, items: string[], o: Partial<Opts<'results'>> = {}): Panel => ({ t: 'results', label, items, ...o });
 
 /** A value as it is written on the page. */
-export function show(v: unknown): Val {
+function show(v: unknown): Val {
   if (v === null || v === undefined) return null;
   if (typeof v === 'number') return Number.isInteger(v) ? v : Math.round(v * 1000) / 1000;
   if (typeof v === 'string' || typeof v === 'boolean') return v;

@@ -34,7 +34,7 @@ import { turnAway, turnOver } from '@/lib/pageTurn';
 type NavigateFn = (href: string) => void;
 const NavigateContext = createContext<NavigateFn>(() => {});
 
-export function useNavigate(): NavigateFn {
+function useNavigate(): NavigateFn {
   return useContext(NavigateContext);
 }
 

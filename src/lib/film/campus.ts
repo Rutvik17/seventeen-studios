@@ -37,8 +37,6 @@ import { between, pick, rng } from './random';
 import { blob, Wash, type Pt, type WashStyle } from './wash';
 import { curve, pencil, ruled, type Stroke } from './pencil';
 
-/** The world the projection draws into: 1600 × 1000 units. */
-export const WORLD = { w: 1600, h: 1000 };
 /** The part of the world that is painted. */
 export const PAINTED = { x: 200, y: 150, w: 1260, h: 830 };
 
@@ -70,8 +68,8 @@ export function proj(x: number, y: number, z = 0): Pt {
   return [CX + (x / depth) * FOCAL, CY - (up / depth) * FOCAL];
 }
 
-/** World units per metre at a point on the plan. */
-export function scaleAt(x: number, y: number, z = 0): number {
+/** World units per metre at a depth `y` on the plan (and height `z`): how far across does not change it. */
+export function scaleAt(y: number, z = 0): number {
   return FOCAL / ((y - CAM_Y) * cosP - (z - CAM_H) * sinP);
 }
 
@@ -657,7 +655,7 @@ export function buildCampus(seed = 17): Campus {
     const foot = P(x, y, 0);
     if (hidden(occluders, foot[0], foot[1]) || overhead.some((o) => inside(o, tx, ty + 4))) return;
     if (inside(inset(E.top, -4), x, y) || inside(inset(Vy.top, -4), x, y)) return;
-    const s = scaleAt(x, y);
+    const s = scaleAt(y);
     const [bx, by] = P(x, y, 0);
     const rad = (kind === 'palm' ? 3.5 : 5.5) * size * s;
     trees.push({ cx: tx, cy: ty, r: rad, base: by, kind });

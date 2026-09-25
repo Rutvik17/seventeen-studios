@@ -55,7 +55,6 @@ import { drawStroke, pointAt } from './pencil';
 import { between, clamp, easeInOut, lerp, rgb, rng, smooth } from './random';
 import type { Wash } from './wash';
 import { drawBrush, drawPencil } from './tools';
-export { drawBrush, drawPencil };
 
 export interface FilmHooks {
   /** The caption changed: a shot's label, or an act's. `index` is -1 during the opening acts. */

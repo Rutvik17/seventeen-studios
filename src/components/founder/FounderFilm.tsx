@@ -66,7 +66,6 @@ export function FounderFilm({ sizes }: { sizes: Record<string, string> }) {
           photo,
           reduced,
           hand,
-          hooks: {},
         });
         engine.current = film;
         if (useUi.getState().entered) film.begin();

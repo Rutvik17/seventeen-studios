@@ -18,8 +18,6 @@ import { intervals } from './intervals';
 import { mathGeometry } from './math-geometry';
 import { bitManipulation } from './bit-manipulation';
 
-export type { Category, Problem, Difficulty } from './types';
-
 /** Every category, in NeetCode's order. */
 export const categories: Category[] = [arraysHashing, twoPointers, slidingWindow, stack, binarySearch, linkedList, trees, tries, heap, backtracking, graphs, advancedGraphs, dp1d, dp2d, greedy, intervals, mathGeometry, bitManipulation];
 

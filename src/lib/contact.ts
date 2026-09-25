@@ -35,7 +35,7 @@
 const PARTS: readonly string[] = ['moc', 'liamg', '2071kivtur', 'letap'];
 
 /** The address, assembled. Call it; never store the result in a module field. */
-export function contactAddress(): string {
+function contactAddress(): string {
   const [tld, host, tail, head] = PARTS;
   return `${reverse(head)}${reverse(tail)}@${reverse(host)}.${reverse(tld)}`;
 }

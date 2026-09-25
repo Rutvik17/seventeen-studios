@@ -108,7 +108,7 @@ export const STEP = 0.05;
  * 1e−9 "for accuracy" makes the answer WORSE, which is the counter-intuitive
  * part and the reason the constant is documented rather than tuned.
  */
-export const H = 0.001;
+const H = 0.001;
 
 /**
  * Central difference:  [ f(x + h) − f(x − h) ] ÷ 2h

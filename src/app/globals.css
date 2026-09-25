@@ -40,31 +40,15 @@
 
   /* The crimson — the second reading of a drawing, and the one thing to do next. */
   --accent-2: #c8233f;
-  --accent-2-soft: rgba(200, 35, 63, 0.1);
-
-
-  /* Brushed paint, as a mask for text painted in it: the bristles' streaks
-     along the stroke, and the canvas's tooth where the paint skipped. */
-  --paint-bristle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='b' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.005 0.42' numOctaves='2' seed='6' stitchTiles='stitch' result='s'/%3E%3CfeColorMatrix in='s' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.5 1.72' result='streak'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' seed='3' stitchTiles='stitch' result='t'/%3E%3CfeColorMatrix in='t' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -5 4.4' result='tooth'/%3E%3CfeComposite in='streak' in2='tooth' operator='arithmetic' k1='1'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23b)'/%3E%3C/svg%3E");
-  /* One loose stroke of a wide brush, ragged at its ends and streaked along
-     it — the shape of a wash, as a mask for its colour. */
-  --paint-swash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cfilter id='r' x='-5%25' y='-25%25' width='110%25' height='150%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035 0.12' numOctaves='3' seed='5' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='16' xChannelSelector='R' yChannelSelector='G' result='d'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004 0.28' numOctaves='2' seed='8' result='s'/%3E%3CfeColorMatrix in='s' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.3 1.45' result='streak'/%3E%3CfeComposite in='d' in2='streak' operator='arithmetic' k1='1'/%3E%3C/filter%3E%3Cpath d='M16 52C80 30 300 26 386 44C394 58 384 72 362 75C262 82 122 80 22 71C8 66 7 57 16 52Z' filter='url(%23r)'/%3E%3C/svg%3E");
 
   /*
-    Everything is handwritten. `--font-hand` (Caveat) and `--font-write`
-    (Shantell Sans) are set by next/font on this element; the older names
-    point at them, so every rule that asks for display, body or label type
-    gets a hand. Grasp's board restores its own faces on its root.
+    Everything is handwritten. `--font-hand` (Caveat) is set by next/font on
+    this element, and the display, body and label names all point at it.
+    (The algorithms' code sets its own `--font-code`, JetBrains Mono.)
   */
   --font-display: var(--font-hand);
   --font-body: var(--font-hand);
   --font-mono: var(--font-hand);
-  /* The faces that used to be loaded beside it, kept as names so nothing that
-     asks for them falls back to a system font: they are all the one hand now. */
-  --font-write: var(--font-hand);
-  --font-syne: var(--font-hand);
-  --font-dm-sans: var(--font-hand);
-  --font-jetbrains: var(--font-hand);
 
   /* The paint box: acrylics — ultramarine, cadmium yellow, sap green, cadmium
      red, dioxazine violet. Lists take turns with them; ultramarine is the mark's. */
@@ -89,7 +73,6 @@
   --step-label: 18px;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
 }
 
 /* ---------- Titles: the captions' style --------------------------- */
@@ -100,8 +83,7 @@
   painted titles (a bristle mask over a brushed wash) went when the landing
   became a watercolour; one hand, one line, everywhere.
 */
-.sheet__title,
-.index__title {
+.sheet__title {
   position: relative;
   text-decoration: underline;
   text-decoration-thickness: max(1.5px, 0.03em);
@@ -905,22 +887,6 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   font-size: 0.92em;
 }
 
-/* ---- a defined word ---- */
-
-/* ---- an equation, in teaching order ---- */
-
-/* Visually hidden, still announced. */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-}
 
 /* ==================================================================
    MOBILE
@@ -990,161 +956,6 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   }
 
   
-}
-
-/* ==================================================================
-   LISTS — every list of pages to turn to (the contents)
-   ================================================================== */
-
-/* Each row in its own paint (--c, set per row): its number outlined in pencil
-   and painted in a little off register, its title painted in it over a wash
-   of it. Pointed at, the row gets a wash of its own, the number's paint slips
-   back into register, and the arrow takes the colour and moves on. */
-.index {
-  list-style: none;
-  display: grid;
-  gap: 6px;
-}
-.index__row {
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  grid-template-columns: clamp(76px, 7.4vw, 112px) minmax(0, 1fr) auto clamp(30px, 3vw, 42px);
-  grid-template-areas: 'mark text art arrow';
-  align-items: center;
-  gap: 8px clamp(14px, 2vw, 30px);
-  padding: clamp(14px, 2.2vh, 22px) clamp(8px, 1.2vw, 16px);
-  border-bottom: 2px dashed color-mix(in srgb, var(--c) 40%, transparent);
-}
-/* The rows carry no wash now: the title's pen line is the mark of a link. */
-.index__row::before {
-  display: none;
-  content: '';
-  position: absolute;
-  inset: 2px -1%;
-  z-index: -1;
-  background-color: var(--c);
-  opacity: 0.16;
-  -webkit-mask: var(--paint-swash) center / 100% 100% no-repeat;
-  mask: var(--paint-swash) center / 100% 100% no-repeat;
-  clip-path: inset(0 100% 0 0);
-  transition: clip-path 0.6s var(--ease-out);
-}
-.index__row:hover::before,
-.index__row:focus-visible::before {
-  clip-path: inset(0 0 0 0);
-}
-.index__mark {
-  grid-area: mark;
-  position: relative;
-  isolation: isolate;
-  justify-self: start;
-  font-family: var(--font-hand), cursive;
-  font-weight: 700;
-  font-size: clamp(50px, 5vw, 78px);
-  line-height: 0.9;
-  color: var(--fg);
-  transform: rotate(var(--tilt, -4deg));
-  transition: transform 0.45s var(--ease-out);
-}
-.index li:nth-child(even) .index__mark {
-  --tilt: 3deg;
-}
-.index__ink {
-  display: none;
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  -webkit-text-stroke: 0;
-  color: var(--c);
-  -webkit-mask: var(--paint-bristle) 0 0 / 200px 200px;
-  mask: var(--paint-bristle) 0 0 / 200px 200px;
-  transform: translate(0.06em, 0.05em);
-  transition: transform 0.45s var(--ease-out);
-}
-.index__row:hover .index__mark,
-.index__row:focus-visible .index__mark {
-  transform: rotate(0deg);
-}
-.index__row:hover .index__ink,
-.index__row:focus-visible .index__ink {
-  transform: translate(0, 0);
-}
-.index__text {
-  grid-area: text;
-  display: grid;
-  gap: 5px;
-}
-.index__label {
-  font-family: var(--font-mono), monospace;
-  font-size: var(--step-label);
-  color: var(--muted);
-}
-/* The title painted in the row's colour, deep enough to read, over a wash of
-   it. Pointed at, it leans in. */
-.index__title {
-  justify-self: start;
-  font-family: var(--font-display), cursive;
-  font-weight: 700;
-  font-size: clamp(38px, 4.6vw, 76px);
-  line-height: 0.95;
-  color: var(--fg);
-  transform-origin: left center;
-  transition: transform 0.4s var(--ease-out);
-}
-.index__row:hover .index__title,
-.index__row:focus-visible .index__title {
-  transform: translateX(6px) rotate(-1.5deg);
-}
-/* The note under it, in pencil of the row's colour. */
-.index__note {
-  max-width: 40ch;
-  font-family: var(--font-hand), cursive;
-  font-size: clamp(21px, 1.75vw, 27px);
-  line-height: 1.12;
-  color: color-mix(in srgb, var(--c) 45%, var(--fg));
-}
-.index__art {
-  grid-area: art;
-  width: clamp(92px, 10vw, 150px);
-}
-.index__arrow {
-  grid-area: arrow;
-  width: 100%;
-  height: auto;
-  overflow: visible;
-  fill: none;
-  stroke: var(--fg);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: transform 0.45s var(--ease-out), stroke 0.3s;
-}
-.index__row:hover .index__arrow,
-.index__row:focus-visible .index__arrow {
-  transform: translateX(8px);
-  stroke: var(--c);
-}
-@media (max-width: 700px) {
-  .index__row {
-    grid-template-columns: 50px minmax(0, 1fr) 58px;
-    grid-template-areas: 'mark text art';
-    column-gap: 12px;
-    padding-inline: 4px;
-  }
-  .index__row:not(:has(.index__art)) {
-    grid-template-columns: 50px minmax(0, 1fr) 30px;
-    grid-template-areas: 'mark text arrow';
-  }
-  .index__title {
-    font-size: 34px;
-  }
-  .index__row:has(.index__art) .index__arrow {
-    display: none;
-  }
-  .index__mark {
-    font-size: 40px;
-  }
 }
 
 /* ==================================================================
@@ -1353,29 +1164,4 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   text-underline-offset: 7px;
 }
 
-/* A list on a page, below its heading. */
-.sheet .index {
-  margin-top: clamp(40px, 8vh, 80px);
-  max-width: 70rem;
-}
 
-/* Blank ruled lines under the entries, and a folio. */
-.sheet__ruled {
-  position: relative;
-  margin-top: 34px;
-  max-width: 46rem;
-  display: grid;
-  gap: 34px;
-}
-.sheet__ruled span:not(.sheet__folio) {
-  display: block;
-  height: 1px;
-  background: var(--accent);
-  opacity: 0.22;
-}
-.sheet__folio {
-  justify-self: end;
-  font-family: var(--font-hand), cursive;
-  font-size: 22px;
-  color: var(--muted);
-}

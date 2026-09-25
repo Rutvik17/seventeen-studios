@@ -34,7 +34,6 @@ import { founder } from './founder';
 export const site = {
   name: 'Seventeen Studios',
   description: `The sketchbook of ${founder.name}, ${founder.title} at ${founder.employer}, ${founder.focus}.`,
-  location: 'Toronto, Canada',
   /*
     There is deliberately no `email` field. It is assembled on the client by
     `lib/contact.ts` so the address never lands in the static export — see the
@@ -52,55 +51,6 @@ export const nav = [
   { label: 'Grasp', href: '/grasp/' },
   { label: 'Founder', href: '/founder/' },
 ] as const;
-
-/**
- * The landing: the sketchbook's contents page.
- *
- * The whole site is one sketchbook, and this is where it opens: the title drawn
- * in pencil, one line about what is inside, and the contents — each chapter a
- * page you can turn to, with a small drawing of what is on it.
- */
-export const cover = {
-  wordmarkTop: 'Seventeen',
-  wordmarkBottom: 'Studios',
-  /** The label on the cover: what the book is, and which one. */
-  shelfmark: { name: 'Sketchbook', number: 'No. 17' },
-  owner: 'kept by Rutvik Patel, Toronto',
-  /** One line about what is inside, and the second half of it picked out with a wash of paint. */
-  line: 'A software engineer’s sketchbook.',
-  motto: 'Sketching one page at a time.',
-  contents: 'Contents',
-  cursor: 'Turn to it',
-} as const;
-
-export type Chapter = {
-  title: string;
-  note: string;
-  href: string;
-  /** Which small drawing marks it. */
-  doodle: 'head' | 'notebook' | 'tangent';
-};
-
-export const chapters: Chapter[] = [
-  {
-    title: 'The founder',
-    note: 'My journey',
-    href: '/founder/',
-    doodle: 'head',
-  },
-  {
-    title: 'Algorithms',
-    note: 'The NeetCode 150, drawn',
-    href: '/algorithms/',
-    doodle: 'notebook',
-  },
-  {
-    title: 'Grasp',
-    note: 'Learning calculus',
-    href: '/grasp/',
-    doodle: 'tangent',
-  },
-];
 
 /**
  * The footer is the book's back endpaper: the page every sketchbook has inside

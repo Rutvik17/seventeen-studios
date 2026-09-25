@@ -12,7 +12,7 @@
  * they are drawn whole.
  */
 
-import { between, gauss, type Rng } from './random';
+import { gauss, type Rng } from './random';
 import type { Pt } from './wash';
 
 export interface Stroke {
@@ -166,11 +166,3 @@ export function pointAt(s: Stroke, d: number): Pt {
   return pts[pts.length - 1];
 }
 
-/** Short parallel strokes across a region — shading, in the sketch's own hand. */
-export function hatch(x0: number, y0: number, x1: number, y1: number, gap: number, slant: number, r: Rng, style: PencilStyle = {}): Stroke[] {
-  const out: Stroke[] = [];
-  for (let x = x0; x < x1; x += gap * between(r, 0.8, 1.2)) {
-    out.push(pencil([[x, y1], [x + slant, y0]], r, { wobble: 0.3, overshoot: 1, width: 0.7, tone: 0.35, ...style }));
-  }
-  return out;
-}

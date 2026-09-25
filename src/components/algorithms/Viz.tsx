@@ -22,7 +22,7 @@ import type { ReactNode } from 'react';
 import type { Panel, Role, Val, LNode, TNode } from '@/lib/algorithms/trace';
 import styles from './Viz.module.css';
 
-export const PAINT: Record<Role | 'base', { fill: string; ink: string }> = {
+const PAINT: Record<Role | 'base', { fill: string; ink: string }> = {
   base: { fill: '#fbf8f1', ink: '#3b3a40' },
   active: { fill: '#f7d27f', ink: '#a8680f' },
   compare: { fill: '#b4c4ee', ink: '#2b3f9e' },

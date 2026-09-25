@@ -29,7 +29,8 @@ Live: **https://rutvik17.github.io/seventeen-studios/**
 npm install
 npm run dev        # http://localhost:3000
 npm run build      # static export into ./out
-npm run typecheck
+npm run typecheck  # fails on anything unused, too
+npm run deadcode   # no unused file, export or dependency (knip)
 ```
 
 `npm run build` produces a complete static bundle in `out/`. To preview exactly
@@ -103,7 +104,6 @@ src/
     instruments/           the derivative Grasp demonstrates
     algorithms/            the list, the player, the drawing panels (Viz), the code tabs
     film/Film.tsx          the landing's film: the canvas, its caption, the shots to jump between, a pause
-    IndexList.tsx          every list of pages to turn to
     DrawIn.tsx             a little drawing — an underline, an arrow — that draws itself in
   content/                 all copy, as typed data
   lib/
@@ -140,7 +140,7 @@ npm run test:traces                # every drawing arrives at the expected answe
 
 Every word lives in `src/content` as typed data, not JSX. The founder page's
 words and photographs are `content/founder.ts`; the facts about Rutvik in it
-are the résumé's own (`content/resume.ts`).
+are the résumé's own.
 
 ### Anything that moves with the calendar
 
@@ -169,5 +169,4 @@ font files, so run `npm run build` before `npm run og`. The address on the cards
 ## Notes on the content
 
 Nothing is invented. No clients, no testimonials, no metric that was not
-measured. Every fact about the career comes from `src/content/resume.ts` and
-the résumé itself.
+measured. Every fact about the career comes from the résumé itself.
