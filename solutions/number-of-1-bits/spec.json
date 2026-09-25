@@ -1,0 +1,45 @@
+{
+  "method": "hammingWeight",
+  "params": [
+    {
+      "name": "n",
+      "type": "int"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        11
+      ],
+      "out": 3,
+      "example": true
+    },
+    {
+      "in": [
+        128
+      ],
+      "out": 1,
+      "example": true
+    },
+    {
+      "in": [
+        2147483645
+      ],
+      "out": 30,
+      "example": true
+    },
+    {
+      "in": [
+        1
+      ],
+      "out": 1
+    },
+    {
+      "in": [
+        2147483647
+      ],
+      "out": 31
+    }
+  ]
+}

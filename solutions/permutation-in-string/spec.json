@@ -1,0 +1,13 @@
+{
+  "method": "checkInclusion",
+  "params": [{ "name": "s1", "type": "string" }, { "name": "s2", "type": "string" }],
+  "returns": "bool",
+  "cases": [
+    { "in": ["ab", "eidbaooo"], "out": true, "example": true },
+    { "in": ["ab", "eidboaoo"], "out": false, "example": true },
+    { "in": ["adc", "dcda"], "out": true },
+    { "in": ["abc", "ab"], "out": false },
+    { "in": ["a", "a"], "out": true },
+    { "in": ["hello", "ooolleoooleh"], "out": false }
+  ]
+}

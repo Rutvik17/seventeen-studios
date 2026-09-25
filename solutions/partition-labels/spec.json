@@ -1,0 +1,58 @@
+{
+  "method": "partitionLabels",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    }
+  ],
+  "returns": "list<int>",
+  "cases": [
+    {
+      "in": [
+        "ababcbacadefegdehijhklij"
+      ],
+      "out": [
+        9,
+        7,
+        8
+      ],
+      "example": true
+    },
+    {
+      "in": [
+        "eccbbbbdec"
+      ],
+      "out": [
+        10
+      ],
+      "example": true
+    },
+    {
+      "in": [
+        "a"
+      ],
+      "out": [
+        1
+      ]
+    },
+    {
+      "in": [
+        "abc"
+      ],
+      "out": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "in": [
+        "abca"
+      ],
+      "out": [
+        4
+      ]
+    }
+  ]
+}

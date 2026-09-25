@@ -7,7 +7,9 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "postbuild": "node scripts/verify-og.mjs && node scripts/verify-assets.mjs",
-    "og": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/build-og.mjs"
+    "og": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/build-og.mjs",
+    "test:algorithms": "node scripts/algorithms/test.mjs",
+    "test:traces": "node --experimental-strip-types --import ./scripts/alias-register.mjs scripts/algorithms/traces.mjs"
   },
   "dependencies": {
     "gsap": "^3.12.5",

@@ -1,0 +1,14 @@
+{
+  "method": "twoSum",
+  "params": [{ "name": "nums", "type": "int[]" }, { "name": "target", "type": "int" }],
+  "returns": "int[]",
+  "compare": "sorted",
+  "cases": [
+    { "in": [[2, 7, 11, 15], 9], "out": [0, 1], "example": true },
+    { "in": [[3, 2, 4], 6], "out": [1, 2], "example": true },
+    { "in": [[3, 3], 6], "out": [0, 1], "example": true },
+    { "in": [[-1, -2, -3, -4, -5], -8], "out": [2, 4] },
+    { "in": [[0, 4, 3, 0], 0], "out": [0, 3] },
+    { "in": [[1000000000, -999999993, 3], 7], "out": [0, 1] }
+  ]
+}

@@ -1,7 +1,7 @@
 /**
  * A drawing that can be shown at any stage, from a blank sheet to finished:
  * the pencil over the first part of its progress, the washes over the rest.
- * The studio (`studio.ts`) and the notebook's drawings are shown through it.
+ * The studio's drawings (`studio.ts`) are shown through it.
  *
  * Both stages only ever add to what is on the sheet — progress moves forward,
  * a glaze once laid stays laid — so a frame never repaints what it has

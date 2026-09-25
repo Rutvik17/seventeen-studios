@@ -10,8 +10,7 @@ import { FounderFilm } from '@/components/founder/FounderFilm';
  * from his photograph, then the 0s and 1s underneath everything and the GPU
  * that AI runs on, and back to him.
  *
- * The route is also the `url` on the Person node every notebook lesson names
- * as its author, and the address printed on the résumé itself.
+ * The route is also the address printed on the résumé itself.
  */
 
 const DESCRIPTION = `${founder.name}, ${founder.title} at ${founder.employer}, ${founder.focus} — and what his work runs on, from 0s and 1s to a GPU, sketched and painted.`;

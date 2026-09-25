@@ -1,0 +1,11 @@
+{
+  "method": "diameterOfBinaryTree",
+  "params": [{ "name": "root", "type": "TreeNode" }],
+  "returns": "int",
+  "cases": [
+    { "in": [[1, 2, 3, 4, 5]], "out": 3, "example": true },
+    { "in": [[1, 2]], "out": 1, "example": true },
+    { "in": [[1]], "out": 0 },
+    { "in": [[1, 2, null, 3, 4, 5, null, null, 6, 7, null, null, 8]], "out": 6 }
+  ]
+}

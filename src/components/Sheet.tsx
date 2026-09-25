@@ -5,8 +5,8 @@ import { TransitionLink } from '@/components/Transition';
 /**
  * A page of the sketchbook: gridded paper, a margin rule, a handwritten note at
  * the top and a title under it. Every simple page on the site is one of these,
- * so the notebook and the 404 read as leaves of the same book as the landing
- * and the founder page.
+ * so the 404 reads as a leaf of the same book as the landing and the founder
+ * page.
  */
 export function Sheet({
   kicker,
@@ -18,7 +18,7 @@ export function Sheet({
   kicker: string;
   title: ReactNode;
   lead?: ReactNode;
-  /** A way back to the page this one belongs to — a notebook entry's to the notebook. */
+  /** A way back to the page this one belongs to. */
   back?: { href: string; label: string };
   children?: ReactNode;
 }) {

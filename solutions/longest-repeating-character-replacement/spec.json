@@ -1,0 +1,13 @@
+{
+  "method": "characterReplacement",
+  "params": [{ "name": "s", "type": "string" }, { "name": "k", "type": "int" }],
+  "returns": "int",
+  "cases": [
+    { "in": ["ABAB", 2], "out": 4, "example": true },
+    { "in": ["AABABBA", 1], "out": 4, "example": true },
+    { "in": ["A", 0], "out": 1 },
+    { "in": ["ABBB", 2], "out": 4 },
+    { "in": ["AAAB", 0], "out": 3 },
+    { "in": ["ABCDE", 1], "out": 2 }
+  ]
+}

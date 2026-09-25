@@ -1,0 +1,13 @@
+{
+  "method": "hasCycle",
+  "params": [{ "name": "head", "type": "ListCycle" }],
+  "returns": "bool",
+  "cases": [
+    { "in": [[[3, 2, 0, -4], 1]], "out": true, "example": true },
+    { "in": [[[1, 2], 0]], "out": true, "example": true },
+    { "in": [[[1], -1]], "out": false, "example": true },
+    { "in": [[[1, 2, 3, 4, 5], -1]], "out": false },
+    { "in": [[[1], 0]], "out": true },
+    { "in": [[[], -1]], "out": false }
+  ]
+}

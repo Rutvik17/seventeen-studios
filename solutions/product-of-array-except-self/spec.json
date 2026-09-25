@@ -1,0 +1,13 @@
+{
+  "method": "productExceptSelf",
+  "params": [{ "name": "nums", "type": "int[]" }],
+  "returns": "int[]",
+  "cases": [
+    { "in": [[1, 2, 3, 4]], "out": [24, 12, 8, 6], "example": true },
+    { "in": [[-1, 1, 0, -3, 3]], "out": [0, 0, 9, 0, 0], "example": true },
+    { "in": [[2, 3]], "out": [3, 2] },
+    { "in": [[0, 0]], "out": [0, 0] },
+    { "in": [[5, 0, 2]], "out": [0, 10, 0] },
+    { "in": [[-2, -3, 4, 1]], "out": [-12, -8, 6, 24] }
+  ]
+}

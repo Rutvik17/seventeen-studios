@@ -1,0 +1,77 @@
+{
+  "method": "partition",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    }
+  ],
+  "returns": "list<list<string>>",
+  "compare": "unordered",
+  "cases": [
+    {
+      "in": [
+        "aab"
+      ],
+      "out": [
+        [
+          "a",
+          "a",
+          "b"
+        ],
+        [
+          "aa",
+          "b"
+        ]
+      ],
+      "example": true
+    },
+    {
+      "in": [
+        "a"
+      ],
+      "out": [
+        [
+          "a"
+        ]
+      ],
+      "example": true
+    },
+    {
+      "in": [
+        "efe"
+      ],
+      "out": [
+        [
+          "e",
+          "f",
+          "e"
+        ],
+        [
+          "efe"
+        ]
+      ]
+    },
+    {
+      "in": [
+        "abba"
+      ],
+      "out": [
+        [
+          "a",
+          "b",
+          "b",
+          "a"
+        ],
+        [
+          "a",
+          "bb",
+          "a"
+        ],
+        [
+          "abba"
+        ]
+      ]
+    }
+  ]
+}

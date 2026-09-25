@@ -1,0 +1,12 @@
+{
+  "method": "carFleet",
+  "params": [{ "name": "target", "type": "int" }, { "name": "position", "type": "int[]" }, { "name": "speed", "type": "int[]" }],
+  "returns": "int",
+  "cases": [
+    { "in": [12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3]], "out": 3, "example": true },
+    { "in": [10, [3], [3]], "out": 1, "example": true },
+    { "in": [100, [0, 2, 4], [4, 2, 1]], "out": 1, "example": true },
+    { "in": [10, [6, 8], [3, 2]], "out": 2 },
+    { "in": [10, [0, 4, 2], [2, 1, 3]], "out": 1 }
+  ]
+}

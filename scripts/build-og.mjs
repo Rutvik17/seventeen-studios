@@ -45,7 +45,6 @@ import { fileURLToPath } from 'node:url';
 import { founder } from '../src/content/founder.ts';
 import { site, chapters } from '../src/content/studio.ts';
 import { graspInfo, graspModule } from '../src/content/grasp.ts';
-import { notebook } from '../src/content/notebook.ts';
 import { formatDate, spell } from '../src/lib/time.ts';
 import { CURVES } from '../src/lib/calculus.ts';
 import { SITE_HOST } from '../src/lib/url.ts';
@@ -173,38 +172,17 @@ function stageChalkboard() {
     <text x="${n(fx(at) + 18)}" y="${n(fy(curve.f(at)) - 16)}" fill="${CHALK_ACCENT}" font-family="Caveat, cursive" font-size="34" opacity="0.95">slope = 2x</text>`;
 }
 
-/** The mark, for pages whose subject is the site itself. */
-/** The notebook: a ruled page, blank, with a pencil resting across it. */
-function plateBlank(w, h, ink, accent) {
-  const lines = [];
-  for (let y = 70; y < h - 20; y += 44) lines.push(`<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="${accent}" stroke-opacity="0.3" stroke-width="1.5"/>`);
-  return `
-    <rect width="${w}" height="${h}" fill="#faf3e5" stroke="${ink}" stroke-opacity="0.2"/>
-    <line x1="40" y1="0" x2="40" y2="${h}" stroke="#c8233f" stroke-opacity="0.35" stroke-width="1.5"/>
-    ${lines.join('')}
-    <g transform="translate(${w * 0.28}, ${h * 0.72}) rotate(-24)">
-      <path d="M0 0 L22 -9 L22 9 Z" fill="${ink}"/>
-      <path d="M22 -9 L56 -18 L56 18 L22 9 Z" fill="#e6c89a" stroke="${ink}" stroke-width="2"/>
-      <rect x="56" y="-18" width="210" height="36" fill="${accent}" stroke="${ink}" stroke-width="2"/>
-      <rect x="266" y="-18" width="20" height="36" fill="#b9b3a2" stroke="${ink}" stroke-width="2"/>
-      <rect x="286" y="-18" width="26" height="36" rx="6" fill="#c8233f" stroke="${ink}" stroke-width="2"/>
-    </g>
-    <text x="${w - 16}" y="${h - 22}" text-anchor="end" fill="${ink}" fill-opacity="0.5" font-family="Caveat, cursive" font-size="30">p. 1</text>`;
-}
-
 /**
  * Every plate takes the same arguments so the renderer never special-cases one.
  * `(width, height, ink, accent)`.
  */
 const PLATES = {
   contents: (w, h, ink, accent) => plateContents(w, h, ink, accent),
-  blank: (w, h, ink, accent) => plateBlank(w, h, ink, accent),
 };
 
 /** Plates that want a landscape box rather than the square the diagrams use. */
 const PLATE_BOX = {
   contents: { w: 470, h: 440 },
-  blank: { w: 470, h: 420 },
 };
 
 /* A faint plane grid, the same one the site lays under its pages. */
@@ -387,12 +365,12 @@ function cards() {
       film: '/founder/?photo=evening',
     },
     {
-      file: 'notebook',
-      label: 'Notebook',
-      title: 'Something new, every day.',
-      standfirst: `${founder.name.split(' ')[0]}’s notebook: what he is learning, worked through one entry at a time.`,
-      plate: 'blank',
-      footRight: 'Sketchbook No. 17',
+      file: 'algorithms',
+      // The section itself: the list of problems beside one being drawn, part-way through.
+      film: '/algorithms/trapping-rain-water/',
+      css: ALGORITHMS_CSS,
+      ready: 'svg',
+      steps: 9,
     },
     {
       file: 'grasp',
@@ -405,14 +383,6 @@ function cards() {
       titleSize: 96,
       footRight: `${graspModule.position} · ${graspModule.title}`,
     },
-    ...notebook.map((entry) => ({
-      file: `notebook-${entry.slug}`,
-      label: 'Notebook',
-      title: entry.title,
-      standfirst: entry.summary,
-      plate: entry.slug in PLATES ? entry.slug : 'blank',
-      footRight: formatDate(entry.date),
-    })),
   ];
 
   return list;
@@ -438,6 +408,12 @@ const FILM_CSS = `
   [class*="FounderFilm_plate"] { left: 70px !important; bottom: auto !important; top: 50% !important; transform: translateY(-50%); width: 500px !important; }
   [class*="FounderFilm_title"] { font-size: 86px !important; margin-bottom: 18px !important; }
   [class*="FounderFilm_line"] { font-size: 32px !important; color: var(--fg) !important; opacity: 0.75; }
+`;
+
+/* The algorithms card: the page as it is, less the header, scrolled to the drawing. */
+const ALGORITHMS_CSS = `
+  .nav, .preloader, .curtain, .cursor-marks { display: none !important; }
+  [data-app] { --top: 12px !important; }
 `;
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.txt': 'text/plain' };
@@ -466,7 +442,32 @@ async function shootFilm(card) {
   const page = await openPage({ width: W, height: H, reducedMotion: true });
   try {
     await page.navigate(`http://127.0.0.1:${server.address().port}${card.film}`);
-    await page.evaluate(`(() => { const s = document.createElement('style'); s.textContent = ${JSON.stringify(FILM_CSS)}; document.head.append(s); })()`);
+    await page.evaluate(`(() => { const s = document.createElement('style'); s.textContent = ${JSON.stringify(card.css ?? FILM_CSS)}; document.head.append(s); })()`);
+    if (card.ready) {
+      // A page drawn in SVG: wait for the drawing and the fonts, then step it along.
+      await page.evaluate(`new Promise((resolve, reject) => {
+        const start = performance.now();
+        const check = () => {
+          const next = document.querySelector('[aria-label="Next step"]');
+          if (document.querySelector(${JSON.stringify(card.ready)}) && (!next || !next.disabled)) return document.fonts.ready.then(resolve);
+          if (performance.now() - start > 20000) return reject(new Error('the page never drew'));
+          setTimeout(check, 200);
+        };
+        check();
+      })`);
+      // The exported HTML already holds the player, so keep clicking until the counter
+      // shows the step wanted: clicks made before React has attached do nothing.
+      await page.evaluate(`(async () => {
+        const want = ${(card.steps ?? 0) + 1};
+        const at = () => Number((document.body.innerText.match(/(\\d+) \\/ \\d+/) || [])[1] || 0);
+        const start = performance.now();
+        while (at() < want && performance.now() - start < 20000) {
+          document.querySelector('[aria-label="Next step"]')?.click();
+          await new Promise((r) => setTimeout(r, 120));
+        }
+        await new Promise((r) => setTimeout(r, 900));
+      })()`);
+    } else
     // Wait until the canvas has paint on it, then a frame more.
     await page.evaluate(`new Promise((resolve, reject) => {
       const start = performance.now();

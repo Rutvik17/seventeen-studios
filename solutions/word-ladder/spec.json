@@ -1,0 +1,104 @@
+{
+  "method": "ladderLength",
+  "params": [
+    {
+      "name": "beginWord",
+      "type": "string"
+    },
+    {
+      "name": "endWord",
+      "type": "string"
+    },
+    {
+      "name": "wordList",
+      "type": "list<string>"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        "hit",
+        "cog",
+        [
+          "hot",
+          "dot",
+          "dog",
+          "lot",
+          "log",
+          "cog"
+        ]
+      ],
+      "out": 5,
+      "example": true
+    },
+    {
+      "in": [
+        "hit",
+        "cog",
+        [
+          "hot",
+          "dot",
+          "dog",
+          "lot",
+          "log"
+        ]
+      ],
+      "out": 0,
+      "example": true
+    },
+    {
+      "in": [
+        "a",
+        "c",
+        [
+          "a",
+          "b",
+          "c"
+        ]
+      ],
+      "out": 2
+    },
+    {
+      "in": [
+        "hot",
+        "dog",
+        [
+          "hot",
+          "dog"
+        ]
+      ],
+      "out": 0
+    },
+    {
+      "in": [
+        "lost",
+        "cost",
+        [
+          "most",
+          "fist",
+          "lost",
+          "cost",
+          "fish"
+        ]
+      ],
+      "out": 2
+    },
+    {
+      "in": [
+        "talk",
+        "tail",
+        [
+          "talk",
+          "tons",
+          "fall",
+          "tail",
+          "gale",
+          "hall",
+          "negs"
+        ]
+      ],
+      "out": 0
+    }
+  ]
+}

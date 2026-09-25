@@ -9,7 +9,7 @@
   A SKETCHBOOK.
 
   The whole site is one sketchbook — the landing and the founder page are its
-  films, the notebook is the book itself, the loader is the mark being painted
+  films, the algorithms its worked problems, the loader is the mark being painted
   and a change of page is a page turning. So the ground is warm paper, the ink is
   charcoal, the pen is a deep ink blue, and one crimson is kept for the moments
   that matter: the thing to do next.
@@ -591,14 +591,19 @@ body:has([data-slate]) .nav.is-scrolled::before {
 
 /*
   The landing is one scene and nothing else: the film fills the screen, the
-  back endpaper is not bound in, and there is nothing to scroll to.
+  back endpaper is not bound in, and there is nothing to scroll to. The
+  algorithms section is the same shape — it fills the screen, and its list
+  and its page each scroll inside it.
 */
 html:has([data-film]),
-body:has([data-film]) {
+body:has([data-film]),
+html:has([data-app]),
+body:has([data-app]) {
   height: 100%;
   overflow: hidden;
 }
-body:has([data-film]) .endpaper {
+body:has([data-film]) .endpaper,
+body:has([data-app]) .endpaper {
   display: none;
 }
 
@@ -976,7 +981,7 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
 }
 
 /* ==================================================================
-   LISTS — every list of pages to turn to (the contents, the notebook)
+   LISTS — every list of pages to turn to (the contents)
    ================================================================== */
 
 /* Each row in its own paint (--c, set per row): its number outlined in pencil

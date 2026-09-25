@@ -1,0 +1,28 @@
+{
+  "design": {
+    "class": "MedianFinder",
+    "ctor": [],
+    "methods": {
+      "addNum": { "params": ["int"], "returns": "void" },
+      "findMedian": { "params": [], "returns": "double" }
+    }
+  },
+  "cases": [
+    {
+      "ops": ["MedianFinder", "addNum", "addNum", "findMedian", "addNum", "findMedian"],
+      "args": [[], [1], [2], [], [3], []],
+      "out": [null, null, null, 1.5, null, 2.0],
+      "example": true
+    },
+    {
+      "ops": ["MedianFinder", "addNum", "findMedian", "addNum", "findMedian", "addNum", "findMedian", "addNum", "findMedian", "addNum", "findMedian", "addNum", "findMedian"],
+      "args": [[], [6], [], [10], [], [2], [], [6], [], [5], [], [0], []],
+      "out": [null, null, 6.0, null, 8.0, null, 6.0, null, 6.0, null, 6.0, null, 5.5]
+    },
+    {
+      "ops": ["MedianFinder", "addNum", "findMedian", "addNum", "findMedian"],
+      "args": [[], [-1], [], [-2], []],
+      "out": [null, null, -1.0, null, -1.5]
+    }
+  ]
+}

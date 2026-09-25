@@ -1,0 +1,11 @@
+{
+  "roundtrip": { "class": "Codec", "encode": "encode", "decode": "decode", "type": "list<string>", "param": "strs" },
+  "cases": [
+    { "in": [["neet", "code", "love", "you"]], "out": ["neet", "code", "love", "you"], "example": true },
+    { "in": [["we", "say", ":", "yes"]], "out": ["we", "say", ":", "yes"], "example": true },
+    { "in": [[""]], "out": [""] },
+    { "in": [[]], "out": [] },
+    { "in": [["a#b", "12#", "#", "3#abc"]], "out": ["a#b", "12#", "#", "3#abc"] },
+    { "in": [["", "", "x"]], "out": ["", "", "x"] }
+  ]
+}

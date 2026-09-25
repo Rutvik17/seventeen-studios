@@ -1,0 +1,16 @@
+{
+  "design": {
+    "class": "MinStack",
+    "ctor": [],
+    "methods": {
+      "push": { "params": ["int"], "returns": "void" },
+      "pop": { "params": [], "returns": "void" },
+      "top": { "params": [], "returns": "int" },
+      "getMin": { "params": [], "returns": "int" }
+    }
+  },
+  "cases": [
+    { "ops": ["MinStack", "push", "push", "push", "getMin", "pop", "top", "getMin"], "args": [[], [-2], [0], [-3], [], [], [], []], "out": [null, null, null, null, -3, null, 0, -2], "example": true },
+    { "ops": ["MinStack", "push", "push", "getMin", "pop", "getMin", "push", "getMin"], "args": [[], [5], [5], [], [], [], [7], []], "out": [null, null, null, 5, null, 5, null, 5] }
+  ]
+}

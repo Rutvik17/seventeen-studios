@@ -1,0 +1,12 @@
+{
+  "method": "findDuplicate",
+  "params": [{ "name": "nums", "type": "int[]" }],
+  "returns": "int",
+  "cases": [
+    { "in": [[1, 3, 4, 2, 2]], "out": 2, "example": true },
+    { "in": [[3, 1, 3, 4, 2]], "out": 3, "example": true },
+    { "in": [[3, 3, 3, 3, 3]], "out": 3, "example": true },
+    { "in": [[1, 1]], "out": 1 },
+    { "in": [[2, 5, 9, 6, 9, 3, 8, 9, 7, 1]], "out": 9 }
+  ]
+}

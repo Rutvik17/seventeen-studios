@@ -1,0 +1,60 @@
+{
+  "method": "getSum",
+  "params": [
+    {
+      "name": "a",
+      "type": "int"
+    },
+    {
+      "name": "b",
+      "type": "int"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        1,
+        2
+      ],
+      "out": 3,
+      "example": true
+    },
+    {
+      "in": [
+        2,
+        3
+      ],
+      "out": 5,
+      "example": true
+    },
+    {
+      "in": [
+        -1,
+        1
+      ],
+      "out": 0
+    },
+    {
+      "in": [
+        -12,
+        -8
+      ],
+      "out": -20
+    },
+    {
+      "in": [
+        1000,
+        -1000
+      ],
+      "out": 0
+    },
+    {
+      "in": [
+        -5,
+        3
+      ],
+      "out": -2
+    }
+  ]
+}

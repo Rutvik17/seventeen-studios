@@ -1,0 +1,84 @@
+{
+  "method": "canAttendMeetings",
+  "params": [
+    {
+      "name": "intervals",
+      "type": "int[][]"
+    }
+  ],
+  "returns": "bool",
+  "cases": [
+    {
+      "in": [
+        [
+          [
+            0,
+            30
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            15,
+            20
+          ]
+        ]
+      ],
+      "out": false,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          [
+            7,
+            10
+          ],
+          [
+            2,
+            4
+          ]
+        ]
+      ],
+      "out": true,
+      "example": true
+    },
+    {
+      "in": [
+        []
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        [
+          [
+            5,
+            8
+          ],
+          [
+            8,
+            9
+          ]
+        ]
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        [
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            3
+          ]
+        ]
+      ],
+      "out": false
+    }
+  ]
+}

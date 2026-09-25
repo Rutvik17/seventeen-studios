@@ -1,0 +1,101 @@
+{
+  "method": "combinationSum2",
+  "params": [
+    {
+      "name": "candidates",
+      "type": "int[]"
+    },
+    {
+      "name": "target",
+      "type": "int"
+    }
+  ],
+  "returns": "list<list<int>>",
+  "compare": "unordered-deep",
+  "cases": [
+    {
+      "in": [
+        [
+          10,
+          1,
+          2,
+          7,
+          6,
+          1,
+          5
+        ],
+        8
+      ],
+      "out": [
+        [
+          1,
+          1,
+          6
+        ],
+        [
+          1,
+          2,
+          5
+        ],
+        [
+          1,
+          7
+        ],
+        [
+          2,
+          6
+        ]
+      ],
+      "example": true
+    },
+    {
+      "in": [
+        [
+          2,
+          5,
+          2,
+          1,
+          2
+        ],
+        5
+      ],
+      "out": [
+        [
+          1,
+          2,
+          2
+        ],
+        [
+          5
+        ]
+      ],
+      "example": true
+    },
+    {
+      "in": [
+        [
+          1,
+          1,
+          1,
+          1
+        ],
+        2
+      ],
+      "out": [
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "in": [
+        [
+          3
+        ],
+        2
+      ],
+      "out": []
+    }
+  ]
+}

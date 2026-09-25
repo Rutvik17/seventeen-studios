@@ -1,0 +1,28 @@
+{
+  "design": {
+    "class": "TimeMap",
+    "ctor": [],
+    "methods": {
+      "set": { "params": ["string", "string", "int"], "returns": "void" },
+      "get": { "params": ["string", "int"], "returns": "string" }
+    }
+  },
+  "cases": [
+    {
+      "ops": ["TimeMap", "set", "get", "get", "set", "get", "get"],
+      "args": [[], ["foo", "bar", 1], ["foo", 1], ["foo", 3], ["foo", "bar2", 4], ["foo", 4], ["foo", 5]],
+      "out": [null, null, "bar", "bar", null, "bar2", "bar2"],
+      "example": true
+    },
+    {
+      "ops": ["TimeMap", "set", "set", "get", "get", "get", "get", "get"],
+      "args": [[], ["love", "high", 10], ["love", "low", 20], ["love", 5], ["love", 10], ["love", 15], ["love", 20], ["love", 25]],
+      "out": [null, null, null, "", "high", "high", "low", "low"]
+    },
+    {
+      "ops": ["TimeMap", "get", "set", "get", "get"],
+      "args": [[], ["x", 1], ["y", "v", 3], ["x", 5], ["y", 2]],
+      "out": [null, "", null, "", ""]
+    }
+  ]
+}

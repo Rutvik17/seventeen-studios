@@ -1,0 +1,54 @@
+{
+  "method": "longestCommonSubsequence",
+  "params": [
+    {
+      "name": "text1",
+      "type": "string"
+    },
+    {
+      "name": "text2",
+      "type": "string"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        "abcde",
+        "ace"
+      ],
+      "out": 3,
+      "example": true
+    },
+    {
+      "in": [
+        "abc",
+        "abc"
+      ],
+      "out": 3,
+      "example": true
+    },
+    {
+      "in": [
+        "abc",
+        "def"
+      ],
+      "out": 0,
+      "example": true
+    },
+    {
+      "in": [
+        "bsbininm",
+        "jmjkbkjkv"
+      ],
+      "out": 1
+    },
+    {
+      "in": [
+        "oxcpqrsvwf",
+        "shmtulqrypy"
+      ],
+      "out": 2
+    }
+  ]
+}

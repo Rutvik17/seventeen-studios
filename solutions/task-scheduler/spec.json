@@ -1,0 +1,13 @@
+{
+  "method": "leastInterval",
+  "params": [{ "name": "tasks", "type": "char[]" }, { "name": "n", "type": "int" }],
+  "returns": "int",
+  "cases": [
+    { "in": [["A", "A", "A", "B", "B", "B"], 2], "out": 8, "example": true },
+    { "in": [["A", "C", "A", "B", "D", "B"], 1], "out": 6, "example": true },
+    { "in": [["A", "A", "A", "B", "B", "B"], 3], "out": 10, "example": true },
+    { "in": [["A", "A", "A", "A", "A", "A", "B", "C", "D", "E", "F", "G"], 2], "out": 16 },
+    { "in": [["A", "B", "C", "D"], 3], "out": 4 },
+    { "in": [["A", "A", "B", "B", "C", "C", "D", "D"], 0], "out": 8 }
+  ]
+}

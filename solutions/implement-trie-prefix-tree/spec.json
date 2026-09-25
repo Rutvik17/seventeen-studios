@@ -1,0 +1,24 @@
+{
+  "design": {
+    "class": "Trie",
+    "ctor": [],
+    "methods": {
+      "insert": { "params": ["string"], "returns": "void" },
+      "search": { "params": ["string"], "returns": "bool" },
+      "startsWith": { "params": ["string"], "returns": "bool" }
+    }
+  },
+  "cases": [
+    {
+      "ops": ["Trie", "insert", "search", "search", "startsWith", "insert", "search"],
+      "args": [[], ["apple"], ["apple"], ["app"], ["app"], ["app"], ["app"]],
+      "out": [null, null, true, false, true, null, true],
+      "example": true
+    },
+    {
+      "ops": ["Trie", "insert", "insert", "search", "startsWith", "search", "startsWith"],
+      "args": [[], ["ab"], ["abc"], ["a"], ["abcd"], ["abc"], ["b"]],
+      "out": [null, null, null, false, false, true, false]
+    }
+  ]
+}

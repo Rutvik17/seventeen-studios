@@ -1,0 +1,71 @@
+{
+  "method": "letterCombinations",
+  "params": [
+    {
+      "name": "digits",
+      "type": "string"
+    }
+  ],
+  "returns": "list<string>",
+  "compare": "unordered",
+  "cases": [
+    {
+      "in": [
+        "23"
+      ],
+      "out": [
+        "ad",
+        "ae",
+        "af",
+        "bd",
+        "be",
+        "bf",
+        "cd",
+        "ce",
+        "cf"
+      ],
+      "example": true
+    },
+    {
+      "in": [
+        ""
+      ],
+      "out": [],
+      "example": true
+    },
+    {
+      "in": [
+        "2"
+      ],
+      "out": [
+        "a",
+        "b",
+        "c"
+      ],
+      "example": true
+    },
+    {
+      "in": [
+        "79"
+      ],
+      "out": [
+        "pw",
+        "px",
+        "py",
+        "pz",
+        "qw",
+        "qx",
+        "qy",
+        "qz",
+        "rw",
+        "rx",
+        "ry",
+        "rz",
+        "sw",
+        "sx",
+        "sy",
+        "sz"
+      ]
+    }
+  ]
+}

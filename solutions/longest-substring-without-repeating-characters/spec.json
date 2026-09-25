@@ -1,0 +1,14 @@
+{
+  "method": "lengthOfLongestSubstring",
+  "params": [{ "name": "s", "type": "string" }],
+  "returns": "int",
+  "cases": [
+    { "in": ["abcabcbb"], "out": 3, "example": true },
+    { "in": ["bbbbb"], "out": 1, "example": true },
+    { "in": ["pwwkew"], "out": 3, "example": true },
+    { "in": [""], "out": 0 },
+    { "in": [" "], "out": 1 },
+    { "in": ["dvdf"], "out": 3 },
+    { "in": ["abba"], "out": 2 }
+  ]
+}

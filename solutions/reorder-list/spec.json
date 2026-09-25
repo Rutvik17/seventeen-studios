@@ -1,0 +1,13 @@
+{
+  "method": "reorderList",
+  "params": [{ "name": "head", "type": "ListNode", "mut": true }],
+  "returns": "void",
+  "mutates": "head",
+  "cases": [
+    { "in": [[1, 2, 3, 4]], "out": [1, 4, 2, 3], "example": true },
+    { "in": [[1, 2, 3, 4, 5]], "out": [1, 5, 2, 4, 3], "example": true },
+    { "in": [[1]], "out": [1] },
+    { "in": [[1, 2]], "out": [1, 2] },
+    { "in": [[1, 2, 3]], "out": [1, 3, 2] }
+  ]
+}

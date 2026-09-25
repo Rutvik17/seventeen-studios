@@ -1,0 +1,14 @@
+{
+  "method": "isValid",
+  "params": [{ "name": "s", "type": "string" }],
+  "returns": "bool",
+  "cases": [
+    { "in": ["()"], "out": true, "example": true },
+    { "in": ["()[]{}"], "out": true, "example": true },
+    { "in": ["(]"], "out": false, "example": true },
+    { "in": ["([{}])"], "out": true },
+    { "in": ["([)]"], "out": false },
+    { "in": ["("], "out": false },
+    { "in": ["]"], "out": false }
+  ]
+}

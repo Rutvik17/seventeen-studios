@@ -1,0 +1,60 @@
+{
+  "method": "uniquePaths",
+  "params": [
+    {
+      "name": "m",
+      "type": "int"
+    },
+    {
+      "name": "n",
+      "type": "int"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        3,
+        7
+      ],
+      "out": 28,
+      "example": true
+    },
+    {
+      "in": [
+        3,
+        2
+      ],
+      "out": 3,
+      "example": true
+    },
+    {
+      "in": [
+        1,
+        1
+      ],
+      "out": 1
+    },
+    {
+      "in": [
+        10,
+        10
+      ],
+      "out": 48620
+    },
+    {
+      "in": [
+        23,
+        12
+      ],
+      "out": 193536720
+    },
+    {
+      "in": [
+        1,
+        100
+      ],
+      "out": 1
+    }
+  ]
+}

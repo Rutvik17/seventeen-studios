@@ -1,0 +1,14 @@
+{
+  "method": "findMedianSortedArrays",
+  "params": [{ "name": "nums1", "type": "int[]" }, { "name": "nums2", "type": "int[]" }],
+  "returns": "double",
+  "cases": [
+    { "in": [[1, 3], [2]], "out": 2.0, "example": true },
+    { "in": [[1, 2], [3, 4]], "out": 2.5, "example": true },
+    { "in": [[], [1]], "out": 1.0 },
+    { "in": [[2], []], "out": 2.0 },
+    { "in": [[1, 3, 5, 7], [2, 4, 6]], "out": 4.0 },
+    { "in": [[1, 2], [-1, 3]], "out": 1.5 },
+    { "in": [[100000], [100001]], "out": 100000.5 }
+  ]
+}

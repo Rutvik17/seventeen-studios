@@ -1,0 +1,12 @@
+{
+  "method": "maxProfit",
+  "params": [{ "name": "prices", "type": "int[]" }],
+  "returns": "int",
+  "cases": [
+    { "in": [[7, 1, 5, 3, 6, 4]], "out": 5, "example": true },
+    { "in": [[7, 6, 4, 3, 1]], "out": 0, "example": true },
+    { "in": [[2, 4, 1]], "out": 2 },
+    { "in": [[1]], "out": 0 },
+    { "in": [[3, 2, 6, 5, 0, 3]], "out": 4 }
+  ]
+}

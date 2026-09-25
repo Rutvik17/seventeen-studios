@@ -1,0 +1,82 @@
+{
+  "method": "coinChange",
+  "params": [
+    {
+      "name": "coins",
+      "type": "int[]"
+    },
+    {
+      "name": "amount",
+      "type": "int"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        [
+          1,
+          2,
+          5
+        ],
+        11
+      ],
+      "out": 3,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          2
+        ],
+        3
+      ],
+      "out": -1,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          1
+        ],
+        0
+      ],
+      "out": 0,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          186,
+          419,
+          83,
+          408
+        ],
+        6249
+      ],
+      "out": 20
+    },
+    {
+      "in": [
+        [
+          3,
+          7
+        ],
+        11
+      ],
+      "out": -1
+    },
+    {
+      "in": [
+        [
+          2,
+          5,
+          10,
+          1
+        ],
+        27
+      ],
+      "out": 4
+    }
+  ]
+}

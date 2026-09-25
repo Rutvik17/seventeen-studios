@@ -1,0 +1,13 @@
+{
+  "method": "minEatingSpeed",
+  "params": [{ "name": "piles", "type": "int[]" }, { "name": "h", "type": "int" }],
+  "returns": "int",
+  "cases": [
+    { "in": [[3, 6, 7, 11], 8], "out": 4, "example": true },
+    { "in": [[30, 11, 23, 4, 20], 5], "out": 30, "example": true },
+    { "in": [[30, 11, 23, 4, 20], 6], "out": 23, "example": true },
+    { "in": [[1000000000], 2], "out": 500000000 },
+    { "in": [[312884470], 312884469], "out": 2 },
+    { "in": [[805306368, 805306368, 805306368], 1000000000], "out": 3 }
+  ]
+}
