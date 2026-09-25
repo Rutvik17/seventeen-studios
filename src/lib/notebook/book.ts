@@ -279,9 +279,11 @@ export class Book {
     ctx.rect(m, m, w - m * 2, h - m * 2);
     ctx.clip();
     this.washOn(f, (paint) => {
-      for (let k = 0; k < 7; k++) paint(blob(m + r() * (w - 2 * m), m + r() * (h - 2 * m), w * 0.3, h * 0.1, r), k % 2 ? '#e3b07a' : '#f0d9a8', 0.012, 10, 0.5);
+      for (let k = 0; k < 16; k++) paint(blob(m + r() * (w - 2 * m), m + r() * (h - 2 * m), w * 0.2, h * 0.06, r), k % 2 ? '#e3b07a' : '#f0d9a8', 0.025, 12, 0.45);
     }, 22);
     ctx.restore();
+    this.text(f, this.copy.inside, 0.5, 0.52, 0.06, { weight: 700, align: 'center' });
+    this.text(f, this.copy.owner, 0.5, 0.58, 0.032, { weight: 600, align: 'center', colour: 'rgba(29,29,33,0.6)' });
     return f;
   }
 
