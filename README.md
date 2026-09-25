@@ -86,7 +86,7 @@ src/
   app/                     routes (App Router, all statically exported)
     page.tsx               the landing: one full-screen film — Nvidia's campus from the air, in watercolour, through a year
     founder/               the book: cover, chapters, the résumé in the back pocket
-    notebook/              the notebook, and a folder per entry (earth-we-live-on/)
+    notebook/              the notebook — a watercolour sketchbook turned by scrolling — and a folder per entry (earth-we-live-on/)
     grasp/                 Grasp: the chalkboard, the live derivative, the lessons
     globals.css            tokens, the chrome, and the shared page styles
   components/
@@ -100,7 +100,7 @@ src/
     founder/               the book component and its styles
     grasp/                 the chalkboard
     instruments/           the derivative Grasp demonstrates
-    notebook/              the entries' drawings — the globe, and the continents sketched beside it
+    notebook/              the notebook's book (NotebookBook), and the entries' drawings — the globe, and the continents sketched beside it
     film/Film.tsx          the landing's film: the canvas, its caption, the shots to jump between, a pause
     IndexList.tsx          every list of pages to turn to — the contents, the notebook
     DrawIn.tsx             a little drawing — an underline, an arrow — that draws itself in
@@ -115,6 +115,7 @@ src/
     url.ts                 where the site lives — the one place it is written
     sketch/portrait.ts     the founder's photo, redrawn in pencil and coloured pencil
     calculus.ts            Grasp's numeric and exact derivatives
+    notebook/              the sketchbook — its leaves, turns and scroll (book.ts) — and Earth in watercolour (globe.ts)
     globe/                 the Earth we live on: coastlines and colour data, the view, the painted map, the globe, the continents
 scripts/
   build-og.mjs             share cards, drawn from the site's own data

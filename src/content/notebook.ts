@@ -6,6 +6,8 @@
  * the entry's own page lives at `app/notebook/<slug>/`.
  */
 
+import { founder } from './founder';
+
 export type NotebookEntry = {
   slug: string;
   title: string;
@@ -26,6 +28,20 @@ export const notebook: NotebookEntry[] = [
     cardAlt: 'A globe painted in acrylic: pencil coastlines, green and ochre land and a deep blue sea',
   },
 ];
+
+/**
+ * The notebook itself, as a book: what is written on its cover, inside the
+ * cover, at the head of its contents, and under each entry's title.
+ */
+export const notebookBook = {
+  cover: 'notebook',
+  owner: founder.name,
+  inside: 'My sketchbook.',
+  contents: 'contents',
+  read: 'read the entry',
+  /** For screen readers and for anyone without the script: the book, as a list. */
+  label: 'The notebook’s entries',
+};
 
 /** The way back from an entry to the notebook. */
 export const notebookBack = { href: '/notebook/', label: 'Notebook' } as const;

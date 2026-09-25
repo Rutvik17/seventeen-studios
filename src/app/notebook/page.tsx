@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import { ogImage } from '@/lib/og';
 import { formatDate } from '@/lib/time';
-import { Sheet } from '@/components/Sheet';
-import { IndexList } from '@/components/IndexList';
-import { notebook } from '@/content/notebook';
+import { NotebookBook } from '@/components/notebook/NotebookBook';
+import { notebook, notebookBook } from '@/content/notebook';
 import { founder } from '@/content/founder';
 
 const DESCRIPTION = `${founder.name}’s notebook: what he is learning, worked through one entry at a time.`;
@@ -19,33 +18,16 @@ export const metadata: Metadata = {
 };
 
 /**
- * The notebook: every entry in `content/notebook.ts`, each written on a ruled
- * line, and a few blank lines under them for the next.
+ * The notebook: a watercolour sketchbook, sketched and painted, whose pages
+ * turn as you scroll — the contents, then a spread for every entry in
+ * `content/notebook.ts`, its title page on the left and its painting on the
+ * right.
  */
 export default function NotebookPage() {
   return (
-    <Sheet
-      kicker="Notebook"
-      title="Something new, every day."
-      lead={<p>My sketchbook.</p>}
-    >
-      <IndexList
-        cursor="Read"
-        items={notebook.map((entry, i) => ({
-          key: entry.slug,
-          href: `/notebook/${entry.slug}/`,
-          mark: String(i + 1),
-          label: formatDate(entry.date),
-          title: entry.title,
-          note: entry.summary,
-        }))}
-      />
-      <div className="sheet__ruled" aria-hidden="true">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <span key={i} />
-        ))}
-        <span className="sheet__folio">p. 1</span>
-      </div>
-    </Sheet>
+    <NotebookBook
+      copy={notebookBook}
+      entries={notebook.map((e) => ({ slug: e.slug, title: e.title, date: formatDate(e.date), summary: e.summary }))}
+    />
   );
 }
