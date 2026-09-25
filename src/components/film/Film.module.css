@@ -152,6 +152,6 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: #f5f0e6;
+  background: var(--paper);
   pointer-events: none;
 }

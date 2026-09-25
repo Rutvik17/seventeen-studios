@@ -3,8 +3,8 @@
 /**
  * The top edge of the sketchbook.
  *
- * On the left, the 17 mark in pencil — outlined and hatched, the same drawing
- * the loader makes — which goes back to the film. On the right, three
+ * On the left, the mark — Seventeen's studio in autumn, the painting the
+ * loader makes, finished and small — which goes back to the film. On the right, three
  * index tabs, written in the same hand as the film's captions: Caveat, heavy,
  * in the ink of the page. The current tab is underlined with the same straight
  * pen line the captions carry; the others write theirs in when pointed at.
@@ -19,7 +19,7 @@ import { usePathname } from 'next/navigation';
 import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { nav } from '@/content/studio';
-import { LOGO_ONE, LOGO_SEVEN, LOGO_VIEWBOX, MARK_STROKE } from '@/components/Logo';
+import { StudioCanvas } from '@/components/loader/StudioCanvas';
 import { useUi } from '@/lib/store';
 import { TransitionLink } from './Transition';
 
@@ -66,11 +66,7 @@ export function Nav() {
   return (
     <header className="nav" ref={ref}>
       <TransitionLink href="/" className="nav__mark" aria-label="Seventeen Studios — home" data-cursor="Home">
-        <svg viewBox={LOGO_VIEWBOX} className="nav__logo" aria-hidden="true" overflow="visible">
-          {[LOGO_ONE, LOGO_SEVEN].map((d) => (
-            <path key={d} d={d} className="nav__stroke" strokeWidth={MARK_STROKE} />
-          ))}
-        </svg>
+        <StudioCanvas mark className="nav__logo" />
       </TransitionLink>
 
       <nav className="nav__tabs" aria-label="Sections">

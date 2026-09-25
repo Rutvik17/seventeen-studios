@@ -3,7 +3,7 @@
 /**
  * The loader on a full page load.
  *
- * A pencil draws the mark while the page gets ready, then the sheet turns away
+ * Seventeen's studio is sketched and painted while the page gets ready, then the sheet turns away
  * like a page. It is the same screen the page transitions show — see
  * `components/loader/LoaderScreen.tsx`.
  *
@@ -19,11 +19,11 @@
  * paints itself has said it is ready (`lib/ready.ts`).
  *
  * The first visit of a session gets the whole drawing; a reload gets a quicker
- * one. Either way the pencil stops at 90% if the page is not ready yet and
- * finishes the mark only when it is — the counter reports a real state, not a
+ * one. Either way the painting stops at 90% if the page is not ready yet and
+ * finishes only when it is — the counter reports a real state, not a
  * timer chosen to look good.
  *
- * Reduced motion gets the finished mark, still, and no turn: the sheet is
+ * Reduced motion gets the finished painting, still, and no turn: the sheet is
  * simply gone when the page is ready.
  */
 
@@ -36,9 +36,9 @@ import { doneLoading, everythingReady } from '@/lib/ready';
 import { LoaderScreen } from '@/components/loader/LoaderScreen';
 import { turnAway } from '@/lib/pageTurn';
 
-/** How long the pencil takes to draw the mark, seconds: a first visit, and a reload. */
-const DRAW_FIRST = 1.9;
-const DRAW_AGAIN = 0.7;
+/** How long the studio takes to sketch and paint, seconds: a first visit, and a reload. */
+const DRAW_FIRST = 3.4;
+const DRAW_AGAIN = 1.3;
 
 export function Preloader() {
   const enter = useUi((state) => state.enter);

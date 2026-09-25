@@ -60,8 +60,10 @@ it rather than as a web page:
   `src/lib/sketchbook/brush.ts` (a body, bristle streaks, ragged dry ends, a
   raised edge); everything drawn by `pencil.ts`. A new drawing uses both
   rather than inventing a third hand.
-- **The pencil is the cursor; the page turn is the transition; a brush
-  painting the 17 is the loader.** New motion should feel like drawing or turning
+- **The pencil is the cursor; the page turn is the transition; the loader is
+  Seventeen's studio in autumn, sketched and painted as the page gets ready**
+  (`lib/film/studio.ts`, the film's pencil and wash), and the header's mark is
+  that painting, finished and small. The tab icon keeps the handwritten 17. New motion should feel like drawing or turning
   paper, not like an interface animating.
 - **The footer is the back endpaper**, and the nav is the book's three tabs —
   written in the film's caption hand (Caveat 600, the current tab 700 with a

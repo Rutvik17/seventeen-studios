@@ -1,10 +1,9 @@
 <!--
   The site's mark, for the tab.
 
-  The same two paths as `src/components/Logo.tsx`, on a tile — a favicon needs a
-  shape to sit in at 16px. They are duplicated here rather than imported
-  because Next reads this file statically and nothing can be imported into it;
-  if the mark changes, change both.
+  The header's mark is the studio painting, which is unreadable at 16px, so
+  the tab keeps the handwritten 17 on a tile — a favicon needs a simple shape
+  to sit in.
 
   It used to be acid green on near-black, which was the palette from the dark,
   agency-era version of this site and had been wrong for months — the site is

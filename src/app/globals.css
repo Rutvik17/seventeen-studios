@@ -28,6 +28,8 @@
   --bg: #f2e7d2;
   --bg-raise: #faf3e5;
   --bg-sunk: #e6d9bf;
+  /* Cold-pressed watercolour paper: the film's sheet, and the loader's. */
+  --paper: #f5f0e6;
 
   /* Charcoal. */
   --fg: #1d1d21;
@@ -397,8 +399,8 @@ code {
   a filling one — which made the site look like three sites that shared a
   typeface.
 
-  The mark and the counter are laid out here; the drawing is
-  `components/loader/PencilMark.tsx`.
+  The painting, its name and the counter are laid out here; the painting is
+  `components/loader/StudioCanvas.tsx` (drawn by `lib/film/studio.ts`).
 */
 .loader {
   position: absolute;
@@ -410,46 +412,36 @@ code {
   pointer-events: none;
 }
 
+.loader__figure {
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+/* The studio painting, framed 560 : 310 as it is drawn. */
+.loader__painting {
+  display: block;
+  width: min(680px, 90vw, 120vh);
+  aspect-ratio: 560 / 310;
+}
+.loader__name {
+  font-family: var(--font-hand), cursive;
+  font-weight: 700;
+  font-size: clamp(28px, 2.6vw, 40px);
+  line-height: 1.1;
+  color: var(--fg);
+  padding-bottom: 2px;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1.5px no-repeat;
+}
 .loader__count {
   position: absolute;
   right: var(--gutter);
   bottom: var(--gutter);
-  font-size: clamp(13px, 1.1vw, 15px);
-  letter-spacing: 0.2em;
+  font-family: var(--font-hand), cursive;
+  font-weight: 600;
+  font-size: clamp(20px, 1.7vw, 26px);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
-}
-
-.pencil-mark {
-  position: relative;
-  width: clamp(180px, 22vw, 340px);
-  /* The mark's own proportions — 36 x 26. */
-  aspect-ratio: 36 / 26;
-}
-.pencil-mark__svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-/* The strokes carry the bristles' streaks; the brush, on its own sheet above, does not. */
-.pencil-mark__wax {
-  -webkit-mask: var(--paint-bristle) 0 0 / 200px 200px;
-  mask: var(--paint-bristle) 0 0 / 200px 200px;
-}
-.pencil-mark__hand {
-  position: absolute;
-  inset: 0;
-}
-.pencil-mark__line {
-  fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.pencil-mark__line--light {
-  opacity: 0.55;
-}
-.pencil-mark__tip {
-  transition: opacity 0.3s;
 }
 
 /* ---------- The turning sheet: preloader and page transitions ---- */
@@ -485,13 +477,8 @@ html:not(.is-loading) .preloader {
 .curtain__sheet {
   position: absolute;
   inset: 0;
-  background: var(--bg) url('../assets/ground/wide.webp') center / cover no-repeat;
-}
-@media (max-aspect-ratio: 1/1) {
-  .preloader__sheet,
-  .curtain__sheet {
-    background-image: url('../assets/ground/tall.webp');
-  }
+  /* The film's watercolour sheet: the loader paints on the same paper. */
+  background: var(--paper);
 }
 .curtain__sheet {
   clip-path: polygon(101% 0, 101% 0, 101% 100%, 101% 100%);
@@ -566,24 +553,15 @@ html:not(.is-loading) .preloader {
   align-items: center;
   color: var(--fg);
 }
-/* The mark in ultramarine, as the loader paints it. */
+/* The mark: the studio painting, small. */
 .nav__logo {
   display: block;
-  height: 26px;
-  width: auto;
-  overflow: visible;
-  -webkit-mask: var(--paint-bristle) 0 0 / 120px 120px;
-  mask: var(--paint-bristle) 0 0 / 120px 120px;
+  width: clamp(76px, 6.2vw, 96px);
+  aspect-ratio: 560 / 256;
   transition: transform 0.4s var(--ease-out);
 }
-.nav__stroke {
-  fill: none;
-  stroke: var(--mark, var(--paint-1));
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
 .nav__mark:hover .nav__logo {
-  transform: rotate(-4deg) scale(1.06);
+  transform: rotate(-2deg) scale(1.05);
 }
 
 /*
@@ -644,9 +622,6 @@ body:has([data-slate]) .nav__tab.is-active {
   color: #eef1e6;
 }
 /* On the board the mark is chalk. */
-body:has([data-slate]) .nav__logo {
-  --mark: #eef1e6;
-}
 body:has([data-slate]) .nav.is-scrolled::before {
   background: linear-gradient(180deg, rgba(36, 60, 51, 0.94), rgba(36, 60, 51, 0));
 }
@@ -671,9 +646,6 @@ body:has([data-film]) .endpaper {
 body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__mark,
 body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   color: #f3eee2;
-}
-body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__logo {
-  --mark: #f3eee2;
 }
 
 /* ==================================================================
