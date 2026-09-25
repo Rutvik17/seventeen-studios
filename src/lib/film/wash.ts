@@ -71,7 +71,15 @@ function trace(ctx: CanvasRenderingContext2D, p: Pt[]) {
   ctx.closePath();
 }
 
-export class Wash {
+/** Anything laid a glaze at a time: a wash, or a portrait's glaze of the photograph. */
+export interface Glazed {
+  readonly layers: number;
+  readonly cx: number;
+  readonly cy: number;
+  pass(ctx: CanvasRenderingContext2D, i: number): void;
+}
+
+export class Wash implements Glazed {
   readonly layers: number;
   readonly cx: number;
   readonly cy: number;
