@@ -4,8 +4,9 @@
  *   npm run og            — all of them
  *   npm run og -- grasp   — only the cards whose file name contains "grasp"
  *
- * The founder card is a photograph of the built founder page's own painting,
- * so `npm run build` (without a base path) has to have run first.
+ * Most cards are photographs of the built pages themselves, and the drawn one
+ * is written in the site's own font files, so `npm run build` (without a base
+ * path) has to have run first.
  *
  * Writes `public/og/<name>.png`, one per route, committed to the repo. Wired
  * into metadata by `src/lib/og.ts`, which is the file that decides which route
@@ -26,8 +27,8 @@
  * WHY THE ARTWORK IS COMPUTED RATHER THAN DRAWN
  *
  * Every plate below is produced by the same code the page it advertises uses —
- * `CURVES[0]` draws the parabola, the landing's card lists the landing's own
- * chapters, and the founder card is the founder film's own painting.
+ * `CURVES[0]` draws the parabola, and the landing, founder and algorithms
+ * cards are those pages, photographed.
  * Nothing is traced by eye.
  *
  * That is not craft for its own sake. A share image is the one asset nobody
@@ -36,16 +37,15 @@
  * the picture is wrong only if the page is wrong.
  */
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync, statSync } from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { founder } from '../src/content/founder.ts';
-import { site, chapters } from '../src/content/studio.ts';
 import { graspInfo, graspModule } from '../src/content/grasp.ts';
-import { formatDate, spell } from '../src/lib/time.ts';
+import { spell } from '../src/lib/time.ts';
 import { CURVES } from '../src/lib/calculus.ts';
 import { SITE_HOST } from '../src/lib/url.ts';
 import { fileUrl, openPage } from './chrome.mjs';
@@ -70,24 +70,16 @@ const H = 630;
 
 const PAPER = '#f2e7d2';
 const GRAPHITE = '#1d1d21';
-const ACCENT = '#1f3a8a';
 const SLATE = '#2d4a3f';
 const SLATE_DEEP = '#243c33';
 const CHALK = '#eef1e6';
 const CHALK_ACCENT = '#f0d266';
 
-/** The 17 mark, from `components/Logo.tsx`. */
-const LOGO = {
-  viewBox: '0 0 36 26',
-  one: 'M13 0V26H6.5V6.5L1.5 9.5V3L7.5 0Z',
-  seven: 'M19 0H36V5.5L27 26H20L29 6H19Z',
-};
 
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const n = (v) => Number(v.toFixed(2));
-const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /* ------------------------------------------------------------------ *
  * Plates — the artwork, one per kind of page
@@ -100,31 +92,6 @@ const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 function polyline(pts, stroke, width = 3, extra = '') {
   const d = pts.map((p, i) => `${i ? 'L' : 'M'}${n(p[0])} ${n(p[1])}`).join(' ');
   return `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" ${extra}/>`;
-}
-
-/* ------------------------------------------------------------------ *
- * The contents page
- * ------------------------------------------------------------------ */
-
-/**
- * The landing's own contents, from the same `chapters` the page lists: a
- * handwritten heading, then each chapter's number and title on a dashed rule.
- */
-function plateContents(w, h, ink, accent) {
-  const rowH = (h - 96) / chapters.length;
-  const rows = chapters
-    .map((c, i) => {
-      const y = 96 + i * rowH + rowH / 2;
-      return `
-        <text x="0" y="${n(y + 10)}" fill="${accent}" font-family="Caveat, cursive" font-size="40">${i + 1}</text>
-        <text x="64" y="${n(y + 10)}" fill="${ink}" font-family="Syne, sans-serif" font-weight="700" font-size="34" letter-spacing="-1">${esc(c.title)}</text>
-        <line x1="0" y1="${n(y + rowH / 2)}" x2="${w}" y2="${n(y + rowH / 2)}" stroke="${ink}" stroke-opacity="0.3" stroke-width="1.5" stroke-dasharray="5 6"/>`;
-    })
-    .join('');
-  return `
-    <text x="0" y="52" fill="${ink}" font-family="Caveat, cursive" font-size="54">Contents</text>
-    <line x1="0" y1="78" x2="${w}" y2="78" stroke="${ink}" stroke-opacity="0.5" stroke-width="2"/>
-    ${rows}`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -169,25 +136,7 @@ function stageChalkboard() {
     )}
     ${polyline(pts, CHALK, 4, 'opacity="0.95"')}
     <circle cx="${n(fx(at))}" cy="${n(fy(curve.f(at)))}" r="7" fill="${CHALK_ACCENT}"/>
-    <text x="${n(fx(at) + 18)}" y="${n(fy(curve.f(at)) - 16)}" fill="${CHALK_ACCENT}" font-family="Caveat, cursive" font-size="34" opacity="0.95">slope = 2x</text>`;
-}
-
-/**
- * Every plate takes the same arguments so the renderer never special-cases one.
- * `(width, height, ink, accent)`.
- */
-const PLATES = {
-  contents: (w, h, ink, accent) => plateContents(w, h, ink, accent),
-};
-
-/** Plates that want a landscape box rather than the square the diagrams use. */
-const PLATE_BOX = {
-  contents: { w: 470, h: 440 },
-};
-
-/* A faint plane grid, the same one the site lays under its pages. */
-function grid() {
-  return `<rect width="${W}" height="${H}" fill="url(#plane)"/>`;
+    <text x="${n(fx(at) + 18)}" y="${n(fy(curve.f(at)) - 16)}" fill="${CHALK_ACCENT}" font-family="Caveat, cursive" font-weight="600" font-size="38" opacity="0.95">slope = 2x</text>`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -197,81 +146,56 @@ function grid() {
 function defs(ink) {
   return `
     <defs>
-      <pattern id="plane" width="48" height="48" patternUnits="userSpaceOnUse">
-        <path d="M48 0H0V48" fill="none" stroke="${ink}" stroke-opacity="0.06" stroke-width="1"/>
-      </pattern>
       <linearGradient id="slateWash" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stop-color="${SLATE_DEEP}" stop-opacity="0"/>
         <stop offset="1" stop-color="${SLATE_DEEP}" stop-opacity="0.75"/>
       </linearGradient>
-      <linearGradient id="scrim" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="${PAPER}" stop-opacity="0"/>
-        <stop offset="0.55" stop-color="${PAPER}" stop-opacity="0.9"/>
-        <stop offset="1" stop-color="${PAPER}" stop-opacity="1"/>
-      </linearGradient>
     </defs>`;
 }
 
-function markSvg(ink, height = 30) {
-  const w = (height / 26) * 36;
-  return `<svg width="${n(w)}" height="${height}" viewBox="${LOGO.viewBox}" fill="${ink}" aria-hidden="true"><path d="${LOGO.one}"/><path d="${LOGO.seven}"/></svg>`;
+/**
+ * The site's own Caveat, from the built export's stylesheets — the files
+ * `next/font` serves — so a drawn card is written in exactly the hand the site
+ * is, and needs no network to be made.
+ */
+function siteHand() {
+  const dir = path.join(root, 'out', '_next', 'static', 'css');
+  if (!existsSync(dir)) throw new Error('no out/ — run `npm run build` (without a base path) first.');
+  const media = pathToFileURL(path.join(root, 'out', '_next', 'static', 'media')).href;
+  return readdirSync(dir)
+    .filter((f) => f.endsWith('.css'))
+    .flatMap((f) => readFileSync(path.join(dir, f), 'utf8').match(/@font-face\{font-family:__Caveat_[^}]*\}/g) ?? [])
+    .map((rule) => rule.replace(/font-family:__Caveat_\w+/, "font-family:'Caveat'").replace(/url\(\/_next\/static\/media/g, `url(${media}`))
+    .join('\n');
 }
 
 /**
- * Type size from title length.
- *
- * Set by hand at first, and every card whose title grew past the guess ran into
- * the artwork or pushed the standfirst off the bottom. Deriving it means a
- * retitled lesson re-typesets itself, which matters because the titles on this
- * site have already been rewritten once wholesale.
+ * A drawn card, in the site's one hand: Caveat throughout, the title bold with
+ * one straight pen underline, as every title on the site is written — the
+ * artwork on the right, the words on the left over a scrim of the card's own
+ * ground.
  */
-function titleSize(card, hasPlate) {
-  if (card.titleSize) return card.titleSize;
-  const len = card.title.length;
-  const scale = hasPlate ? 1 : 1.2;
-  /*
-    Calibrated against Syne 800, which is far wider than its point size
-    suggests — the first table here was built on a guess at the advance width
-    and put "Lessons" at 96px straight through the notebook artwork. A
-    single-word title has no wrapping opportunity, so an over-generous size does
-    not wrap, it overflows.
-  */
-  const base = len <= 10 ? 70 : len <= 16 ? 62 : len <= 24 ? 54 : len <= 34 ? 46 : 40;
-  return Math.round(base * scale);
-}
-
 function html(card) {
   const ink = card.ink ?? GRAPHITE;
   const ground = card.ground ?? PAPER;
   const onDark = card.onDark ?? false;
   const textInk = onDark ? CHALK : ink;
-  const dim = onDark ? `${CHALK}b0` : `${ink}a8`;
-  // The scrim fades from the card's own ground, so text sits on the same paper
-  // the artwork does rather than on a patch of the site's grey.
-  const scrimRgb = [1, 3, 5].map((i) => parseInt(ground.slice(i, i + 2), 16)).join(',');
+  const dim = onDark ? `${CHALK}b8` : `${ink}b0`;
 
   const stage = card.stage
     ? `<svg class="stage" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${defs(ink)}${card.stage()}</svg>`
     : '';
 
-  const box = PLATE_BOX[card.plate] ?? { w: 420, h: 420 };
-  const accent = card.accent ?? ACCENT;
-  const plate = card.plate
-    ? `<svg class="plate" width="${box.w}" height="${box.h}" viewBox="0 0 ${box.w} ${box.h}" style="flex: 0 0 ${box.w}px">${defs(ink)}${PLATES[card.plate](box.w, box.h, ink, accent)}</svg>`
-    : '';
-
   return `<!doctype html>
 <html><head><meta charset="utf-8">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=JetBrains+Mono:wght@500&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <style>
+  ${siteHand()}
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: ${W}px; height: ${H}px; }
   body {
     background: ${ground};
     color: ${textInk};
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Caveat', cursive;
     position: relative;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
@@ -279,65 +203,46 @@ function html(card) {
   .stage { position: absolute; inset: 0; }
   .scrim {
     position: absolute; inset: 0;
-    background: linear-gradient(
-      100deg,
-      ${onDark ? 'rgba(36,60,51,0.96)' : `rgba(${scrimRgb},0.97)`} 0%,
-      ${onDark ? 'rgba(36,60,51,0.86)' : `rgba(${scrimRgb},0.88)`} 38%,
-      ${onDark ? 'rgba(36,60,51,0)' : `rgba(${scrimRgb},0)`} 62%
-    );
+    background: linear-gradient(100deg, rgba(36,60,51,0.96) 0%, rgba(36,60,51,0.86) 38%, rgba(36,60,51,0) 62%);
   }
   .card {
     position: relative;
     width: 100%; height: 100%;
-    padding: 62px 70px;
+    padding: 58px 70px;
     display: flex; flex-direction: column;
   }
-  .top { display: flex; align-items: center; gap: 18px; }
-  .label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 17px; font-weight: 500;
-    letter-spacing: 0.22em; text-transform: uppercase;
-    color: ${dim};
-  }
-  .body { flex: 1; display: flex; align-items: center; gap: 46px; }
-  .text { flex: 1 1 auto; min-width: 0; }
+  .label { font-size: 30px; font-weight: 600; color: ${dim}; }
+  .body { flex: 1; display: flex; align-items: center; }
+  .text { max-width: 520px; }
   .title {
-    font-family: 'Syne', system-ui, sans-serif;
-    font-weight: 800;
-    font-size: ${titleSize(card, Boolean(card.plate))}px;
-    line-height: 1.02;
-    letter-spacing: -0.022em;
-    text-wrap: balance;
-    /* Last line of defence: wrap rather than run into the artwork. */
-    overflow-wrap: break-word;
+    display: inline-block;
+    font-weight: 700;
+    font-size: ${card.titleSize ?? 110}px;
+    line-height: 1;
+    padding-bottom: 6px;
+    border-bottom: 3px solid currentColor;
   }
   .standfirst {
-    margin-top: 22px;
-    font-size: 25px; line-height: 1.38;
+    margin-top: 26px;
+    font-size: 36px; font-weight: 600; line-height: 1.2;
     color: ${dim};
-    max-width: 22ch;
   }
   .foot {
     display: flex; justify-content: space-between; align-items: baseline;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 16px; letter-spacing: 0.14em; text-transform: uppercase;
+    font-size: 26px; font-weight: 600;
     color: ${dim};
-    border-top: 1px solid ${onDark ? `${CHALK}30` : `${ink}22`};
-    padding-top: 20px;
   }
-  .wide .standfirst { max-width: 30ch; }
 </style></head>
 <body>
   ${stage}
-  ${card.stage ? '<div class="scrim"></div>' : ''}
+  ${card.stage && onDark ? '<div class="scrim"></div>' : ''}
   <div class="card">
-    <div class="top">${markSvg(textInk, 30)}<span class="label">${esc(card.label)}</span></div>
-    <div class="body${card.plate ? '' : ' wide'}">
+    <div class="label">${esc(card.label)}</div>
+    <div class="body">
       <div class="text">
         <h1 class="title">${esc(card.title)}</h1>
         ${card.standfirst ? `<p class="standfirst">${esc(card.standfirst)}</p>` : ''}
       </div>
-      ${plate}
     </div>
     <div class="foot"><span>${esc(card.footLeft ?? SITE_HOST)}</span><span>${esc(card.footRight ?? '')}</span></div>
   </div>
@@ -352,21 +257,27 @@ function cards() {
   const list = [
     {
       file: 'home',
-      label: site.location,
-      title: founder.name,
-      standfirst: `${founder.title} at ${founder.employer}, ${founder.focus}.`,
-      plate: 'contents',
-      titleSize: 58,
-      footRight: 'Sketchbook No. 17',
+      // The landing itself: the campus painted in autumn, with his name written over the sky.
+      film: '/',
+      css: LANDING_CSS,
+      shot: 'autumn',
+      overlay: { title: founder.name, line: `${founder.title} at ${founder.employer}` },
     },
     {
       file: 'founder',
-      // The painting itself: the founder film's portrait, finished, with its caption.
+      // The painting itself: the founder page's portrait, finished, with his name beside it.
       film: '/founder/?photo=evening',
     },
     {
       file: 'algorithms',
-      // The section itself: the list of problems beside one being drawn, part-way through.
+      // The index: every category of the NeetCode 150 beside the list of problems.
+      film: '/algorithms/',
+      css: ALGORITHMS_CSS,
+      ready: 'main h1',
+    },
+    {
+      file: 'algorithms-problem',
+      // A problem page: the list of problems beside one being drawn, part-way through.
       film: '/algorithms/trapping-rain-water/',
       css: ALGORITHMS_CSS,
       ready: 'svg',
@@ -374,13 +285,12 @@ function cards() {
     },
     {
       file: 'grasp',
-      label: graspInfo.name,
+      label: 'Calculus, on a chalkboard',
       title: graspInfo.name,
-      standfirst: `${graspInfo.tagline}. ${capitalise(spell(graspModule.lessons.length))} lessons, from the steepness of a line to velocity.`,
+      standfirst: `${graspInfo.tagline}: ${spell(graspModule.lessons.length)} lessons, from the steepness of a line to velocity.`,
       stage: stageChalkboard,
       ground: SLATE,
       onDark: true,
-      titleSize: 96,
       footRight: `${graspModule.position} · ${graspModule.title}`,
     },
   ];
@@ -401,7 +311,7 @@ function cards() {
 */
 const FILM_CSS = `
   .nav, .preloader, .curtain, .cursor-marks, .endpaper,
-  [class*="FounderFilm_controls"], [class*="FounderFilm_downloads"],
+  [class*="FounderFilm_downloads"],
   p[class*="FounderFilm_line"] ~ p { display: none !important; }
   /* A taller canvas, so the portrait fills the card's height. */
   canvas[role="img"] { top: -81px !important; height: 824px !important; bottom: auto !important; }
@@ -410,7 +320,16 @@ const FILM_CSS = `
   [class*="FounderFilm_line"] { font-size: 32px !important; color: var(--fg) !important; opacity: 0.75; }
 `;
 
-/* The algorithms card: the page as it is, less the header, scrolled to the drawing. */
+/* The landing's card: the painting, less the header and the list of shots, with his name over the sky. */
+const LANDING_CSS = `
+  .nav, .preloader, .curtain, .cursor-marks, [class*="Film_controls"] { display: none !important; }
+  .og-name { position: fixed; left: 24px; top: 8px; z-index: 10; padding: 40px 110px 60px 40px; font-family: var(--font-hand), cursive; color: var(--fg);
+    background: radial-gradient(closest-side, rgba(245,240,230,0.9), rgba(245,240,230,0.72) 60%, rgba(245,240,230,0)); }
+  .og-name b { display: inline-block; font-size: 84px; line-height: 1; padding-bottom: 4px; border-bottom: 3px solid currentColor; }
+  .og-name span { display: block; margin-top: 12px; font-size: 36px; font-weight: 600; opacity: 0.8; }
+`;
+
+/* The algorithms cards: the page as it is, less the header. */
 const ALGORITHMS_CSS = `
   .nav, .preloader, .curtain, .cursor-marks { display: none !important; }
   [data-app] { --top: 12px !important; }
@@ -443,6 +362,16 @@ async function shootFilm(card) {
   try {
     await page.navigate(`http://127.0.0.1:${server.address().port}${card.film}`);
     await page.evaluate(`(() => { const s = document.createElement('style'); s.textContent = ${JSON.stringify(card.css ?? FILM_CSS)}; document.head.append(s); })()`);
+    if (card.overlay) {
+      await page.evaluate(`(() => {
+        const o = document.createElement('div');
+        o.className = 'og-name';
+        o.innerHTML = '<b></b><span></span>';
+        o.firstChild.textContent = ${JSON.stringify(card.overlay.title)};
+        o.lastChild.textContent = ${JSON.stringify(card.overlay.line)};
+        document.body.append(o);
+      })()`);
+    }
     if (card.ready) {
       // A page drawn in SVG: wait for the drawing and the fonts, then step it along.
       await page.evaluate(`new Promise((resolve, reject) => {
@@ -457,7 +386,7 @@ async function shootFilm(card) {
       })`);
       // The exported HTML already holds the player, so keep clicking until the counter
       // shows the step wanted: clicks made before React has attached do nothing.
-      await page.evaluate(`(async () => {
+      if (card.steps) await page.evaluate(`(async () => {
         const want = ${(card.steps ?? 0) + 1};
         const at = () => Number((document.body.innerText.match(/(\\d+) \\/ \\d+/) || [])[1] || 0);
         const start = performance.now();
@@ -465,8 +394,8 @@ async function shootFilm(card) {
           document.querySelector('[aria-label="Next step"]')?.click();
           await new Promise((r) => setTimeout(r, 120));
         }
-        await new Promise((r) => setTimeout(r, 900));
       })()`);
+      await new Promise((r) => setTimeout(r, 900));
     } else
     // Wait until the canvas has paint on it, then a frame more.
     await page.evaluate(`new Promise((resolve, reject) => {
@@ -484,6 +413,11 @@ async function shootFilm(card) {
       };
       check();
     })`);
+    if (card.shot) {
+      // Turn the film to the shot wanted — under reduced motion every shot is a button — and let it paint.
+      await page.evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(card.shot)})?.click()`);
+      await new Promise((r) => setTimeout(r, 3000));
+    }
     if (page.errors.length) throw new Error(page.errors.join('\n'));
     const dest = path.join(outDir, `${card.file}.png`);
     writeFileSync(dest, await page.screenshot());

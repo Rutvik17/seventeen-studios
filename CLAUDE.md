@@ -58,7 +58,11 @@ it rather than as a web page:
   everything drawn by `src/lib/film/pencil.ts`. The pencil and the brush seen
   at work are `src/lib/film/tools.ts`. A new drawing uses them rather than
   inventing a third hand.
-- **The pencil is the cursor; the page turn is the transition; the loader is
+- **The pencil is the cursor** (`components/Cursor.tsx`): it circles what it
+  can act on in graphite, crimson only round the one thing to do next
+  (`data-cursor-accent`); rows of a list (`data-row`) wash themselves in
+  instead of being circled; over text it steps aside for the caret.
+- **The page turn is the transition; the loader is
   the mark being made** — the maple leaf sketched in pencil and painted as
   the page gets ready, swaying a little (`loader/LeafCanvas.tsx`). **The mark
   is a maple leaf**,
@@ -148,21 +152,16 @@ place carries that place's colours.
   still, with every shot a button. Nothing in the engine is started without
   checking.
 
-### The founder film — the story, from 0s and 1s to the GPU
+### The founder page — one painting
 
-The founder page is a film too, made the way the landing's is and in the same
-two hands: one scene at a time filling the viewport, each sketched in pencil,
-painted, alive for a while, then sponged off the page through growing blots
-while the next one's pencil starts underneath. No scrolling, no footer.
+The founder page is one scene filling the viewport, made the way the landing's
+film is and in the same two hands: Rutvik sketched in pencil and painted, then
+left alive on the page, with his name and what he does now written beside him
+(`now` in `src/content/founder.ts`), a way to write to him and the résumé. No
+scenes to choose between, no pause, no scrolling, no footer. It used to be a
+four-scene story (the 0s and 1s, the GPU); that went, and the page is only the
+portrait.
 
-- **The script is `src/content/founder.ts`** (`scenes`: a title, the lines
-  written under it, how long it holds). It runs Rutvik's portrait → 0s and 1s
-  (a line of C++ typed and read back as bytes) → the GPU (a CUDA kernel across
-  its streaming multiprocessors, and a race against a CPU) → back to him.
-  Adding or reordering a scene is an edit there and a builder in `scenes.ts`.
-- **Every number on screen is computed** in `src/lib/founder/facts.ts` — the
-  byte from each character, the thread indices and the race from the sizes
-  of the chips as drawn. The captions and the drawings both read them there.
 - **The portrait is drawn from a photograph**, a different one of Rutvik on
   each visit (`founderFilm.photos` in `content/founder.ts`, the files in
   `public/founder`; `?photo=<id>` asks for one). `src/lib/founder/portrait.ts`
@@ -174,14 +173,13 @@ while the next one's pencil starts underneath. No scrolling, no footer.
   given per photo) keep more of the photograph's tones, feathered in; a photo
   where he is small gets a `crop`, so the painting frames him, not the view. If a
   portrait starts to look like a photo again, it has lost its shapes.
-- **`src/lib/founder/director.ts` is the director**: making, alive, wash-out;
-  the camera fits each scene's `focus` into the room the captions leave.
-  Reduced motion gets each scene finished and still, turned by the strip.
-- **What moves comes in with the paint.** A scene's `live` layer is drawn on
-  its own sheet and faded up as the washes go down, so nothing (a GPU's lit
-  cores, a lamp) pops onto a half-made page. Each story loops on its own
-  clock inside the scene's hold, with its beats timed from `st.alive`.
-- The captions obey the teaching rule: words, then symbols, then numbers.
+- **`src/lib/founder/director.ts` runs it**: making, then alive; the camera
+  fits the portrait into the room the words leave. Reduced motion gets the
+  painting finished and still.
+- **What moves comes in with the paint.** The `live` layer (the lights in the
+  photograph flickering, 0s and 1s rising off the page) is drawn on its own
+  sheet and faded up as the washes go down, so nothing pops onto a half-made
+  page.
 
 ---
 

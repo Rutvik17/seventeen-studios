@@ -9,7 +9,7 @@ const DESCRIPTION = `${algorithmsPage.lead} ${algorithmsPage.languages}.`;
 export const metadata: Metadata = {
   title: algorithmsPage.title,
   description: DESCRIPTION,
-  openGraph: { title: algorithmsPage.title, description: DESCRIPTION, images: ogImage('algorithms', 'The NeetCode 150, drawn step by step') },
+  openGraph: { title: algorithmsPage.title, description: DESCRIPTION, images: ogImage('algorithms', 'The NeetCode 150: every problem listed down the left, and its categories as cards') },
 };
 
 /** The section's first page: the patterns, each a way into its problems. */
@@ -24,7 +24,7 @@ export default function AlgorithmsIndex() {
           const counts = (['Easy', 'Medium', 'Hard'] as const).map((d) => [d, c.problems.filter((p) => p.difficulty === d).length] as const);
           return (
             <li key={c.slug} style={{ ['--k' as string]: k }}>
-              <Link href={`/algorithms/${c.problems[0].slug}/`} prefetch={false} className={styles.pattern}>
+              <Link href={`/algorithms/${c.problems[0].slug}/`} prefetch={false} className={styles.pattern} data-row>
                 <span className={styles.patternNo}>{String(k + 1).padStart(2, '0')}</span>
                 <span className={styles.patternTitle}>{c.title}</span>
                 <span className={styles.patternBlurb}>{c.blurb}</span>

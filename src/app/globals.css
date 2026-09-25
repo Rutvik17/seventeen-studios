@@ -164,6 +164,10 @@ html.has-custom-cursor,
 html.has-custom-cursor * {
   cursor: none !important;
 }
+/* Over text the pencil steps aside for the caret (`Cursor.tsx`). */
+html.has-custom-cursor :is(input[type='search'], input[type='text'], textarea, pre, pre *) {
+  cursor: text !important;
+}
 
 img,
 svg,
@@ -324,6 +328,14 @@ code {
 /* Over something that does something, the pencil lifts and leans in. */
 .cursor-pencil.is-active .cursor-pencil__body {
   transform: rotate(-14deg) scale(1.12);
+}
+/* Over text it steps aside, and the caret takes its place. */
+.cursor-pencil__lean {
+  transition: opacity 0.15s;
+}
+.cursor-pencil.is-away .cursor-pencil__lean,
+.cursor-pencil.is-away .cursor-pencil__label {
+  opacity: 0;
 }
 /* Pressing: the pencil taps down onto the page. */
 .cursor-pencil.is-pressed .cursor-pencil__body {

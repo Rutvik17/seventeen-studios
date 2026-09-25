@@ -1,26 +1,22 @@
 'use client';
 
 /**
- * THE FOUNDER PAGE'S FILM.
+ * THE FOUNDER PAGE.
  *
- * Rutvik, sketched from his photograph and painted, and then the story of what
- * he builds, from the bottom: a line of code stored as 0s and 1s, and a GPU
- * running it on thousands of threads at once — and back to him. The engine is `lib/founder/director.ts`;
- * the script is `content/founder.ts`. This is the frame round it: each
- * scene's title and lines written in the corner, the scenes along the bottom
- * to jump between, a pause, and the résumé.
+ * Rutvik, sketched from a photograph of him and painted, with his name and
+ * what he does now written beside him, a way to write to him and the résumé.
+ * The painting is `lib/founder/director.ts`; the words are `content/founder.ts`.
  *
  * ---
  *
  * WITHOUT THE SCRIPT
  *
- * The canvas is empty; the first scene's caption, every scene's name and the
- * résumé links are plain HTML. Nothing is hidden by CSS.
+ * The canvas is empty; the words and the résumé links are plain HTML.
+ * Nothing is hidden by CSS.
  *
  * REDUCED MOTION
  *
- * No pencil, brush or wash-out: each scene is its finished painting, still,
- * and the strip along the bottom turns them by hand.
+ * No pencil or brush: the finished painting, still.
  *
  * THE LOADER
  *
@@ -31,7 +27,7 @@ import { useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from '@/lib/gsap';
 import { useUi } from '@/lib/store';
 import { holdLoader } from '@/lib/ready';
-import { founderFilm as copy, scenes } from '@/content/founder';
+import { founderFilm as copy, now } from '@/content/founder';
 import { createFounderFilm, type FounderFilm as Engine } from '@/lib/founder/director';
 import { loadPhoto } from '@/lib/founder/portrait';
 import { ContactLink } from '@/components/ContactLink';
@@ -40,12 +36,8 @@ import styles from './FounderFilm.module.css';
 export function FounderFilm({ sizes }: { sizes: Record<string, string> }) {
   const root = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const strip = useRef<HTMLOListElement>(null);
   const engine = useRef<Engine | null>(null);
   const entered = useUi((s) => s.entered);
-  const [index, setIndex] = useState(0);
-  const [playing, setPlaying] = useState(true);
-  const [still, setStill] = useState(false);
   const [alt, setAlt] = useState('');
 
   useEffect(() => {
@@ -54,7 +46,6 @@ export function FounderFilm({ sizes }: { sizes: Record<string, string> }) {
     if (!el || !section) return;
     const release = holdLoader();
     const reduced = prefersReducedMotion();
-    setStill(reduced);
     const hand = getComputedStyle(document.documentElement).getPropertyValue('--font-hand').trim() || 'cursive';
     let film: Engine | null = null;
     let cancelled = false;
@@ -75,12 +66,7 @@ export function FounderFilm({ sizes }: { sizes: Record<string, string> }) {
           photo,
           reduced,
           hand,
-          hooks: {
-            onScene: setIndex,
-            onProgress(f) {
-              strip.current?.style.setProperty('--p', f.toFixed(4));
-            },
-          },
+          hooks: {},
         });
         engine.current = film;
         if (useUi.getState().entered) film.begin();
@@ -112,32 +98,27 @@ export function FounderFilm({ sizes }: { sizes: Record<string, string> }) {
     if (entered) engine.current?.begin();
   }, [entered]);
 
-  const scene = scenes[index];
-  const last = index === scenes.length - 1;
-
   return (
     <section ref={root} className={styles.film} data-film aria-label={copy.description}>
-      <canvas ref={canvas} className={styles.canvas} role="img" aria-label={`${scene.id === 'portrait' || scene.id === 'return' ? `${scene.title}, painted ${alt}` : scene.title} — ${scene.lines.join(' ')}`} />
+      <canvas ref={canvas} className={styles.canvas} role="img" aria-label={`${now.title}, painted ${alt}`} />
 
-      <div className={styles.plate} aria-live="polite" data-face={scene.id === 'portrait' || scene.id === 'return' ? '' : undefined}>
-        <h1 key={`t${index}`} className={styles.title}>
-          <span>{scene.title}</span>
+      <div className={styles.plate} data-face="">
+        <h1 className={styles.title}>
+          <span>{now.title}</span>
         </h1>
-        {scene.lines.map((line, i) => (
-          <p key={`${index}-${i}`} className={styles.line} style={{ animationDelay: `${0.5 + i * 0.9}s` }}>
+        {now.lines.map((line, i) => (
+          <p key={i} className={styles.line} style={{ animationDelay: `${0.5 + i * 0.9}s` }}>
             {line}
           </p>
         ))}
-        {last && (
-          <p className={styles.line} style={{ animationDelay: '1.4s' }}>
-            <ContactLink className={styles.contact}>{copy.contact}</ContactLink>
-            {copy.downloads.map((d) => (
-              <a key={d.format} className={styles.inline} href={d.href} download data-cursor="Take a copy">
-                {d.label}
-              </a>
-            ))}
-          </p>
-        )}
+        <p className={styles.line} style={{ animationDelay: `${0.5 + now.lines.length * 0.9}s` }}>
+          <ContactLink className={styles.contact} data-cursor-accent="">{copy.contact}</ContactLink>
+          {copy.downloads.map((d) => (
+            <a key={d.format} className={styles.inline} href={d.href} download data-cursor="Take a copy">
+              {d.label}
+            </a>
+          ))}
+        </p>
       </div>
 
       <ul className={styles.downloads} aria-label="Résumé">
@@ -149,31 +130,6 @@ export function FounderFilm({ sizes }: { sizes: Record<string, string> }) {
           </li>
         ))}
       </ul>
-
-      <div className={styles.controls}>
-        <ol ref={strip} className={styles.strip} aria-label="Scenes">
-          {scenes.map((s, i) => (
-            <li key={s.id}>
-              <button type="button" className={styles.shot} aria-pressed={i === index} onClick={() => engine.current?.goTo(i)}>
-                {s.strip}
-              </button>
-            </li>
-          ))}
-        </ol>
-        {!still && (
-          <button
-            type="button"
-            className={styles.pause}
-            aria-pressed={!playing}
-            onClick={() => {
-              engine.current?.setPlaying(!playing);
-              setPlaying(!playing);
-            }}
-          >
-            {playing ? 'pause' : 'play'}
-          </button>
-        )}
-      </div>
     </section>
   );
 }

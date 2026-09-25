@@ -12,13 +12,21 @@
  * every page rather than as drawing, and it went.)
  *
  * Over anything that does something, it does what a pencil does in a
- * sketchbook: it circles it. A quick crimson loop is drawn round a link or a
+ * sketchbook: it circles it. A quick graphite loop is drawn round a link or a
  * button, the pencil lifts and leans in, and a handwritten label appears
- * beside the point when the thing has a `data-cursor`. Pressing taps the
- * pencil down. Anything long or large — a row of a list, a drawing — gets no
- * mark: the rows colour themselves in (`IndexList`), and for a drawing the
- * label says enough. (Long things used to be underlined in crimson; a red rule
- * under every row read as a warning, not a pencil.)
+ * beside the point — the thing's `data-cursor`, or for a button that is only
+ * an icon, its `aria-label`. Pressing taps the pencil down.
+ *
+ * - The loop is crimson only round the one thing to do next
+ *   (`data-cursor-accent`: writing to Rutvik) — the palette's rule for
+ *   crimson. A crimson ring round every link read as a page of corrections.
+ * - Anything long or large — a row of a list (`data-row`), a card, a
+ *   drawing — gets no loop: rows wash themselves in with paint on hover, and
+ *   a loop round a whole row read as a pencil scribbling over the page.
+ * - Over text — a field to type in, code to select — the pencil steps aside
+ *   for the text caret, which says "you can type or select here" better than
+ *   any drawing.
+ * - Something disabled is not circled: there is nothing to do there.
  *
  * It used to be a blue dot inside a lagging ring — a good cursor for an
  * instrument panel, and a stranger in a notebook.
@@ -31,14 +39,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap, prefersReducedMotion } from '@/lib/gsap';
 
-const HOVER_SELECTOR = 'a, button, [data-cursor], input, textarea, select';
+const HOVER_SELECTOR = 'a, button:not(:disabled), [data-cursor], input:not(:disabled), select';
+/** Where the pencil steps aside for the text caret. */
+const TEXT_SELECTOR = 'input[type="search"], input[type="text"], textarea, pre';
 
 /** How far the pencil leans at most, degrees, and how quickly it rights itself. */
 const MAX_LEAN = 24;
 const SETTLE_MS = 90;
 /** How long the pencil takes to circle something, milliseconds. */
 const CIRCLE_MS = 380;
-const MARK = 'rgb(200, 35, 63)';
+/** Graphite, and crimson for the one thing to do next. */
+const GRAPHITE = 'rgb(46, 46, 52)';
+const CRIMSON = 'rgb(200, 35, 63)';
 
 /** A stable number from an element's size, so each thing is circled the same way every time. */
 function seedOf(r: DOMRect): number {
@@ -99,18 +111,17 @@ export function Cursor() {
      * start, as a hand does — for something small enough to circle.
      */
     const circle = (now: number) => {
-      if (!hovered) return false;
+      if (!hovered || hovered.closest('[data-row], input[type="range"]')) return false;
       const r = hovered.getBoundingClientRect();
-      if (!r.width || !r.height) return false;
+      if (!r.width || !r.height || r.width > 420 || r.height > 130) return false;
       const u = Math.min(1, (now - circledAt) / CIRCLE_MS);
       const p = 1 - (1 - u) ** 3;
       const seed = seedOf(r);
-      ctx.strokeStyle = MARK;
+      ctx.strokeStyle = hovered.closest('[data-cursor-accent]') ? CRIMSON : GRAPHITE;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-      if (r.width > 420 || r.height > 130) return false;
       for (let pass = 0; pass < 2; pass += 1) {
-        ctx.globalAlpha = pass ? 0.35 : 0.85;
+        ctx.globalAlpha = pass ? 0.3 : 0.75;
         ctx.lineWidth = pass ? 1 : 1.7;
         ctx.beginPath();
         const cx = r.left + r.width / 2;
@@ -163,7 +174,8 @@ export function Cursor() {
       hovered = target;
       circledAt = performance.now();
       if (!raf) raf = requestAnimationFrame(paint);
-      const text = target.getAttribute('data-cursor');
+      // A button that is only an icon (no letters on it) is named by its aria-label; one with words needs no label.
+      const text = target.getAttribute('data-cursor') ?? (/\p{L}/u.test(target.textContent ?? '') ? null : target.getAttribute('aria-label'));
       pencil.classList.add('is-active');
       if (text) {
         label.textContent = text;
@@ -174,8 +186,11 @@ export function Cursor() {
       }
     };
 
-    const hoverTargetOf = (event: PointerEvent) =>
-      (event.target as Element | null)?.closest(HOVER_SELECTOR) ?? null;
+    const hoverTargetOf = (event: PointerEvent) => {
+      const el = event.target as Element | null;
+      if (!el?.closest || el.closest(TEXT_SELECTOR)) return null;
+      return el.closest(HOVER_SELECTOR);
+    };
 
     const onMove = (event: PointerEvent) => {
       if (!visible) {
@@ -195,6 +210,7 @@ export function Cursor() {
       window.clearTimeout(settle);
       settle = window.setTimeout(() => tilt(0), SETTLE_MS);
 
+      pencil.classList.toggle('is-away', !!(event.target as Element | null)?.closest?.(TEXT_SELECTOR));
       applyHover(hoverTargetOf(event));
     };
 

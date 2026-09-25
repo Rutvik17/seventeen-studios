@@ -33,7 +33,7 @@ export function IndexList({ items, cursor, listRef }: { items: IndexItem[]; curs
     <ol className="index" ref={listRef}>
       {items.map((item, i) => (
         <li key={item.key} style={{ ['--c' as string]: `var(--paint-${item.paint ?? (i % PAINTS) + 1})` }}>
-          <TransitionLink href={item.href} className="index__row" data-cursor={cursor}>
+          <TransitionLink href={item.href} className="index__row" data-row data-cursor={cursor}>
             <span className="index__mark">
               <span className="index__ink" aria-hidden="true">
                 {item.mark}

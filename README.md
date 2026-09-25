@@ -5,9 +5,9 @@ Rutvik Patel's portfolio, made as one sketchbook. A statically exported Next.js
 
 - **The landing** — a film: Nvidia's campus in Santa Clara from the air,
   sketched, painted in watercolour and turned through a year.
-- **The founder** — a film too: Rutvik sketched and painted from his
-  photograph, then a line of code stored as 0s and 1s and a GPU running
-  thousands of threads at once — every number on screen computed. The résumé is always to hand.
+- **The founder** — Rutvik, sketched in pencil and painted in watercolour from
+  a photograph of him, with his name and what he does beside him, a way to
+  write to him, and the résumé.
 - **Algorithms** — the NeetCode 150: every problem restated, solved in Python,
   JavaScript, Java, C++, C# and Rust, and drawn step by step as it runs.
 - **Grasp** — a calculus course you learn by dragging, on this site.
@@ -98,7 +98,7 @@ src/
     Transition.tsx         page-turn transitions + TransitionLink
     loader/                the loader: the maple leaf, sketched and painted as the page gets ready
     LeafMark.tsx           the header's mark: a maple leaf, sketched and painted
-    founder/FounderFilm.tsx the founder film: the canvas, each scene's caption, the scenes to jump between, a pause, the résumé
+    founder/FounderFilm.tsx the founder page: the portrait's canvas, his name and line beside it, the résumé
     grasp/                 the chalkboard
     instruments/           the derivative Grasp demonstrates
     algorithms/            the list, the player, the drawing panels (Viz), the code tabs
@@ -108,14 +108,14 @@ src/
   content/                 all copy, as typed data
   lib/
     film/                  the watercolour engine — the leaf (mark and loader), and the film — wash, pencil, the campus, sky, people and traffic, weather, the director
-    founder/               the founder film — facts.ts (every number, computed), portrait.ts (the photo, sketched and painted), scenes.ts (the drawings), director.ts
+    founder/               the founder portrait — portrait.ts (the photo, sketched and painted), director.ts (made, then alive)
     pageTurn.ts            the sheet that turns between pages
     ready.ts               holds the loader until every self-painting part has painted
     url.ts                 where the site lives — the one place it is written
     calculus.ts            Grasp's numeric and exact derivatives
     algorithms/            trace.ts (steps and panels), traces/ (a tracer per category), solutions.ts, highlight.ts
 scripts/
-  build-og.mjs             share cards, drawn from the site's own data
+  build-og.mjs             share cards: the built pages photographed, and Grasp's board drawn
   verify-og.mjs            postbuild: every page names a share card that exists
   verify-assets.mjs        postbuild: every file a page references is in out/
   chrome.mjs               headless Chrome, for the scripts that draw
@@ -138,10 +138,9 @@ npm run test:traces                # every drawing arrives at the expected answe
 
 ### Content
 
-Every word lives in `src/content` as typed data, not JSX. The founder film's
-script is `content/founder.ts`; the facts about Rutvik in it are the résumé's
-own (`content/resume.ts`), and every number in it is computed by
-`lib/founder/facts.ts`.
+Every word lives in `src/content` as typed data, not JSX. The founder page's
+words and photographs are `content/founder.ts`; the facts about Rutvik in it
+are the résumé's own (`content/resume.ts`).
 
 ### Anything that moves with the calendar
 
@@ -161,8 +160,9 @@ To change the résumé, edit the .docx and export the PDF from it.
 
 Every route names its own share card (`public/og/<name>.png`, drawn by
 `scripts/build-og.mjs`), and `scripts/verify-og.mjs` fails the build if one is
-missing. The founder card is the founder film's finished portrait, photographed
-from the built page, so run `npm run build` before `npm run og`. The address on the cards and in the sitemap comes from `lib/url.ts`.
+missing. The landing, founder and algorithms cards are those pages,
+photographed from the built export, and Grasp's is drawn in the site's own
+font files, so run `npm run build` before `npm run og`. The address on the cards and in the sitemap comes from `lib/url.ts`.
 
 ---
 
