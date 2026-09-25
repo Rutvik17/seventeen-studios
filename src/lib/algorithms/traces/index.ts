@@ -10,6 +10,7 @@ const loaders: Record<string, () => Promise<{ traces: Record<string, Tracer> }>>
   'sliding-window': () => import('./sliding-window'),
   stack: () => import('./stack'),
   'binary-search': () => import('./binary-search'),
+  'linked-list': () => import('./linked-list'),
 };
 
 export async function loadTracer(category: string, slug: string): Promise<Tracer | null> {

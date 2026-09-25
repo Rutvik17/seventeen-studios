@@ -28,3 +28,4 @@ const conv = (x) => {
   return x;
 };
 const toJson = (x) => JSON.stringify(conv(x));
+const toJsonNode = (x) => toJson(x ?? []); // an empty list, tree or graph is written []

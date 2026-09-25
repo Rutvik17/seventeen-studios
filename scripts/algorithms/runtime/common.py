@@ -139,3 +139,8 @@ def _conv(x, seen=None):
 
 def to_json(x):
     return json.dumps(_conv(x), separators=(",", ":"))
+
+
+def to_json_node(x):
+    """A list, tree or graph answer: an empty one is written [], as LeetCode writes it."""
+    return to_json(x if x is not None else [])

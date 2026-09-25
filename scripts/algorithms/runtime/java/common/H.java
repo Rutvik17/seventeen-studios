@@ -19,6 +19,9 @@ public final class H {
     public static common.graph.Node mkGraph(int[][] adj) { if (adj.length == 0) return null; common.graph.Node[] ns = new common.graph.Node[adj.length]; for (int i = 0; i < adj.length; i++) ns[i] = new common.graph.Node(i + 1); for (int i = 0; i < adj.length; i++) for (int j : adj[i]) ns[i].neighbors.add(ns[j - 1]); return ns[0]; }
 
     static String str(String s) { StringBuilder o = new StringBuilder("\""); for (char c : s.toCharArray()) { if (c == '"' || c == '\\') o.append('\\').append(c); else if (c == '\n') o.append("\\n"); else o.append(c); } return o.append('"').toString(); }
+    /** A list, tree or graph answer: an empty one is written [], as LeetCode writes it. */
+    public static String jsonNode(Object x) { return x == null ? "[]" : json(x); }
+
     public static String json(Object x) {
         if (x == null) return "null";
         if (x instanceof String) return str((String) x);

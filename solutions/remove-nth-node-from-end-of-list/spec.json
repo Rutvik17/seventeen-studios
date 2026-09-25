@@ -1,0 +1,12 @@
+{
+  "method": "removeNthFromEnd",
+  "params": [{ "name": "head", "type": "ListNode" }, { "name": "n", "type": "int" }],
+  "returns": "ListNode",
+  "cases": [
+    { "in": [[1, 2, 3, 4, 5], 2], "out": [1, 2, 3, 5], "example": true },
+    { "in": [[1], 1], "out": [], "example": true },
+    { "in": [[1, 2], 1], "out": [1], "example": true },
+    { "in": [[1, 2], 2], "out": [2] },
+    { "in": [[10, 20, 30], 3], "out": [20, 30] }
+  ]
+}

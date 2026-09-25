@@ -1,0 +1,11 @@
+{
+  "method": "reverseList",
+  "params": [{ "name": "head", "type": "ListNode" }],
+  "returns": "ListNode",
+  "cases": [
+    { "in": [[1, 2, 3, 4, 5]], "out": [5, 4, 3, 2, 1], "example": true },
+    { "in": [[1, 2]], "out": [2, 1], "example": true },
+    { "in": [[]], "out": [] },
+    { "in": [[7]], "out": [7] }
+  ]
+}

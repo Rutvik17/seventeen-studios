@@ -1,0 +1,28 @@
+{
+  "design": {
+    "class": "LRUCache",
+    "ctor": ["int"],
+    "methods": {
+      "get": { "params": ["int"], "returns": "int" },
+      "put": { "params": ["int", "int"], "returns": "void" }
+    }
+  },
+  "cases": [
+    {
+      "ops": ["LRUCache", "put", "put", "get", "put", "get", "put", "get", "get", "get"],
+      "args": [[2], [1, 1], [2, 2], [1], [3, 3], [2], [4, 4], [1], [3], [4]],
+      "out": [null, null, null, 1, null, -1, null, -1, 3, 4],
+      "example": true
+    },
+    {
+      "ops": ["LRUCache", "put", "get", "put", "get", "get"],
+      "args": [[1], [2, 1], [2], [3, 2], [2], [3]],
+      "out": [null, null, 1, null, -1, 2]
+    },
+    {
+      "ops": ["LRUCache", "put", "put", "put", "put", "get", "get"],
+      "args": [[2], [2, 1], [1, 1], [2, 3], [4, 1], [1], [2]],
+      "out": [null, null, null, null, null, -1, 3]
+    }
+  ]
+}

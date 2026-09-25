@@ -1,0 +1,11 @@
+{
+  "method": "copyRandomList",
+  "params": [{ "name": "head", "type": "RandomList" }],
+  "returns": "RandomList",
+  "cases": [
+    { "in": [[[7, null], [13, 0], [11, 4], [10, 2], [1, 0]]], "out": [[7, null], [13, 0], [11, 4], [10, 2], [1, 0]], "example": true },
+    { "in": [[[1, 1], [2, 1]]], "out": [[1, 1], [2, 1]], "example": true },
+    { "in": [[[3, null], [3, 0], [3, null]]], "out": [[3, null], [3, 0], [3, null]] },
+    { "in": [[]], "out": [] }
+  ]
+}

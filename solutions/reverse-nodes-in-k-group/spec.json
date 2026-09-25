@@ -1,0 +1,12 @@
+{
+  "method": "reverseKGroup",
+  "params": [{ "name": "head", "type": "ListNode" }, { "name": "k", "type": "int" }],
+  "returns": "ListNode",
+  "cases": [
+    { "in": [[1, 2, 3, 4, 5], 2], "out": [2, 1, 4, 3, 5], "example": true },
+    { "in": [[1, 2, 3, 4, 5], 3], "out": [3, 2, 1, 4, 5], "example": true },
+    { "in": [[1], 1], "out": [1] },
+    { "in": [[1, 2, 3, 4], 4], "out": [4, 3, 2, 1] },
+    { "in": [[1, 2, 3, 4, 5, 6], 3], "out": [3, 2, 1, 6, 5, 4] }
+  ]
+}

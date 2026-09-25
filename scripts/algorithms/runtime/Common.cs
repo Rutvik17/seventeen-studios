@@ -30,6 +30,9 @@ public static class H {
     public static Common.Graph.Node MkGraph(int[][] adj) { if (adj.Length == 0) return null; var ns = Enumerable.Range(1, adj.Length).Select(i => new Common.Graph.Node(i)).ToArray(); for (int i = 0; i < adj.Length; i++) foreach (var j in adj[i]) ns[i].neighbors.Add(ns[j - 1]); return ns[0]; }
 
     static string Str(string s) { var o = new StringBuilder("\""); foreach (var c in s) { if (c == '"' || c == '\\') o.Append('\\').Append(c); else if (c == '\n') o.Append("\\n"); else o.Append(c); } return o.Append('"').ToString(); }
+    // A list, tree or graph answer: an empty one is written [], as LeetCode writes it.
+    public static string JsonNode(object x) => x == null ? "[]" : Json(x);
+
     public static string Json(object x) {
         switch (x) {
             case null: return "null";

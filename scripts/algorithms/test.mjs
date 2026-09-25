@@ -154,16 +154,18 @@ function dynBuild(lang, type, expr) {
 }
 
 /** How each language prints a value of a spec type as JSON. */
+const NODE_TYPES = new Set(['ListNode', 'TreeNode', 'RandomList', 'Graph', 'ListCycle']);
 function show(lang, type, expr) {
+  const node = NODE_TYPES.has(type);
   switch (lang) {
     case 'py':
-      return `to_json(${expr})`;
+      return node ? `to_json_node(${expr})` : `to_json(${expr})`;
     case 'js':
-      return type === 'u32' ? `toJson((${expr}) >>> 0)` : `toJson(${expr})`;
+      return type === 'u32' ? `toJson((${expr}) >>> 0)` : node ? `toJsonNode(${expr})` : `toJson(${expr})`;
     case 'java':
-      return type === 'u32' ? `H.json(Integer.toUnsignedLong(${expr}))` : `H.json(${expr})`;
+      return type === 'u32' ? `H.json(Integer.toUnsignedLong(${expr}))` : node ? `H.jsonNode(${expr})` : `H.json(${expr})`;
     case 'cs':
-      return `H.Json(${expr})`;
+      return node ? `H.JsonNode(${expr})` : `H.Json(${expr})`;
     case 'cpp':
       return `J(${expr})`;
     case 'rs':

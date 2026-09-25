@@ -1,0 +1,12 @@
+{
+  "method": "addTwoNumbers",
+  "params": [{ "name": "l1", "type": "ListNode" }, { "name": "l2", "type": "ListNode" }],
+  "returns": "ListNode",
+  "cases": [
+    { "in": [[2, 4, 3], [5, 6, 4]], "out": [7, 0, 8], "example": true },
+    { "in": [[0], [0]], "out": [0], "example": true },
+    { "in": [[9, 9, 9, 9, 9, 9, 9], [9, 9, 9, 9]], "out": [8, 9, 9, 9, 0, 0, 0, 1], "example": true },
+    { "in": [[5], [5]], "out": [0, 1] },
+    { "in": [[1, 8], [0]], "out": [1, 8] }
+  ]
+}

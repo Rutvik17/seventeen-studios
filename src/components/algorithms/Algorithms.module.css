@@ -329,6 +329,14 @@
   tab-size: 4;
   color: #2a2930;
 }
+.pre code {
+  /* not the site's inline code chip: no hand, no tint, no padding */
+  font: inherit;
+  color: inherit;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
 .pre :global(.tk-kw) {
   color: #2b3f9e;
   font-weight: 600;
