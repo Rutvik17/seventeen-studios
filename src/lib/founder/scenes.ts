@@ -222,48 +222,58 @@ function binary(r: Rng): SceneArt {
 
 function switchScene(r: Rng): SceneArt {
   const k = new Kit(r);
+  // A transistor in cross-section: a slab of silicon, a source and a drain
+  // doped into it either side, and the gate sitting over the gap between them
+  // on a thin layer of insulating glass.
   const top = 380;
-  const bot = 460;
-  k.line([280, top], [720, top], { width: 1.3 });
-  k.line([880, top], [1240, top], { width: 1.3 });
-  k.line([280, bot], [1240, bot], { width: 1.3 });
-  k.rect(720, 250, 160, 130, { width: 1.2 });
-  k.line([800, 250], [800, 190], { width: 1.1 });
-  k.circle(800, 180, 14, { width: 1 });
-  k.paint([[280, top], [1240, top], [1240, bot], [280, bot]], PAINT.sky, { layers: 10, alpha: 0.08 });
-  k.paint(rectPts(720, 250, 160, 130), PAINT.orange, { layers: 10, alpha: 0.09 });
+  const bot = 470;
+  const src = { x0: 280, x1: 640 };
+  const drn = { x0: 960, x1: 1240 };
+  k.rect(260, top, 1000, 170, { width: 1.3 });
+  k.line([src.x1, top], [src.x1, bot], { width: 1 });
+  k.line([src.x0 + 20, bot], [src.x1, bot], { width: 1 });
+  k.line([drn.x0, top], [drn.x0, bot], { width: 1 });
+  k.line([drn.x0, bot], [drn.x1 - 20, bot], { width: 1 });
+  k.rect(src.x1 + 10, top - 22, drn.x0 - src.x1 - 20, 16, { width: 0.8, tone: 0.6 });
+  k.rect(src.x1 + 10, top - 150, drn.x0 - src.x1 - 20, 128, { width: 1.2 });
+  k.line([800, top - 150], [800, top - 210], { width: 1.1 });
+  k.circle(800, top - 222, 14, { width: 1 });
+  k.paint(rectPts(260, top, 1000, 170), PAINT.grey, { layers: 8, alpha: 0.06 });
+  k.paint(rectPts(src.x0 - 20, top, src.x1 - src.x0 + 20, bot - top), PAINT.sky, { layers: 10, alpha: 0.09 });
+  k.paint(rectPts(drn.x0, top, drn.x1 - drn.x0 + 20, bot - top), PAINT.sky, { layers: 10, alpha: 0.09 });
+  k.paint(rectPts(src.x1 + 10, top - 150, drn.x0 - src.x1 - 20, 128), PAINT.orange, { layers: 10, alpha: 0.09 });
   // The display that reads the bit.
-  k.circle(1370, 300, 90, { width: 1.3 });
-  k.paint(circlePts(1370, 300, 88, 30), PAINT.pale, { layers: 8, alpha: 0.12 });
-  k.line([1240, 420], [1300, 360], { width: 0.9 });
-  const electrons = Array.from({ length: 40 }, () => ({ p: r(), y: between(r, top + 12, bot - 12), v: between(r, 0.18, 0.28) }));
+  k.circle(1400, 250, 90, { width: 1.3 });
+  k.paint(circlePts(1400, 250, 88, 30), PAINT.pale, { layers: 8, alpha: 0.12 });
+  const electrons = Array.from({ length: 46 }, () => ({ p: r(), y: between(r, top + 10, bot - 14), v: between(r, 0.16, 0.26), home: between(r, src.x0 + 20, src.x1 - 20) }));
   return {
     ink: k.ink,
     washes: k.washes,
-    focus: { x: 220, y: 120, w: 1280, h: 600 },
+    focus: { x: 220, y: 120, w: 1300, h: 600 },
     live(ctx, st) {
-      write(ctx, st, 'source', 300, 520, 32, { at: -1.2 });
-      write(ctx, st, 'drain', 1240, 520, 32, { at: -1, align: 'right' });
-      write(ctx, st, 'gate', 830, 175, 32, { at: -0.8 });
+      write(ctx, st, 'source', (src.x0 + src.x1) / 2, bot + 60, 32, { at: -1.2, align: 'center' });
+      write(ctx, st, 'drain', (drn.x0 + drn.x1) / 2, bot + 60, 32, { at: -1, align: 'center' });
+      write(ctx, st, 'gate', 830, top - 225, 32, { at: -0.8 });
+      write(ctx, st, 'silicon', 1240, top + 150, 26, { at: -0.8, align: 'right', colour: PAINT.grey });
+      write(ctx, st, 'insulating glass', drn.x0 + 20, top - 10, 24, { at: -0.6, colour: PAINT.grey });
       if (st.alive < 0) return;
-      // The gate opens and closes: 2 s on, 2 s off.
+      // The gate's voltage goes on and off: 2 s each. On, a channel forms under it.
       const phase = st.alive % 4;
       const on = phase < 2 ? smooth(0, 0.35, phase) : 1 - smooth(2, 2.35, phase);
-      const drop = (1 - on) * 80;
-      ctx.fillStyle = 'rgba(140,70,30,0.55)';
-      ctx.fillRect(760, 300 + drop, 80, 80);
-      ctx.strokeStyle = 'rgba(29,29,33,0.7)';
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(760, 300 + drop, 80, 80);
+      write(ctx, st, on > 0.5 ? 'voltage on' : 'voltage off', 800, top - 70, 30, { at: 0, align: 'center', weight: 700, colour: on > 0.5 ? PAINT.red : PAINT.grey });
+      ctx.fillStyle = `rgba(43,63,158,${(0.35 * on).toFixed(3)})`;
+      ctx.fillRect(src.x1, top + 2, drn.x0 - src.x1, 16);
       for (const e of electrons) {
-        e.p = (e.p + (on > 0.5 ? e.v / 60 : 0)) % 1;
-        const x = 290 + e.p * 940;
-        if (on < 0.5 && x > 760) continue;
-        dot(ctx, x, e.y, 5, PAINT.ultramarine, 0.75);
+        if (on > 0.5) e.p = (e.p + e.v / 60) % 1;
+        const flowing = src.x0 + 10 + e.p * (drn.x1 - src.x0 - 20);
+        // Off, an electron that has not reached the drain waits in the source.
+        const x = on > 0.5 || flowing > drn.x0 ? flowing : Math.min(flowing, e.home);
+        const y = x > src.x1 && x < drn.x0 ? top + 10 : e.y;
+        dot(ctx, x, y, 5, PAINT.ultramarine, 0.75);
       }
-      glow(ctx, 1370, 300, 150, '255,205,110', 0.5 * on);
-      write(ctx, st, on > 0.5 ? '1' : '0', 1370, 335, 110, { at: 0, align: 'center', weight: 700, colour: on > 0.5 ? PAINT.ink : PAINT.grey });
-      write(ctx, st, on > 0.5 ? 'current flows' : 'no current', 1370, 440, 30, { at: 0, align: 'center' });
+      glow(ctx, 1400, 250, 150, '255,205,110', 0.5 * on);
+      write(ctx, st, on > 0.5 ? '1' : '0', 1400, 285, 110, { at: 0, align: 'center', weight: 700, colour: on > 0.5 ? PAINT.ink : PAINT.grey });
+      write(ctx, st, on > 0.5 ? 'current flows' : 'no current', 1400, 390, 30, { at: 0, align: 'center' });
     },
   };
 }
@@ -288,7 +298,7 @@ function byteScene(r: Rng): SceneArt {
         write(ctx, st, String(b), X(i), 540, 52, { at, align: 'center', weight: 700, colour: b ? PAINT.ultramarine : PAINT.grey });
       });
       write(ctx, st, `${byte.on.join(' + ')} = ${byte.code}`, 800, 640, 48, { at: 4.4, align: 'center', weight: 700 });
-      write(ctx, st, `${byte.code} is the letter ${LETTER}`, 800, 710, 40, { at: 6, align: 'center', colour: PAINT.ultramarine });
+      write(ctx, st, `in ASCII, ${byte.code} is the letter ${LETTER}`, 800, 710, 40, { at: 6, align: 'center', colour: PAINT.ultramarine });
     },
   };
 }
@@ -323,9 +333,9 @@ function logicScene(r: Rng): SceneArt {
     [[334, 260], [520, 260], [520, 235], [730, 235]],
     [[334, 520], [560, 520], [560, 285], [730, 285]],
     [[334, 260], [600, 260], [600, 495], [720, 495]],
-    [[334, 520], [720, 545]],
+    [[334, 520], [640, 520], [640, 545], [720, 545]],
     [[870, 260], [1150, 260]],
-    [[870, 520], [1150, 520]],
+    [[855, 520], [1150, 520]],
   ];
   for (const w of wires) k.path(w, { width: 0.9, tone: 0.7, overshoot: 0 });
   lampArt(k, 1190, 260, 38);
@@ -344,6 +354,9 @@ function logicScene(r: Rng): SceneArt {
       if (st.alive < 0) return;
       lampLit(ctx, 300, 260, 34, 1);
       lampLit(ctx, 300, 520, 34, 1);
+      // Where a wire splits to feed both gates.
+      dot(ctx, 520, 260, 6, PAINT.ink);
+      dot(ctx, 560, 520, 6, PAINT.ink);
       const u = (st.alive % 2.4) / 2.4;
       wires.slice(0, 4).forEach((w) => {
         const [x, y] = along(w, u);
@@ -391,7 +404,7 @@ function cpuScene(r: Rng): SceneArt {
     wave.push([x0, 720], [x0, 670], [x0 + 42, 670], [x0 + 42, 720]);
   }
   k.path(wave, { width: 0.9, overshoot: 0 });
-  const program = ['LOAD a', 'LOAD b', 'ADD', 'STORE sum', 'JUMP'];
+  const program = ['LOAD a', 'LOAD b', 'ADD', 'STORE sum', '…next'];
   const steps = ['fetch', 'decode', 'execute'];
   return {
     ink: k.ink,
@@ -490,7 +503,7 @@ function gpuScene(r: Rng): SceneArt {
       write(ctx, st, 'GPU', 800, 128, 36, { at: -1.4, align: 'center', weight: 700 });
       write(ctx, st, 'memory', 290, 600, 28, { at: -1.2, align: 'center', colour: PAINT.violet });
       write(ctx, st, 'memory', 1310, 600, 28, { at: -1.2, align: 'center', colour: PAINT.violet });
-      write(ctx, st, `each block: a streaming multiprocessor · each dot: a core · ${WARP} in step: a warp`, 800, 690, 30, { at: 0.5, align: 'center' });
+      write(ctx, st, `each block: a streaming multiprocessor · its ${WARP} dots: one warp of threads, lit in step`, 800, 690, 30, { at: 0.5, align: 'center' });
       // The cores, 32 to a block as dots, lit a warp at a time in a wave across the chip.
       for (let c = 0; c < cols; c++)
         for (let rr = 0; rr < rows; rr++) {
@@ -576,7 +589,7 @@ function matmulScene(r: Rng): SceneArt {
         ctx.font = `700 44px ${st.hand}`;
         ctx.textAlign = 'center';
         ctx.fillStyle = PAINT.ultramarine;
-        ctx.fillText(`c${i + 1}${j + 1} = ${mm.working[i][j]}`, 800, 560);
+        ctx.fillText(`c${'₁₂'[i]}${'₁₂'[j]} = ${mm.working[i][j]}`, 800, 560);
         ctx.restore();
       } else {
         ctx.save();
@@ -622,10 +635,10 @@ function neuronScene(r: Rng): SceneArt {
     live(ctx, st) {
       ins.forEach(([x, y], i) => {
         write(ctx, st, String(n.x[i]), x, y + 12, 34, { at: -1.4, align: 'center', weight: 700 });
-        write(ctx, st, `w = ${n.w[i]}`, (x + N[0]) / 2 - 20, (y + N[1]) / 2 - 12, 26, { at: -1.2, align: 'center', colour: PAINT.grey });
+        write(ctx, st, `w${'₁₂₃'[i]} = ${String(n.w[i]).replace('-', '−')}`, (x + N[0]) / 2 - 20, (y + N[1]) / 2 - 12, 26, { at: -1.2, align: 'center', colour: PAINT.grey });
       });
       write(ctx, st, 'Σ', N[0], N[1] + 22, 64, { at: -1, align: 'center', weight: 700 });
-      write(ctx, st, `bias ${n.b}`, N[0], 660, 28, { at: -1, align: 'center', colour: PAINT.grey });
+      write(ctx, st, `bias b = ${String(n.b).replace('-', '−')}`, N[0], 660, 28, { at: -1, align: 'center', colour: PAINT.grey });
       write(ctx, st, 'sigmoid', plot.x + plot.w / 2, plot.y - 18, 28, { at: -0.8, align: 'center', colour: PAINT.grey });
       if (st.alive < 0) return;
       const u = (st.alive % 2) / 2;
@@ -736,6 +749,15 @@ function languageScene(r: Rng): SceneArt {
         const p = smooth(0.2 + i * 0.15, 0.8 + i * 0.15, cycle);
         if (p <= 0) return;
         const to = TX(i) + 65;
+        if (to === from) {
+          // A word weighs itself too: a small loop above it.
+          ctx.strokeStyle = `rgba(43,63,158,${(0.25 + a * 0.9).toFixed(3)})`;
+          ctx.lineWidth = 2 + a * 22;
+          ctx.beginPath();
+          ctx.ellipse(from, TY - 46, 22, 36, 0, Math.PI / 2, Math.PI / 2 + Math.PI * 2 * p);
+          ctx.stroke();
+          return;
+        }
         ctx.strokeStyle = `rgba(43,63,158,${(0.25 + a * 0.9).toFixed(3)})`;
         ctx.lineWidth = 2 + a * 22;
         ctx.beginPath();

@@ -47,6 +47,7 @@ export function FounderFilm({ sizes }: { sizes: Record<string, string> }) {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [still, setStill] = useState(false);
+  const [alt, setAlt] = useState('');
 
   useEffect(() => {
     const el = canvas.current;
@@ -63,10 +64,15 @@ export function FounderFilm({ sizes }: { sizes: Record<string, string> }) {
     let pending = 0;
     const onVis = () => film?.setVisible(!document.hidden);
 
-    Promise.all([loadPhoto(copy.photo), document.fonts?.load(`600 30px ${hand}`).catch(() => undefined)])
-      .then(([photo]) => {
+    // A different drawing of him on each visit — or the one asked for, `?photo=<id>` (the share card uses it).
+    const asked = new URLSearchParams(window.location.search).get('photo');
+    const photo = copy.photos.find((p) => p.id === asked) ?? copy.photos[Math.floor(Math.random() * copy.photos.length)];
+    setAlt(photo.alt);
+    Promise.all([loadPhoto(photo.src), document.fonts?.load(`600 30px ${hand}`).catch(() => undefined)])
+      .then(([image]) => {
         if (cancelled) return;
         film = createFounderFilm(el, {
+          image,
           photo,
           reduced,
           hand,
@@ -112,7 +118,7 @@ export function FounderFilm({ sizes }: { sizes: Record<string, string> }) {
 
   return (
     <section ref={root} className={styles.film} data-film aria-label={copy.description}>
-      <canvas ref={canvas} className={styles.canvas} role="img" aria-label={`${scene.title} — ${scene.lines.join(' ')}`} />
+      <canvas ref={canvas} className={styles.canvas} role="img" aria-label={`${scene.id === 'portrait' || scene.id === 'return' ? `${scene.title}, painted ${alt}` : scene.title} — ${scene.lines.join(' ')}`} />
 
       <div className={styles.plate} aria-live="polite" data-face={scene.id === 'portrait' || scene.id === 'return' ? '' : undefined}>
         <h1 key={`t${index}`} className={styles.title}>
