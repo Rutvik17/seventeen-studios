@@ -17,7 +17,7 @@
  * cars a little larger than life, so they read.
  */
 
-import { proj, scaleAt, GROUND_SQUASH, type Campus, type Walk } from './campus';
+import { hidden, proj, scaleAt, GROUND_SQUASH, type Campus, type Walk } from './campus';
 import type { Pt } from './wash';
 import { between, clamp, pick, rng, smooth, type Rng } from './random';
 
@@ -110,7 +110,7 @@ export class Life {
     this.gaps = campus.lanes.map(() => 0);
     for (let k = 0; k < count; k++) this.people.push(this.spawn(true, k < campus.terrace.length * 2));
     for (let k = 0; k < 3; k++) {
-      this.drones.push({ cx: between(this.r, 400, 1200), cy: between(this.r, 250, 340), ax: between(this.r, 120, 260), ay: between(this.r, 20, 50), f: between(this.r, 0.05, 0.1), p: between(this.r, 0, 6), x: 0, y: 0 });
+      this.drones.push({ cx: between(this.r, 620, 1080), cy: between(this.r, 360, 460), ax: between(this.r, 80, 160), ay: between(this.r, 12, 30), f: between(this.r, 0.05, 0.1), p: between(this.r, 0, 6), x: 0, y: 0 });
     }
     // The streets already have traffic on them when the film begins.
     campus.lanes.forEach((_, lane) => {
@@ -212,7 +212,8 @@ export class Life {
     for (const { p, at } of shown) {
       let a = env.fade * p.here * this.edge(at[0], at[1]) * Math.min(1, p.age);
       if (p.walk.door && !p.standing) a *= smooth(0, 6, p.len - p.d);
-      if (a < 0.02) continue;
+      // Round the back of a building, a walker is hidden by it.
+      if (a < 0.02 || hidden(this.campus.occluders, at[0], at[1])) continue;
       this.person(ctx, p, at, a, env);
     }
     ctx.globalAlpha = env.fade;
@@ -334,7 +335,7 @@ export class Life {
   private taxiAt(): Pt | null {
     const u = this.taxi.t / this.taxi.period;
     if (u < 0 || u > 1) return null;
-    return [-200 + u * 2000, 240 - u * 60 + Math.sin(u * 9) * 6];
+    return [100 + u * 1500, 300 - u * 50 + Math.sin(u * 9) * 6];
   }
 
   private airTaxi(ctx: CanvasRenderingContext2D) {
@@ -396,7 +397,7 @@ export class Life {
       const [ax, ay] = tip(L + 22, -5);
       const [bx, by] = tip(L + 22, 5);
       const beam = ctx.createRadialGradient(fx, fy, 0, fx, fy, Math.hypot(ax - fx, ay - fy) + 4);
-      beam.addColorStop(0, `rgba(255,236,190,${0.5 * a})`);
+      beam.addColorStop(0, `rgba(255,236,190,${0.28 * a})`);
       beam.addColorStop(1, 'rgba(255,236,190,0)');
       ctx.fillStyle = beam;
       ctx.beginPath();

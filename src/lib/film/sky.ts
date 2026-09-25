@@ -107,7 +107,7 @@ export function makeClouds(): Cloud[] {
   const out: Cloud[] = [];
   for (let k = 0; k < 7; k++) {
     const storm = k >= 3;
-    out.push({ x: between(r, -300, 1800), y: storm ? between(r, -40, 160) : between(r, -20, 130), speed: between(r, 6, 14), art: paintCloud(200 + k, storm), storm, w: 420, h: 170 });
+    out.push({ x: between(r, -300, 1800), y: storm ? between(r, 120, 260) : between(r, 130, 240), speed: between(r, 6, 14), art: paintCloud(200 + k, storm), storm, w: 420, h: 170 });
   }
   return out;
 }

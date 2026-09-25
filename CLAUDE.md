@@ -85,16 +85,18 @@ place carries that place's colours.
   sorted into ink, the `build` layer and the four seasons' layers — and
   `film.ts` the director: acts, shots, camera, compositing. Keep new drawing in
   those two hands rather than inventing a third.
-- **The campus is drawn from the buildings' published facts, on a plan.**
-  Two triangular floor plates with beveled corners; triangulated roofs with
-  triangular skylights; sloped glass curtain walls of 12 ft × 4 ft panels;
-  Endeavor two storeys, Voyager four and 68 ft; Voyager's 70 ft solar trellis
-  with its 240 ft canopy on the southeast side; a four-acre park and a shaded
-  walk between; San Tomas Expressway to the west. Everything — buildings,
-  trees, people, cars, splashes — is placed on a plan in metres and projected
-  through one camera (`proj` in `campus.ts`). Never place a thing by eye on
-  screen: it will not share the perspective. Before changing the buildings,
-  check the change against a photograph, not against memory.
+- **The campus is drawn to NVIDIA's own aerial photograph** ("Aerial View of
+  NVIDIA Voyager and Endeavor", Gensler / Jason O'Rear, NVIDIA newsroom) and
+  the buildings' published facts. Endeavor front left, Voyager behind it to
+  the right; both beveled triangles under white, crystalline, faceted roofs
+  set with triangular skylights, dark sloped glass beneath a deep overhang;
+  the trellis — white steel trees under a star of dark solar panels — in
+  front of Voyager's southwest face; San Tomas Expressway sweeping up the
+  right with a covered footbridge over it; a lawn wedge with a diagonal path
+  from the junction to Endeavor. Everything is placed on a plan in metres and
+  projected through one camera (`proj` in `campus.ts`); never place a thing
+  by eye on screen. Buildings hide what is behind them (`occluders`). Before
+  changing the buildings, check the change against that photograph.
 - **Shots are content.** Each is one object in `src/content/film.ts`: season,
   sky, glaze, how dark, how busy, what is falling, where the camera rests.
   Adding a shot must not need an engine change.

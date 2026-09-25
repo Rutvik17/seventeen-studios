@@ -1,35 +1,36 @@
 /**
  * THE SUBJECT: NVIDIA'S CAMPUS IN SANTA CLARA, FROM THE AIR.
  *
- * Drawn from the published facts of the two buildings, not from a guess at
- * their silhouettes:
+ * Drawn to NVIDIA's own aerial photograph of the campus ("Aerial View of
+ * NVIDIA Voyager and Endeavor", Gensler / Jason O'Rear Photography, on the
+ * NVIDIA newsroom), and to the buildings' published facts:
  *
- * - **Endeavor** (2017): a triangular floor plate with beveled corners, two
- *   storeys, about 250,000 sq ft a floor. The roof is one undulating triangle
- *   pierced by triangular skylights; the walls are a sloped glass curtain wall
- *   of 12 ft × 4 ft panels framed along their horizontal edges, under a deep
- *   soffit.
- * - **Voyager** (2022): the larger triangle, four storeys and 68 ft tall, the
- *   same triangulated roof and sloped glass. On its southeast side, over the
- *   main entrance, a 70 ft steel trellis carries a 240 ft wide canopy of solar
- *   panels.
- * - Between them, a four-acre park, crossed by a tree-lined walk shaded with
- *   solar panels from one building to the other. San Tomas Expressway runs
- *   down the west side.
+ * - **Endeavor**, in front and to the left: a triangular floor plate with
+ *   beveled corners, two storeys. Its roof is WHITE — a crystalline field of
+ *   big triangular facets, each tilted a little differently so each catches
+ *   the light differently, set with rows of small triangular skylights, with
+ *   a little courtyard cut into it. The roof oversails the walls, which are
+ *   dark sloped glass above a planted green bank.
+ * - **Voyager**, behind it and to the right: the same language, larger —
+ *   four storeys, 68 ft. In front of its southwest face stands the trellis:
+ *   white steel columns branching like trees, carrying a canopy of dark solar
+ *   panels 70 ft up, 240 ft across.
+ * - San Tomas Expressway sweeps up the right-hand side, a covered footbridge
+ *   crossing it from Voyager; another road runs up to the left from the
+ *   junction in the foreground; between them, in front of Endeavor, a lawn
+ *   wedge with a path cut diagonally across it to the door. Beyond, low
+ *   white-roofed Santa Clara runs to the hills.
  *
- * Everything is described on a PLAN, in metres (x east, y north, z up), and
- * projected through one camera — high to the south, looking north and down —
- * so the buildings, the park, the roads, the trees, the people and the cars
- * all share one perspective. Nothing on screen is placed by eye.
+ * Everything is described on a PLAN, in metres (x to the right, y away from
+ * the camera, z up), and projected through one camera — high, looking across
+ * the campus — so the buildings, trees, people, cars and rain all share one
+ * perspective. Nothing on screen is placed by eye.
  *
- * Out of the geometry come three things:
- *
+ * Out of the geometry come:
  * - `ink`, the pencil drawing, in the order the hand draws it;
- * - washes, sorted into the `build` layer (painted once) or one of the four
- *   seasons' layers (trees, grass, snow);
- * - the fittings the living scene needs: lit windows, glowing skylights,
- *   lamps, tree crowns, and the paths people walk and lanes cars drive — kept
- *   on the plan, for `life.ts` to project as they move.
+ * - washes: the `build` layer (painted once), and for each season a ground
+ *   layer (grass, under the buildings) and a top layer (trees, snow);
+ * - the fittings the living scene needs, kept on the plan for `life.ts`.
  */
 
 import { between, pick, rng } from './random';
@@ -38,8 +39,8 @@ import { curve, pencil, ruled, type Stroke } from './pencil';
 
 /** The world the projection draws into: 1600 × 1000 units. */
 export const WORLD = { w: 1600, h: 1000 };
-/** The part of the world that is painted: the vignette, with room for the hills. */
-export const PAINTED = { x: 0, y: 170, w: 1600, h: 800 };
+/** The part of the world that is painted. */
+export const PAINTED = { x: 200, y: 150, w: 1260, h: 830 };
 
 export const SEASONS = ['spring', 'summer', 'autumn', 'winter'] as const;
 export type Season = (typeof SEASONS)[number];
@@ -48,14 +49,15 @@ export type Season = (typeof SEASONS)[number];
  * The camera                                                          *
  * ------------------------------------------------------------------ */
 
-// High to the south, 21° down, far enough back to take in both buildings,
-// the park and the streets, with the hills and the sky above.
-const PITCH = (21 * Math.PI) / 180;
-const CAM_H = 280;
-const CAM_Y = -660;
-const FOCAL = 1700;
-const CX = 800;
-const CY = 575;
+// High to the south-west, 20° down, as the photograph is taken: the junction
+// at the foot of the frame, the expressway sweeping up the right, the town
+// and the hills above.
+const PITCH = (20 * Math.PI) / 180;
+const CAM_H = 260;
+const CAM_Y = -760;
+const FOCAL = 1500;
+const CX = 820;
+const CY = 640;
 const cosP = Math.cos(PITCH);
 const sinP = Math.sin(PITCH);
 
@@ -73,13 +75,12 @@ export function scaleAt(x: number, y: number, z = 0): number {
   return FOCAL / ((y - CAM_Y) * cosP - (z - CAM_H) * sinP);
 }
 
-/** How much a circle on the ground is squashed on screen: the sine of the view's pitch, near enough. */
+/** How much a circle on the ground is squashed on screen. */
 export const GROUND_SQUASH = Math.sin(PITCH + 0.12);
 
 export type P3 = readonly [number, number, number];
 
 export interface Tree {
-  /** On screen, in world units: the crown, for leaves and petals to fall from. */
   cx: number;
   cy: number;
   r: number;
@@ -88,16 +89,13 @@ export interface Tree {
 }
 
 export interface Walk {
-  /** A path on the plan, in metres. */
   path: Pt[];
   spread: number;
   weight: number;
-  /** People start or end this walk at a door, and fade there. */
   door?: boolean;
 }
 
 export interface Lane {
-  /** The lane's centre line on the plan, in the direction of travel. */
   path: Pt[];
 }
 
@@ -106,53 +104,80 @@ export interface Window {
   warm: boolean;
 }
 
+/** A strip of hard surface on the plan — a road, a path — that rain splashes on. */
+export interface Strip {
+  a: Pt;
+  b: Pt;
+  width: number;
+}
+
 export interface Campus {
   ink: Stroke[];
   build: Wash[];
-  /** Each season's trees and snow: painted over the buildings. */
   seasons: Record<Season, Wash[]>;
-  /** Each season's grass: painted under them. */
   ground: Record<Season, Wash[]>;
   windows: Window[];
-  /** Endeavor's roof edge, as a band of triangles lit in sequence at night. */
+  /** The roof's edge above Endeavor's front glass, lit in sequence at night. */
   fascia: [Pt, Pt, Pt][];
   skylights: [Pt, Pt, Pt][];
   lamps: Pt[];
-  /** Where each lamp stands, for its reflection in a wet street. */
   lampFeet: Pt[];
   trees: Tree[];
   walks: Walk[];
-  /** Where people stand and talk: under Voyager's canopy, on the plan. */
   terrace: Pt[];
   lanes: Lane[];
-  /** Hard surfaces the rain splashes on, as plan rectangles [x0, y0, x1, y1]. */
-  wet: [number, number, number, number][];
+  wet: Strip[];
+  /** Each building's silhouette on screen: anything drawn behind one is hidden by it. */
+  occluders: Pt[][];
+}
+
+/** The convex hull of some screen points (Andrew's monotone chain). */
+function hull(points: Pt[]): Pt[] {
+  const p = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o: Pt, a: Pt, b: Pt) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower: Pt[] = [];
+  for (const q of p) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0) lower.pop();
+    lower.push(q);
+  }
+  const upper: Pt[] = [];
+  for (const q of p.reverse()) {
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0) upper.pop();
+    upper.push(q);
+  }
+  return lower.slice(0, -1).concat(upper.slice(0, -1));
+}
+
+/** Is screen point (x, y) hidden behind any of the silhouettes? */
+export function hidden(occluders: Pt[][], x: number, y: number): boolean {
+  return occluders.some((o) => inside(o, x, y));
 }
 
 /* ------------------------------------------------------------------ *
- * The palette — watercolour pigments                                  *
+ * The palette                                                         *
  * ------------------------------------------------------------------ */
 
 const PAINT = {
-  roof: '#5d626b',
-  roofLight: '#7c818a',
-  skylight: '#cfe0ea',
-  glass: '#7f9db5',
-  glassDeep: '#566f88',
-  soffit: '#a3a7ad',
-  solar: '#2f3f6a',
-  paving: '#c9c0b0',
-  road: '#8b909c',
-  garage: '#bdb6aa',
-  far: '#b9b3a6',
+  skylight: '#5f7488',
+  glass: '#46546a',
+  glassLight: '#8aa2b8',
+  shadow: '#4b4d57',
+  solar: '#2c3654',
+  steel: '#f4f3ef',
+  paving: '#cfc6b6',
+  road: '#8d919b',
+  roofFar: '#e8e4dc',
+  townRoof: '#ebe7df',
+  townWall: '#bdb6aa',
   hills: '#8f98b6',
   hillsFar: '#aeb5cc',
+  bank: '#5f8a45',
 };
 
 const GRASS: Record<Season, [string, string]> = {
   spring: ['#9dbb5e', '#7fa84c'],
-  summer: ['#86a846', '#b3b35a'],
-  autumn: ['#c2a453', '#a88d45'],
+  summer: ['#86a846', '#6f9a3c'],
+  autumn: ['#b9a456', '#a88d45'],
   winter: ['#edf1f7', '#cfd8e6'],
 };
 const CROWN: Record<Season, string[]> = {
@@ -173,7 +198,6 @@ const EVERGREEN: Record<Season, string[]> = {
  * Plan geometry                                                       *
  * ------------------------------------------------------------------ */
 
-/** A triangle with beveled corners, counter-clockwise on the plan. `rot` is the direction of its first vertex. */
 function bevelled(cx: number, cy: number, side: number, rot: number, bevel: number): Pt[] {
   const R = side / Math.sqrt(3);
   const v: Pt[] = [0, 1, 2].map((k) => [cx + Math.cos(rot + (k * 2 * Math.PI) / 3) * R, cy + Math.sin(rot + (k * 2 * Math.PI) / 3) * R]);
@@ -189,7 +213,6 @@ function bevelled(cx: number, cy: number, side: number, rot: number, bevel: numb
   return out;
 }
 
-/** Shrink a convex plan toward its centre by `d` metres (negative grows it). */
 function inset(poly: Pt[], d: number): Pt[] {
   const cx = poly.reduce((a, p) => a + p[0], 0) / poly.length;
   const cy = poly.reduce((a, p) => a + p[1], 0) / poly.length;
@@ -211,11 +234,27 @@ function inside(poly: Pt[], x: number, y: number): boolean {
 
 const lerp2 = (a: Pt, b: Pt, t: number): Pt => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 
+/** The quadrilateral of a strip of width `w` from a to b. */
+function band(a: Pt, b: Pt, w: number): Pt[] {
+  const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const nx = (-(b[1] - a[1]) / l) * (w / 2);
+  const ny = ((b[0] - a[0]) / l) * (w / 2);
+  return [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]];
+}
+
+/* The roads, on the plan. */
+/** San Tomas Expressway's western kerb, as a function of y. */
+const expressWest = (y: number) => 120 + (y + 300) * 0.24;
+const EXPRESS_W = 46;
+/** The road running up to the left from the junction. */
+const ROAD_A: Pt = [80, -320];
+const ROAD_B: Pt = [-760, 300];
+const ROAD_W = 26;
+
 export function buildCampus(seed = 17): Campus {
   const r = rng(seed);
   const ink: Stroke[] = [];
   const build: Wash[] = [];
-  // Ground-level paint — roads, paving, parking, shadows — goes down before any building.
   const under: Wash[] = [];
   const seasons: Record<Season, Wash[]> = { spring: [], summer: [], autumn: [], winter: [] };
   const ground: Record<Season, Wash[]> = { spring: [], summer: [], autumn: [], winter: [] };
@@ -226,9 +265,6 @@ export function buildCampus(seed = 17): Campus {
   const lampFeet: Pt[] = [];
   const trees: Tree[] = [];
 
-  // The washes go down in the order they are described; the pencil in the
-  // order of its stages — the buildings first, then what they stand on, then
-  // what surrounds them.
   const stageOf: number[] = [];
   const stage = (n: number) => {
     while (stageOf.length < ink.length) stageOf.push(n);
@@ -246,21 +282,24 @@ export function buildCampus(seed = 17): Campus {
   const paint = (into: Wash[], poly: Pt[], style: WashStyle) => into.push(new Wash(poly, style, r));
   const everySeason = (fn: (s: Season, into: Wash[]) => void) => SEASONS.forEach((s) => fn(s, seasons[s]));
   const everyGround = (fn: (s: Season, into: Wash[]) => void) => SEASONS.forEach((s) => fn(s, ground[s]));
-  /** Is the outward face of plan edge a→b turned toward the camera? */
   const facing = (a: Pt, b: Pt) => {
     const nx = b[1] - a[1];
     const ny = -(b[0] - a[0]);
-    const mx = (a[0] + b[0]) / 2;
-    const my = (a[1] + b[1]) / 2;
-    return nx * (0 - mx) + ny * (CAM_Y - my) > 0;
+    return nx * (0 - (a[0] + b[0]) / 2) + ny * (CAM_Y - (a[1] + b[1]) / 2) > 0;
   };
+  /** Light comes from the upper left, low: the photograph's late sun. */
+  const SUN = (() => {
+    const v = [-0.55, -0.35, 0.76];
+    const l = Math.hypot(...v);
+    return v.map((c) => c / l);
+  })();
 
-  /* ---------------- a building: sloped glass under a triangulated roof ---------------- */
+  /* ---------------- a building: dark sloped glass under a white faceted roof ---------------- */
 
-  const building = (o: { cx: number; cy: number; side: number; rot: number; bevel: number; glass: number; roof: number; floors: number; lattice: number; skyShare: number }) => {
+  const building = (o: { cx: number; cy: number; side: number; rot: number; bevel: number; glass: number; roof: number; floors: number; facets: number; lattice: number; skyShare: number; rise: number }) => {
     const top = bevelled(o.cx, o.cy, o.side, o.rot, o.bevel);
-    // The glass slopes: it meets the ground a few metres in from the roof's edge.
-    const foot = inset(top, 5);
+    // The roof oversails the glass: the wall stands well back under it.
+    const foot = inset(top, 7);
     const n = top.length;
 
     for (let i = 0; i < n; i++) {
@@ -269,45 +308,49 @@ export function buildCampus(seed = 17): Campus {
       if (!facing(a, b)) continue;
       const fa = foot[i];
       const fb = foot[(i + 1) % n];
-      const q: Pt[] = [P(fa[0], fa[1], 0), P(fb[0], fb[1], 0), P(b[0], b[1], o.glass), P(a[0], a[1], o.glass)];
-      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      paint(build, q, { color: len > o.bevel * 2 ? PAINT.glass : PAINT.glassDeep, layers: 12, alpha: 0.075, spread: 0.1, edge: 0.5, grain: 14 });
-      // Sky caught in the glass, in long diagonal streaks.
-      for (let k = 0; k < 3; k++) {
-        const t = between(r, 0.1, 0.85);
-        paint(build, [lerp2(q[3], q[2], t), lerp2(q[3], q[2], t + 0.06), lerp2(q[0], q[1], t + 0.01), lerp2(q[0], q[1], t - 0.05)], { color: '#dfe8ef', layers: 4, alpha: 0.1, spread: 0.1, edge: 0 });
-      }
-      // The fascia: the roof's edge above the glass.
-      paint(build, [P(a[0], a[1], o.glass), P(b[0], b[1], o.glass), P(b[0], b[1], o.roof), P(a[0], a[1], o.roof)], { color: PAINT.soffit, layers: 8, alpha: 0.09, spread: 0.08, edge: 0.4 });
-      lineOn(fa, fb, 0, { width: 1.1 }, 0.3);
-      lineOn(a, b, o.glass, { width: 0.9, tone: 0.75 }, 0);
-      line3([fa[0], fa[1], 0], [a[0], a[1], o.glass], { width: 0.9 }, 0);
-      // Four-foot panels framed along their horizontal edges: the glass is banded, floors darker.
-      const bands = Math.round(o.glass / 2.4);
-      const perFloor = Math.max(1, Math.round(bands / o.floors));
-      for (let k = 1; k < bands; k++) {
-        const t = k / bands;
-        lineOn(lerp2(fa, a, t), lerp2(fb, b, t), o.glass * t, { width: 0.5, tone: k % perFloor === 0 ? 0.5 : 0.2, overshoot: 0, wobble: 0.25 }, 0);
-      }
-      // Faint vertical joints, and the panes lit at night floor by floor.
-      const cols = Math.max(1, Math.round(len / 11));
       const at = (tt: number, zz: number) => {
-        const u = zz / o.glass;
-        const p = lerp2(lerp2(fa, fb, tt), lerp2(a, b, tt), u);
+        const p = lerp2(fa, fb, tt);
         return P(p[0], p[1], zz);
       };
+      const q: Pt[] = [at(0, 0), at(1, 0), at(1, o.glass), at(0, o.glass)];
+      paint(build, q, { color: PAINT.glass, layers: 14, alpha: 0.085, spread: 0.08, edge: 0.5, grain: 14 });
+      for (let k = 0; k < 3; k++) {
+        const t = between(r, 0.1, 0.85);
+        paint(build, [lerp2(q[3], q[2], t), lerp2(q[3], q[2], t + 0.05), lerp2(q[0], q[1], t + 0.02), lerp2(q[0], q[1], t - 0.03)], { color: PAINT.glassLight, layers: 4, alpha: 0.08, spread: 0.1, edge: 0 });
+      }
+      // The deep shadow under the roof's edge.
+      paint(build, [P(a[0], a[1], o.roof - 1), P(b[0], b[1], o.roof - 1), at(1, o.glass), at(0, o.glass)], { color: PAINT.shadow, layers: 8, alpha: 0.08, spread: 0.08, edge: 0.2 });
+      lineOn(fa, fb, 0, { width: 1 }, 0.3);
+      lineOn(fa, fb, o.glass, { width: 0.8, tone: 0.7 }, 0);
+      const bands = Math.round(o.glass / 2.4);
+      const perFloor = Math.max(1, Math.round(bands / o.floors));
+      for (let k = 1; k < bands; k++) lineOn(fa, fb, (o.glass * k) / bands, { width: 0.45, tone: k % perFloor === 0 ? 0.5 : 0.18, overshoot: 0, wobble: 0.2 }, 0);
+      const len = Math.hypot(fb[0] - fa[0], fb[1] - fa[1]);
+      const cols = Math.max(1, Math.round(len / 11));
       for (let k = 0; k < cols; k++) {
-        if (k > 0) ink.push(pencil([at(k / cols, 0), at(k / cols, o.glass)], r, { width: 0.45, tone: 0.18, overshoot: 0, wobble: 0.2 }));
+        if (k > 0) ink.push(pencil([at(k / cols, 0), at(k / cols, o.glass)], r, { width: 0.4, tone: 0.2, overshoot: 0, wobble: 0.2 }));
         for (let f = 0; f < o.floors; f++) {
-          if (r() < 0.55) continue;
-          const z0 = (o.glass / o.floors) * f + 0.6;
-          const z1 = (o.glass / o.floors) * (f + 1) - 0.6;
+          if (r() < 0.5) continue;
+          const z0 = (o.glass / o.floors) * f + 0.5;
+          const z1 = (o.glass / o.floors) * (f + 1) - 0.5;
           windows.push({ quad: [at(k / cols, z0), at((k + 1) / cols, z0), at((k + 1) / cols, z1), at(k / cols, z1)], warm: r() < 0.75 });
         }
       }
+      // The roof's thick white edge, seen face on.
+      paint(build, [P(a[0], a[1], o.roof - 2), P(b[0], b[1], o.roof - 2), P(b[0], b[1], o.roof), P(a[0], a[1], o.roof)], { color: '#dcdad4', layers: 6, alpha: 0.12, spread: 0.06, edge: 0.4 });
+      lineOn(a, b, o.roof - 2, { width: 0.8, tone: 0.7 }, 0);
     }
 
-    // The roof: one triangle, gently undulating toward its middle.
+    // The roof: a lattice of big facets, each lifted a little at its corners,
+    // shaded by how squarely it faces the sun.
+    const R = o.side / Math.sqrt(3);
+    const V: Pt[] = [0, 1, 2].map((k) => [o.cx + Math.cos(o.rot + (k * 2 * Math.PI) / 3) * R, o.cy + Math.sin(o.rot + (k * 2 * Math.PI) / 3) * R]);
+    const baryAt = (m: number) => (i: number, j: number): Pt => [
+      V[0][0] + (V[1][0] - V[0][0]) * (i / m) + (V[2][0] - V[0][0]) * (j / m),
+      V[0][1] + (V[1][1] - V[0][1]) * (i / m) + (V[2][1] - V[0][1]) * (j / m),
+    ];
+    const m = o.facets;
+    const big = baryAt(m);
     const edgeDist = (x: number, y: number) =>
       Math.min(
         ...top.map((p, i) => {
@@ -317,276 +360,312 @@ export function buildCampus(seed = 17): Campus {
           return Math.abs((x - p[0]) * ey - (y - p[1]) * ex) / Math.hypot(ex, ey);
         }),
       );
-    const roofZ = (x: number, y: number) => o.roof + Math.min(1, edgeDist(x, y) / 40) * (2 + 2.5 * Math.sin(x * 0.045 + y * 0.03));
-    const onRoof = (p: Pt) => P(p[0], p[1], roofZ(p[0], p[1]));
-    paint(build, flat(top, o.roof), { color: PAINT.roof, layers: 16, alpha: 0.075, spread: 0.06, edge: 0.6, grain: 16 });
-    paint(build, flat(inset(top, 30), o.roof + 3), { color: PAINT.roofLight, layers: 8, alpha: 0.05, spread: 0.2, edge: 0.2 });
-    outline(top, o.roof, { width: 1.3, tone: 0.9 });
-
-    // The lattice: the triangle before its corners were cut, divided into small ones.
-    const R = o.side / Math.sqrt(3);
-    const V: Pt[] = [0, 1, 2].map((k) => [o.cx + Math.cos(o.rot + (k * 2 * Math.PI) / 3) * R, o.cy + Math.sin(o.rot + (k * 2 * Math.PI) / 3) * R]);
-    const m = o.lattice;
-    const bary = (i: number, j: number): Pt => [
-      V[0][0] + (V[1][0] - V[0][0]) * (i / m) + (V[2][0] - V[0][0]) * (j / m),
-      V[0][1] + (V[1][1] - V[0][1]) * (i / m) + (V[2][1] - V[0][1]) * (j / m),
-    ];
-    const within = inset(top, 2);
-    for (let k = 2; k < m - 1; k += 2) {
-      for (const [a, b] of [[bary(k, 0), bary(0, k)], [bary(k, 0), bary(k, m - k)], [bary(0, k), bary(m - k, k)]] as [Pt, Pt][]) {
-        const pts: Pt[] = [];
-        for (let s = 0; s <= 14; s++) {
-          const p = lerp2(a, b, s / 14);
-          if (inside(within, p[0], p[1])) pts.push(onRoof(p));
-        }
-        if (pts.length > 2) ink.push(pencil(pts, r, { width: 0.45, tone: 0.2, wobble: 0.2, overshoot: 0 }));
+    const lift = new Map<string, number>();
+    const zAt = (i: number, j: number) => {
+      const key = `${i},${j}`;
+      if (!lift.has(key)) {
+        const [x, y] = big(i, j);
+        const d = inside(top, x, y) ? edgeDist(x, y) : 0;
+        lift.set(key, o.roof + Math.min(1, d / 30) * o.rise * (0.35 + 0.65 * r()));
       }
-    }
-    // Skylights: small triangles, in drifts rather than evenly.
-    const room = inset(top, 8);
+      return lift.get(key)!;
+    };
+    // The roof's own white, then each facet's shade over it.
+    paint(build, flat(top, o.roof), { color: '#ecebe6', layers: 14, alpha: 0.09, spread: 0.05, edge: 0.4, grain: 16 });
+    const room = inset(top, 5);
+    const facetsDrawn: [Pt, Pt, Pt][] = [];
     for (let i = 0; i < m; i++) {
       for (let j = 0; j < m - i; j++) {
-        const tri: Pt[] = [bary(i, j), bary(i + 1, j), bary(i, j + 1)];
-        const c: Pt = [(tri[0][0] + tri[1][0] + tri[2][0]) / 3, (tri[0][1] + tri[1][1] + tri[2][1]) / 3];
-        if (!inside(room, c[0], c[1])) continue;
-        const drift = 0.5 + 0.5 * Math.sin(c[0] * 0.05) * Math.cos(c[1] * 0.04);
-        if (r() > o.skyShare * (0.4 + drift)) continue;
-        const s = tri.map((p) => onRoof(lerp2(c, p, 0.62))) as [Pt, Pt, Pt];
-        skylights.push(s);
-        build.push(new Wash([...s], { color: PAINT.skylight, layers: 3, alpha: 0.26, spread: 0.04, edge: 0, grain: 30 }, r));
-        ink.push(pencil([s[0], s[1], s[2], s[0]], r, { width: 0.45, tone: 0.35, wobble: 0.1, overshoot: 0 }));
+        for (const tri of [[[i, j], [i + 1, j], [i, j + 1]], [[i + 1, j], [i + 1, j + 1], [i, j + 1]]] as [number, number][][]) {
+          if (tri.some(([a, b]) => a + b > m)) continue;
+          const pts = tri.map(([a, b]) => big(a, b));
+          if (!pts.every((p) => inside(room, p[0], p[1]))) continue;
+          const p3 = tri.map(([a, b], k) => [pts[k][0], pts[k][1], zAt(a, b)]);
+          const u = [p3[1][0] - p3[0][0], p3[1][1] - p3[0][1], p3[1][2] - p3[0][2]];
+          const v = [p3[2][0] - p3[0][0], p3[2][1] - p3[0][1], p3[2][2] - p3[0][2]];
+          let nrm = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+          if (nrm[2] < 0) nrm = nrm.map((c) => -c);
+          const nl = Math.hypot(...nrm);
+          const lit = (nrm[0] * SUN[0] + nrm[1] * SUN[1] + nrm[2] * SUN[2]) / nl;
+          const scr = p3.map(([x, y, z]) => P(x, y, z)) as [Pt, Pt, Pt];
+          facetsDrawn.push(scr);
+          const shade = Math.max(0, Math.min(1, (0.99 - lit) * 5));
+          build.push(new Wash([...scr], { color: '#9ea3ad', layers: 3, alpha: 0.02 + shade * 0.13, spread: 0.02, edge: 0, grain: 60 }, r));
+          ink.push(pencil([scr[0], scr[1], scr[2], scr[0]], r, { width: 0.45, tone: 0.22, wobble: 0.15, overshoot: 0 }));
+        }
       }
     }
-    return top;
+    outline(top, o.roof, { width: 1.2, tone: 0.85 });
+    // Skylights: small dark triangles in rows along the facets.
+    const small = baryAt(o.lattice);
+    const room2 = inset(top, 9);
+    for (let i = 0; i < o.lattice; i++) {
+      for (let j = 0; j < o.lattice - i; j++) {
+        if ((i + 2 * j) % 3 !== 0) continue;
+        const tri: Pt[] = [small(i, j), small(i + 1, j), small(i, j + 1)];
+        const c: Pt = [(tri[0][0] + tri[1][0] + tri[2][0]) / 3, (tri[0][1] + tri[1][1] + tri[2][1]) / 3];
+        if (!inside(room2, c[0], c[1]) || r() > o.skyShare) continue;
+        const zc = o.roof + Math.min(1, edgeDist(c[0], c[1]) / 30) * o.rise * 0.6;
+        const s = tri.map((p) => { const q = lerp2(c, p, 0.55); return P(q[0], q[1], zc); }) as [Pt, Pt, Pt];
+        skylights.push(s);
+        build.push(new Wash([...s], { color: PAINT.skylight, layers: 3, alpha: 0.15, spread: 0.03, edge: 0, grain: 30 }, r));
+      }
+    }
+    return { top, foot, zAt, big };
   };
 
   /* ---------------- Endeavor ---------------- */
 
-  // One vertex points south, toward the camera, so its two south faces are seen.
-  const endeavor = building({ cx: 110, cy: 0, side: 232, rot: -Math.PI / 2, bevel: 28, glass: 12, roof: 15, floors: 2, lattice: 18, skyShare: 0.32 });
-  // Its roof edge as a band of triangles round the faces we see — lit in sequence at night.
-  for (let i = 0; i < endeavor.length; i++) {
-    const a = endeavor[i];
-    const b = endeavor[(i + 1) % endeavor.length];
+  // A vertex points left; the long southwest face looks toward the camera.
+  const E = building({ cx: 0, cy: 20, side: 256, rot: Math.PI, bevel: 40, glass: 10, roof: 14, floors: 2, facets: 11, lattice: 24, skyShare: 0.5, rise: 6 });
+  // The courtyard cut into its roof, near the back edge, with planting in it.
+  {
+    const c = lerp2(E.top[3], E.top[4], 0.5);
+    const cc: Pt = [c[0] - 26, c[1] - 12];
+    const tri: Pt[] = [[cc[0] - 14, cc[1] + 8], [cc[0] + 12, cc[1] + 12], [cc[0] - 2, cc[1] - 14]];
+    paint(build, flat(tri, 12), { color: '#6d8f58', layers: 8, alpha: 0.12, spread: 0.1, edge: 0.4 });
+    outline(tri, 14, { width: 0.8, tone: 0.7 });
+  }
+  // The front edge of the roof, as a band of triangles lit in sequence at night.
+  for (let i = 0; i < E.top.length; i++) {
+    const a = E.top[i];
+    const b = E.top[(i + 1) % E.top.length];
     if (!facing(a, b)) continue;
     const k = Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / 7));
     for (let j = 0; j < k; j++) {
       const p0 = lerp2(a, b, j / k);
       const p1 = lerp2(a, b, (j + 0.5) / k);
       const p2 = lerp2(a, b, (j + 1) / k);
-      fascia.push([P(p0[0], p0[1], 12), P(p1[0], p1[1], 15), P(p2[0], p2[1], 12)]);
+      fascia.push([P(p0[0], p0[1], 12), P(p1[0], p1[1], 14), P(p2[0], p2[1], 12)]);
     }
   }
   stage(1);
 
-  /* ---------------- Voyager, and its trellis ---------------- */
+  /* ---------------- Voyager ---------------- */
 
-  // A flat side faces southeast, toward Endeavor and the park: the entrance.
-  const voyager = building({ cx: -150, cy: 255, side: 272, rot: (3 * Math.PI) / 4, bevel: 32, glass: 19, roof: 21, floors: 4, lattice: 20, skyShare: 0.22 });
-  let se: [Pt, Pt] = [voyager[0], voyager[1]];
+  const Vy = building({ cx: 100, cy: 335, side: 286, rot: Math.PI, bevel: 44, glass: 17, roof: 21, floors: 4, facets: 12, lattice: 26, skyShare: 0.45, rise: 7 });
+  // Its southwest face: the one the trellis stands in front of.
+  let sw: [Pt, Pt] = [Vy.top[1], Vy.top[2]];
   let best = -Infinity;
-  for (let i = 0; i < voyager.length; i++) {
-    const a = voyager[i];
-    const b = voyager[(i + 1) % voyager.length];
+  for (let i = 0; i < Vy.top.length; i++) {
+    const a = Vy.top[i];
+    const b = Vy.top[(i + 1) % Vy.top.length];
     const nx = b[1] - a[1];
     const ny = -(b[0] - a[0]);
-    const score = (nx - ny) / Math.hypot(nx, ny) + Math.hypot(b[0] - a[0], b[1] - a[1]) / 1000;
+    const score = (nx * Math.cos((4 * Math.PI) / 3) + ny * Math.sin((4 * Math.PI) / 3)) / Math.hypot(nx, ny) + Math.hypot(b[0] - a[0], b[1] - a[1]) / 1000;
     if (score > best) {
       best = score;
-      se = [a, b];
+      sw = [a, b];
     }
   }
   stage(2);
 
-  // The canopy: 240 ft (73 m) wide, 70 ft (21 m) up, reaching out over the forecourt.
-  const [sa, sb] = se;
-  const mid = lerp2(sa, sb, 0.5);
+  /* ---------------- the trellis ---------------- */
+
+  // White steel trees in front of Voyager's southwest face, carrying a canopy
+  // of dark solar panels 70 ft (21 m) up, 240 ft (73 m) across.
+  const [sa, sb] = sw;
+  const mid = lerp2(sa, sb, 0.62);
   const sl = Math.hypot(sb[0] - sa[0], sb[1] - sa[1]);
   const along: Pt = [(sb[0] - sa[0]) / sl, (sb[1] - sa[1]) / sl];
   const out: Pt = [along[1], -along[0]];
-  const CZ = 21.5;
-  const cpt = (u: number, v: number): Pt => [mid[0] + along[0] * u * 36.5 + out[0] * (v * 52 + 2), mid[1] + along[1] * u * 36.5 + out[1] * (v * 52 + 2)];
-  const canopy: Pt[] = [cpt(-1, 0), cpt(1, 0), cpt(1, 1), cpt(-1, 1)];
-  const forecourt = [cpt(-1.25, 0), cpt(1.25, 0), cpt(1.3, 1.35), cpt(-1.3, 1.35)];
-  paint(under, flat(forecourt), { color: PAINT.paving, layers: 10, alpha: 0.07, spread: 0.08, edge: 0.3 });
-  // Its shadow falls on the forecourt below.
-  paint(under, flat(canopy.map(([x, y]) => [x + 6, y - 14] as Pt)), { color: '#8e8a86', layers: 8, alpha: 0.06, spread: 0.1, edge: 0.2 });
-  // The steel trees that hold it up: a trunk, then branches to the canopy.
-  for (const u of [-0.6, 0, 0.6]) {
-    const [bx, by] = cpt(u, 0.55);
-    post(bx, by, 0, 11, { width: 1.1, tone: 0.8 });
-    for (const [du, dv] of [[-0.18, -0.2], [0.18, -0.2], [0, 0.3]]) {
-      const tip = cpt(u + du, 0.55 + dv);
-      line3([bx, by, 11], [tip[0], tip[1], CZ - 0.5], { width: 0.8, tone: 0.7, overshoot: 0 }, 0);
+  const CZ = 21;
+  const cpt = (u: number, v: number): Pt => [mid[0] + along[0] * u * 36.5 + out[0] * (v * 44 + 24), mid[1] + along[1] * u * 36.5 + out[1] * (v * 44 + 24)];
+  const hub = cpt(0, 0.5);
+  // The canopy's outline: a broad, irregular star of panels.
+  const canopy: Pt[] = Array.from({ length: 12 }, (_, k) => {
+    const a = (k / 12) * Math.PI * 2;
+    const rr = (k % 2 ? 26 : 38) * between(r, 0.9, 1.08);
+    return [hub[0] + Math.cos(a) * rr, hub[1] + Math.sin(a) * rr * 0.72] as Pt;
+  });
+  const forecourt = inset(canopy, -14);
+  paint(under, flat(forecourt), { color: PAINT.paving, layers: 10, alpha: 0.07, spread: 0.1, edge: 0.3 });
+  paint(under, flat(canopy.map(([x, y]) => [x + 10, y - 16] as Pt)), { color: '#7d7a78', layers: 8, alpha: 0.07, spread: 0.1, edge: 0.2 });
+  // The trees: trunks, then three or four branches spreading to the canopy.
+  const trunks: Pt[] = [cpt(-0.45, 0.35), cpt(0.1, 0.25), cpt(0.5, 0.55), cpt(-0.1, 0.8), cpt(-0.6, 0.85)];
+  for (const [bx, by] of trunks) {
+    paint(build, [P(bx - 0.9, by, 0), P(bx + 0.9, by, 0), P(bx + 0.9, by, 10), P(bx - 0.9, by, 10)], { color: PAINT.steel, layers: 4, alpha: 0.4, spread: 0.02, edge: 0 });
+    post(bx, by, 0, 10, { width: 0.9, tone: 0.55 });
+    for (let k = 0; k < 4; k++) {
+      const a = (k / 4) * Math.PI * 2 + 0.4;
+      const tip: Pt = [bx + Math.cos(a) * 13, by + Math.sin(a) * 10];
+      line3([bx, by, 10], [tip[0], tip[1], CZ - 0.6], { width: 0.7, tone: 0.5, overshoot: 0 }, 0);
     }
   }
-  paint(build, flat(canopy, CZ), { color: PAINT.solar, layers: 12, alpha: 0.08, spread: 0.06, edge: 0.5 });
-  outline(canopy, CZ, { width: 1.1, tone: 0.9 });
-  for (let k = 1; k < 10; k++) lineOn(cpt(-1 + (k / 10) * 2, 0), cpt(-1 + (k / 10) * 2, 1), CZ, { width: 0.5, tone: 0.4, overshoot: 0 }, 0);
-  for (let k = 1; k < 5; k++) lineOn(cpt(-1, k / 5), cpt(1, k / 5), CZ, { width: 0.5, tone: 0.4, overshoot: 0 }, 0);
-  for (let k = 0; k < 5; k++) lineOn(cpt(-1 + k * 0.4, 0), cpt(-0.6 + k * 0.4, 1), CZ, { width: 0.4, tone: 0.25, overshoot: 0 }, 0);
+  paint(build, flat(inset(canopy, -2), CZ), { color: '#f1efe9', layers: 6, alpha: 0.3, spread: 0.04, edge: 0.3 });
+  paint(build, flat(inset(canopy, 3), CZ), { color: PAINT.solar, layers: 12, alpha: 0.09, spread: 0.05, edge: 0.4 });
+  // Its white frame: spokes and rings, the panels between them.
+  canopy.forEach((p, k) => {
+    lineOn(hub, p, CZ, { width: 0.6, tone: 0.45, overshoot: 0 }, 0);
+    lineOn(p, canopy[(k + 1) % canopy.length], CZ, { width: 0.9, tone: 0.8 }, 0.2);
+    const q = lerp2(hub, p, 0.55);
+    const q2 = lerp2(hub, canopy[(k + 1) % canopy.length], 0.55);
+    lineOn(q, q2, CZ, { width: 0.5, tone: 0.4, overshoot: 0 }, 0);
+  });
   stage(3);
 
   /* ---------------- the ground ---------------- */
 
-  const groundPoly: Pt[] = [[-300, -120], [-60, -128], [200, -124], [440, -120], [470, 60], [455, 260], [470, 480], [300, 560], [40, 590], [-220, 560], [-300, 420], [-285, 200]];
-  // The park fills everything between the two buildings and runs on east past Endeavor.
-  const park: Pt[] = [[-140, 100], [-40, 76], [120, 78], [250, 74], [330, 64], [326, 290], [220, 300], [80, 310], [-10, 262], [-100, 190]];
-  const plazaE = inset(endeavor, -14);
-  const plazaV = inset(voyager, -12);
-
-  // The ground itself: the pale of paving and dry earth, everywhere on the campus.
-  paint(under, flat(groundPoly), { color: '#d6ccba', layers: 12, alpha: 0.06, spread: 0.18, edge: 0.3, grain: 30 });
-  // Lawns: the park, the lawn along the south street, and the green to the north and east.
+  const campus: Pt[] = [[-720, 300], [70, -296], [expressWest(-296) - 6, -296], [expressWest(760) - 6, 760], [-720, 760]];
+  // The lawn wedge in front of Endeavor, between the two roads.
+  const wedge: Pt[] = [[-660, 270], [60, -286], [expressWest(-286) - 10, -286], [expressWest(-80) - 10, -80], [90, -120], [-40, -110], [-160, -30], [-300, 100], [-420, 190]];
+  // Round Voyager, and on beyond the buildings.
   const lawns: Pt[][] = [
-    park,
-    [[-300, -118], [470, -118], [470, 40], [330, 60], [250, 70], [190, 60], [-60, 50], [-62, -96], [-300, -96]],
-    [[-300, 46], [-150, 50], [-110, 180], [-240, 330], [-300, 300]],
-    [[240, 290], [468, 280], [470, 480], [300, 556], [230, 520]],
-    [[-290, 440], [-60, 470], [220, 470], [300, 552], [40, 588], [-220, 558]],
-    [[190, 70], [320, 60], [322, 280], [236, 280]],
+    campus,
+    wedge,
+    [[-30, 170], [70, 150], [90, 230], [-10, 262]],
+    [[-720, 330], [-240, 110], [-180, 420], [-720, 520]],
+    [[-300, 450], [260, 520], [expressWest(520) - 10, 520], [expressWest(760) - 10, 760], [-720, 760], [-720, 560]],
+    [[expressWest(-40) - 8, -40], [expressWest(160) - 8, 160], [120, 90], [110, -40]],
   ];
   everyGround((s, into) => {
     const [g0, g1] = GRASS[s];
-    const alpha = s === 'winter' ? 0.13 : 0.075;
-    lawns.forEach((lawn, i) => paint(into, flat(lawn), { color: i === 0 ? g1 : g0, layers: 12, alpha, spread: 0.14, edge: 0.4, grain: 20 }));
-    // Winter lies on everything.
-    if (s === 'winter') paint(into, flat(groundPoly), { color: '#eef2f8', layers: 10, alpha: 0.12, spread: 0.2, edge: 0.2, grain: 30 });
+    const alpha = s === 'winter' ? 0.13 : 0.08;
+    lawns.forEach((lawn, i) => paint(into, flat(lawn), { color: i === 1 ? g1 : g0, layers: i === 0 ? 10 : 12, alpha: i === 0 ? alpha * 0.8 : alpha, spread: 0.12, edge: 0.4, grain: 22 }));
+    if (s === 'winter') paint(into, flat(campus), { color: '#eef2f8', layers: 10, alpha: 0.12, spread: 0.15, edge: 0.2, grain: 30 });
   });
+  // The planted bank along Endeavor's front, under the glass.
+  for (let i = 0; i < E.foot.length; i++) {
+    const a = E.foot[i];
+    const b = E.foot[(i + 1) % E.foot.length];
+    if (!facing(a, b)) continue;
+    const o = inset(E.foot, -10);
+    everyGround((s, into) => paint(into, flat([a, b, o[(i + 1) % o.length], o[i]]), { color: s === 'winter' ? '#dfe6ee' : PAINT.bank, layers: 10, alpha: s === 'winter' ? 0.2 : 0.1, spread: 0.1, edge: 0.4 }));
+  }
   everySeason((s, into) => {
     if (s !== 'winter') return;
-    paint(into, flat(inset(endeavor, 3), 15.5), { color: '#f6f8fb', layers: 10, alpha: 0.22, spread: 0.1, edge: 0.3 });
-    paint(into, flat(inset(voyager, 3), 21.5), { color: '#f6f8fb', layers: 10, alpha: 0.22, spread: 0.1, edge: 0.3 });
-    paint(into, flat(canopy, CZ + 0.2), { color: '#f6f8fb', layers: 8, alpha: 0.2, spread: 0.1, edge: 0.3 });
+    paint(into, flat(canopy, CZ + 0.2), { color: '#f6f8fb', layers: 8, alpha: 0.25, spread: 0.1, edge: 0.3 });
   });
-  // A surface car park between the expressway and Endeavor, in rows.
-  const lot: Pt[] = [[-290, -96], [-70, -96], [-70, 40], [-290, 40]];
-  paint(under, flat(lot), { color: '#a9a9ad', layers: 10, alpha: 0.07, spread: 0.08, edge: 0.4 });
-  outline(lot, 0, { width: 0.6, tone: 0.4 });
-  const parked = ['#e9e4d8', '#3a3d46', '#8fa9bd', '#c8423a', '#f2efe8', '#6b6f78', '#2b3f9e'];
-  for (let row = 0; row < 5; row++) {
-    const y = -84 + row * 27;
-    lineOn([-284, y + 6], [-76, y + 6], 0, { width: 0.4, tone: 0.25, overshoot: 0 }, 0);
-    for (let x = -282; x < -80; x += 4.2) {
-      if (r() < 0.3) continue;
-      for (const dy of [0, 7.5]) {
-        const car: Pt[] = [[x + 0.6, y + dy], [x + 3.2, y + dy], [x + 3.2, y + dy + 4.6], [x + 0.6, y + dy + 4.6]];
-        under.push(new Wash(flat(car, 0.8), { color: pick(r, parked), layers: 2, alpha: 0.5, spread: 0.02, edge: 0, grain: 40 }, r));
-      }
-    }
-  }
+  const plazaE = inset(E.top, -16);
+  const plazaV = inset(Vy.top, -14);
   paint(under, flat(plazaE), { color: PAINT.paving, layers: 10, alpha: 0.07, spread: 0.08, edge: 0.3 });
   paint(under, flat(plazaV), { color: PAINT.paving, layers: 10, alpha: 0.07, spread: 0.08, edge: 0.3 });
-  outline(plazaE, 0, { width: 0.6, tone: 0.35 });
+  outline(plazaE, 0, { width: 0.5, tone: 0.3 });
 
-  // The walk from Endeavor to Voyager: shaded by a strip of solar panels, trees either side.
-  const walkA = lerp2(plazaE[3], plazaE[4], 0.5);
-  const walkB = cpt(0, 1.35);
-  const wl = Math.hypot(walkB[0] - walkA[0], walkB[1] - walkA[1]);
-  const wn: Pt = [-(walkB[1] - walkA[1]) / wl, (walkB[0] - walkA[0]) / wl];
-  const side = (p: Pt, d: number): Pt => [p[0] + wn[0] * d, p[1] + wn[1] * d];
-  paint(under, flat([side(walkA, -5), side(walkA, 5), side(walkB, 5), side(walkB, -5)]), { color: PAINT.paving, layers: 10, alpha: 0.08, spread: 0.08, edge: 0.3 });
-  lineOn(side(walkA, -5), side(walkB, -5), 0, { width: 0.6, tone: 0.4 }, 0);
-  lineOn(side(walkA, 5), side(walkB, 5), 0, { width: 0.6, tone: 0.4 }, 0);
-  const shade = [side(lerp2(walkA, walkB, 0.08), -3), side(lerp2(walkA, walkB, 0.08), 3), side(lerp2(walkA, walkB, 0.92), 3), side(lerp2(walkA, walkB, 0.92), -3)];
-  paint(build, flat(shade, 4.5), { color: PAINT.solar, layers: 8, alpha: 0.09, spread: 0.06, edge: 0.4 });
-  outline(shade, 4.5, { width: 0.7, tone: 0.6 });
-  const parkPath: Pt[] = [[-120, 110], [-40, 150], [30, 120]];
-  paint(under, flat([[-122, 106], [-40, 146], [30, 116], [32, 124], [-40, 154], [-118, 114]]), { color: PAINT.paving, layers: 6, alpha: 0.07, spread: 0.1 });
-
-  // San Tomas Expressway down the west side; a street along the south.
-  paint(under, flat([[-350, -200], [-310, -200], [-310, 620], [-350, 620]]), { color: PAINT.road, layers: 12, alpha: 0.075, spread: 0.08, edge: 0.4 });
-  paint(under, flat([[-350, -152], [520, -152], [520, -128], [-350, -128]]), { color: PAINT.road, layers: 12, alpha: 0.075, spread: 0.08, edge: 0.4 });
-  for (const x of [-350, -310]) line3([x, -200, 0], [x, 620, 0], { width: 0.8, tone: 0.55 }, 0.2);
-  line3([-330, -200, 0], [-330, 620, 0], { width: 0.6, tone: 0.3 }, 0);
-  for (const y of [-152, -128]) line3([-310, y, 0], [520, y, 0], { width: 0.8, tone: 0.55 }, 0.2);
-  for (let x = -290; x < 500; x += 16) line3([x, -140, 0], [x + 8, -140, 0], { width: 0.6, tone: 0.4, overshoot: 0 }, 0);
-  // Street lamps along both roads.
-  const lampAt: Pt[] = [...Array.from({ length: 14 }, (_, k) => [-270 + k * 55, -124] as Pt), ...Array.from({ length: 11 }, (_, k) => [-305, -100 + k * 60] as Pt)];
-  for (const [lx, ly] of lampAt) {
-    post(lx, ly, 0, 9, { width: 0.6, tone: 0.55 });
-    lamps.push(P(lx, ly, 9));
-    lampFeet.push(P(lx, ly - 4, 0));
-  }
+  // The path cut diagonally across the lawn, from the junction to Endeavor's door.
+  const door = lerp2(plazaE[1], plazaE[2], 0.6);
+  const junction: Pt = [70, -280];
+  paint(under, flat(band(junction, door, 6)), { color: PAINT.paving, layers: 10, alpha: 0.09, spread: 0.06, edge: 0.3 });
+  const [p0, p1, p2, p3] = band(junction, door, 6);
+  lineOn(p0, p1, 0, { width: 0.6, tone: 0.45 }, 0);
+  lineOn(p3, p2, 0, { width: 0.6, tone: 0.45 }, 0);
+  // A second path, from the corner along the lawn toward Voyager.
+  const path2: [Pt, Pt] = [[expressWest(-200) - 14, -200], cpt(0.2, 1.3)];
+  paint(under, flat(band(path2[0], path2[1], 5)), { color: PAINT.paving, layers: 8, alpha: 0.08, spread: 0.06, edge: 0.3 });
+  // The walk from Endeavor's back corner to the trellis.
+  const walkA = lerp2(plazaE[3], plazaE[4], 0.2);
+  const walkB = cpt(-0.3, 1.2);
+  paint(under, flat(band(walkA, walkB, 7)), { color: PAINT.paving, layers: 8, alpha: 0.08, spread: 0.06, edge: 0.3 });
   stage(4);
 
-  // A parking structure on the east side, solar panels on its top deck.
-  const gar: Pt[] = [[330, 70], [420, 70], [420, 270], [330, 270]];
-  const GZ = 14;
-  for (let i = 0; i < 4; i++) {
-    const a = gar[i];
-    const b = gar[(i + 1) % 4];
-    if (!facing(a, b)) continue;
-    paint(build, [P(a[0], a[1], 0), P(b[0], b[1], 0), P(b[0], b[1], GZ), P(a[0], a[1], GZ)], { color: PAINT.garage, layers: 8, alpha: 0.09, spread: 0.08, edge: 0.4 });
-    for (const z of [0, 3.5, 7, 10.5, 14]) lineOn(a, b, z, { width: z === 0 || z === GZ ? 1 : 0.5, tone: z === 0 || z === GZ ? 0.8 : 0.4 }, 0);
-    post(a[0], a[1], 0, GZ, { width: 0.9 });
-    post(b[0], b[1], 0, GZ, { width: 0.9 });
+  /* ---------------- roads ---------------- */
+
+  const exPoly: Pt[] = [[expressWest(-700), -700], [expressWest(1400), 1400], [expressWest(1400) + EXPRESS_W, 1400], [expressWest(-700) + EXPRESS_W, -700]];
+  paint(under, flat(exPoly), { color: PAINT.road, layers: 12, alpha: 0.08, spread: 0.06, edge: 0.4 });
+  for (const off of [0, EXPRESS_W]) line3([expressWest(-700) + off, -700, 0], [expressWest(1400) + off, 1400, 0], { width: 0.8, tone: 0.55 }, 0.2);
+  // The median, and the lane lines either side of it.
+  line3([expressWest(-700) + EXPRESS_W / 2, -700, 0], [expressWest(1400) + EXPRESS_W / 2, 1400, 0], { width: 0.9, tone: 0.6 }, 0);
+  for (const off of [7, 14, 32, 39]) {
+    for (let y = -600; y < 1300; y += 22) line3([expressWest(y) + off, y, 0], [expressWest(y + 9) + off, y + 9, 0], { width: 0.4, tone: 0.3, overshoot: 0 }, 0);
   }
-  paint(build, flat(gar, GZ), { color: '#cfc8bc', layers: 8, alpha: 0.08, spread: 0.08, edge: 0.4 });
-  outline(gar, GZ, { width: 1, tone: 0.8 });
-  for (let k = 0; k < 6; k++) {
-    const y0 = 88 + k * 30;
-    const panel: Pt[] = [[342, y0], [408, y0], [408, y0 + 16], [342, y0 + 16]];
-    paint(build, flat(panel, GZ + 2.5), { color: PAINT.solar, layers: 6, alpha: 0.1, spread: 0.05, edge: 0.4 });
-    outline(panel, GZ + 2.5, { width: 0.5, tone: 0.5 });
+  paint(under, flat(band(ROAD_A, ROAD_B, ROAD_W)), { color: PAINT.road, layers: 12, alpha: 0.08, spread: 0.06, edge: 0.4 });
+  {
+    const [q0, q1, q2, q3] = band(ROAD_A, ROAD_B, ROAD_W);
+    lineOn(q0, q1, 0, { width: 0.8, tone: 0.55 }, 0.2);
+    lineOn(q3, q2, 0, { width: 0.8, tone: 0.55 }, 0.2);
+    for (let t = 0; t < 1; t += 0.025) lineOn(lerp2(ROAD_A, ROAD_B, t), lerp2(ROAD_A, ROAD_B, t + 0.01), 0, { width: 0.5, tone: 0.45, overshoot: 0 }, 0);
+  }
+  // The junction in the foreground, where the roads meet.
+  paint(under, flat([[-20, -360], [expressWest(-360) + EXPRESS_W + 20, -360], [expressWest(-280) + EXPRESS_W, -280], [60, -280]]), { color: PAINT.road, layers: 10, alpha: 0.08, spread: 0.08, edge: 0.4 });
+
+  // The covered footbridge over the expressway, from Voyager's side.
+  const brA: Pt = [expressWest(330) - 50, 330];
+  const brB: Pt = [expressWest(290) + EXPRESS_W + 40, 290];
+  const bridge = band(brA, brB, 5);
+  paint(under, flat(bridge.map(([x, y]) => [x + 3, y - 5] as Pt)), { color: '#6f6f78', layers: 6, alpha: 0.08, spread: 0.06 });
+  paint(build, flat(bridge, 8), { color: '#e9e7e1', layers: 8, alpha: 0.18, spread: 0.04, edge: 0.4 });
+  outline(bridge, 8, { width: 0.8, tone: 0.75 });
+  for (const t of [0.2, 0.5, 0.8]) {
+    const [x, y] = lerp2(brA, brB, t);
+    post(x, y, 0, 8, { width: 0.7, tone: 0.55 });
   }
 
-  // Santa Clara beyond: low buildings, fading with distance.
-  for (let k = 0; k < 16; k++) {
-    const x = between(r, -520, 560);
-    const y = between(r, 600, 1000);
-    if (x > -380 && x < -290) continue;
-    const w = between(r, 40, 110);
-    const d = between(r, 30, 70);
-    const h = between(r, 6, 14);
+  // Street lamps.
+  const lampAt: Pt[] = [
+    ...Array.from({ length: 18 }, (_, k) => [expressWest(-260 + k * 60) - 3, -260 + k * 60] as Pt),
+    ...Array.from({ length: 13 }, (_, k) => lerp2(ROAD_A, ROAD_B, 0.06 + k * 0.07)).map(([x, y]) => [x + 10, y + 12] as Pt),
+  ];
+  for (const [lx, ly] of lampAt) {
+    post(lx, ly, 0, 9, { width: 0.55, tone: 0.5 });
+    lamps.push(P(lx, ly, 9));
+    lampFeet.push(P(lx, ly, 0));
+  }
+  stage(5);
+
+  // Parking across the expressway, rows of cars.
+  const lotX = expressWest(0) + EXPRESS_W + 18;
+  const lot: Pt[] = [[lotX, -160], [lotX + 150, -160], [lotX + 190, 260], [lotX + 90, 260]];
+  paint(under, flat(lot), { color: '#a9a9ad', layers: 10, alpha: 0.07, spread: 0.08, edge: 0.4 });
+  const parked = ['#e9e4d8', '#3a3d46', '#8fa9bd', '#c8423a', '#f2efe8', '#6b6f78', '#2b3f9e'];
+  for (let row = 0; row < 12; row++) {
+    const y = -150 + row * 34;
+    const x0 = lotX + 8 + (row / 12) * 60;
+    for (let x = x0; x < x0 + 110; x += 4.2) {
+      if (r() < 0.35) continue;
+      for (const dy of [0, 7.5]) under.push(new Wash(flat([[x + 0.6, y + dy], [x + 3.2, y + dy], [x + 3.2, y + dy + 4.6], [x + 0.6, y + dy + 4.6]], 0.8), { color: pick(r, parked), layers: 2, alpha: 0.5, spread: 0.02, edge: 0, grain: 40 }, r));
+    }
+  }
+
+  // Santa Clara beyond and to the sides: low buildings with white flat roofs.
+  const clear = (x: number, y: number, w: number, d: number) =>
+    [[x, y], [x + w, y], [x + w, y + d], [x, y + d]].every(([px, py]) => !inside(campus, px, py) && !inside(lot, px, py) && Math.abs(px - (expressWest(py) + EXPRESS_W / 2)) > 40);
+  for (let k = 0; k < 110; k++) {
+    const y = between(r, -150, 1500);
+    const x = between(r, -1100, 1200);
+    const w = between(r, 40, 120);
+    const d = between(r, 25, 70);
+    if (!clear(x, y, w, d)) continue;
+    const h = between(r, 6, 16);
+    const fade = Math.max(0.15, 1 - Math.max(0, y - 300) / 1300);
     const box: Pt[] = [[x, y], [x + w, y], [x + w, y + d], [x, y + d]];
-    const fade = 1 - (y - 600) / 500;
-    paint(build, [P(x, y, 0), P(x + w, y, 0), P(x + w, y, h), P(x, y, h)], { color: PAINT.far, layers: 6, alpha: 0.06 * fade, spread: 0.1, edge: 0.3 });
-    paint(build, flat(box, h), { color: '#cfcac0', layers: 5, alpha: 0.06 * fade, spread: 0.1 });
-    outline(box, h, { width: 0.5, tone: 0.25 * fade });
-    lineOn([x, y], [x + w, y], 0, { width: 0.5, tone: 0.25 * fade }, 0);
+    paint(build, [P(x, y, 0), P(x + w, y, 0), P(x + w, y, h), P(x, y, h)], { color: PAINT.townWall, layers: 5, alpha: 0.08 * fade, spread: 0.06, edge: 0.3 });
+    paint(build, flat(box, h), { color: PAINT.townRoof, layers: 4, alpha: 0.1 * fade, spread: 0.05 });
+    if (fade > 0.35) outline(box, h, { width: 0.45, tone: 0.3 * fade });
+    if (fade > 0.35) lineOn([x, y], [x + w, y], 0, { width: 0.45, tone: 0.3 * fade }, 0);
   }
   stage(6);
 
-  // The Santa Cruz mountains, far off, above the town.
-  const hy = P(0, 1150, 0)[1];
-  const ridge: Pt[] = [[20, hy + 30], [160, hy - 4], [300, hy - 20], [430, hy - 6], [560, hy - 34], [700, hy - 18], [840, hy - 42], [980, hy - 24], [1120, hy - 36], [1260, hy - 12], [1400, hy - 22], [1580, hy + 20]];
+  // The hills far off, above the town.
+  const hy = P(0, 2300, 0)[1];
+  const ridge: Pt[] = [[20, hy + 20], [160, hy - 6], [300, hy - 18], [430, hy - 8], [560, hy - 30], [700, hy - 16], [840, hy - 36], [980, hy - 22], [1120, hy - 32], [1260, hy - 10], [1400, hy - 20], [1580, hy + 16]];
   ink.push(pencil(curve(ridge, 5), r, { width: 0.8, tone: 0.3 }));
-  paint(build, [...ridge.map(([x, y]) => [x, y - 26] as Pt), [1400, hy + 8], [900, hy + 16], [400, hy + 6], [20, hy + 14]], { color: PAINT.hillsFar, layers: 10, alpha: 0.04, spread: 0.3, edge: 0.2, grain: 26 });
-  paint(build, [...ridge, [1500, hy + 40], [1200, hy + 56], [900, hy + 36], [600, hy + 58], [300, hy + 38], [60, hy + 50]], { color: PAINT.hills, layers: 12, alpha: 0.055, spread: 0.3, edge: 0.3, grain: 26 });
+  paint(build, [...ridge, [1500, hy + 34], [1200, hy + 44], [900, hy + 30], [600, hy + 46], [300, hy + 30], [60, hy + 40]], { color: PAINT.hills, layers: 12, alpha: 0.05, spread: 0.3, edge: 0.3, grain: 26 });
   everySeason((s, into) => {
-    if (s === 'winter') paint(into, [ridge[4], ridge[5], ridge[6], ridge[7], ridge[8], [1120, hy - 20], [840, hy - 26], [560, hy - 20]], { color: '#f6f8fb', layers: 8, alpha: 0.28, spread: 0.2 });
+    if (s === 'winter') paint(into, [ridge[4], ridge[5], ridge[6], ridge[7], ridge[8], [1120, hy - 18], [840, hy - 22], [560, hy - 16]], { color: '#f6f8fb', layers: 8, alpha: 0.28, spread: 0.2 });
   });
   stage(7);
 
   /* ---------------- trees ---------------- */
 
-  // A tree standing behind a building is hidden by it: from up here its crown
-  // would land on the roof, so it is not drawn at all.
-  const roofs = [flat(endeavor, 15), flat(voyager, 21), flat(canopy, CZ)];
+  const occluders = [hull([...flat(E.top, 14), ...flat(E.foot, 0)]), hull([...flat(Vy.top, 21), ...flat(Vy.foot, 0)])];
+  // A tree standing behind a building (its foot inside the silhouette) is
+  // hidden; so is one whose crown would poke through the canopy or bridge.
+  const overhead = [flat(canopy, CZ), flat(bridge, 8)];
   const tree = (x: number, y: number, kind: Tree['kind'], size = 1) => {
-    const top = P(x, y, (kind === 'palm' ? 16 : 10) * size * 0.75);
-    if (roofs.some((roof) => inside(roof, top[0], top[1] + 4))) return;
-    const s = scaleAt(x, y);
     const h = (kind === 'palm' ? 16 : 10) * size;
-    const [bx, by] = P(x, y, 0);
     const [tx, ty] = P(x, y, h * 0.75);
+    const foot = P(x, y, 0);
+    if (hidden(occluders, foot[0], foot[1]) || overhead.some((o) => inside(o, tx, ty + 4))) return;
+    if (inside(inset(E.top, -4), x, y) || inside(inset(Vy.top, -4), x, y)) return;
+    const s = scaleAt(x, y);
+    const [bx, by] = P(x, y, 0);
     const rad = (kind === 'palm' ? 3.5 : 5.5) * size * s;
     trees.push({ cx: tx, cy: ty, r: rad, base: by, kind });
-    // Its shadow, cast to the northeast.
-    paint(under, blob(bx + rad * 0.5, by - rad * 0.15, rad * 0.9, rad * 0.35, r, 7), { color: '#6b6a70', layers: 4, alpha: 0.07, spread: 0.2, edge: 0 });
-    ink.push(pencil([[bx, by], [tx, ty + rad * 0.3]], r, { width: 0.7, tone: 0.6, overshoot: 0 }));
-    if (kind === 'palm') {
-      for (let k = 0; k < 7; k++) {
-        const a = (k / 7) * Math.PI * 2;
-        const end: Pt = [tx + Math.cos(a) * rad * 1.4, ty + Math.sin(a) * rad * 0.7 + rad * 0.3];
-        ink.push(pencil(curve([[tx, ty], [(tx + end[0]) / 2, (ty + end[1]) / 2 - rad * 0.35], end], 3), r, { width: 0.5, tone: 0.5, overshoot: 0 }));
-      }
-    } else {
-      for (let k = 0; k < 3; k++) {
-        const a = -Math.PI / 2 + (k - 1) * 0.7;
-        ink.push(pencil([[tx, ty + rad * 0.3], [tx + Math.cos(a) * rad * 0.7, ty + rad * 0.3 + Math.sin(a) * rad * 0.7]], r, { width: 0.5, tone: 0.45, overshoot: 0 }));
-      }
+    paint(under, blob(bx + rad * 0.6, by - rad * 0.1, rad * 0.9, rad * 0.35, r, 7), { color: '#6b6a70', layers: 4, alpha: 0.07, spread: 0.2, edge: 0 });
+    ink.push(pencil([[bx, by], [tx, ty + rad * 0.3]], r, { width: 0.6, tone: 0.55, overshoot: 0 }));
+    for (let k = 0; k < 3; k++) {
+      const a = -Math.PI / 2 + (k - 1) * 0.7;
+      ink.push(pencil([[tx, ty + rad * 0.3], [tx + Math.cos(a) * rad * 0.7, ty + rad * 0.3 + Math.sin(a) * rad * 0.7]], r, { width: 0.45, tone: 0.4, overshoot: 0 }));
     }
     everySeason((season, into) => {
       if (kind === 'palm') {
@@ -602,59 +681,60 @@ export function buildCampus(seed = 17): Campus {
         const col = k === 2 ? cols[Math.min(cols.length - 1, 1)] : pick(r, cols);
         paint(into, blob(tx + between(r, -0.35, 0.35) * rad, ty + between(r, -0.3, 0.3) * rad, rad * between(r, 0.6, 0.85), rad * between(r, 0.5, 0.7), r), { color: col, layers: 9, alpha: 0.085, spread: 0.3, edge: 0.55 });
       }
-      if (r() < 0.3) {
-        const sz = between(r, 0.6, 1.4);
-        paint(into, blob(tx + rad * 1.2, ty - rad * 0.4, sz, sz, r, 5), { color: pick(r, cols), layers: 2, alpha: 0.35, spread: 0.2, edge: 0 });
-      }
     });
   };
 
-  // Along the walk, both sides.
-  for (let t = 0.1; t < 0.95; t += 0.1) {
-    const p = lerp2(walkA, walkB, t);
-    tree(...side(p, -10), t < 0.5 ? 'blossom' : 'shade');
-    tree(...side(p, 10), 'shade');
+  // Along the expressway's western side, a continuous row.
+  for (let y = -260; y < 760; y += 24) tree(expressWest(y) - 12 + between(r, -3, 3), y, r() < 0.15 ? 'palm' : 'shade', between(r, 0.85, 1.15));
+  // Along the left road.
+  for (let t = 0.05; t < 0.95; t += 0.035) {
+    const [x, y] = lerp2(ROAD_A, ROAD_B, t);
+    tree(x + 16, y + 20, 'street', 0.85);
+    tree(x - 16, y - 20, 'street', 0.85);
   }
-  // The park: groves, not a scatter — trees gather in clumps with open lawn between.
-  const vFoot = inset(voyager, -6);
-  const groves: Pt[] = [[40, 120], [150, 200], [260, 140], [230, 250], [-40, 190], [300, 90]];
-  for (const [gx, gy] of groves) {
-    for (let k = 0; k < 9; k++) {
-      const x = gx + between(r, -28, 28);
-      const y = gy + between(r, -22, 22);
-      if (inside(park, x, y) && !inside(vFoot, x, y) && !inside(inset(endeavor, -6), x, y)) tree(x, y, r() < 0.25 ? 'blossom' : 'shade', between(r, 0.8, 1.35));
+  // Scattered across the lawn wedge, a few big ones.
+  for (let k = 0; k < 16; k++) {
+    const x = between(r, -460, 150);
+    const y = between(r, -260, 100);
+    if (inside(wedge, x, y)) tree(x, y, r() < 0.3 ? 'blossom' : 'shade', between(r, 1, 1.5));
+  }
+  // Round the plazas.
+  for (const ring of [inset(E.top, -26), inset(Vy.top, -24)]) {
+    for (let k = 0; k < ring.length; k++) {
+      const a = ring[k];
+      const b = ring[(k + 1) % ring.length];
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      for (let t = 0.1; t < 0.95; t += 24 / len) {
+        const p = lerp2(a, b, t);
+        if (Math.hypot(p[0] - hub[0], p[1] - hub[1]) > 60) tree(p[0], p[1], r() < 0.2 ? 'blossom' : 'shade', 0.9);
+      }
     }
   }
-  // Trees between the rows of the car park.
-  for (let row = 0; row < 4; row++) for (let x = -270; x < -80; x += 36) tree(x + between(r, -3, 3), -66 + row * 27 + 1.5, 'street', 0.7);
-  // Round Voyager's plaza.
-  const ringV = inset(voyager, -22);
-  for (let k = 0; k < ringV.length; k++) {
-    const a = ringV[k];
-    const b = ringV[(k + 1) % ringV.length];
-    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    for (let t = 0.15; t < 0.9; t += 30 / len) {
-      const p = lerp2(a, b, t);
-      if (!inside(inset(voyager, -8), p[0], p[1]) && Math.hypot(p[0] - mid[0], p[1] - mid[1]) > 50) tree(p[0], p[1], 'shade', 0.9);
-    }
+  // Between the buildings, and beyond them.
+  for (let k = 0; k < 30; k++) tree(between(r, -600, 330), between(r, 140, 700), r() < 0.2 ? 'blossom' : 'shade', between(r, 0.8, 1.3));
+  // The town has its own trees.
+  for (let k = 0; k < 60; k++) {
+    const x = between(r, -1000, 1100);
+    const y = between(r, -100, 1100);
+    if (!inside(campus, x, y)) tree(x, y, 'street', between(r, 0.7, 1));
   }
-  // Round Endeavor's plaza, along the streets, and in the far corners.
-  const ringT = inset(endeavor, -24);
-  for (let k = 0; k < ringT.length; k++) {
-    const a = ringT[k];
-    const b = ringT[(k + 1) % ringT.length];
-    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    for (let t = 0.15; t < 0.9; t += 26 / len) tree(...lerp2(a, b, t), 'shade', 0.9);
-  }
-  for (let x = -260; x < 480; x += 34) tree(x, -112, Math.round(x / 34) % 3 === 0 ? 'palm' : 'street', 0.85);
-  for (let y = -80; y < 540; y += 38) tree(-292, y, 'street', 0.85);
-  for (let k = 0; k < 10; k++) tree(between(r, 250, 440), between(r, 300, 540), 'shade', between(r, 0.8, 1.2));
-  for (let k = 0; k < 8; k++) tree(between(r, -285, -200), between(r, 400, 560), 'shade', between(r, 0.8, 1.2));
   stage(9);
 
   const drawn = ink.map((s, i) => [s, stageOf[i] ?? 9, i] as const).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(([s]) => s);
+  const ringE = inset(E.top, -10);
+  const exLane = (off: number, dir: 1 | -1): Lane => {
+    const pts: Pt[] = [];
+    for (let y = -700; y <= 1400; y += 100) pts.push([expressWest(y) + off, y]);
+    return { path: dir === 1 ? pts : pts.reverse() };
+  };
+  const roadLane = (off: number, dir: 1 | -1): Lane => {
+    const l = Math.hypot(ROAD_B[0] - ROAD_A[0], ROAD_B[1] - ROAD_A[1]);
+    const nx = (-(ROAD_B[1] - ROAD_A[1]) / l) * off;
+    const ny = ((ROAD_B[0] - ROAD_A[0]) / l) * off;
+    const pts: Pt[] = [[ROAD_A[0] + nx, ROAD_A[1] + ny], [ROAD_B[0] + nx, ROAD_B[1] + ny]];
+    return { path: dir === 1 ? pts : pts.reverse() };
+  };
 
-  const ringE = inset(endeavor, -9);
   return {
     ink: drawn,
     build: [...under, ...build],
@@ -667,24 +747,20 @@ export function buildCampus(seed = 17): Campus {
     lampFeet,
     trees,
     walks: [
-      { path: [walkA, walkB], spread: 2.5, weight: 4 },
+      { path: [junction, door], spread: 2, weight: 3 },
+      { path: [walkA, walkB], spread: 2.5, weight: 3 },
       { path: [...ringE.slice(1), ringE[0], ringE[1]], spread: 2, weight: 2 },
-      { path: [[-300, -122], [500, -122]], spread: 1.5, weight: 2 },
-      { path: [[-304, -110], [-304, 520]], spread: 1.2, weight: 1 },
-      { path: parkPath, spread: 2, weight: 1.5 },
-      { path: [cpt(0, 1.3), cpt(0, 0.05)], spread: 10, weight: 1.5, door: true },
+      { path: [path2[0], path2[1]], spread: 1.5, weight: 1.5 },
+      { path: [lerp2(ROAD_A, ROAD_B, 0.05), lerp2(ROAD_A, ROAD_B, 0.8)].map(([x, y]) => [x + 12, y + 14] as Pt), spread: 1.2, weight: 1 },
+      { path: [cpt(0, 1.3), cpt(0, -0.1)], spread: 12, weight: 1.5, door: true },
     ],
     terrace: [cpt(-0.5, 0.4), cpt(-0.3, 0.7), cpt(0.35, 0.5), cpt(0.55, 0.8), cpt(0.1, 0.3)],
-    lanes: [
-      { path: [[-700, -145], [900, -145]] },
-      { path: [[900, -135], [-700, -135]] },
-      { path: [[-336, -400], [-336, 1100]] },
-      { path: [[-324, 1100], [-324, -400]] },
-    ],
+    lanes: [exLane(9, 1), exLane(17, 1), exLane(29, -1), exLane(37, -1), roadLane(-6, 1), roadLane(6, -1)],
     wet: [
-      [-350, -152, 520, -128],
-      [-350, -200, -310, 620],
-      [-300, -126, 460, -118],
+      { a: [expressWest(-300) + EXPRESS_W / 2, -300], b: [expressWest(700) + EXPRESS_W / 2, 700], width: EXPRESS_W },
+      { a: ROAD_A, b: ROAD_B, width: ROAD_W },
+      { a: junction, b: door, width: 6 },
     ],
+    occluders,
   };
 }
