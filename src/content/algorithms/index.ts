@@ -13,11 +13,12 @@ import { graphs } from './graphs';
 import { advancedGraphs } from './advanced-graphs';
 import { dp1d } from './dp-1d';
 import { dp2d } from './dp-2d';
+import { greedy } from './greedy';
 
 export type { Category, Problem, Difficulty } from './types';
 
 /** Every category, in NeetCode's order. */
-export const categories: Category[] = [arraysHashing, twoPointers, slidingWindow, stack, binarySearch, linkedList, trees, tries, heap, backtracking, graphs, advancedGraphs, dp1d, dp2d];
+export const categories: Category[] = [arraysHashing, twoPointers, slidingWindow, stack, binarySearch, linkedList, trees, tries, heap, backtracking, graphs, advancedGraphs, dp1d, dp2d, greedy];
 
 export interface Listed extends Problem {
   category: string;

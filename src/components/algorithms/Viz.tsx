@@ -113,7 +113,7 @@ function Pointers({ ptrs, at, y }: { ptrs: { at: number | string | null; label: 
         return (
           <g key={p.label} className={styles.move} style={{ transform: `translate(${x}px, ${y + k * 22}px)` }}>
             {k === 0 && <path d="M 0 2 L -5 11 M 0 2 L 5 11 M 0 2 L 0 16" stroke={c} strokeWidth={1.8} fill="none" strokeLinecap="round" />}
-            <text y={k === 0 ? 34 : 16} textAnchor="middle" fontSize={18} fontWeight={700} fill={c} className={styles.value}>
+            <text y={34} textAnchor="middle" fontSize={18} fontWeight={700} fill={c} className={styles.value}>
               {p.label}
             </text>
           </g>
@@ -289,7 +289,7 @@ function ResultsPanel({ p }: { p: Extract<Panel, { t: 'results' }> }) {
 function VarsPanel({ p }: { p: Extract<Panel, { t: 'vars' }> }) {
   const marks: Record<string, Role> = {};
   p.items.forEach((it) => it.role && (marks[it.k] = it.role));
-  return <Chips items={p.items.map((it) => ({ key: it.k, text: `${it.k} = ${text(it.v)}` }))} marks={marks} />;
+  return <Chips items={p.items.map((it) => ({ key: it.k, text: `${it.k} = ${typeof it.v === 'boolean' ? String(it.v) : text(it.v)}` }))} marks={marks} />;
 }
 
 function StackPanel({ p, queue }: { p: Extract<Panel, { t: 'stack' | 'queue' }>; queue?: boolean }) {
