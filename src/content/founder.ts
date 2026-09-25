@@ -3,7 +3,8 @@
  *
  * The founder page is a film, painted like the landing's: Rutvik sketched
  * from his photograph and washed in watercolour, and then a story told the
- * same way, scene by scene — from a single switch to the AI he builds now.
+ * same way, scene by scene — the 0s and 1s underneath everything, and the
+ * GPU that AI runs on.
  * This file is its script: what each scene is called and what is written
  * under it. The drawings are `lib/founder/scenes.ts`; every number in the
  * captions is computed by `lib/founder/facts.ts`.
@@ -15,7 +16,7 @@
 
 import { asset } from '@/lib/asset';
 import { resumeExperience } from './resume';
-import { agentRun, byteOf, CANDIDATES, CONTEXT, CPU_CORES, descent, encodeAdd, halfAdder, LETTER, matmul, modrmFields, neuron, race, RATE, runProgram, SMS, softmax, TARGET, TASK, typed, WARP } from '@/lib/founder/facts';
+import { CPU_CORES, race, SMS, typed, WARP } from '@/lib/founder/facts';
 
 export const founder = {
   name: 'Rutvik Patel',
@@ -35,21 +36,7 @@ export const founder = {
 /** The year of the first role, from the résumé's timeline. */
 export const careerStart = resumeExperience[resumeExperience.length - 1].start.slice(3);
 
-export type SceneId =
-  | 'portrait'
-  | 'binary'
-  | 'switch'
-  | 'byte'
-  | 'logic'
-  | 'cpu'
-  | 'metal'
-  | 'gpu'
-  | 'matmul'
-  | 'neuron'
-  | 'learning'
-  | 'language'
-  | 'agent'
-  | 'return';
+export type SceneId = 'portrait' | 'binary' | 'gpu' | 'return';
 
 export interface Scene {
   id: SceneId;
@@ -63,18 +50,8 @@ export interface Scene {
   hold: number;
 }
 
-const byte = byteOf(LETTER);
-const add = halfAdder(1, 1);
-const code = encodeAdd();
-const mm = matmul();
-const n = neuron();
-const gd = descent();
-const probs = softmax();
 const firstKey = typed().find((c) => c.ch !== ' ')!;
-const prog = runProgram();
-const fields = modrmFields();
 const rc = race();
-const job = agentRun();
 
 export const scenes: Scene[] = [
   {
@@ -95,60 +72,6 @@ export const scenes: Scene[] = [
     hold: 14,
   },
   {
-    id: 'switch',
-    strip: 'a switch',
-    title: 'A bit is a switch.',
-    lines: [
-      'A transistor is a switch with no moving parts. Put a voltage on its gate and a thin channel opens in the silicon beneath it, so current can flow from source to drain; take the voltage away and the channel closes.',
-      'Wire it into a circuit with a lamp: gate on, channel open, current flows, the lamp lights — read as 1. Gate off: no current, 0. That one yes-or-no is a bit.',
-    ],
-    hold: 12,
-  },
-  {
-    id: 'byte',
-    strip: 'a byte',
-    title: 'Eight bits make a byte.',
-    lines: [
-      'Each switch in a row of eight is worth twice the one to its right: 128, 64, 32, 16, 8, 4, 2, 1.',
-      `Add up the ones that are on: ${byte.on.join(' + ')} = ${byte.sum}.`,
-      `In ASCII, the standard code for text, ${byte.code} means the letter ${LETTER} — so these eight switches, ${byte.bits.join('')}, are an ${LETTER}.`,
-    ],
-    hold: 14,
-  },
-  {
-    id: 'logic',
-    strip: 'logic',
-    title: 'Switches that add.',
-    lines: [
-      'Wire switches together and they make gates. An XOR gate outputs 1 when exactly one input is 1; an AND gate when both are.',
-      `Try all four ways in. With a 1 and a 1, XOR gives ${add.sum} and AND gives ${add.carry}: read together, ${add.binary} — two, written in binary. Together they are a half adder.`,
-      'Every sum a computer does is built from gates like these.',
-    ],
-    hold: 13,
-  },
-  {
-    id: 'cpu',
-    strip: 'the CPU',
-    title: 'The processor: fetch, decode, execute.',
-    lines: [
-      'A CPU is billions of these switches, arranged into a few cores. Each core works through a program: it fetches an instruction from memory, decodes what it asks for, and executes it — then the next.',
-      `Here, a program adds a = ${prog.a} and b = ${prog.b}: load a into register R1, load b into R2, add them, store R1 back as sum — ${prog.a} + ${prog.b} = ${prog.a + prog.b}. A register is one of a few slots inside the core that hold a number.`,
-      'A clock keeps every step in time, ticking billions of times a second.',
-    ],
-    hold: 14,
-  },
-  {
-    id: 'metal',
-    strip: 'C++',
-    title: 'From C++ to the metal.',
-    lines: [
-      `I write a line of C++: ${code.source}`,
-      `A compiler — a program that translates code — turns it into instructions the CPU knows: load a, load b, add, store. The addition is ${code.assembly}: add register ebx into eax.`,
-      `An assembler encodes it as two bytes, in hexadecimal ${code.hex.join(' ')}. ${code.hex[0]} is the opcode for ADD; ${code.hex[1]} is ${fields.mod} ${fields.reg} ${fields.rm} — mode ${fields.mod} (two registers), ${fields.reg} for ebx, ${fields.rm} for eax. Sixteen switches.`,
-    ],
-    hold: 16,
-  },
-  {
     id: 'gpu',
     strip: 'the GPU',
     title: 'The GPU: thousands of small cores.',
@@ -160,65 +83,10 @@ export const scenes: Scene[] = [
     hold: 15,
   },
   {
-    id: 'matmul',
-    strip: 'matrices',
-    title: 'The one sum AI is made of.',
-    lines: [
-      'A matrix is a grid of numbers. Multiplying two means: each answer is one row of the first times one column of the second, added up.',
-      `In symbols, for a row a₁ a₂ and a column b₁ b₂: c = a₁b₁ + a₂b₂. With numbers, the top-left answer: ${mm.working[0][0]}.`,
-      'Every answer is independent, so a GPU gives each one its own thread — and does them all at once.',
-    ],
-    hold: 15,
-  },
-  {
-    id: 'neuron',
-    strip: 'a neuron',
-    title: 'A neuron: a weighted vote.',
-    lines: [
-      'An artificial neuron multiplies each input x by a weight w — how much that input matters — adds them up with a bias b, a fixed nudge, and squashes the total z to between 0 and 1.',
-      `In symbols, z = x₁w₁ + x₂w₂ + x₃w₃ + b. With numbers: ${n.working}.`,
-      `The sigmoid curve does the squashing: 1 ÷ (1 + e⁻ᶻ), where e ≈ 2.718. For z = ${n.z} that is ${n.y}. A network is layers of these, and a whole layer's sums at once are one matrix multiplication.`,
-    ],
-    hold: 12,
-  },
-  {
-    id: 'learning',
-    strip: 'learning',
-    title: 'Learning is rolling downhill.',
-    lines: [
-      `The loss measures how wrong a network is. Here, for one weight w, the loss is (w − ${TARGET})², smallest at w = ${TARGET}; its slope, 2(w − ${TARGET}), says which way is downhill.`,
-      `Each step moves the weight a little against the slope: new w = w − rate × slope. With rate ${RATE}, starting at 0: ${gd.first}.`,
-      `Step after step — ${gd.steps.map((s) => s.w).join(', ')} — w settles toward ${TARGET}. A real network does this for millions of weights at once.`,
-    ],
-    hold: 14,
-  },
-  {
-    id: 'language',
-    strip: 'language',
-    title: 'A language model guesses the next word.',
-    lines: [
-      `Text is cut into tokens — words, or pieces of words. Given “${CONTEXT.join(' ')}”, attention lets each word weigh every word up to itself.`,
-      'The model then gives every word it knows a score. The softmax turns scores into probabilities: e to the power of each score, divided by the sum of them all.',
-      `Say four candidates score ${CANDIDATES.map((c) => `${c.word} ${c.score}`).join(', ')}. Between them: ${probs.map((p) => `${p.word} ${p.percent}%`).join(', ')}. It picks a word — here “${probs[0].word}” — adds it, and does it all again.`,
-    ],
-    hold: 13,
-  },
-  {
-    id: 'agent',
-    strip: 'agents',
-    title: 'An agent: a model in a loop.',
-    lines: [
-      'Give a model tools — search, code, a database — and a goal, and let it loop: plan, act, look at what happened, try again.',
-      `Asked “${job.question}”, it decides to use the calculator, calls ${job.call}, reads back ${job.result}, and answers.`,
-      `That is what I build now at ${founder.employer}: agentic AI platforms, used by global enterprises for risk analysis, reporting and decision support.`,
-    ],
-    hold: 12.5,
-  },
-  {
     id: 'return',
     strip: 'now',
     title: founder.name,
-    lines: [`${founder.title} at ${founder.employer}, and now an AI engineer — from the switches up.`],
+    lines: [`${founder.title} at ${founder.employer}, and now an AI engineer — from the 0s and 1s up.`],
     hold: 14,
   },
 ];
@@ -260,7 +128,7 @@ const photos: FounderPhoto[] = [
 
 export const founderFilm = {
   /** What the canvas shows, for anyone who cannot see it. */
-  description: `A watercolour film: ${founder.name}, sketched from a photograph of him and painted in, then the story of how computers work — a switch, a byte, logic gates, a processor, C++ compiled to machine code, a GPU, matrix multiplication, a neuron, learning, a language model and an agent — each sketched and painted in turn, and back to his portrait.`,
+  description: `A watercolour film: ${founder.name}, sketched from a photograph of him and painted in, then a line of code typed and stored as 0s and 1s, and a GPU running thousands of threads at once — each sketched and painted in turn, and back to his portrait.`,
   /** The photographs the portrait is drawn from — one, at random, on each visit. */
   photos,
   contact: 'Write to me',

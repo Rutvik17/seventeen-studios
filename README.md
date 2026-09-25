@@ -6,10 +6,8 @@ Rutvik Patel's portfolio, made as one sketchbook. A statically exported Next.js
 - **The landing** — a film: Nvidia's campus in Santa Clara from the air,
   sketched, painted in watercolour and turned through a year.
 - **The founder** — a film too: Rutvik sketched and painted from his
-  photograph, then how a computer works from a single switch up to the AI he
-  builds — bits, a byte, gates, a CPU, C++ down to machine code, a GPU, a
-  matrix product, a neuron, learning, a language model, an agent — every
-  number on screen computed. The résumé is always to hand.
+  photograph, then a line of code stored as 0s and 1s and a GPU running
+  thousands of threads at once — every number on screen computed. The résumé is always to hand.
 - **The notebook** — where Rutvik documents what he learns, day by day.
 - **Grasp** — a calculus course you learn by dragging, on this site.
 

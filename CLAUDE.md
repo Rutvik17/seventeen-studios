@@ -132,7 +132,7 @@ place carries that place's colours.
   still, with every shot a button. Nothing in the engine is started without
   checking.
 
-### The founder film — the story, from a switch to an agent
+### The founder film — the story, from 0s and 1s to the GPU
 
 The founder page is a film too, made the way the landing's is and in the same
 two hands: one scene at a time filling the viewport, each sketched in pencil,
@@ -141,15 +141,12 @@ while the next one's pencil starts underneath. No scrolling, no footer.
 
 - **The script is `src/content/founder.ts`** (`scenes`: a title, the lines
   written under it, how long it holds). It runs Rutvik's portrait → 0s and 1s
-  → a transistor → a byte → logic gates → the CPU → C++ to machine code → the
-  GPU → matrix multiplication → a neuron → learning → a language model → an
-  agent → back to him. Adding or reordering a scene is an edit there and a
-  builder in `scenes.ts`.
+  (a line of C++ typed and read back as bytes) → the GPU (a CUDA kernel across
+  its streaming multiprocessors, and a race against a CPU) → back to him.
+  Adding or reordering a scene is an edit there and a builder in `scenes.ts`.
 - **Every number on screen is computed** in `src/lib/founder/facts.ts` — the
-  byte from the letter, the sum from the gates, the machine code from the x86
-  encoding, the product from the matrices, the neuron from its weights, the
-  descent from its slope, the probabilities from the scores. The captions and
-  the drawings both read them there.
+  byte from each character, the thread indices and the race from the sizes
+  of the chips as drawn. The captions and the drawings both read them there.
 - **The portrait is drawn from a photograph**, a different one of Rutvik on
   each visit (`founderFilm.photos` in `content/founder.ts`, the files in
   `public/founder`; `?photo=<id>` asks for one). `src/lib/founder/portrait.ts`
