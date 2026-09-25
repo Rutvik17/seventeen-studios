@@ -649,6 +649,18 @@ body:has([data-slate]) .nav.is-scrolled::before {
   background: linear-gradient(180deg, rgba(36, 60, 51, 0.94), rgba(36, 60, 51, 0));
 }
 
+/*
+  Over the landing's film when it has gone dark for the night, the bar is
+  written in the colour of lamplight until the page is scrolled past it.
+*/
+body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__mark,
+body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
+  color: #f3eee2;
+}
+body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__logo {
+  --mark: #f3eee2;
+}
+
 /* ==================================================================
    Responsive
    ================================================================== */

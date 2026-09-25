@@ -84,7 +84,7 @@ string) — `next.config.js` already treats `/` and empty as "no base path".
 ```
 src/
   app/                     routes (App Router, all statically exported)
-    page.tsx               the cover and contents
+    page.tsx               the film (Nvidia's campus through a year, in watercolour), then the cover and contents
     founder/               the book: cover, chapters, the résumé in the back pocket
     notebook/              the notebook, and a folder per entry (earth-we-live-on/)
     grasp/                 Grasp: the chalkboard, the live derivative, the lessons
@@ -101,13 +101,15 @@ src/
     grasp/                 the chalkboard
     instruments/           the derivative Grasp demonstrates
     notebook/              the entries' drawings — the globe, and the continents sketched beside it
-    sections/Contents.tsx  the landing
+    film/Film.tsx          the landing's film: the canvas, its caption, the shots to jump between, a pause
+    sections/Contents.tsx  the landing's contents
     sections/Skyline.tsx   the cities beside the landing's title, drawn one after another
     IndexList.tsx          every list of pages to turn to — the contents, the notebook
     DrawIn.tsx             a little drawing — an underline, an arrow — that draws itself in
   assets/ground/           the painted ground every page lies on (made by scripts/make-ground.mjs)
   content/                 all copy, as typed data
   lib/
+    film/                  the watercolour film engine — wash, pencil, the campus, sky, people and traffic, weather, the director
     sketchbook/            the book's drawings — geometry, chapters, the canvas painter — and the pencil, the brush and the painted ground everything is made with
     sketch/wordmark.ts     the landing's title, painted letter by letter
     sketch/skylines.ts     the cities, landmark by landmark, as pencil marks
