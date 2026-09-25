@@ -132,8 +132,6 @@
   inset: 12% 0 10%;
   background-color: var(--globe-shallow);
   opacity: 0.32;
-  -webkit-mask: var(--paint-swash) center / 100% 100% no-repeat;
-  mask: var(--paint-swash) center / 100% 100% no-repeat;
 }
 
 @media (max-width: 860px) {

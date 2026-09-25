@@ -96,7 +96,8 @@ src/
     Cursor.tsx             the pencil and its hover marks
     Preloader.tsx          every full load: a brush paints the mark until the page is ready
     Transition.tsx         page-turn transitions + TransitionLink
-    loader/                the loader: Seventeen's studio, sketched and painted in autumn (also the header's mark)
+    loader/                the loader: Seventeen's HQ, a modern pavilion, sketched and painted in autumn
+    LeafMark.tsx           the header's mark: a maple leaf, sketched and painted
     founder/               the book component and its styles
     grasp/                 the chalkboard
     instruments/           the derivative Grasp demonstrates
