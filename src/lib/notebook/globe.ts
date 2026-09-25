@@ -80,7 +80,8 @@ export function earth(w: number, h: number, seed = 424): Drawing {
   const r = rng(seed);
   const ink: Stroke[] = [];
   const washes: Wash[] = [];
-  const R = Math.min(w * 0.3, h * 0.33);
+  // Small enough to sit in the night sky with room round it, not fill it.
+  const R = Math.min(w * 0.23, h * 0.26);
   const cx = w * 0.5;
   const cy = h * 0.44;
   const lon0 = 12;
@@ -166,14 +167,6 @@ export function earth(w: number, h: number, seed = 424): Drawing {
   };
   for (let lon = -180; lon < 180; lon += 30) graticule(Array.from({ length: 45 }, (_, k) => [lon, -88 + k * 4] as [number, number]));
   for (let lat = -60; lat <= 60; lat += 30) graticule(Array.from({ length: 91 }, (_, k) => [-180 + k * 4, lat] as [number, number]));
-  // A storm spiral over the South Atlantic, drawn before it is painted.
-  const storm = project(-18, -38);
-  const spiral: Pt[] = Array.from({ length: 26 }, (_, k) => {
-    const a = k * 0.5;
-    const rr = R * 0.012 * k;
-    return [storm.p[0] + Math.cos(a) * rr, storm.p[1] + Math.sin(a) * rr * 0.6] as Pt;
-  });
-  ink.push(pencil(curve(spiral, 2), r, { width: 0.5, tone: 0.35, overshoot: 0 }));
 
   /* ---------------- the sky ---------------- */
 
@@ -259,8 +252,6 @@ export function earth(w: number, h: number, seed = 424): Drawing {
     const dry = g === PAINTS.indexOf('desert') || g === PAINTS.indexOf('savanna');
     washes.push(within(landPath, new Wash(blob(q.p[0], q.p[1], R * 0.05, R * 0.028, r, 7), { color: dry ? '#c07f45' : '#2f5f2c', layers: 4, alpha: 0.11, spread: 0.4, edge: 0.6 }, r)));
   }
-  // The storm, a pale swirl.
-  washes.push(within(sphere, new Wash(blob(storm.p[0], storm.p[1], R * 0.16, R * 0.08, r, 11), { color: '#f3f6fa', layers: 6, alpha: 0.18, spread: 0.35, edge: 0.1 }, r)));
 
   // Day and night: the side away from the sun sinks under indigo, laid in
   // ten thin glazes so it shades round the curve and past the terminator.
@@ -281,29 +272,78 @@ export function earth(w: number, h: number, seed = 424): Drawing {
         ctx.restore();
       }),
     );
-  // Light caught on the sea, toward the sun.
-  washes.push(within(sphere, new Wash(blob(cx - R * 0.45, cy - R * 0.15, R * 0.2, R * 0.13, r), { color: '#e6f1f8', layers: 6, alpha: 0.12, spread: 0.3, edge: 0 }, r)));
+  // Light caught on the sea, toward the sun: a soft lift, not a patch.
+  washes.push(
+    glaze(6, (ctx) => {
+      const lx = cx - R * 0.42;
+      const ly = cy - R * 0.2;
+      const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, R * 0.35);
+      g.addColorStop(0, 'rgba(235,244,250,0.035)');
+      g.addColorStop(1, 'rgba(235,244,250,0)');
+      ctx.save();
+      ctx.clip(sphere);
+      ctx.fillStyle = g;
+      ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+      ctx.restore();
+    }),
+  );
 
   /* ---------------- what keeps moving ---------------- */
 
-  // Cloud sprites, painted once each: a soft white streak.
-  const sprite = (seed2: number) => {
+  // Clouds, as the planet actually wears them: a broken band of cumulus
+  // along the equator where the trade winds meet, spiral storm systems in
+  // the westerlies of both hemispheres, and long thin streamers over the
+  // Southern Ocean. None over the great deserts, which is why they are
+  // deserts. Each kind is painted once as a small watercolour — puffs of
+  // white laid wet so their edges melt, with a faint blue-grey underside —
+  // and moved round the globe on the latitude it belongs to.
+  const paintCloud = (kind: 'puff' | 'storm' | 'streak', seed2: number) => {
     const c = document.createElement('canvas');
-    c.width = 160;
-    c.height = 60;
+    c.width = c.height = 220;
     const x = c.getContext('2d')!;
     const q = rng(seed2);
-    for (let k = 0; k < 6; k++) new Wash(blob(38 + k * 17 + between(q, -6, 6), 30 + between(q, -5, 5), between(q, 20, 30), between(q, 10, 15), q, 11), { color: '#ffffff', layers: 7, alpha: 0.12, spread: 0.5, edge: 0 }, q).paint(x);
+    const puff = (px: number, py: number, rad: number, alpha: number) => {
+      new Wash(blob(px + 3, py + 4, rad, rad * 0.8, q, 9), { color: '#9fb0c8', layers: 3, alpha: alpha * 0.35, spread: 0.45, edge: 0 }, q).paint(x);
+      new Wash(blob(px, py, rad, rad * 0.8, q, 9), { color: '#ffffff', layers: 5, alpha, spread: 0.5, edge: 0 }, q).paint(x);
+    };
+    if (kind === 'puff') {
+      for (let k = 0; k < 9; k++) puff(110 + between(q, -45, 45), 110 + between(q, -22, 22), between(q, 12, 24), 0.11);
+    } else if (kind === 'storm') {
+      // A comma: puffs wound along a spiral, fuller toward the head.
+      for (let k = 0; k < 26; k++) {
+        const a2 = k * 0.32;
+        const rr = 6 + k * 3.4;
+        puff(110 + Math.cos(a2) * rr, 110 + Math.sin(a2) * rr * 0.8, 20 - k * 0.45, 0.09);
+      }
+      puff(110, 110, 16, 0.14);
+    } else {
+      for (let k = 0; k < 10; k++) puff(20 + k * 19 + between(q, -4, 4), 110 + Math.sin(k * 0.7) * 6, between(q, 8, 13), 0.08);
+    }
     return c;
   };
-  const sprites = typeof document === 'undefined' ? [] : Array.from({ length: 5 }, (_, k) => sprite(900 + k));
-  const clouds = Array.from({ length: 36 }, () => ({
-    lon: between(r, -180, 180),
-    lat: pick(r, [-52, -45, -12, -6, 6, 10, 38, 46, 55]) + between(r, -4, 4),
-    speed: between(r, 1.2, 2.6),
-    size: between(r, 0.8, 1.4),
-    art: sprites.length ? pick(r, sprites) : null,
-  }));
+  const art = typeof document === 'undefined' ? null : {
+    puff: [0, 1, 2].map((k) => paintCloud('puff', 900 + k)),
+    storm: [0, 1].map((k) => paintCloud('storm', 910 + k)),
+    streak: [0, 1].map((k) => paintCloud('streak', 920 + k)),
+  };
+  type Cloud = { lon: number; lat: number; speed: number; size: number; kind: 'puff' | 'storm' | 'streak'; v: number };
+  const clouds: Cloud[] = [];
+  const dry = (lon: number, lat: number) => {
+    const g = paintAt(((lon + 540) % 360) - 180, lat);
+    return g === PAINTS.indexOf('desert');
+  };
+  // The equatorial band: easterly trades, so it drifts west, slowly.
+  for (let lon = -180; lon < 180; lon += 9) {
+    const lat = between(r, -4, 9);
+    if (!dry(lon, lat) && r() < 0.75) clouds.push({ lon: lon + between(r, -5, 5), lat, speed: -between(r, 0.6, 1), size: between(r, 0.7, 1.1), kind: 'puff', v: Math.floor(r() * 3) });
+  }
+  // Storm systems in the westerlies, drifting east.
+  for (const [lon, lat] of [[-38, 52], [15, 58], [-150, 48], [60, -46], [-5, -50], [-120, -48], [150, -45]] as const) {
+    clouds.push({ lon, lat, speed: between(r, 1.5, 2.2), size: between(r, 1.1, 1.5), kind: 'storm', v: Math.floor(r() * 2) });
+  }
+  // Streamers over the Southern Ocean and the North Pacific.
+  for (let k = 0; k < 10; k++) clouds.push({ lon: between(r, -180, 180), lat: pick(r, [-58, -62, 44]), speed: between(r, 2, 2.8), size: between(r, 1, 1.4), kind: 'streak', v: Math.floor(r() * 2) });
+
   const lights = CITIES.map(([lon, lat]) => ({ lon, lat, p: r() * 6.28 }));
 
   const live = (ctx: CanvasRenderingContext2D, t: number, a: number) => {
@@ -322,25 +362,30 @@ export function earth(w: number, h: number, seed = 424): Drawing {
 
     ctx.save();
     ctx.clip(sphere);
-    // Clouds drift east with the westerlies and the trades.
-    for (const c of clouds) {
-      if (!c.art) continue;
-      const lon = c.lon + t * c.speed;
-      const q = project(lon, c.lat);
-      if (!q.front) continue;
-      const lit = Math.max(0, lightAt(q.x, q.y, q.z));
-      const alpha = a * Math.min(1, q.z * 2.5) * (0.2 + 0.8 * Math.min(1, lit * 2.2));
-      if (alpha < 0.02) continue;
-      const ahead = project(lon + 3, c.lat);
-      const sw = R * 0.34 * c.size;
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.translate(q.p[0], q.p[1]);
-      ctx.rotate(Math.atan2(ahead.p[1] - q.p[1], ahead.p[0] - q.p[0]));
-      // Foreshortened toward the rim, across and along.
-      ctx.scale(Math.max(0.25, Math.min(1, Math.hypot(ahead.p[0] - q.p[0], ahead.p[1] - q.p[1]) / (R * 0.05))), Math.max(0.35, q.z));
-      ctx.drawImage(c.art, -sw / 2, -sw * 0.19, sw, sw * 0.375);
-      ctx.restore();
+    // Clouds drift with their winds: east in the westerlies, west in the trades.
+    if (art) {
+      for (const c of clouds) {
+        const lon = c.lon + t * c.speed;
+        if (c.kind === 'puff' && dry(lon, c.lat)) continue;
+        const q = project(lon, c.lat);
+        if (!q.front) continue;
+        const lit = lightAt(q.x, q.y, q.z);
+        // Thinning toward the rim, and grey as they pass into the night.
+        const alpha = a * Math.min(1, q.z * 3) * Math.max(0.08, Math.min(1, 0.3 + lit * 1.6));
+        if (alpha < 0.03) continue;
+        const img = art[c.kind][c.v % art[c.kind].length];
+        const size = R * 0.3 * c.size;
+        // Foreshortened: squashed toward the rim, along the line to the centre.
+        const ang = Math.atan2(q.p[1] - cy, q.p[0] - cx);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(q.p[0], q.p[1]);
+        ctx.rotate(ang);
+        ctx.scale(Math.max(0.25, q.z), 1);
+        ctx.rotate(-ang);
+        ctx.drawImage(img, -size / 2, -size / 2, size, size);
+        ctx.restore();
+      }
     }
     // The cities on the night side, twinkling.
     for (const c of lights) {
