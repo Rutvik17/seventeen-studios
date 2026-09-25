@@ -318,7 +318,7 @@ function cards() {
   artwork because it is made by the artwork's own code.
 */
 const FILM_CSS = `
-  .nav, .preloader, .curtain, .cursor-marks, .endpaper,
+  .nav, .preloader, .curtain, .cursor-wash, .cursor-brush, .endpaper,
   [class*="FounderFilm_downloads"],
   p[class*="FounderFilm_line"] ~ p { display: none !important; }
   /* A taller canvas, so the portrait fills the card's height. */
@@ -330,7 +330,7 @@ const FILM_CSS = `
 
 /* The landing's card: the painting, less the header and the list of shots, with his name over the sky. */
 const LANDING_CSS = `
-  .nav, .preloader, .curtain, .cursor-marks, [class*="Film_controls"] { display: none !important; }
+  .nav, .preloader, .curtain, .cursor-wash, .cursor-brush, [class*="Film_controls"] { display: none !important; }
   /* A mist of paper lifting off the top left corner, so the name sits on paper, not on the fields. */
   body::after { content: ''; position: fixed; inset: 0; z-index: 9; pointer-events: none;
     background: linear-gradient(162deg, rgba(245,240,230,0.94) 0%, rgba(245,240,230,0.82) 22%, rgba(245,240,230,0.35) 38%, rgba(245,240,230,0) 52%); }
@@ -341,7 +341,7 @@ const LANDING_CSS = `
 
 /* The algorithms cards: the page as it is, less the header. */
 const ALGORITHMS_CSS = `
-  .nav, .preloader, .curtain, .cursor-marks { display: none !important; }
+  .nav, .preloader, .curtain, .cursor-wash, .cursor-brush { display: none !important; }
   [data-app] { --top: 12px !important; }
 `;
 

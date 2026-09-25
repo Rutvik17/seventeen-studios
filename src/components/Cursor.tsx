@@ -1,35 +1,33 @@
 'use client';
 
 /**
- * The cursor is a pencil.
+ * The cursor is a brush.
  *
- * The site is a sketchbook, so the pointer is the thing that draws in it: a
- * pencil whose point sits exactly on the pointer. It leans the way it is being
- * moved — the top trails behind the point, as a real pencil's does when you
- * drag it across paper — and stands back up when the hand stops.
+ * The site is a watercolour, so the pointer is the thing that paints it: the
+ * films' own brush (`lib/film/tools.ts`, the one seen laying their washes), its
+ * tip exactly on the pointer. It leans the way it is being moved, as a brush
+ * dragged across paper trails its handle, and stands back up when the hand
+ * stops.
  *
- * (It used to leave a fading graphite line behind it. That read as a smear on
- * every page rather than as drawing, and it went.)
+ * Over anything that does something, it does what a brush does: it lays a
+ * little wash under it (`lib/film/wash.ts`, a glaze at a time), blended into
+ * the paper so the words read through it, and lifted off again when the
+ * pointer leaves. A handwritten label appears beside the tip — the thing's
+ * `data-cursor`, or for a button that is only an icon, its `aria-label`.
+ * Pressing presses the brush down.
  *
- * Over anything that does something, it does what a pencil does in a
- * sketchbook: it circles it. A quick graphite loop is drawn round a link or a
- * button, the pencil lifts and leans in, and a handwritten label appears
- * beside the point — the thing's `data-cursor`, or for a button that is only
- * an icon, its `aria-label`. Pressing taps the pencil down.
- *
- * - The loop is crimson only round the one thing to do next
+ * - The wash is crimson only under the one thing to do next
  *   (`data-cursor-accent`: writing to Rutvik) — the palette's rule for
- *   crimson. A crimson ring round every link read as a page of corrections.
+ *   crimson — and cadmium yellow, thinly, under everything else.
  * - Anything long or large — a row of a list (`data-row`), a card, a
- *   drawing — gets no loop: rows wash themselves in with paint on hover, and
- *   a loop round a whole row read as a pencil scribbling over the page.
- * - Over text — a field to type in, code to select — the pencil steps aside
- *   for the text caret, which says "you can type or select here" better than
- *   any drawing.
- * - Something disabled is not circled: there is nothing to do there.
+ *   drawing — gets no wash from here: rows wash themselves in with their
+ *   own CSS, and a wash the size of a card would drown it.
+ * - Over text — a field to type in, code to select — the brush steps aside
+ *   for the text caret.
+ * - Something disabled gets no wash: there is nothing to do there.
  *
- * It used to be a blue dot inside a lagging ring — a good cursor for an
- * instrument panel, and a stranger in a notebook.
+ * (It was a pencil, and before that a blue dot in a lagging ring. A pencil
+ * circling links in graphite belonged to a sketchbook; this is a painting.)
  *
  * Only mounts on fine-pointer devices with motion enabled; everything falls
  * back to the native cursor otherwise (and `cursor: none` is applied by the
@@ -38,35 +36,42 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { gsap, prefersReducedMotion } from '@/lib/gsap';
+import { drawBrush } from '@/lib/film/tools';
+import { blob, Wash } from '@/lib/film/wash';
+import { rng } from '@/lib/film/random';
 
 const HOVER_SELECTOR = 'a, button:not(:disabled), [data-cursor], input:not(:disabled), select';
-/** Where the pencil steps aside for the text caret. */
+/** Where the brush steps aside for the text caret. */
 const TEXT_SELECTOR = 'input[type="search"], input[type="text"], textarea, pre';
 
-/** How far the pencil leans at most, degrees, and how quickly it rights itself. */
+/** How far the brush leans at most, degrees, and how quickly it rights itself. */
 const MAX_LEAN = 24;
 const SETTLE_MS = 90;
-/** How long the pencil takes to circle something, milliseconds. */
-const CIRCLE_MS = 380;
-/** Graphite, and crimson for the one thing to do next. */
-const GRAPHITE = 'rgb(46, 46, 52)';
-const CRIMSON = 'rgb(200, 35, 63)';
+/** The brush's size against the films' (it is drawn 110 units long there). */
+const BRUSH_SCALE = 0.62;
+/** The brush's own little canvas, CSS px, and where its tip sits in it. */
+const BRUSH_BOX = { w: 76, h: 50, tipX: 4, tipY: 46 };
+/** How long a wash takes to go down, and how many glazes it is laid in. */
+const WASH_MS = 420;
+const GLAZES = 12;
+/** Frames it takes to lift a wash off again. */
+const LIFT_FRAMES = 14;
+/** Cadmium yellow, and crimson for the one thing to do next. */
+const YELLOW = '#eba42c';
+const CRIMSON = '#c8233f';
 
-/** A stable number from an element's size, so each thing is circled the same way every time. */
+/** A stable number from an element's size, so each thing is washed the same way every time. */
 function seedOf(r: DOMRect): number {
-  return (Math.round(r.width) * 73856093) ^ (Math.round(r.height) * 19349663);
-}
-function wobble(seed: number, i: number): number {
-  const h = Math.imul(seed ^ (i * 2654435761), 1597334677) >>> 0;
-  return (h / 4294967296) - 0.5;
+  return ((Math.round(r.width) * 73856093) ^ (Math.round(r.height) * 19349663)) >>> 0;
 }
 
 export function Cursor() {
   const [enabled, setEnabled] = useState(false);
-  const pencilRef = useRef<HTMLDivElement>(null);
+  const brushRef = useRef<HTMLDivElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
   const leanRef = useRef<HTMLSpanElement>(null);
-  const marksRef = useRef<HTMLCanvasElement>(null);
+  const tipRef = useRef<HTMLCanvasElement>(null);
+  const washRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (prefersReducedMotion()) return;
@@ -76,86 +81,101 @@ export function Cursor() {
 
   useEffect(() => {
     if (!enabled) return;
-    const pencil = pencilRef.current;
+    const brush = brushRef.current;
     const label = labelRef.current;
     const lean = leanRef.current;
-    const marks = marksRef.current;
-    if (!pencil || !label || !lean || !marks) return;
-    const ctx = marks.getContext('2d');
-    if (!ctx) return;
+    const tip = tipRef.current;
+    const sheet = washRef.current;
+    if (!brush || !label || !lean || !tip || !sheet) return;
+    const ctx = sheet.getContext('2d');
+    const tctx = tip.getContext('2d');
+    if (!ctx || !tctx) return;
 
     document.documentElement.classList.add('has-custom-cursor');
 
-    const setX = gsap.quickSetter(pencil, 'x', 'px');
-    const setY = gsap.quickSetter(pencil, 'y', 'px');
+    let dpr = 1;
+    const size = () => {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      sheet.width = Math.round(window.innerWidth * dpr);
+      sheet.height = Math.round(window.innerHeight * dpr);
+      // The brush itself, drawn once by the films' own hand, its tip at the box's corner.
+      tip.width = Math.round(BRUSH_BOX.w * dpr);
+      tip.height = Math.round(BRUSH_BOX.h * dpr);
+      tctx.setTransform(dpr * BRUSH_SCALE, 0, 0, dpr * BRUSH_SCALE, BRUSH_BOX.tipX * dpr, BRUSH_BOX.tipY * dpr);
+      // drawBrush dabs about its point with time; at t = 0 it sits 2 units low, so it is drawn 2 high.
+      drawBrush(tctx, 0, -2, 0);
+    };
+    size();
+
+    const setX = gsap.quickSetter(brush, 'x', 'px');
+    const setY = gsap.quickSetter(brush, 'y', 'px');
     const tilt = gsap.quickTo(lean, 'rotation', { duration: 0.5, ease: 'power3.out' });
     let lastX = 0;
     let lastT = 0;
     let settle = 0;
-
     let visible = false;
+
     let hovered: Element | null = null;
+    /** The wash going down under what is hovered, and how many of its glazes are laid. */
+    let wash: Wash | null = null;
+    let laid = 0;
+    let washedAt = 0;
+    /** Frames left in lifting the last wash off. */
+    let lifting = 0;
     let raf = 0;
-    let dpr = 1;
-    let circledAt = 0;
 
-    const size = () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      marks.width = Math.round(window.innerWidth * dpr);
-      marks.height = Math.round(window.innerHeight * dpr);
-    };
-    size();
-
-    /**
-     * The mark round whatever is hovered: a loose loop that overshoots its own
-     * start, as a hand does — for something small enough to circle.
-     */
-    const circle = (now: number) => {
-      if (!hovered || hovered.closest('[data-row], input[type="range"]')) return false;
-      const r = hovered.getBoundingClientRect();
-      if (!r.width || !r.height || r.width > 420 || r.height > 130) return false;
-      const u = Math.min(1, (now - circledAt) / CIRCLE_MS);
-      const p = 1 - (1 - u) ** 3;
-      const seed = seedOf(r);
-      ctx.strokeStyle = hovered.closest('[data-cursor-accent]') ? CRIMSON : GRAPHITE;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      for (let pass = 0; pass < 2; pass += 1) {
-        ctx.globalAlpha = pass ? 0.3 : 0.75;
-        ctx.lineWidth = pass ? 1 : 1.7;
-        ctx.beginPath();
-        const cx = r.left + r.width / 2;
-        const cy = r.top + r.height / 2;
-        const rx = r.width / 2 + 12;
-        const ry = r.height / 2 + 9;
-        const start = -2.5 + wobble(seed, 99) * 0.6;
-        const turn = Math.PI * 2 * 1.1 * p;
-        const steps = 48;
-        for (let i = 0; i <= steps; i += 1) {
-          const a = start + (turn * i) / steps;
-          const k = 1 + wobble(seed + pass * 7, i) * 0.06 + (i / steps) * 0.05;
-          const x = cx + Math.cos(a) * rx * k + pass * 1.5;
-          const y = cy + Math.sin(a) * ry * k - pass;
-          i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-        }
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
-      return true;
+    /** Start a wash under `el`, if it is something small enough to wash. */
+    const begin = (el: Element) => {
+      wash = null;
+      laid = 0;
+      if (el.closest('[data-row], input[type="range"]')) return;
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height || r.width > 420 || r.height > 130) return;
+      const R = rng(seedOf(r));
+      const shape = blob(r.left + r.width / 2, r.top + r.height / 2, r.width / 2 + 10, r.height / 2 + 7, R, 12);
+      const accent = !!el.closest('[data-cursor-accent]');
+      wash = new Wash(shape, { color: accent ? CRIMSON : YELLOW, layers: GLAZES, alpha: accent ? 0.028 : 0.034, spread: 0.24, edge: 1, grain: 10 }, R);
+      washedAt = performance.now();
     };
 
-    /* One frame of the mark round whatever is hovered; the loop stops when nothing is. */
+    /* One frame: lift the old wash a little, lay the glazes of the new one that are due; stop when there is nothing to do. */
     const paint = () => {
+      raf = 0;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, marks.width, marks.height);
-      raf = circle(performance.now()) ? requestAnimationFrame(paint) : 0;
+      if (lifting > 0) {
+        // Blotted: a little of the paint comes away each frame.
+        lifting -= 1;
+        if (lifting === 0) ctx.clearRect(0, 0, sheet.width, sheet.height);
+        else {
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.fillStyle = 'rgba(0,0,0,0.22)';
+          ctx.fillRect(0, 0, sheet.width, sheet.height);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+      }
+      if (wash) {
+        const due = Math.min(GLAZES, Math.ceil(((performance.now() - washedAt) / WASH_MS) * GLAZES));
+        while (laid < due) wash.pass(ctx, laid++);
+      }
+      if (lifting > 0 || (wash && laid < GLAZES)) raf = requestAnimationFrame(paint);
+    };
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(paint);
+    };
+
+    /** Lift whatever wash is down. */
+    const lift = () => {
+      if (wash || laid) lifting = LIFT_FRAMES;
+      wash = null;
+      laid = 0;
+      schedule();
     };
 
     const clear = () => {
       hovered = null;
-      pencil.classList.remove('is-active', 'is-labelled', 'is-pressed');
+      brush.classList.remove('is-active', 'is-labelled', 'is-pressed');
       label.textContent = '';
-      if (!raf) raf = requestAnimationFrame(paint);
+      lift();
     };
 
     /**
@@ -171,19 +191,15 @@ export function Cursor() {
         clear();
         return;
       }
+      lift();
       hovered = target;
-      circledAt = performance.now();
-      if (!raf) raf = requestAnimationFrame(paint);
+      begin(target);
+      schedule();
       // A button that is only an icon (no letters on it) is named by its aria-label; one with words needs no label.
       const text = target.getAttribute('data-cursor') ?? (/\p{L}/u.test(target.textContent ?? '') ? null : target.getAttribute('aria-label'));
-      pencil.classList.add('is-active');
-      if (text) {
-        label.textContent = text;
-        pencil.classList.add('is-labelled');
-      } else {
-        pencil.classList.remove('is-labelled');
-        label.textContent = '';
-      }
+      brush.classList.add('is-active');
+      brush.classList.toggle('is-labelled', !!text);
+      label.textContent = text ?? '';
     };
 
     const hoverTargetOf = (event: PointerEvent) => {
@@ -195,7 +211,7 @@ export function Cursor() {
     const onMove = (event: PointerEvent) => {
       if (!visible) {
         visible = true;
-        gsap.to(pencil, { opacity: 1, duration: 0.3 });
+        gsap.to(brush, { opacity: 1, duration: 0.3 });
       }
       setX(event.clientX);
       setY(event.clientY);
@@ -210,7 +226,7 @@ export function Cursor() {
       window.clearTimeout(settle);
       settle = window.setTimeout(() => tilt(0), SETTLE_MS);
 
-      pencil.classList.toggle('is-away', !!(event.target as Element | null)?.closest?.(TEXT_SELECTOR));
+      brush.classList.toggle('is-away', !!(event.target as Element | null)?.closest?.(TEXT_SELECTOR));
       applyHover(hoverTargetOf(event));
     };
 
@@ -222,13 +238,24 @@ export function Cursor() {
       if (hoverTargetOf(event) === hovered) clear();
     };
 
-    const onDown = () => pencil.classList.add('is-pressed');
-    const onUp = () => pencil.classList.remove('is-pressed');
+    const onDown = () => brush.classList.add('is-pressed');
+    const onUp = () => brush.classList.remove('is-pressed');
+
+    // A wash is laid where the thing was; once the page moves under it, lift it and let the next move lay a new one.
+    const onScroll = () => {
+      if (hovered) clear();
+    };
 
     const onLeaveWindow = () => {
       visible = false;
       tilt(0);
-      gsap.to(pencil, { opacity: 0, duration: 0.2 });
+      gsap.to(brush, { opacity: 0, duration: 0.2 });
+      clear();
+    };
+
+    const onResize = () => {
+      size();
+      clear();
     };
 
     window.addEventListener('pointermove', onMove, { passive: true });
@@ -236,7 +263,8 @@ export function Cursor() {
     window.addEventListener('pointerout', onOut);
     window.addEventListener('pointerdown', onDown);
     window.addEventListener('pointerup', onUp);
-    window.addEventListener('resize', size);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
     document.addEventListener('pointerleave', onLeaveWindow);
 
     return () => {
@@ -247,7 +275,8 @@ export function Cursor() {
       window.removeEventListener('pointerout', onOut);
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('resize', size);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onScroll, { capture: true });
       document.removeEventListener('pointerleave', onLeaveWindow);
       document.documentElement.classList.remove('has-custom-cursor');
     };
@@ -257,27 +286,13 @@ export function Cursor() {
 
   return (
     <div aria-hidden="true">
-      <canvas className="cursor-marks" ref={marksRef} />
-      <div className="cursor-pencil" ref={pencilRef}>
-        {/* Leans about the point: the wrapper's origin is the pointer. */}
-        <span className="cursor-pencil__lean" ref={leanRef}>
-        {/* Drawn with its point at (0, 0), so the point is the pointer. */}
-        <svg className="cursor-pencil__body" viewBox="-2 -44 46 46" width="46" height="46">
-          <g transform="rotate(-45)">
-            {/* graphite point */}
-            <path d="M0 0 L5 -2.4 L5 2.4 Z" fill="#1d1d21" />
-            {/* sharpened wood */}
-            <path d="M5 -2.4 L14 -5.5 L14 5.5 L5 2.4 Z" fill="#e6c89a" stroke="#1d1d21" strokeWidth="0.9" strokeLinejoin="round" />
-            {/* the painted body */}
-            <rect x="14" y="-5.5" width="30" height="11" fill="var(--accent)" stroke="#1d1d21" strokeWidth="0.9" />
-            <line x1="14" y1="0" x2="44" y2="0" stroke="#faf3e5" strokeOpacity="0.35" strokeWidth="1.2" />
-            {/* ferrule and eraser */}
-            <rect x="44" y="-5.5" width="5" height="11" fill="#b9b3a2" stroke="#1d1d21" strokeWidth="0.9" />
-            <rect x="49" y="-5.5" width="6" height="11" rx="2" fill="var(--accent-2)" stroke="#1d1d21" strokeWidth="0.9" />
-          </g>
-        </svg>
+      <canvas className="cursor-wash" ref={washRef} />
+      <div className="cursor-brush" ref={brushRef}>
+        {/* Leans about the tip: the wrapper's origin is the pointer. */}
+        <span className="cursor-brush__lean" ref={leanRef}>
+          <canvas className="cursor-brush__body" ref={tipRef} />
         </span>
-        <span className="cursor-pencil__label" ref={labelRef} />
+        <span className="cursor-brush__label" ref={labelRef} />
       </div>
     </div>
   );
