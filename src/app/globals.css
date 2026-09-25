@@ -382,7 +382,7 @@ code {
   typeface.
 
   The painting, its name and the counter are laid out here; the painting is
-  `components/loader/StudioCanvas.tsx` (drawn by `lib/film/studio.ts`).
+  `components/loader/LeafCanvas.tsx` (the leaf is `lib/film/leaf.ts`).
 */
 .loader {
   position: absolute;
@@ -400,11 +400,11 @@ code {
   justify-items: center;
   gap: 4px;
 }
-/* The studio painting, framed 560 : 310 as it is drawn. */
+/* The leaf, painted. */
 .loader__painting {
   display: block;
-  width: min(680px, 90vw, 120vh);
-  aspect-ratio: 560 / 310;
+  width: min(300px, 56vw, 40vh);
+  aspect-ratio: 1;
 }
 .loader__name {
   font-family: var(--font-hand), cursive;

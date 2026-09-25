@@ -69,10 +69,16 @@ export function earth(cx: number, cy: number, R: number, lon0 = -28, lat0 = 18, 
 
   // A loose wash of sky behind it first, running out into the paper — the
   // vignette a sketchbook painting sits in.
-  washes.push(new Wash(blob(cx + R * 0.1, cy + R * 0.05, R * 1.45, R * 1.3, r, 11), { color: '#c3d3e3', layers: 10, alpha: 0.045, spread: 0.45, edge: 0.15, grain: 18 }, r));
+  washes.push(new Wash(blob(cx + R * 0.06, cy + R * 0.04, R * 1.28, R * 1.2, r, 11), { color: '#c3d3e3', layers: 10, alpha: 0.035, spread: 0.45, edge: 0.15, grain: 18 }, r));
 
   // The sea: one wash, then the rim darkened, then light caught top-left.
-  washes.push(new Wash(circle(R * 0.99), { color: PIGMENT.sea, layers: 16, alpha: 0.075, spread: 0.04, edge: 0.7, grain: 12 }, r));
+  washes.push(new Wash(circle(R * 0.99), { color: PIGMENT.sea, layers: 18, alpha: 0.085, spread: 0.04, edge: 0.7, grain: 12 }, r));
+  // Granulation: ultramarine settling into the paper's pits across the sea.
+  for (let k = 0; k < 26; k++) {
+    const a = r() * Math.PI * 2;
+    const d = Math.sqrt(r()) * R * 0.85;
+    washes.push(new Wash(blob(cx + Math.cos(a) * d, cy + Math.sin(a) * d, R * 0.14, R * 0.08, r), { color: '#2d5a92', layers: 4, alpha: 0.05, spread: 0.45, edge: 0.3 }, r));
+  }
   washes.push(new Wash([...circle(R * 0.99, 40), ...circle(R * 0.8, 40).reverse()], { color: PIGMENT.deep, layers: 10, alpha: 0.06, spread: 0.05, edge: 0.2 }, r));
 
   // The land: each landmass in the colour of most of its ground.
@@ -109,54 +115,100 @@ export function earth(cx: number, cy: number, R: number, lon0 = -28, lat0 = 18, 
   }
   washes.push(...landWashes);
 
-  // Then the colour of each place: dabs across the land, in its own ground's colour.
-  for (let lat = -80; lat <= 80; lat += 5) {
-    for (let lon = -180; lon < 180; lon += 5 / Math.max(0.3, Math.cos(lat * DEG))) {
-      const { p, front } = project(lon, lat);
+  // Then the colour of each place, washed wet-in-wet and kept inside the
+  // coasts: broad soft patches of each ground's pigment, clipped to the land
+  // so none of it bleeds into the sea.
+  const landPath = new Path2D();
+  for (const ring of LAND) {
+    let seen = 0;
+    const pts: Pt[] = [];
+    for (let i = 0; i < ring.length; i += 2) {
+      const { p, front } = project(ring[i], ring[i + 1]);
+      pts.push(p);
+      if (front) seen++;
+    }
+    if (seen < 3) continue;
+    pts.forEach(([x, y], i) => (i ? landPath.lineTo(x, y) : landPath.moveTo(x, y)));
+    landPath.closePath();
+  }
+  const clipped = (w: Wash): Wash =>
+    Object.assign(Object.create(Object.getPrototypeOf(w)), w, {
+      pass(ctx: CanvasRenderingContext2D, i: number) {
+        ctx.save();
+        ctx.clip(landPath);
+        w.pass(ctx, i);
+        ctx.restore();
+      },
+    });
+  for (let lat = -80; lat <= 80; lat += 7) {
+    for (let lon = -180; lon < 180; lon += 7 / Math.max(0.3, Math.cos(lat * DEG))) {
+      const { p, front } = project(lon + between(r, -2, 2), lat + between(r, -2, 2));
       if (!front) continue;
       const k = paintAt(lon, lat);
       if (isSea(k)) continue;
-      // Near the rim the dabs are foreshortened, like the land under them.
       const d = Math.hypot(p[0] - cx, p[1] - cy) / R;
-      const size = R * 0.055 * Math.sqrt(Math.max(0.15, 1 - d * d));
-      washes.push(new Wash(blob(p[0] + between(r, -2, 2), p[1] + between(r, -2, 2), size * 1.3, size, r, 7), { color: PIGMENT[PAINTS[k]], layers: 4, alpha: 0.11, spread: 0.35, edge: 0.25 }, r));
+      const size = R * 0.09 * Math.sqrt(Math.max(0.12, 1 - d * d));
+      washes.push(clipped(new Wash(blob(p[0], p[1], size * 1.5, size, r, 9), { color: PIGMENT[PAINTS[k]], layers: 6, alpha: 0.075, spread: 0.4, edge: 0.45 }, r)));
     }
+  }
+  // Mountains and deserts pooled darker, where the pigment settles.
+  for (let k = 0; k < 40; k++) {
+    const lon = between(r, -120, 60);
+    const lat = between(r, -50, 70);
+    const { p, front } = project(lon, lat);
+    const g = paintAt(lon, lat);
+    if (!front || isSea(g)) continue;
+    washes.push(clipped(new Wash(blob(p[0], p[1], R * 0.05, R * 0.03, r, 7), { color: g === PAINTS.indexOf('desert') ? '#c98f55' : '#3f6a34', layers: 4, alpha: 0.1, spread: 0.4, edge: 0.6 }, r)));
   }
 
-  // The graticule, faintly: every thirty degrees.
-  for (let lon = -180; lon < 180; lon += 30) {
-    let run: Pt[] = [];
-    for (let lat = -88; lat <= 88; lat += 4) {
-      const { p, front } = project(lon, lat);
-      if (front) run.push(p);
-      else if (run.length) {
-        if (run.length > 1) ink.push(pencil(run, r, { width: 0.4, tone: 0.18, overshoot: 0 }));
-        run = [];
-      }
-    }
-    if (run.length > 1) ink.push(pencil(run, r, { width: 0.4, tone: 0.18, overshoot: 0 }));
-  }
-  for (let lat = -60; lat <= 60; lat += 30) {
-    let run: Pt[] = [];
-    for (let lon = -180; lon <= 180; lon += 4) {
-      const { p, front } = project(lon, lat);
-      if (front) run.push(p);
-      else if (run.length) {
-        if (run.length > 1) ink.push(pencil(run, r, { width: 0.4, tone: 0.18, overshoot: 0 }));
-        run = [];
-      }
-    }
-    if (run.length > 1) ink.push(pencil(run, r, { width: 0.4, tone: 0.18, overshoot: 0 }));
-  }
+  // The sphere's light: the sun from the upper left, so the lower right
+  // sinks into ultramarine. Three glazes, each a disc offset further toward
+  // the light and lifted out of the shade, clipped to the globe — the
+  // shading grades softly round the curve instead of stopping at an edge.
+  const sphere = new Path2D();
+  sphere.arc(cx, cy, R * 0.995, 0, Math.PI * 2);
+  const inSphere = (w: Wash): Wash =>
+    Object.assign(Object.create(Object.getPrototypeOf(w)), w, {
+      pass(ctx: CanvasRenderingContext2D, i: number) {
+        ctx.save();
+        ctx.clip(sphere);
+        w.pass(ctx, i);
+        ctx.restore();
+      },
+    });
+  const glaze = (layers: number, paint: (ctx: CanvasRenderingContext2D) => void): Wash =>
+    Object.assign(Object.create(Object.getPrototypeOf(washes[0])), { layers, pass: (ctx: CanvasRenderingContext2D) => paint(ctx) });
+  washes.push(
+    glaze(8, (ctx) => {
+      const g = ctx.createRadialGradient(cx - R * 0.45, cy - R * 0.45, R * 0.2, cx - R * 0.2, cy - R * 0.2, R * 1.45);
+      g.addColorStop(0, 'rgba(35,59,106,0)');
+      g.addColorStop(0.55, 'rgba(35,59,106,0.02)');
+      g.addColorStop(1, 'rgba(24,40,78,0.11)');
+      ctx.save();
+      ctx.fillStyle = g;
+      ctx.fill(sphere);
+      ctx.restore();
+    }),
+  );
 
-  // Cloud: a few long white wisps, and the light on the sea top-left.
-  for (let k = 0; k < 7; k++) {
-    const a = between(r, 0, Math.PI * 2);
-    const d = Math.sqrt(r()) * R * 0.7;
-    const x = cx + Math.cos(a) * d;
-    const y = cy + Math.sin(a) * d;
-    washes.push(new Wash(blob(x, y, R * between(r, 0.12, 0.22), R * between(r, 0.03, 0.05), r, 9), { color: '#fbfcfe', layers: 5, alpha: 0.22, spread: 0.35, edge: 0.1 }, r));
+  // Clouds: soft white wisps that lie along the latitudes, the way weather
+  // wraps the planet — thin where they trail off, fuller in the middle.
+  for (const band of [-50, -14, 6, 36, 54]) {
+    for (let k = 0; k < 3; k++) {
+      const lon0 = between(r, -80, 30);
+      const len = between(r, 22, 40);
+      for (let t = 0; t <= 1; t += 0.25) {
+        const { p, front } = project(lon0 + t * len, band + between(r, -2, 2));
+        if (!front) continue;
+        const d = Math.hypot(p[0] - cx, p[1] - cy) / R;
+        const fore = Math.sqrt(Math.max(0.1, 1 - d * d));
+        const full = Math.sin(t * Math.PI) * 0.7 + 0.3;
+        washes.push(inSphere(new Wash(blob(p[0], p[1], R * 0.1 * full, R * 0.03 * full * (0.5 + fore * 0.5), r, 11), { color: '#ffffff', layers: 7, alpha: 0.13, spread: 0.45, edge: 0 }, r)));
+      }
+    }
   }
-  washes.push(new Wash(blob(cx - R * 0.38, cy - R * 0.4, R * 0.28, R * 0.2, r), { color: '#dcebf5', layers: 6, alpha: 0.12, spread: 0.3, edge: 0 }, r));
+  // The air: a thin pale glow round the rim, and light caught on the sea.
+  washes.push(new Wash([...circle(R * 1.06, 60), ...circle(R * 1.0, 60).reverse()], { color: '#bcd6ec', layers: 8, alpha: 0.08, spread: 0.1, edge: 0 }, r));
+  washes.push(new Wash(blob(cx - R * 0.4, cy - R * 0.42, R * 0.22, R * 0.14, r), { color: '#eef5fa', layers: 6, alpha: 0.14, spread: 0.3, edge: 0 }, r));
   return { ink, washes };
 }

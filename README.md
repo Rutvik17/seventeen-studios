@@ -96,7 +96,7 @@ src/
     Cursor.tsx             the pencil and its hover marks
     Preloader.tsx          every full load: a brush paints the mark until the page is ready
     Transition.tsx         page-turn transitions + TransitionLink
-    loader/                the loader: Seventeen's HQ, a modern pavilion, sketched and painted in autumn
+    loader/                the loader: the maple leaf, sketched and painted as the page gets ready
     LeafMark.tsx           the header's mark: a maple leaf, sketched and painted
     founder/               the book component and its styles
     grasp/                 the chalkboard
@@ -108,7 +108,7 @@ src/
   assets/ground/           the painted ground every page lies on (made by scripts/make-ground.mjs)
   content/                 all copy, as typed data
   lib/
-    film/                  the watercolour engine — the studio (loader and mark), and the film — wash, pencil, the campus, sky, people and traffic, weather, the director
+    film/                  the watercolour engine — the leaf (mark and loader), and the film — wash, pencil, the campus, sky, people and traffic, weather, the director
     sketchbook/            the book's drawings — geometry, chapters, the canvas painter — and the pencil, the brush and the painted ground everything is made with
     sketch/skylines.ts     the cities, landmark by landmark, as pencil marks
     pageTurn.ts            the sheet that turns between pages
