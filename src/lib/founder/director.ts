@@ -72,6 +72,10 @@ export function createFounderFilm(
   const ctx = canvas.getContext('2d')!;
   const outgoing = document.createElement('canvas');
   const octx = outgoing.getContext('2d')!;
+  // What moves is drawn on its own sheet first, so it can come in as one: it
+  // fades up while the paint goes down, never pops on over a blank page.
+  const moving = document.createElement('canvas');
+  const mctx = moving.getContext('2d')!;
 
   // Where the photograph is painted, in world units.
   const frame0 = framed(opts.image, opts.photo);
@@ -157,7 +161,8 @@ export function createFounderFilm(
     run = { index, art: a, make: scenes[index].id === 'portrait' || scenes[index].id === 'return' ? MAKE_PORTRAIT : MAKE, ink, paint, prog, t: 0 };
     if (reduced) {
       prog.set(1);
-      run.t = run.make + 30;
+      // A still is taken well into the story, where it has the most to show.
+      run.t = run.make + scenes[index].hold * 0.7;
     }
     ended = false;
     hooks.onScene(index);
@@ -202,6 +207,8 @@ export function createFounderFilm(
     canvas.height = ch;
     outgoing.width = cw;
     outgoing.height = ch;
+    moving.width = cw;
+    moving.height = ch;
     washT = -1;
 
     // The layers are baked a little sharper than the largest scene will be shown, and no sharper.
@@ -237,9 +244,20 @@ export function createFounderFilm(
     target.globalAlpha = 0.92 + ((r.art.inkAfter ?? 0.92) - 0.92) * paintP;
     target.drawImage(r.ink, OX, OY, r.ink.width * k, r.ink.height * k);
     target.globalAlpha = 1;
-    target.setTransform(S, 0, 0, S, OX, OY);
     const st: LiveState = { t: filmT, made: r.prog.progress, alive: r.t - r.make, hand };
-    r.art.live?.(target, st);
+    const shown = reduced ? 1 : smooth(0.55, 0.97, r.prog.progress);
+    if (r.art.live && shown > 0) {
+      mctx.setTransform(1, 0, 0, 1, 0, 0);
+      mctx.clearRect(0, 0, cw, ch);
+      mctx.setTransform(S, 0, 0, S, OX, OY);
+      mctx.lineCap = 'round';
+      mctx.lineJoin = 'round';
+      r.art.live(mctx, st);
+      target.globalAlpha = shown;
+      target.drawImage(moving, 0, 0);
+      target.globalAlpha = 1;
+    }
+    target.setTransform(S, 0, 0, S, OX, OY);
     if (!reduced && r.prog.progress < 1) {
       if (r.prog.pencilAt && r.prog.progress < 0.5) drawPencil(target, r.prog.pencilAt[0], r.prog.pencilAt[1]);
       else if (r.prog.brushAt) drawBrush(target, r.prog.brushAt[0], r.prog.brushAt[1], filmT);
