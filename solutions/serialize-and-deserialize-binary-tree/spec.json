@@ -1,0 +1,10 @@
+{
+  "roundtrip": { "class": "Codec", "encode": "serialize", "decode": "deserialize", "type": "TreeNode", "param": "root" },
+  "cases": [
+    { "in": [[1, 2, 3, null, null, 4, 5]], "out": [1, 2, 3, null, null, 4, 5], "example": true },
+    { "in": [[]], "out": [], "example": true },
+    { "in": [[1]], "out": [1] },
+    { "in": [[-5, null, -300, 12]], "out": [-5, null, -300, 12] },
+    { "in": [[4, -7, -3, null, null, -9, -3, 9, -7, -4, null, 6, null, -6, -6]], "out": [4, -7, -3, null, null, -9, -3, 9, -7, -4, null, 6, null, -6, -6] }
+  ]
+}

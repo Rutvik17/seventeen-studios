@@ -1,0 +1,12 @@
+{
+  "method": "isBalanced",
+  "params": [{ "name": "root", "type": "TreeNode" }],
+  "returns": "bool",
+  "cases": [
+    { "in": [[3, 9, 20, null, null, 15, 7]], "out": true, "example": true },
+    { "in": [[1, 2, 2, 3, 3, null, null, 4, 4]], "out": false, "example": true },
+    { "in": [[]], "out": true, "example": true },
+    { "in": [[1, 2, 2, 3, null, null, 3, 4, null, null, 4]], "out": false },
+    { "in": [[1, 2, 3, 4, 5, 6, null, 8]], "out": true }
+  ]
+}

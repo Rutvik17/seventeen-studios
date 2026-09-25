@@ -156,6 +156,8 @@ function dynBuild(lang, type, expr) {
 /** How each language prints a value of a spec type as JSON. */
 const NODE_TYPES = new Set(['ListNode', 'TreeNode', 'RandomList', 'Graph', 'ListCycle']);
 function show(lang, type, expr) {
+  // A node given back as the answer (a tree's lowest common ancestor) is written as its value.
+  if (type === 'TreeRef') return show(lang, 'int', { py: `${expr}.val`, js: `${expr}.val`, java: `${expr}.val`, cs: `${expr}.val`, cpp: `${expr}->val`, rs: `${expr}.as_ref().unwrap().borrow().val` }[lang]);
   const node = NODE_TYPES.has(type);
   switch (lang) {
     case 'py':

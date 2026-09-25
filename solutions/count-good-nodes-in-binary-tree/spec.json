@@ -1,0 +1,11 @@
+{
+  "method": "goodNodes",
+  "params": [{ "name": "root", "type": "TreeNode" }],
+  "returns": "int",
+  "cases": [
+    { "in": [[3, 1, 4, 3, null, 1, 5]], "out": 4, "example": true },
+    { "in": [[3, 3, null, 4, 2]], "out": 3, "example": true },
+    { "in": [[1]], "out": 1, "example": true },
+    { "in": [[2, null, 4, 10, 8, null, null, 4]], "out": 4 }
+  ]
+}

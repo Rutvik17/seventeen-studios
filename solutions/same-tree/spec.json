@@ -1,0 +1,12 @@
+{
+  "method": "isSameTree",
+  "params": [{ "name": "p", "type": "TreeNode" }, { "name": "q", "type": "TreeNode" }],
+  "returns": "bool",
+  "cases": [
+    { "in": [[1, 2, 3], [1, 2, 3]], "out": true, "example": true },
+    { "in": [[1, 2], [1, null, 2]], "out": false, "example": true },
+    { "in": [[1, 2, 1], [1, 1, 2]], "out": false, "example": true },
+    { "in": [[], []], "out": true },
+    { "in": [[], [0]], "out": false }
+  ]
+}

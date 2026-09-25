@@ -1,0 +1,12 @@
+{
+  "method": "lowestCommonAncestor",
+  "params": [{ "name": "root", "type": "TreeNode" }, { "name": "p", "type": "TreeRef" }, { "name": "q", "type": "TreeRef" }],
+  "returns": "TreeRef",
+  "cases": [
+    { "in": [[6, 2, 8, 0, 4, 7, 9, null, null, 3, 5], 2, 8], "out": 6, "example": true },
+    { "in": [[6, 2, 8, 0, 4, 7, 9, null, null, 3, 5], 2, 4], "out": 2, "example": true },
+    { "in": [[2, 1], 2, 1], "out": 2, "example": true },
+    { "in": [[6, 2, 8, 0, 4, 7, 9, null, null, 3, 5], 3, 5], "out": 4 },
+    { "in": [[6, 2, 8, 0, 4, 7, 9, null, null, 3, 5], 0, 5], "out": 2 }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "method": "isValidBST",
+  "params": [{ "name": "root", "type": "TreeNode" }],
+  "returns": "bool",
+  "cases": [
+    { "in": [[2, 1, 3]], "out": true, "example": true },
+    { "in": [[5, 1, 4, null, null, 3, 6]], "out": false, "example": true },
+    { "in": [[5, 4, 6, null, null, 3, 7]], "out": false },
+    { "in": [[2147483647]], "out": true },
+    { "in": [[-2147483648, null, 2147483647]], "out": true },
+    { "in": [[2, 2, 2]], "out": false },
+    { "in": [[8, 4, 12, 2, 6, 10, 14]], "out": true }
+  ]
+}

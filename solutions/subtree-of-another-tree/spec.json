@@ -1,0 +1,14 @@
+{
+  "method": "isSubtree",
+  "params": [{ "name": "root", "type": "TreeNode" }, { "name": "subRoot", "type": "TreeNode" }],
+  "returns": "bool",
+  "cases": [
+    { "in": [[3, 4, 5, 1, 2], [4, 1, 2]], "out": true, "example": true },
+    { "in": [[3, 4, 5, 1, 2, null, null, null, null, 0], [4, 1, 2]], "out": false, "example": true },
+    { "in": [[12], [2]], "out": false },
+    { "in": [[1, 1], [1]], "out": true },
+    { "in": [[12, null, 2], [2]], "out": true },
+    { "in": [[-1, -12, 2], [2]], "out": true },
+    { "in": [[1, 2, 3], [1, 2]], "out": false }
+  ]
+}
