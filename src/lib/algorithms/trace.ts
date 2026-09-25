@@ -107,7 +107,9 @@ export class Rec {
     this.max = max;
   }
   add(note: string, ...panels: (Panel | false | null | undefined)[]) {
-    if (this.steps.length < this.max) this.steps.push({ note, panels: panels.filter(Boolean) as Panel[] });
+    // A snapshot: a tracer keeps changing its working arrays after drawing them,
+    // and a step must show them as they were when it was taken.
+    if (this.steps.length < this.max) this.steps.push({ note, panels: structuredClone(panels.filter(Boolean) as Panel[]) });
   }
   done(result: unknown): Trace {
     return { steps: this.steps, result };

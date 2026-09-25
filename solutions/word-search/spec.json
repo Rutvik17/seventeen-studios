@@ -1,0 +1,143 @@
+{
+  "method": "exist",
+  "params": [
+    {
+      "name": "board",
+      "type": "char[][]"
+    },
+    {
+      "name": "word",
+      "type": "string"
+    }
+  ],
+  "returns": "bool",
+  "cases": [
+    {
+      "in": [
+        [
+          [
+            "A",
+            "B",
+            "C",
+            "E"
+          ],
+          [
+            "S",
+            "F",
+            "C",
+            "S"
+          ],
+          [
+            "A",
+            "D",
+            "E",
+            "E"
+          ]
+        ],
+        "ABCCED"
+      ],
+      "out": true,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          [
+            "A",
+            "B",
+            "C",
+            "E"
+          ],
+          [
+            "S",
+            "F",
+            "C",
+            "S"
+          ],
+          [
+            "A",
+            "D",
+            "E",
+            "E"
+          ]
+        ],
+        "SEE"
+      ],
+      "out": true,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          [
+            "A",
+            "B",
+            "C",
+            "E"
+          ],
+          [
+            "S",
+            "F",
+            "C",
+            "S"
+          ],
+          [
+            "A",
+            "D",
+            "E",
+            "E"
+          ]
+        ],
+        "ABCB"
+      ],
+      "out": false,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          [
+            "a"
+          ]
+        ],
+        "a"
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        [
+          [
+            "a",
+            "a"
+          ]
+        ],
+        "aaa"
+      ],
+      "out": false
+    },
+    {
+      "in": [
+        [
+          [
+            "C",
+            "A",
+            "A"
+          ],
+          [
+            "A",
+            "A",
+            "A"
+          ],
+          [
+            "B",
+            "C",
+            "D"
+          ]
+        ],
+        "AAB"
+      ],
+      "out": true
+    }
+  ]
+}
