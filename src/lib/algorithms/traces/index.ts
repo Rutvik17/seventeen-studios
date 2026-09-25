@@ -7,6 +7,7 @@ import type { Tracer } from '../trace';
 const loaders: Record<string, () => Promise<{ traces: Record<string, Tracer> }>> = {
   'arrays-hashing': () => import('./arrays-hashing'),
   'two-pointers': () => import('./two-pointers'),
+  'sliding-window': () => import('./sliding-window'),
   stack: () => import('./stack'),
 };
 

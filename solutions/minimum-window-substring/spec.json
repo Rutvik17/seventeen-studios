@@ -1,0 +1,14 @@
+{
+  "method": "minWindow",
+  "params": [{ "name": "s", "type": "string" }, { "name": "t", "type": "string" }],
+  "returns": "string",
+  "cases": [
+    { "in": ["ADOBECODEBANC", "ABC"], "out": "BANC", "example": true },
+    { "in": ["a", "a"], "out": "a", "example": true },
+    { "in": ["a", "aa"], "out": "", "example": true },
+    { "in": ["ab", "b"], "out": "b" },
+    { "in": ["aa", "aa"], "out": "aa" },
+    { "in": ["bba", "ab"], "out": "ba" },
+    { "in": ["cabwefgewcwaefgcf", "cae"], "out": "cwae" }
+  ]
+}
