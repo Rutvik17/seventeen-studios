@@ -60,7 +60,19 @@ export const shots: Shot[] = [
     night: 0,
     bustle: 0.9,
     weather: { petals: 1, clouds: 0.5 },
-    camera: { x: 800, y: 580, zoom: 1 },
+    camera: { x: 800, y: 500, zoom: 1.08 },
+    hold: 9,
+  },
+  {
+    id: 'spring-rain',
+    label: 'spring rain',
+    season: 'spring',
+    sky: 'storm',
+    glaze: ['#9aa4b6', 0.32],
+    night: 0.15,
+    bustle: 0.7,
+    weather: { rain: 0.55, clouds: 0.8 },
+    camera: { x: 760, y: 490, zoom: 1.12 },
     hold: 9,
   },
   {
@@ -72,7 +84,7 @@ export const shots: Shot[] = [
     night: 0,
     bustle: 1,
     weather: { birds: 1, clouds: 0.35 },
-    camera: { x: 700, y: 570, zoom: 1.06 },
+    camera: { x: 700, y: 490, zoom: 1.14 },
     hold: 8,
   },
   {
@@ -84,7 +96,7 @@ export const shots: Shot[] = [
     night: 0.35,
     bustle: 0.6,
     weather: { rain: 1, lightning: 1, clouds: 1 },
-    camera: { x: 860, y: 590, zoom: 1.02 },
+    camera: { x: 860, y: 510, zoom: 1.1 },
     hold: 9,
   },
   {
@@ -96,7 +108,7 @@ export const shots: Shot[] = [
     night: 0,
     bustle: 0.9,
     weather: { leaves: 1, clouds: 0.45 },
-    camera: { x: 820, y: 580, zoom: 1.04 },
+    camera: { x: 820, y: 500, zoom: 1.12 },
     hold: 9,
   },
   {
@@ -108,7 +120,7 @@ export const shots: Shot[] = [
     night: 0.6,
     bustle: 0.8,
     weather: { leaves: 0.5, clouds: 0.3 },
-    camera: { x: 900, y: 585, zoom: 1.08 },
+    camera: { x: 900, y: 505, zoom: 1.17 },
     hold: 8,
   },
   {
@@ -120,7 +132,7 @@ export const shots: Shot[] = [
     night: 1,
     bustle: 0.35,
     weather: { snow: 1, clouds: 0.2 },
-    camera: { x: 800, y: 575, zoom: 1.02 },
+    camera: { x: 800, y: 495, zoom: 1.1 },
     hold: 10,
   },
   {
@@ -132,7 +144,7 @@ export const shots: Shot[] = [
     night: 0.35,
     bustle: 0.5,
     weather: { clouds: 0.4 },
-    camera: { x: 760, y: 580, zoom: 1 },
+    camera: { x: 760, y: 500, zoom: 1.08 },
     hold: 8,
   },
 ];

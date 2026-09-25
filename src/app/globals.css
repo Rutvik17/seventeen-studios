@@ -650,6 +650,19 @@ body:has([data-slate]) .nav.is-scrolled::before {
 }
 
 /*
+  The landing is one scene and nothing else: the film fills the screen, the
+  back endpaper is not bound in, and there is nothing to scroll to.
+*/
+html:has([data-film]),
+body:has([data-film]) {
+  height: 100%;
+  overflow: hidden;
+}
+body:has([data-film]) .endpaper {
+  display: none;
+}
+
+/*
   Over the landing's film when it has gone dark for the night, the bar is
   written in the colour of lamplight until the page is scrolled past it.
 */

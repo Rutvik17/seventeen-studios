@@ -2,20 +2,22 @@
  * THE PEOPLE, AND THE TRAFFIC.
  *
  * Everyone here is a few pencil strokes and a dab of colour: a head, a coat,
- * legs that scissor as they walk, arms that swing against them. They walk the
- * campus's paths, come out of Endeavor's door and go back in, stand and talk
- * under Voyager's roof, and put umbrellas up when it rains. Fewer of them are
- * out at night.
+ * legs that scissor as they walk. They walk the campus's paths — the shaded
+ * walk between the two buildings, the plaza round Endeavor, the pavements —
+ * come and go under Voyager's canopy, stand and talk beneath it, and put
+ * umbrellas up when it rains. Fewer of them are out at night.
  *
- * The street carries the future: pods with no wheels that hover over their
- * own shadows, drones working the air over the roofs, and now and then an air
- * taxi crossing the sky.
+ * The streets carry pods with no wheels, hovering over their own shadows;
+ * drones work the air over the roofs, and now and then an air taxi crosses.
  *
- * Everything here is drawn every frame, in world units, straight onto the
- * screen — it moves, so there is nothing to bake.
+ * People and cars live on the campus PLAN, in metres, and are projected every
+ * frame through the same camera as the painting — so they shrink with
+ * distance and follow the roads' perspective exactly. From this height a
+ * person would be a speck; they are drawn a little over twice life size, and
+ * cars a little larger than life, so they read.
  */
 
-import type { Campus, Walk } from './campus';
+import { proj, scaleAt, GROUND_SQUASH, type Campus, type Walk } from './campus';
 import type { Pt } from './wash';
 import { between, clamp, pick, rng, smooth, type Rng } from './random';
 
@@ -25,6 +27,10 @@ const LEGS = ['#3a3d4a', '#4b4f63', '#6b5a48', '#2e2f36', '#7d7f8c'];
 const SKIN = ['#f0c9a8', '#d9a57f', '#b27a55', '#8a5a3c', '#f3d6bf'];
 const UMBRELLAS = ['#c8423a', '#2b3f9e', '#e0a13a', '#34343c', '#3f7d3a', '#d86f8c'];
 const PODS = ['#e9e4d8', '#c8423a', '#2b3f9e', '#3a3d46', '#8fa9bd', '#e0a13a', '#f2efe8'];
+
+/** How much larger than life figures and cars are drawn. */
+const PERSON_SCALE = 2.3;
+const CAR_SCALE = 1.35;
 
 interface Person {
   walk: Walk;
@@ -38,22 +44,20 @@ interface Person {
   legs: string;
   skin: string;
   umbrella: string;
-  /** Out only when the street is at least this busy. */
   keen: number;
   here: number;
-  /** Fades in at the start of each walk. */
   age: number;
   standing: boolean;
-  x: number;
-  y: number;
+  /** On the plan. */
+  px: number;
+  py: number;
 }
 
 interface Car {
   lane: number;
-  x: number;
+  d: number;
   speed: number;
   colour: string;
-  len: number;
 }
 
 interface Drone {
@@ -73,20 +77,20 @@ function lengthOf(path: Pt[]): number {
   return l;
 }
 
-function along(path: Pt[], d: number): Pt {
+/** The point `d` along a path, and the unit direction there. */
+function along(path: Pt[], d: number): [number, number, number, number] {
   for (let i = 1; i < path.length; i++) {
-    const seg = Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]);
-    if (d <= seg) {
-      const t = d / (seg || 1);
-      return [path[i - 1][0] + (path[i][0] - path[i - 1][0]) * t, path[i - 1][1] + (path[i][1] - path[i - 1][1]) * t];
+    const dx = path[i][0] - path[i - 1][0];
+    const dy = path[i][1] - path[i - 1][1];
+    const seg = Math.hypot(dx, dy) || 1;
+    if (d <= seg || i === path.length - 1) {
+      const t = Math.min(1, d / seg);
+      return [path[i - 1][0] + dx * t, path[i - 1][1] + dy * t, dx / seg, dy / seg];
     }
     d -= seg;
   }
-  return path[path.length - 1];
+  return [path[0][0], path[0][1], 1, 0];
 }
-
-/** Height of a person standing at `y`: nearer the bottom of the picture, nearer us. */
-const heightAt = (y: number) => 15 + (y - 600) * 0.06;
 
 export class Life {
   private r: Rng;
@@ -94,27 +98,32 @@ export class Life {
   private cars: Car[] = [];
   private drones: Drone[] = [];
   private taxi = { t: -8, period: 34 };
-  private gaps = [0, 0];
+  private gaps: number[];
+  private laneLen: number[];
   private campus: Campus;
   time = 0;
 
-  constructor(campus: Campus, count = 38) {
+  constructor(campus: Campus, count = 64) {
     this.r = rng(1717);
     this.campus = campus;
-    for (let k = 0; k < count; k++) this.people.push(this.spawn(true, k < 5));
+    this.laneLen = campus.lanes.map((l) => lengthOf(l.path));
+    this.gaps = campus.lanes.map(() => 0);
+    for (let k = 0; k < count; k++) this.people.push(this.spawn(true, k < campus.terrace.length * 2));
     for (let k = 0; k < 3; k++) {
-      this.drones.push({ cx: between(this.r, 300, 1300), cy: between(this.r, 230, 320), ax: between(this.r, 120, 260), ay: between(this.r, 20, 50), f: between(this.r, 0.05, 0.1), p: between(this.r, 0, 6), x: 0, y: 0 });
+      this.drones.push({ cx: between(this.r, 400, 1200), cy: between(this.r, 250, 340), ax: between(this.r, 120, 260), ay: between(this.r, 20, 50), f: between(this.r, 0.05, 0.1), p: between(this.r, 0, 6), x: 0, y: 0 });
     }
-    // The street already has traffic on it when the film begins.
-    for (let lane = 0; lane < 2; lane++) for (let x = 100; x < 1500; x += between(this.r, 260, 520)) this.cars.push(this.car(lane, x));
+    // The streets already have traffic on them when the film begins.
+    campus.lanes.forEach((_, lane) => {
+      for (let d = 0; d < this.laneLen[lane]; d += between(this.r, 40, 110)) this.cars.push(this.car(lane, d));
+    });
+    this.update(0.01, 1);
   }
 
   private spawn(anywhere: boolean, standing = false): Person {
     const r = this.r;
     const walks = this.campus.walks;
-    const total = walks.reduce((a, w) => a + w.weight, 0);
-    let pickW = r() * total;
     let walk = walks[0];
+    let pickW = r() * walks.reduce((a, w) => a + w.weight, 0);
     for (const w of walks) {
       pickW -= w.weight;
       if (pickW <= 0) {
@@ -123,15 +132,15 @@ export class Life {
       }
     }
     const len = lengthOf(walk.path);
-    const dir: 1 | -1 = r() < 0.5 ? 1 : -1;
-    const t = this.campus.terrace;
+    const dir: 1 | -1 = walk.door ? (r() < 0.5 ? 1 : -1) : r() < 0.5 ? 1 : -1;
+    const spot = standing ? pick(r, this.campus.terrace) : ([0, 0] as Pt);
     return {
       walk,
       len,
       d: anywhere ? r() * len : dir === 1 ? 0 : len,
       dir,
       off: between(r, -walk.spread, walk.spread),
-      speed: between(r, 16, 26),
+      speed: between(r, 1.1, 1.6),
       phase: r() * 6.28,
       coat: pick(r, COATS),
       legs: pick(r, LEGS),
@@ -141,20 +150,13 @@ export class Life {
       here: 0,
       age: anywhere ? 5 : 0,
       standing,
-      x: standing ? between(r, t.x0, t.x1) : 0,
-      y: t.y + (standing ? between(r, -2, 4) : 0),
+      px: spot[0] + between(r, -3, 3),
+      py: spot[1] + between(r, -3, 3),
     };
   }
 
-  private car(lane: number, x?: number): Car {
-    const l = this.campus.lanes[lane];
-    return {
-      lane,
-      x: x ?? (l.dir === 1 ? -140 : 1740),
-      speed: between(this.r, 70, 120),
-      colour: pick(this.r, PODS),
-      len: between(this.r, 46, 60),
-    };
+  private car(lane: number, d = 0): Car {
+    return { lane, d, speed: between(this.r, 13, 22), colour: pick(this.r, PODS) };
   }
 
   update(dt: number, bustle: number) {
@@ -162,34 +164,33 @@ export class Life {
     const r = this.r;
     for (let i = 0; i < this.people.length; i++) {
       const p = this.people[i];
-      const want = p.keen <= bustle ? 1 : 0;
-      p.here += clamp(want - p.here, -dt * 0.6, dt * 0.6);
+      p.here += clamp((p.keen <= bustle ? 1 : 0) - p.here, -dt * 0.6, dt * 0.6);
       p.age += dt;
       if (p.standing) {
         p.phase += dt * 0.8;
         continue;
       }
       p.d += p.dir * p.speed * dt;
-      p.phase += (p.speed * dt) / 5.2;
-      if (p.d < 0 || p.d > p.len) this.people[i] = this.spawn(false);
-      else {
-        const [x, y] = along(p.walk.path, p.d);
-        p.x = x;
-        p.y = y + p.off * 0.35;
+      p.phase += p.speed * dt * 3.4;
+      if (p.d < 0 || p.d > p.len) {
+        this.people[i] = this.spawn(false);
+        continue;
       }
+      const [x, y, tx, ty] = along(p.walk.path, p.d);
+      p.px = x - ty * p.off;
+      p.py = y + tx * p.off;
     }
 
-    const lanes = this.campus.lanes;
-    for (const c of this.cars) c.x += lanes[c.lane].dir * c.speed * dt;
-    this.cars = this.cars.filter((c) => c.x > -200 && c.x < 1800);
-    for (let lane = 0; lane < 2; lane++) {
+    for (const c of this.cars) c.d += c.speed * dt;
+    this.cars = this.cars.filter((c) => c.d < this.laneLen[c.lane]);
+    this.campus.lanes.forEach((_, lane) => {
       this.gaps[lane] -= dt;
       if (this.gaps[lane] <= 0) {
+        // Cars enter well off the painting, so they are already moving when they arrive.
         this.cars.push(this.car(lane));
-        // A quiet street at night; nose to tail at noon.
-        this.gaps[lane] = between(r, 3, 7) / Math.max(0.25, bustle);
+        this.gaps[lane] = between(r, 2.5, 6) / Math.max(0.25, bustle);
       }
-    }
+    });
 
     for (const d of this.drones) {
       const t = this.time * d.f * 6.28 + d.p;
@@ -200,157 +201,116 @@ export class Life {
     if (this.taxi.t > this.taxi.period) this.taxi.t = -between(r, 4, 12);
   }
 
-  /** How much of a figure at `x` shows, fading toward the ragged edges of the painting. */
-  private edge(x: number) {
-    return smooth(60, 160, x) * (1 - smooth(1440, 1540, x));
+  /** How much of something at screen point (x, y) shows, fading toward the ragged edges of the painting. */
+  private edge(x: number, y: number) {
+    return smooth(40, 150, x) * (1 - smooth(1450, 1560, x)) * smooth(250, 320, y) * (1 - smooth(930, 990, y));
   }
 
   draw(ctx: CanvasRenderingContext2D, env: { colour: number; rain: number; snow: number; fade: number }) {
-    // Painted in order of depth: the far path first, the pavement last.
-    const people = this.people.slice().sort((a, b) => a.y - b.y);
-    for (const p of people) {
-      const a = env.fade * p.here * this.edge(p.x) * Math.min(1, p.age) * (p.walk.door && !p.standing ? smooth(p.walk.path[0][1] + 2, p.walk.path[0][1] + 18, p.y) : 1);
-      if (a < 0.02) continue;
-      this.person(ctx, p, a, env);
-    }
+    const shown = this.people.map((p) => ({ p, at: proj(p.px, p.py) })).sort((a, b) => a.at[1] - b.at[1]);
     for (const c of this.cars) this.pod(ctx, c, env.colour, env.fade);
+    for (const { p, at } of shown) {
+      let a = env.fade * p.here * this.edge(at[0], at[1]) * Math.min(1, p.age);
+      if (p.walk.door && !p.standing) a *= smooth(0, 6, p.len - p.d);
+      if (a < 0.02) continue;
+      this.person(ctx, p, at, a, env);
+    }
     ctx.globalAlpha = env.fade;
     for (const d of this.drones) this.drone(ctx, d.x, d.y);
     this.airTaxi(ctx);
     ctx.globalAlpha = 1;
   }
 
-  private person(ctx: CanvasRenderingContext2D, p: Person, alpha: number, env: { colour: number; rain: number; snow: number }) {
-    const h = heightAt(p.y);
-    const { x, y } = p;
+  private person(ctx: CanvasRenderingContext2D, p: Person, [x, y]: Pt, alpha: number, env: { colour: number; rain: number; snow: number }) {
+    const h = 1.75 * scaleAt(p.px, p.py) * PERSON_SCALE;
     const swing = p.standing ? 0 : Math.sin(p.phase);
-    const bob = p.standing ? Math.sin(p.phase) * 0.2 : Math.abs(Math.cos(p.phase)) * h * 0.02;
-    const hip = y - h * 0.46 - bob;
-    const shoulder = y - h * 0.8 - bob;
+    const hip = y - h * 0.46;
+    const shoulder = y - h * 0.8;
     ctx.globalAlpha = alpha;
-
-    // A shadow, soft, on the ground.
-    ctx.fillStyle = 'rgba(60,52,78,0.16)';
+    ctx.fillStyle = 'rgba(60,52,78,0.18)';
     ctx.beginPath();
-    ctx.ellipse(x + h * 0.08, y, h * 0.22, h * 0.05, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + h * 0.15, y, h * 0.24, h * 0.07, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.lineCap = 'round';
-    ctx.lineWidth = Math.max(0.7, h * 0.06);
+    ctx.lineWidth = Math.max(0.6, h * 0.08);
     ctx.strokeStyle = p.legs;
     ctx.globalAlpha = alpha * (0.35 + 0.55 * env.colour);
     ctx.beginPath();
     ctx.moveTo(x, hip);
-    ctx.lineTo(x + swing * h * 0.15, y);
+    ctx.lineTo(x + swing * h * 0.14, y);
     ctx.moveTo(x, hip);
-    ctx.lineTo(x - swing * h * 0.15, y);
+    ctx.lineTo(x - swing * h * 0.14, y);
     ctx.stroke();
 
-    // The coat: a dab of colour, then the pencil round it.
     ctx.globalAlpha = alpha * env.colour * 0.9;
     ctx.fillStyle = p.coat;
     ctx.beginPath();
-    ctx.moveTo(x - h * 0.1, shoulder + h * 0.02);
-    ctx.quadraticCurveTo(x, shoulder - h * 0.04, x + h * 0.1, shoulder + h * 0.02);
-    ctx.lineTo(x + h * 0.12, hip + h * 0.06);
-    ctx.lineTo(x - h * 0.12, hip + h * 0.06);
+    ctx.moveTo(x - h * 0.11, shoulder);
+    ctx.lineTo(x + h * 0.11, shoulder);
+    ctx.lineTo(x + h * 0.13, hip + h * 0.06);
+    ctx.lineTo(x - h * 0.13, hip + h * 0.06);
     ctx.closePath();
     ctx.fill();
-    ctx.globalAlpha = alpha * 0.7;
+    ctx.globalAlpha = alpha * 0.6;
     ctx.strokeStyle = GRAPHITE;
-    ctx.lineWidth = 0.6;
+    ctx.lineWidth = 0.5;
     ctx.stroke();
 
-    // Arms, swinging against the legs.
-    ctx.beginPath();
-    ctx.moveTo(x - h * 0.08, shoulder + h * 0.04);
-    ctx.lineTo(x - h * 0.1 - swing * h * 0.1, hip + h * 0.02);
-    ctx.moveTo(x + h * 0.08, shoulder + h * 0.04);
-    ctx.lineTo(x + h * 0.1 + swing * h * 0.1, hip + h * 0.02);
-    ctx.stroke();
-
-    // Head.
     const hy = shoulder - h * 0.1;
     ctx.globalAlpha = alpha * (0.4 + 0.5 * env.colour);
     ctx.fillStyle = p.skin;
     ctx.beginPath();
-    ctx.arc(x, hy, h * 0.075, 0, Math.PI * 2);
+    ctx.arc(x, hy, h * 0.09, 0, Math.PI * 2);
     ctx.fill();
-    ctx.globalAlpha = alpha * 0.75;
-    ctx.stroke();
 
-    // Umbrellas go up when it rains, hoods when it snows.
     const cover = Math.max(env.rain, env.snow * 0.6);
-    if (cover > 0.15 && (p.keen > 0.25 || env.rain > 0.5)) {
+    if (cover > 0.15 && (p.keen > 0.2 || env.rain > 0.5)) {
       const u = smooth(0.15, 0.5, cover);
-      const top = hy - h * 0.2;
-      ctx.globalAlpha = alpha * u * 0.8;
-      ctx.beginPath();
-      ctx.moveTo(x, hy + h * 0.1);
-      ctx.lineTo(x, top);
-      ctx.stroke();
+      ctx.globalAlpha = alpha * u * (0.45 + 0.45 * env.colour);
       ctx.fillStyle = p.umbrella;
       ctx.beginPath();
-      ctx.ellipse(x, top + h * 0.06, h * 0.3 * u, h * 0.17 * u, 0, Math.PI, 0);
+      ctx.ellipse(x, hy - h * 0.12, h * 0.34 * u, h * 0.18 * u, 0, Math.PI, 0);
       ctx.closePath();
-      ctx.globalAlpha = alpha * u * (0.35 + 0.5 * env.colour);
       ctx.fill();
-      ctx.globalAlpha = alpha * u * 0.7;
+      ctx.globalAlpha = alpha * u * 0.6;
       ctx.stroke();
     }
     ctx.globalAlpha = 1;
   }
 
+  /** A pod, drawn as its body on the plan, projected: a footprint, a shadow, a cabin. */
   private pod(ctx: CanvasRenderingContext2D, c: Car, colour: number, fade: number) {
-    const lane = this.campus.lanes[c.lane];
-    const s = lane.scale;
-    const a = this.edge(c.x) * fade;
+    const [x, y, tx, ty] = along(this.campus.lanes[c.lane].path, c.d);
+    const [sx, sy] = proj(x, y);
+    const a = this.edge(sx, sy) * fade;
     if (a < 0.02) return;
-    const L = c.len;
-    const hover = 4 + Math.sin(this.time * 3 + c.x * 0.05) * 0.8;
-    ctx.save();
-    ctx.translate(c.x, lane.y);
-    ctx.scale(lane.dir * s, s);
-    ctx.globalAlpha = a * 0.22;
-    ctx.fillStyle = '#3c3a4c';
-    ctx.beginPath();
-    ctx.ellipse(0, 0, L * 0.45, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.translate(0, -hover);
-
-    ctx.beginPath();
-    ctx.moveTo(-L / 2, -2);
-    ctx.lineTo(-L / 2 + 1, -9);
-    ctx.quadraticCurveTo(-L / 2 + 4, -15, -L * 0.16, -16);
-    ctx.quadraticCurveTo(L * 0.18, -17, L * 0.36, -10);
-    ctx.quadraticCurveTo(L / 2 + 3, -8, L / 2, -2);
-    ctx.quadraticCurveTo(0, 1, -L / 2, -2);
-    ctx.closePath();
-    ctx.globalAlpha = a * 0.85 * colour;
-    ctx.fillStyle = c.colour;
-    ctx.fill();
-    ctx.globalAlpha = a * 0.8;
+    const L = 4.8 * CAR_SCALE;
+    const W = 2 * CAR_SCALE;
+    const hover = 0.5 + Math.sin(this.time * 3 + c.d * 0.3) * 0.12;
+    const quad = (l: number, w: number, z: number, dx = 0, dy = 0) =>
+      [
+        [l, w],
+        [l, -w],
+        [-l, -w],
+        [-l, w],
+      ].map(([u, v]) => proj(x + tx * u - ty * v + dx, y + ty * u + tx * v + dy, z));
+    const fill = (pts: Pt[], style: string, alpha: number) => {
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = style;
+      ctx.beginPath();
+      pts.forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)));
+      ctx.closePath();
+      ctx.fill();
+    };
+    fill(quad(L * 0.5, W * 0.5, 0, 0.6, -0.8), '#3c3a4c', a * 0.2);
+    const body = quad(L * 0.5, W * 0.5, hover);
+    fill(body, c.colour, a * 0.85 * colour);
+    ctx.globalAlpha = a * 0.7;
     ctx.strokeStyle = GRAPHITE;
-    ctx.lineWidth = 0.8;
+    ctx.lineWidth = 0.6;
     ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(-L * 0.34, -9.5);
-    ctx.quadraticCurveTo(-L * 0.3, -14, -L * 0.12, -14.5);
-    ctx.quadraticCurveTo(L * 0.16, -15, L * 0.3, -9.5);
-    ctx.closePath();
-    ctx.globalAlpha = a * 0.55;
-    ctx.fillStyle = '#2d3646';
-    ctx.fill();
-    // The light strip along its flank.
-    ctx.globalAlpha = a * 0.5;
-    ctx.strokeStyle = '#f7f4ec';
-    ctx.lineWidth = 0.9;
-    ctx.beginPath();
-    ctx.moveTo(-L * 0.42, -5.5);
-    ctx.lineTo(L * 0.42, -5.5);
-    ctx.stroke();
-    ctx.restore();
+    fill(quad(L * 0.24, W * 0.38, hover + 1.4, -tx * 0.3, -ty * 0.3), '#2d3646', a * 0.55);
     ctx.globalAlpha = 1;
   }
 
@@ -360,14 +320,9 @@ export class Life {
     ctx.beginPath();
     ctx.moveTo(x - 6, y);
     ctx.lineTo(x + 6, y);
-    ctx.moveTo(x - 3, y + 2);
-    ctx.lineTo(x - 3, y + 4);
-    ctx.moveTo(x + 3, y + 2);
-    ctx.lineTo(x + 3, y + 4);
     ctx.stroke();
     ctx.fillStyle = 'rgba(40,40,52,0.7)';
     ctx.fillRect(x - 2.5, y - 1, 5, 3);
-    // Rotors, a blur.
     ctx.fillStyle = 'rgba(40,40,52,0.18)';
     for (const dx of [-6, 6]) {
       ctx.beginPath();
@@ -379,15 +334,14 @@ export class Life {
   private taxiAt(): Pt | null {
     const u = this.taxi.t / this.taxi.period;
     if (u < 0 || u > 1) return null;
-    return [-200 + u * 2000, 250 - u * 70 + Math.sin(u * 9) * 6];
+    return [-200 + u * 2000, 240 - u * 60 + Math.sin(u * 9) * 6];
   }
 
   private airTaxi(ctx: CanvasRenderingContext2D) {
     const p = this.taxiAt();
     if (!p) return;
-    const [x, y] = p;
     ctx.save();
-    ctx.translate(x, y);
+    ctx.translate(p[0], p[1]);
     ctx.strokeStyle = GRAPHITE;
     ctx.lineWidth = 0.8;
     ctx.fillStyle = 'rgba(235,232,224,0.85)';
@@ -417,36 +371,55 @@ export class Life {
     ctx.restore();
   }
 
+  /** Screen points of every car's front and rear, and its heading on screen — for the rain's reflections. */
+  carLights(): { front: Pt; rear: Pt; alpha: number }[] {
+    return this.cars.map((c) => {
+      const [x, y, tx, ty] = along(this.campus.lanes[c.lane].path, c.d);
+      const L = 2.4 * CAR_SCALE;
+      const front = proj(x + tx * L, y + ty * L, 0.6);
+      const rear = proj(x - tx * L, y - ty * L, 0.6);
+      return { front, rear, alpha: this.edge(front[0], front[1]) };
+    });
+  }
+
   /** Lights, laid over the painting after it has been glazed for the hour. */
   lights(ctx: CanvasRenderingContext2D, night: number, t: number) {
     if (night < 0.05) return;
-    const lanes = this.campus.lanes;
     for (const c of this.cars) {
-      const lane = lanes[c.lane];
-      const a = this.edge(c.x) * night;
-      const nose = c.x + lane.dir * c.len * 0.5 * lane.scale;
-      const y = lane.y - 6;
-      const beam = ctx.createRadialGradient(nose, y, 0, nose + lane.dir * 40, y + 2, 60);
-      beam.addColorStop(0, `rgba(255,236,190,${0.55 * a})`);
+      const [x, y, tx, ty] = along(this.campus.lanes[c.lane].path, c.d);
+      const L = 2.4 * CAR_SCALE;
+      const [fx, fy] = proj(x + tx * L, y + ty * L, 0.6);
+      const a = this.edge(fx, fy) * night;
+      if (a < 0.02) continue;
+      // Headlights throw a cone along the road ahead.
+      const tip = (u: number, v: number) => proj(x + tx * u - ty * v, y + ty * u + tx * v, 0);
+      const [ax, ay] = tip(L + 22, -5);
+      const [bx, by] = tip(L + 22, 5);
+      const beam = ctx.createRadialGradient(fx, fy, 0, fx, fy, Math.hypot(ax - fx, ay - fy) + 4);
+      beam.addColorStop(0, `rgba(255,236,190,${0.5 * a})`);
       beam.addColorStop(1, 'rgba(255,236,190,0)');
       ctx.fillStyle = beam;
       ctx.beginPath();
-      ctx.moveTo(nose, y - 2);
-      ctx.lineTo(nose + lane.dir * 90, y - 12);
-      ctx.lineTo(nose + lane.dir * 90, y + 14);
+      ctx.moveTo(fx, fy);
+      ctx.lineTo(ax, ay);
+      ctx.lineTo(bx, by);
       ctx.closePath();
       ctx.fill();
-      const tail = c.x - lane.dir * c.len * 0.5 * lane.scale;
-      ctx.fillStyle = `rgba(255,80,70,${0.7 * a})`;
+      const [rx, ry] = proj(x - tx * L, y - ty * L, 0.6);
+      ctx.fillStyle = `rgba(255,80,70,${0.75 * a})`;
       ctx.beginPath();
-      ctx.arc(tail, y, 1.8, 0, Math.PI * 2);
+      ctx.arc(rx, ry, 1.4, 0, Math.PI * 2);
       ctx.fill();
       // The pod's underglow on the road.
-      const glow = ctx.createRadialGradient(c.x, lane.y, 0, c.x, lane.y, c.len * 0.5);
+      const [cx, cy] = proj(x, y);
+      const s = scaleAt(x, y) * L;
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, s * 1.2);
       glow.addColorStop(0, `rgba(120,230,255,${0.35 * a})`);
       glow.addColorStop(1, 'rgba(120,230,255,0)');
       ctx.fillStyle = glow;
-      ctx.fillRect(c.x - c.len * 0.5, lane.y - 8, c.len, 16);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, s * 1.2, s * 1.2 * GROUND_SQUASH, 0, 0, Math.PI * 2);
+      ctx.fill();
     }
     const blink = (Math.sin(t * 6) > 0.6 ? 1 : 0.15) * night;
     for (const d of this.drones) {

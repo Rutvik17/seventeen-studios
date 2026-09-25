@@ -105,7 +105,7 @@ export function Film() {
   };
 
   return (
-    <section ref={root} className={styles.film} aria-label={copy.description} data-film-dark={dark ? '' : undefined}>
+    <section ref={root} className={styles.film} data-film aria-label={copy.description} data-film-dark={dark ? '' : undefined}>
       <canvas ref={canvas} className={styles.canvas} role="img" aria-label={caption ? `${copy.title} — ${caption}` : copy.title} />
 
       <div className={styles.plate}>
