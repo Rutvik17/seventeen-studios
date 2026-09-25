@@ -1,0 +1,92 @@
+.defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.panel {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.label {
+  font-family: var(--font-hand), cursive;
+  font-size: 18px;
+  font-weight: 600;
+  fill: var(--muted);
+}
+
+.value {
+  font-family: var(--font-hand), cursive;
+  transition: fill 0.4s ease;
+}
+
+.index {
+  font-family: var(--font-hand), cursive;
+  fill: var(--muted);
+}
+
+/* Washes wander at the edge; pencil lines are thin and a little rough. */
+.wash {
+  filter: url(#alg-wash);
+  opacity: 0.92;
+  transition: fill 0.45s ease;
+}
+
+.pencil {
+  stroke-width: 1.3;
+  stroke-opacity: 0.8;
+  transition: stroke 0.45s ease;
+}
+
+.move {
+  transition: transform 0.55s cubic-bezier(0.45, 0.05, 0.25, 1);
+}
+
+.shape {
+  transition:
+    x 0.5s ease,
+    y 0.5s ease,
+    width 0.5s ease,
+    height 0.5s ease,
+    x1 0.5s ease,
+    x2 0.5s ease,
+    y1 0.5s ease,
+    y2 0.5s ease,
+    fill 0.45s ease,
+    stroke 0.45s ease;
+}
+
+.fade {
+  transition: opacity 0.4s ease;
+}
+
+.appear {
+  animation: appear 0.45s ease both;
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .move,
+  .shape,
+  .wash,
+  .pencil,
+  .value,
+  .fade {
+    transition: none;
+  }
+  .appear {
+    animation: none;
+  }
+}

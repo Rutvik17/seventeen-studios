@@ -1,33 +1,26 @@
 import type { Metadata } from 'next';
-import { ogImage } from '@/lib/og';
-import { formatDate } from '@/lib/time';
-import { NotebookBook } from '@/components/notebook/NotebookBook';
-import { notebook, notebookBook } from '@/content/notebook';
-import { founder } from '@/content/founder';
-
-const DESCRIPTION = `${founder.name}’s notebook: what he is learning, worked through one entry at a time.`;
-
-export const metadata: Metadata = {
-  title: 'Notebook',
-  description: DESCRIPTION,
-  openGraph: {
-    title: 'Notebook — Seventeen Studios',
-    description: DESCRIPTION,
-    images: ogImage('notebook', 'A blank, ruled notebook page with a pencil resting on it'),
-  },
-};
+import Link from 'next/link';
+import { SendOn } from '@/components/algorithms/SendOn';
 
 /**
- * The notebook: a watercolour sketchbook, sketched and painted, whose pages
- * turn as you scroll — the contents, then a spread for every entry in
- * `content/notebook.ts`, its title page on the left and its painting on the
- * right.
+ * The notebook became the algorithms section. Old links land here and are
+ * sent on — a static export has no server to answer with a redirect, so the
+ * page does it: the router sends the visitor on, and a plain link catches
+ * anyone without the script.
  */
-export default function NotebookPage() {
+export const metadata: Metadata = {
+  title: 'Algorithms',
+  robots: { index: false, follow: true },
+  alternates: { canonical: '/algorithms/' },
+};
+
+export default function NotebookMoved() {
   return (
-    <NotebookBook
-      copy={notebookBook}
-      entries={notebook.map((e) => ({ slug: e.slug, title: e.title, date: formatDate(e.date), summary: e.summary }))}
-    />
+    <main style={{ padding: '140px var(--gutter)', fontFamily: 'var(--font-hand), cursive', fontSize: 24 }}>
+      <SendOn to="/algorithms/" />
+      <p>
+        This page is now <Link href="/algorithms/">Algorithms</Link>.
+      </p>
+    </main>
   );
 }

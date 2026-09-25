@@ -591,14 +591,19 @@ body:has([data-slate]) .nav.is-scrolled::before {
 
 /*
   The landing is one scene and nothing else: the film fills the screen, the
-  back endpaper is not bound in, and there is nothing to scroll to.
+  back endpaper is not bound in, and there is nothing to scroll to. The
+  algorithms section is the same shape — it fills the screen, and its list
+  and its page each scroll inside it.
 */
 html:has([data-film]),
-body:has([data-film]) {
+body:has([data-film]),
+html:has([data-app]),
+body:has([data-app]) {
   height: 100%;
   overflow: hidden;
 }
-body:has([data-film]) .endpaper {
+body:has([data-film]) .endpaper,
+body:has([data-app]) .endpaper {
   display: none;
 }
 

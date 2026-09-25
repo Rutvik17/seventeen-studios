@@ -48,7 +48,7 @@ export const site = {
 
 /** The tabs down the top edge of the book. Three sections, one name each. */
 export const nav = [
-  { label: 'Notebook', href: '/notebook/' },
+  { label: 'Algorithms', href: '/algorithms/' },
   { label: 'Grasp', href: '/grasp/' },
   { label: 'Founder', href: '/founder/' },
 ] as const;
@@ -89,9 +89,9 @@ export const chapters: Chapter[] = [
     doodle: 'head',
   },
   {
-    title: 'Notebook',
-    note: 'Things I imagine',
-    href: '/notebook/',
+    title: 'Algorithms',
+    note: 'The NeetCode 150, drawn',
+    href: '/algorithms/',
     doodle: 'notebook',
   },
   {

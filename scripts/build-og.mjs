@@ -45,7 +45,7 @@ import { fileURLToPath } from 'node:url';
 import { founder } from '../src/content/founder.ts';
 import { site, chapters } from '../src/content/studio.ts';
 import { graspInfo, graspModule } from '../src/content/grasp.ts';
-import { notebook } from '../src/content/notebook.ts';
+import { algorithmsPage } from '../src/content/algorithms/index.ts';
 import { formatDate, spell } from '../src/lib/time.ts';
 import { CURVES } from '../src/lib/calculus.ts';
 import { SITE_HOST } from '../src/lib/url.ts';
@@ -387,12 +387,12 @@ function cards() {
       film: '/founder/?photo=evening',
     },
     {
-      file: 'notebook',
-      label: 'Notebook',
-      title: 'Something new, every day.',
-      standfirst: `${founder.name.split(' ')[0]}’s notebook: what he is learning, worked through one entry at a time.`,
+      file: 'algorithms',
+      label: algorithmsPage.title,
+      title: algorithmsPage.title,
+      standfirst: algorithmsPage.lead,
       plate: 'blank',
-      footRight: 'Sketchbook No. 17',
+      footRight: algorithmsPage.languages,
     },
     {
       file: 'grasp',
@@ -405,14 +405,6 @@ function cards() {
       titleSize: 96,
       footRight: `${graspModule.position} · ${graspModule.title}`,
     },
-    ...notebook.map((entry) => ({
-      file: `notebook-${entry.slug}`,
-      label: 'Notebook',
-      title: entry.title,
-      standfirst: entry.summary,
-      plate: entry.slug in PLATES ? entry.slug : 'blank',
-      footRight: formatDate(entry.date),
-    })),
   ];
 
   return list;

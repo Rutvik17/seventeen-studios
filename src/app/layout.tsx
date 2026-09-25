@@ -52,7 +52,7 @@ const LANDING_TITLE = `${founder.name} — ${founder.role}, ${founder.location}`
 */
 const LANDING_IMAGE = ogImage(
   'home',
-  `${founder.name} — the contents page of a hand-drawn sketchbook: the founder, instruments, lessons and Grasp`,
+  `${founder.name} — the contents page of a hand-drawn sketchbook: the founder, the algorithms, and Grasp`,
 );
 
 export const metadata: Metadata = {
