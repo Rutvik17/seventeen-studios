@@ -586,48 +586,50 @@ html:not(.is-loading) .preloader {
   transform: rotate(-4deg) scale(1.06);
 }
 
-/* The three index tabs, in handwriting. */
+/*
+  The three index tabs, in the hand of the film's captions: Caveat, heavy, in
+  the page's ink. The one you are on is underlined with the captions' straight
+  pen line; the others write theirs in, left to right, when pointed at.
+*/
 .nav__tabs {
   display: flex;
-  gap: clamp(14px, 2.4vw, 34px);
+  gap: clamp(16px, 2.4vw, 36px);
 }
 .nav__tab {
   position: relative;
-  padding: 4px 2px 8px;
+  padding: 4px 1px 6px;
   font-family: var(--font-hand), cursive;
-  font-size: clamp(22px, 1.7vw, 27px);
+  font-weight: 600;
+  font-size: clamp(22px, 1.9vw, 30px);
   line-height: 1;
-  color: var(--fg-dim);
-  transition: color 0.3s;
+  color: var(--fg);
+  opacity: 0.72;
+  transition: opacity 0.3s, color 1.2s;
+}
+.nav__tab::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1px;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.5s var(--ease-out);
 }
 .nav__tab:hover,
+.nav__tab:focus-visible,
 .nav__tab.is-active {
-  color: var(--fg);
+  opacity: 1;
 }
-.nav__underline {
-  position: absolute;
-  left: -4px;
-  right: -4px;
-  bottom: 0;
-  width: calc(100% + 8px);
-  height: 9px;
-  overflow: visible;
+.nav__tab.is-active {
+  font-weight: 700;
 }
-.nav__underline path {
-  fill: none;
-  stroke: var(--accent-2);
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  transition: stroke-dashoffset 0.45s var(--ease-out);
-}
-.nav__tab:hover .nav__underline path,
-.nav__tab:focus-visible .nav__underline path,
-.nav__tab.is-active .nav__underline path {
-  stroke-dashoffset: 0;
+.nav__tab:hover::after,
+.nav__tab:focus-visible::after,
+.nav__tab.is-active::after {
+  transform: scaleX(1);
 }
 
 /*
