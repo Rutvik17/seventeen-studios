@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { problems, problem } from '@/content/algorithms';
 import { readCode, readSpec, examples } from '@/lib/algorithms/solutions';
-import { ogImage } from '@/lib/og';
+import { share } from '@/lib/og';
 import { Rich } from '@/components/algorithms/Rich';
 import { CodeTabs } from '@/components/algorithms/CodeTabs';
 import { Visualizer } from '@/components/algorithms/Visualizer';
@@ -18,7 +18,13 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   return {
     title: `${p.title} — Algorithms`,
     description,
-    openGraph: { title: `${p.title} — step by step`, description, images: ogImage('algorithms-problem', 'A problem from the NeetCode 150 beside the list of all of them, its solution drawn step by step') },
+    ...share({
+      title: `${p.title} — step by step`,
+      description,
+      path: `/algorithms/${p.slug}/`,
+      image: 'algorithms-problem',
+      alt: 'A problem from the NeetCode 150 beside the list of all of them, its solution drawn step by step',
+    }),
   };
 }
 

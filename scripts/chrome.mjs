@@ -164,8 +164,8 @@ export async function openPage({ width, height, scale = 1, reducedMotion = false
         return result.value;
       },
       /** A PNG of the page, or of `clip` ({ x, y, width, height }). */
-      async screenshot(clip) {
-        const shot = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false, ...(clip ? { clip: { ...clip, scale: 1 } } : {}) }, sessionId);
+      async screenshot(clip, { format = 'png', quality } = {}) {
+        const shot = await cdp.send('Page.captureScreenshot', { format, ...(quality ? { quality } : {}), captureBeyondViewport: false, ...(clip ? { clip: { ...clip, scale: 1 } } : {}) }, sessionId);
         return Buffer.from(shot.data, 'base64');
       },
       async close() {

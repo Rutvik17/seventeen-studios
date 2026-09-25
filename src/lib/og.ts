@@ -17,10 +17,21 @@
  *
  *     site_url = https://<owner>.github.io/<repo>
  *
- * So `/og/home.png` resolves to `…github.io/<repo>/og/home.png`, which is the
+ * So `/og/home.jpg` resolves to `…github.io/<repo>/og/home.jpg`, which is the
  * file. Wrapping it in `asset()` as well would emit `…/<repo>/<repo>/og/…` and
  * every card on every platform would 404 — the more dangerous failure of the
  * two, because a broken share image is invisible from inside the site.
+ *
+ * ---
+ *
+ * EVERY URL CARRIES ITS PICTURE'S FINGERPRINT
+ *
+ * Messaging apps and social sites keep a link preview's image by its URL,
+ * for days or for good. When the cards were redrawn, `/og/home.jpg` still
+ * showed the old picture in a shared link after the new one was live, because
+ * the URL had not changed. So each URL ends in `?v=` and the first characters
+ * of a hash of the file: a new picture is a new URL, which no cache has seen.
+ * `verify-og` fails the build if a version does not match its file.
  *
  * ---
  *
@@ -31,6 +42,12 @@
  * link preview, in a message someone forwards — so it is the one that least
  * survives being unlabelled.
  */
+
+import type { Metadata } from 'next';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { site } from '@/content/studio';
 
 /** The size every card is rendered at, and the size crawlers are told. */
 const OG_SIZE = { width: 1200, height: 630 } as const;
@@ -44,11 +61,49 @@ type OgImage = {
 };
 
 /**
- * The `openGraph.images` / `twitter.images` value for one card.
+ * The images value for one card.
  *
  * `name` is the file's stem in `public/og/` — the same string
  * `scripts/build-og.mjs` writes, which is what keeps the two halves in step.
  */
-export function ogImage(name: string, alt: string): OgImage[] {
-  return [{ url: `/og/${name}.png`, ...OG_SIZE, alt, type: 'image/png' }];
+function ogImage(name: string, alt: string): OgImage[] {
+  // A card not yet made has no version; `verify-og` then fails the build by name, after `out/` is
+  // written — which is what `npm run og` photographs to make it.
+  const file = path.join(process.cwd(), 'public', 'og', `${name}.jpg`);
+  const version = existsSync(file) ? createHash('sha1').update(readFileSync(file)).digest('hex').slice(0, 10) : 'none';
+  return [{ url: `/og/${name}.jpg?v=${version}`, ...OG_SIZE, alt, type: 'image/jpeg' }];
+}
+
+/**
+ * Everything a link to a page shows, for every kind of preview at once: the
+ * Open Graph tags (iMessage, Slack, LinkedIn, WhatsApp, Facebook) and the X
+ * tags. Written once, so they cannot disagree.
+ *
+ * They did, once. The X tags were set only in the root layout and every page
+ * inherited them, so a link to any page previewed on X as the landing: its
+ * title, its words and its picture.
+ *
+ * `path` is the page's own address; `image` is the card's name in `public/og/`.
+ */
+export function share(o: {
+  title: string;
+  description: string;
+  path: string;
+  image: string;
+  alt: string;
+  type?: 'website' | 'profile';
+}): Pick<Metadata, 'openGraph' | 'twitter'> {
+  const images = ogImage(o.image, o.alt);
+  return {
+    openGraph: {
+      title: o.title,
+      description: o.description,
+      url: o.path,
+      siteName: site.name,
+      locale: 'en_CA',
+      type: o.type ?? 'website',
+      images,
+    },
+    twitter: { card: 'summary_large_image', title: o.title, description: o.description, images },
+  };
 }

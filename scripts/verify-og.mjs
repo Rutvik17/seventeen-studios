@@ -26,6 +26,7 @@
  * page, and a route may legitimately be mid-removal.
  */
 
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -35,14 +36,14 @@ const OUT = process.argv[2] ?? 'out';
   The same value `metadataBase` is built from, and the reason this script has to
   know it.
 
-  An og:image is emitted as `metadataBase` + `/og/<name>.png`. On a GitHub
+  An og:image is emitted as `metadataBase` + `/og/<name>.jpg`. On a GitHub
   project page that base carries the repository segment —
   `https://<owner>.github.io/<repo>` — but `basePath` is a SERVING prefix, not a
   directory: the export has no `<repo>/` inside it, the file is at `out/og/…`
   and the host maps the two together.
 
   The first version of this check stripped only the scheme and host, so it went
-  looking for `out/seventeen-studios/og/home.png` and failed all eighteen pages
+  looking for `out/seventeen-studios/og/home.jpg` and failed all eighteen pages
   on a deploy that was completely correct. Locally there was nothing to catch it,
   because `basePath` is empty and the two forms are identical.
 
@@ -105,7 +106,7 @@ for (const file of pages(OUT)) {
     continue;
   }
 
-  const rel = url.slice(SITE.length);
+  const [rel, query = ''] = url.slice(SITE.length).split('?');
   const onDisk = path.join(OUT, rel);
   if (!fs.existsSync(onDisk)) {
     failures.push(`${route} — og:image does not resolve to a file in the export: ${rel}`);
@@ -113,14 +114,29 @@ for (const file of pages(OUT)) {
   }
   referenced.add(path.basename(rel));
 
+  // The version is what makes a redrawn card a new URL; a stale one would let caches keep the old picture.
+  const version = new URLSearchParams(query.replace(/&amp;/g, '&')).get('v');
+  const hash = crypto.createHash('sha1').update(fs.readFileSync(onDisk)).digest('hex').slice(0, 10);
+  if (version !== hash) {
+    failures.push(`${route} — og:image version ${version ?? '(none)'} does not match the file (${hash})`);
+  }
+
   if (!/<meta property="og:image:alt"/.test(html)) {
     failures.push(`${route} — og:image has no alt text`);
+  }
+
+  // X reads its own tags. Set only on the landing, every page previewed there as the landing.
+  const tag = (attr, name) => (html.match(new RegExp(`<meta ${attr}="${name}" content="([^"]*)"`)) ?? [, null])[1];
+  for (const k of ['title', 'description', 'image']) {
+    if (tag('name', `twitter:${k}`) !== tag('property', `og:${k}`)) {
+      failures.push(`${route} — twitter:${k} does not match og:${k}`);
+    }
   }
 }
 
 const dir = path.join(OUT, 'og');
 const orphans = fs.existsSync(dir)
-  ? fs.readdirSync(dir).filter((f) => f.endsWith('.png') && !referenced.has(f))
+  ? fs.readdirSync(dir).filter((f) => /\.(png|jpg)$/.test(f) && !referenced.has(f))
   : [];
 
 if (failures.length) {

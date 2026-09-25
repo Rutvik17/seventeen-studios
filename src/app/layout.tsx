@@ -10,7 +10,7 @@ import { Footer } from '@/components/Footer';
 import { site } from '@/content/studio';
 import { founder } from '@/content/founder';
 import { currentYear } from '@/lib/time';
-import { ogImage } from '@/lib/og';
+import { share } from '@/lib/og';
 import { SITE_URL } from '@/lib/url';
 import { LOADING_CLASS, LOADING_FAILSAFE_MS } from '@/lib/ready';
 import './globals.css';
@@ -36,24 +36,11 @@ const siteUrl = SITE_URL;
 /**
  * The landing's title, written once.
  *
- * It is the `<title>` default, the `og:title` and the Twitter title, and those
+ * It is the `<title>` default, the `og:title` and the X title, and those
  * three disagreeing is the ordinary way a share card ends up advertising
  * something the page does not say.
  */
 const LANDING_TITLE = `${founder.name} — ${founder.role}, ${founder.location}`;
-
-/*
-  The landing's card, and the fallback for any route that forgets its own.
-
-  Every route below does set one — but `openGraph` is inherited whole, so if one
-  ever stops, it inherits a real picture of this site rather than nothing. A
-  missing `og:image` is the one metadata failure that degrades to a bare grey
-  rectangle on every platform at once.
-*/
-const LANDING_IMAGE = ogImage(
-  'home',
-  `${founder.name}, written over a watercolour of Nvidia's Voyager and Endeavor buildings in Santa Clara, in autumn`,
-);
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -88,29 +75,18 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: site.name }],
   /*
-    THESE ARE THE LANDING'S, AND EVERY PAGE THAT DOES NOT OVERRIDE THEM GETS
-    THEM TOO. That is how metadata inheritance works in the App Router: a route
-    that set a `title` and no `openGraph` once shared as "Seventeen Studios",
-    because its own title never reached the share card.
-
-    Fixed in two halves: this now carries the landing's real title rather than
-    the brand's, and every static route below sets its own `openGraph` from the
-    same constants it uses for `description`, so the two cannot disagree.
+    THESE ARE THE LANDING'S, AND ANY PAGE THAT DOES NOT SET ITS OWN GETS THEM
+    TOO — metadata is inherited in the App Router, and `openGraph` and
+    `twitter` are replaced whole, never merged. So every page sets both,
+    through `share()`, and `verify-og` fails the build if one does not.
   */
-  openGraph: {
+  ...share({
     title: LANDING_TITLE,
     description: site.description,
-    type: 'website',
-    locale: 'en_CA',
-    siteName: site.name,
-    images: LANDING_IMAGE,
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: LANDING_TITLE,
-    description: site.description,
-    images: LANDING_IMAGE,
-  },
+    path: '/',
+    image: 'home',
+    alt: `${founder.name}, written over a watercolour of Nvidia's Voyager and Endeavor buildings in Santa Clara, in autumn`,
+  }),
   robots: { index: true, follow: true },
 };
 
