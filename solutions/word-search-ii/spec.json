@@ -1,0 +1,16 @@
+{
+  "method": "findWords",
+  "params": [{ "name": "board", "type": "char[][]" }, { "name": "words", "type": "string[]" }],
+  "returns": "list<string>",
+  "compare": "unordered",
+  "cases": [
+    {
+      "in": [[["o", "a", "a", "n"], ["e", "t", "a", "e"], ["i", "h", "k", "r"], ["i", "f", "l", "v"]], ["oath", "pea", "eat", "rain"]],
+      "out": ["eat", "oath"],
+      "example": true
+    },
+    { "in": [[["a", "b"], ["c", "d"]], ["abcb"]], "out": [], "example": true },
+    { "in": [[["a"]], ["a", "a"]], "out": ["a"] },
+    { "in": [[["a", "b"], ["c", "d"]], ["ab", "cb", "ad", "bd", "ac", "ca", "da", "bc", "db", "adcb", "dabc", "abb", "acb"]], "out": ["ab", "bd", "ac", "ca", "db"] }
+  ]
+}

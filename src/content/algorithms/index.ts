@@ -6,11 +6,13 @@ import { stack } from './stack';
 import { binarySearch } from './binary-search';
 import { linkedList } from './linked-list';
 import { trees } from './trees';
+import { tries } from './tries';
+import { heap } from './heap';
 
 export type { Category, Problem, Difficulty } from './types';
 
 /** Every category, in NeetCode's order. */
-export const categories: Category[] = [arraysHashing, twoPointers, slidingWindow, stack, binarySearch, linkedList, trees];
+export const categories: Category[] = [arraysHashing, twoPointers, slidingWindow, stack, binarySearch, linkedList, trees, tries, heap];
 
 export interface Listed extends Problem {
   category: string;

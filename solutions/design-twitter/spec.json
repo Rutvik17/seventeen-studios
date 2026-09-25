@@ -1,0 +1,25 @@
+{
+  "design": {
+    "class": "Twitter",
+    "ctor": [],
+    "methods": {
+      "postTweet": { "params": ["int", "int"], "returns": "void" },
+      "getNewsFeed": { "params": ["int"], "returns": "list<int>" },
+      "follow": { "params": ["int", "int"], "returns": "void" },
+      "unfollow": { "params": ["int", "int"], "returns": "void" }
+    }
+  },
+  "cases": [
+    {
+      "ops": ["Twitter", "postTweet", "getNewsFeed", "follow", "postTweet", "getNewsFeed", "unfollow", "getNewsFeed"],
+      "args": [[], [1, 5], [1], [1, 2], [2, 6], [1], [1, 2], [1]],
+      "out": [null, null, [5], null, null, [6, 5], null, [5]],
+      "example": true
+    },
+    {
+      "ops": ["Twitter", "postTweet", "postTweet", "postTweet", "postTweet", "postTweet", "postTweet", "postTweet", "postTweet", "postTweet", "postTweet", "postTweet", "postTweet", "getNewsFeed", "follow", "getNewsFeed", "unfollow", "getNewsFeed", "follow", "unfollow", "getNewsFeed", "getNewsFeed"],
+      "args": [[], [1, 101], [2, 102], [1, 103], [2, 104], [1, 105], [2, 106], [1, 107], [2, 108], [1, 109], [2, 110], [1, 111], [2, 112], [1], [1, 2], [1], [1, 1], [1], [2, 1], [2, 2], [2], [3]],
+      "out": [null, null, null, null, null, null, null, null, null, null, null, null, null, [111, 109, 107, 105, 103, 101], null, [112, 111, 110, 109, 108, 107, 106, 105, 104, 103], null, [112, 111, 110, 109, 108, 107, 106, 105, 104, 103], null, null, [112, 111, 110, 109, 108, 107, 106, 105, 104, 103], []]
+    }
+  ]
+}

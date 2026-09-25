@@ -1,0 +1,11 @@
+{
+  "method": "lastStoneWeight",
+  "params": [{ "name": "stones", "type": "int[]" }],
+  "returns": "int",
+  "cases": [
+    { "in": [[2, 7, 4, 1, 8, 1]], "out": 1, "example": true },
+    { "in": [[1]], "out": 1, "example": true },
+    { "in": [[2, 2]], "out": 0 },
+    { "in": [[10, 4, 2, 10]], "out": 2 }
+  ]
+}

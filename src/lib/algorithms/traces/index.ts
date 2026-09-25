@@ -12,6 +12,8 @@ const loaders: Record<string, () => Promise<{ traces: Record<string, Tracer> }>>
   'binary-search': () => import('./binary-search'),
   'linked-list': () => import('./linked-list'),
   trees: () => import('./trees'),
+  tries: () => import('./tries'),
+  heap: () => import('./heap'),
 };
 
 export async function loadTracer(category: string, slug: string): Promise<Tracer | null> {
