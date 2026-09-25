@@ -1,0 +1,82 @@
+{
+  "method": "isMatch",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    },
+    {
+      "name": "p",
+      "type": "string"
+    }
+  ],
+  "returns": "bool",
+  "cases": [
+    {
+      "in": [
+        "aa",
+        "a"
+      ],
+      "out": false,
+      "example": true
+    },
+    {
+      "in": [
+        "aa",
+        "a*"
+      ],
+      "out": true,
+      "example": true
+    },
+    {
+      "in": [
+        "ab",
+        ".*"
+      ],
+      "out": true,
+      "example": true
+    },
+    {
+      "in": [
+        "aab",
+        "c*a*b"
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        "mississippi",
+        "mis*is*p*."
+      ],
+      "out": false
+    },
+    {
+      "in": [
+        "",
+        "c*"
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        "ab",
+        ".*c"
+      ],
+      "out": false
+    },
+    {
+      "in": [
+        "aaa",
+        "a*a"
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        "a",
+        "ab*"
+      ],
+      "out": true
+    }
+  ]
+}

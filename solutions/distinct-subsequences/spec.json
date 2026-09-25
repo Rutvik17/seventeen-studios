@@ -1,0 +1,53 @@
+{
+  "method": "numDistinct",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    },
+    {
+      "name": "t",
+      "type": "string"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        "rabbbit",
+        "rabbit"
+      ],
+      "out": 3,
+      "example": true
+    },
+    {
+      "in": [
+        "babgbag",
+        "bag"
+      ],
+      "out": 5,
+      "example": true
+    },
+    {
+      "in": [
+        "a",
+        "b"
+      ],
+      "out": 0
+    },
+    {
+      "in": [
+        "aaaaaaaaaa",
+        "aaa"
+      ],
+      "out": 120
+    },
+    {
+      "in": [
+        "abc",
+        "abcd"
+      ],
+      "out": 0
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "method": "minDistance",
+  "params": [
+    {
+      "name": "word1",
+      "type": "string"
+    },
+    {
+      "name": "word2",
+      "type": "string"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        "horse",
+        "ros"
+      ],
+      "out": 3,
+      "example": true
+    },
+    {
+      "in": [
+        "intention",
+        "execution"
+      ],
+      "out": 5,
+      "example": true
+    },
+    {
+      "in": [
+        "",
+        "abc"
+      ],
+      "out": 3
+    },
+    {
+      "in": [
+        "kitten",
+        "sitting"
+      ],
+      "out": 3
+    },
+    {
+      "in": [
+        "same",
+        "same"
+      ],
+      "out": 0
+    }
+  ]
+}

@@ -109,7 +109,14 @@ export class Rec {
   add(note: string, ...panels: (Panel | false | null | undefined)[]) {
     // A snapshot: a tracer keeps changing its working arrays after drawing them,
     // and a step must show them as they were when it was taken.
-    if (this.steps.length < this.max) this.steps.push({ note, panels: structuredClone(panels.filter(Boolean) as Panel[]) });
+    if (this.steps.length >= this.max) return;
+    let kept = panels.filter(Boolean) as Panel[];
+    // A step that only states values (an answer, a count) keeps the last step's
+    // drawings, so the picture stays on screen while the result is read.
+    const prev = this.steps[this.steps.length - 1];
+    if (prev && kept.every((p) => p.t === 'vars')) kept = [...prev.panels.filter((p) => p.t !== 'vars'), ...structuredClone(kept)];
+    else kept = structuredClone(kept);
+    this.steps.push({ note, panels: kept });
   }
   done(result: unknown): Trace {
     return { steps: this.steps, result };

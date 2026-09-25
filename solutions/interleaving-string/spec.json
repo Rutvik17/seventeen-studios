@@ -1,0 +1,71 @@
+{
+  "method": "isInterleave",
+  "params": [
+    {
+      "name": "s1",
+      "type": "string"
+    },
+    {
+      "name": "s2",
+      "type": "string"
+    },
+    {
+      "name": "s3",
+      "type": "string"
+    }
+  ],
+  "returns": "bool",
+  "cases": [
+    {
+      "in": [
+        "aabcc",
+        "dbbca",
+        "aadbbcbcac"
+      ],
+      "out": true,
+      "example": true
+    },
+    {
+      "in": [
+        "aabcc",
+        "dbbca",
+        "aadbbbaccc"
+      ],
+      "out": false,
+      "example": true
+    },
+    {
+      "in": [
+        "",
+        "",
+        ""
+      ],
+      "out": true,
+      "example": true
+    },
+    {
+      "in": [
+        "a",
+        "",
+        "a"
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        "abc",
+        "def",
+        "adbecf"
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        "ab",
+        "bc",
+        "bbac"
+      ],
+      "out": false
+    }
+  ]
+}
