@@ -83,7 +83,11 @@ const CHANGE = 4.5;
 /** Seconds a single wash takes to go down. */
 const WASH_TIME = 0.9;
 
-type LayerName = 'build' | 'ink' | 'lights' | Season;
+/** Each season has two layers: its ground (grass, under the buildings) and its top (trees and snow, over them). */
+type Ground = `${Season}-ground`;
+type LayerName = 'build' | 'ink' | 'lights' | Season | Ground;
+const groundOf = (s: Season): Ground => `${s}-ground`;
+const isSeason = (layer: LayerName, s: Season) => layer === s || layer === groundOf(s);
 
 interface Layer {
   canvas: HTMLCanvasElement;
@@ -223,7 +227,7 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
   const LIFT = 26;
   const effort = campus.ink.map((s) => s.length + LIFT);
   const inkTotal = effort.reduce((a, e) => a + e, 0);
-  const introJobs = () => jobs.filter((j) => j.layer === 'build' || j.layer === 'spring');
+  const introJobs = () => jobs.filter((j) => j.layer === 'build' || isSeason(j.layer, 'spring'));
 
   /* ---------------- layers ---------------- */
 
@@ -247,10 +251,18 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
       summer: makeLayer(true),
       autumn: makeLayer(true),
       winter: makeLayer(true),
+      'spring-ground': makeLayer(true),
+      'summer-ground': makeLayer(true),
+      'autumn-ground': makeLayer(true),
+      'winter-ground': makeLayer(true),
     };
     jobs = [];
+    // In the order a painter works: the ground, then the buildings on it, then the trees.
+    for (const s of SEASONS) for (const w of campus.ground[s]) jobs.push({ wash: w, layer: groundOf(s), done: 0 });
     for (const w of campus.build) jobs.push({ wash: w, layer: 'build', done: 0 });
     for (const s of SEASONS) for (const w of campus.seasons[s]) jobs.push({ wash: w, layer: s, done: 0 });
+    const order = (j: Job) => (j.layer.endsWith('-ground') ? 0 : j.layer === 'build' ? 1 : 2);
+    jobs.sort((a, b) => order(a) - order(b));
     inkDrawn = 0;
     paintLights(layers.lights.ctx);
   }
@@ -285,22 +297,23 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
       t.forEach(([x, y], i) => (i ? l.lineTo(x, y) : l.moveTo(x, y)));
       l.fill();
     }
-    for (const [x, y] of campus.lamps) {
-      const g = l.createRadialGradient(x, y, 0, x, y, 60);
+    campus.lamps.forEach(([x, y], i) => {
+      const g = l.createRadialGradient(x, y, 0, x, y, 26);
       g.addColorStop(0, 'rgba(255,226,160,0.9)');
-      g.addColorStop(0.2, 'rgba(255,210,140,0.35)');
+      g.addColorStop(0.25, 'rgba(255,210,140,0.35)');
       g.addColorStop(1, 'rgba(255,210,140,0)');
       l.fillStyle = g;
-      l.fillRect(x - 60, y - 60, 120, 120);
-      // The pool it throws on the pavement.
-      const p = l.createRadialGradient(x, 848, 0, x, 848, 50);
+      l.fillRect(x - 26, y - 26, 52, 52);
+      // The pool it throws on the ground at its foot.
+      const [fx, fy] = campus.lampFeet[i];
+      const p = l.createRadialGradient(fx, fy, 0, fx, fy, 22);
       p.addColorStop(0, 'rgba(255,214,150,0.4)');
       p.addColorStop(1, 'rgba(255,214,150,0)');
       l.fillStyle = p;
       l.beginPath();
-      l.ellipse(x, 848, 50, 12, 0, 0, Math.PI * 2);
+      l.ellipse(fx, fy, 22, 9, 0, 0, Math.PI * 2);
       l.fill();
-    }
+    });
   }
 
   function sky(id: SkyId) {
@@ -342,7 +355,7 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
     const end = performance.now() + budget;
     for (const j of jobs) {
       if (j.done >= j.wash.layers) continue;
-      if (j.layer === 'build' || j.layer === 'spring') continue;
+      if (j.layer === 'build' || isSeason(j.layer, 'spring')) continue;
       while (j.done < j.wash.layers) {
         j.wash.pass(layers![j.layer].ctx, j.done++);
         if (performance.now() > end) return;
@@ -357,12 +370,12 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
   }
 
   function ensureSeason(s: Season) {
-    finish((j) => j.layer === s);
+    finish((j) => isSeason(j.layer, s));
   }
 
   function endIntro() {
     if (act === 'shots') return;
-    finish((j) => j.layer === 'build' || j.layer === 'spring');
+    finish((j) => j.layer === 'build' || isSeason(j.layer, 'spring'));
     inkTo(inkTotal);
     pencilAt = null;
     brushAt = null;
@@ -397,7 +410,7 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
       if (was || act === 'shots') {
         // A new size mid-film: the painting is repainted, whole, at once.
         endIntro();
-        finish((j) => j.layer === 'build' || j.layer === shots[cur].season || j.layer === shots[next].season);
+        finish((j) => j.layer === 'build' || isSeason(j.layer, shots[cur].season) || isSeason(j.layer, shots[next].season));
         inkDrawn = 0;
         inkTo(inkTotal);
       }
@@ -430,7 +443,7 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
       // back as the drawing fills the page.
       cam:
         act === 'sketch' && pencilAt
-          ? { x: lerp(clamp(pencilAt[0], 420, 1180), 800, sketchP * sketchP), y: lerp(clamp(pencilAt[1], 470, 700), 590, sketchP * sketchP), zoom: 1.45 - sketchP * 0.35 }
+          ? { x: lerp(clamp(pencilAt[0], 380, 1220), 800, sketchP * sketchP), y: lerp(clamp(pencilAt[1], 330, 760), 500, sketchP * sketchP), zoom: 1.5 - sketchP * 0.38 }
           : act === 'sketch'
             ? { x: 480, y: 500, zoom: 1.45 }
             : shots[0].camera,
@@ -555,26 +568,31 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
     ctx.globalAlpha = 1;
     weather.drawBirds(ctx, P.birds);
 
-    // The land.
+    // The land: this season's ground, the buildings on it, this season's trees and snow.
     screen();
-    place(ctx, L.build.canvas, PAINTED);
-    if (P.bleed > 0 && P.bleed < 1) {
+    const bleeding = P.bleed > 0 && P.bleed < 1;
+    if (bleeding) {
       ensureSeason(P.seasonA);
       ensureSeason(P.seasonB);
       drawMask(P.bleed);
-      for (const [layer, op] of [[P.seasonA, 'destination-out'], [P.seasonB, 'destination-in']] as const) {
+    } else if (act === 'shots') ensureSeason(P.bleed >= 1 ? P.seasonB : P.seasonA);
+    const season = (layerOf: (s: Season) => LayerName) => {
+      if (!bleeding) {
+        place(ctx, L[layerOf(P.bleed >= 1 ? P.seasonB : P.seasonA)].canvas, PAINTED);
+        return;
+      }
+      for (const [s, op] of [[P.seasonA, 'destination-out'], [P.seasonB, 'destination-in']] as const) {
         tctx.globalCompositeOperation = 'source-over';
         tctx.clearRect(0, 0, cw, ch);
-        place(tctx, L[layer].canvas, PAINTED);
+        place(tctx, L[layerOf(s)].canvas, PAINTED);
         tctx.globalCompositeOperation = op;
         tctx.drawImage(mask, 0, 0, cw, ch);
         ctx.drawImage(temp, 0, 0);
       }
-    } else {
-      const s = P.bleed >= 1 ? P.seasonB : P.seasonA;
-      if (act === 'shots') ensureSeason(s);
-      place(ctx, L[s].canvas, PAINTED);
-    }
+    };
+    season(groundOf);
+    place(ctx, L.build.canvas, PAINTED);
+    season((s) => s);
     place(ctx, L.ink.canvas, PAINTED);
 
     // The living.
@@ -585,6 +603,7 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
       ctx.restore();
     }
     weather.drawLeaves(ctx);
+    weather.drawSplashes(ctx, P.rain);
 
     // The hour: one glaze over the whole sheet.
     screen();
@@ -599,12 +618,12 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
     const skyW = (id: SkyId) => (P.skyA === id ? 1 - P.skyT : 0) + (P.skyB === id ? P.skyT : 0);
     const nightSky = skyW('night');
     ctx.globalCompositeOperation = 'source-over';
-    weather.drawStars(ctx, cw, OY + 330 * S, (nightSky + skyW('dawn') * 0.3) * (1 - P.clouds * 0.4), dpr);
+    weather.drawStars(ctx, cw, OY + 215 * S, (nightSky + skyW('dawn') * 0.3) * (1 - P.clouds * 0.4), dpr);
     world();
-    weather.drawMoon(ctx, 1210, 150, nightSky + skyW('dawn') * 0.55);
+    weather.drawMoon(ctx, 1180, 110, nightSky + skyW('dawn') * 0.55);
     ctx.globalCompositeOperation = 'screen';
-    weather.drawSun(ctx, 1000, 322, skyW('dusk'), '255,170,95');
-    weather.drawSun(ctx, 390, 286, skyW('dawn') * 0.8, '255,196,160');
+    weather.drawSun(ctx, 1080, 212, skyW('dusk'), '255,170,95');
+    weather.drawSun(ctx, 330, 205, skyW('dawn') * 0.8, '255,196,160');
     if (P.night > 0.03) {
       screen();
       ctx.globalAlpha = smooth(0.3, 1, P.night);
@@ -627,9 +646,25 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
       life.lights(ctx, P.night, filmT);
     }
 
-    // Weather.
+    // A wet street doubles every light on it: headlights and tail lights in any
+    // rain, the lamps once they are lit.
+    if (P.rain > 0.05) {
+      world();
+      ctx.globalCompositeOperation = 'screen';
+      const wet = [
+        ...life.carLights().flatMap((c) => [
+          { at: c.front, colour: '255,236,196', alpha: c.alpha * (0.35 + P.night * 0.65), len: 14 },
+          { at: c.rear, colour: '255,90,80', alpha: c.alpha * (0.3 + P.night * 0.7), len: 10 },
+        ]),
+        ...campus.lampFeet.map((at) => ({ at, colour: '255,214,150', alpha: smooth(0.3, 0.9, P.night), len: 22 })),
+      ];
+      weather.drawReflections(ctx, wet, P.rain);
+    }
+
+    // Weather: the veil of rain over the distance, then the rain itself.
     ctx.globalCompositeOperation = 'source-over';
     screen();
+    weather.drawMist(ctx, cw, ch, OY + 300 * S, P.rain, dpr);
     weather.drawRain(ctx, cw, ch, P.rain, dpr);
     weather.drawSnow(ctx, cw, ch, P.snow, dpr);
     const flash = weather.flashAmount * P.lightning;

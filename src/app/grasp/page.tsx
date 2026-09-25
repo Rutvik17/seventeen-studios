@@ -32,7 +32,7 @@ export default function GraspPage() {
     <article className={styles.world} data-slate>
       <header className={styles.head}>
         <TransitionLink href="/" className={styles.back} data-cursor="Back">
-          <i aria-hidden="true">←</i> Contents
+          <i aria-hidden="true">←</i> Home
         </TransitionLink>
         <h1 className={styles.name}>{graspInfo.name}</h1>
         <p className={styles.tagline}>{graspInfo.tagline}</p>

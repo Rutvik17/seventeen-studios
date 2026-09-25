@@ -70,10 +70,12 @@ it rather than as a web page:
 
 ### The film — the one place that is watercolour
 
-The landing opens on a film: Nvidia's campus in Santa Clara (Voyager and
-Endeavor) drawn in pencil, laid in with watercolour washes, and then turned
-through a year of shots — seasons, times of day, weather — with people
-walking, pods on the street, drones and an air taxi overhead. It is the
+The landing IS a film, and nothing else — one scene filling the viewport,
+no contents, no footer, no scrolling; the header's tabs are the way into the
+rest of the book. It shows Nvidia's campus in Santa Clara from the air
+(Voyager and Endeavor) drawn in pencil, laid in with watercolour washes, and
+turned through a year of shots — seasons, times of day, weather — with people
+walking, pods on the streets, drones and an air taxi overhead. It is the
 deliberate exception to "acrylic, a few paints at a time": a painting of a
 place carries that place's colours.
 
@@ -83,6 +85,16 @@ place carries that place's colours.
   sorted into ink, the `build` layer and the four seasons' layers — and
   `film.ts` the director: acts, shots, camera, compositing. Keep new drawing in
   those two hands rather than inventing a third.
+- **The campus is drawn from the buildings' published facts, on a plan.**
+  Two triangular floor plates with beveled corners; triangulated roofs with
+  triangular skylights; sloped glass curtain walls of 12 ft × 4 ft panels;
+  Endeavor two storeys, Voyager four and 68 ft; Voyager's 70 ft solar trellis
+  with its 240 ft canopy on the southeast side; a four-acre park and a shaded
+  walk between; San Tomas Expressway to the west. Everything — buildings,
+  trees, people, cars, splashes — is placed on a plan in metres and projected
+  through one camera (`proj` in `campus.ts`). Never place a thing by eye on
+  screen: it will not share the perspective. Before changing the buildings,
+  check the change against a photograph, not against memory.
 - **Shots are content.** Each is one object in `src/content/film.ts`: season,
   sky, glaze, how dark, how busy, what is falling, where the camera rests.
   Adding a shot must not need an engine change.

@@ -39,7 +39,7 @@ export function paintSky(id: SkyId): HTMLCanvasElement {
 
   if (id === 'clear') {
     for (let k = 0; k < 7; k++) {
-      wash(blob(between(r, 150, 1450), between(r, 140, 300), between(r, 120, 260), between(r, 40, 80), r), pick(r, ['#b7cde2', '#c5d6e6', '#a9c2dc']), 0.05, 10, 0.35, 0.4);
+      wash(blob(between(r, 150, 1450), between(r, 40, 200), between(r, 120, 260), between(r, 40, 80), r), pick(r, ['#b7cde2', '#c5d6e6', '#a9c2dc']), 0.05, 10, 0.35, 0.4);
     }
   } else if (id === 'storm') {
     wash(band(-1000, 900, r), '#8a91a6', 0.05, 8, 0.2, 0.1);
@@ -107,7 +107,7 @@ export function makeClouds(): Cloud[] {
   const out: Cloud[] = [];
   for (let k = 0; k < 7; k++) {
     const storm = k >= 3;
-    out.push({ x: between(r, -300, 1800), y: storm ? between(r, 60, 300) : between(r, 90, 280), speed: between(r, 6, 14), art: paintCloud(200 + k, storm), storm, w: 420, h: 170 });
+    out.push({ x: between(r, -300, 1800), y: storm ? between(r, -40, 160) : between(r, -20, 130), speed: between(r, 6, 14), art: paintCloud(200 + k, storm), storm, w: 420, h: 170 });
   }
   return out;
 }

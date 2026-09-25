@@ -12,7 +12,7 @@
  * in the scene. Leaves fall in the world, from the tree they grew on.
  */
 
-import type { Campus, Tree } from './campus';
+import { proj, scaleAt, GROUND_SQUASH, type Campus, type Tree } from './campus';
 import { between, pick, rng, type Rng } from './random';
 import type { Pt } from './wash';
 
@@ -21,6 +21,30 @@ interface Drop {
   y: number;
   v: number;
   l: number;
+  /** Which of four brightness buckets it is drawn in, so a layer is four strokes, not hundreds. */
+  b: number;
+}
+
+/** A layer of rain at one depth: far drops are fine, short and slow on screen; near ones long, fast and blurred. */
+interface RainLayer {
+  drops: Drop[];
+  /** Streak length and fall speed, in CSS pixels and screen heights per second. */
+  len: number;
+  speed: number;
+  width: number;
+  alpha: number;
+  /** How much the wind leans it. */
+  lean: number;
+}
+
+interface Splash {
+  x: number;
+  y: number;
+  /** Radius when fully spread, in world units. */
+  r: number;
+  t: number;
+  life: number;
+  ripple: boolean;
 }
 
 interface Flake {
@@ -58,14 +82,18 @@ const PETAL = ['#f2a9bb', '#f7c6d2', '#e98aa5'];
 
 export class Weather {
   private r: Rng;
-  private drops: Drop[] = [];
+  private rain: RainLayer[] = [];
+  private splashes: Splash[] = [];
+  private wet: [number, number, number, number][];
+  private shafts: HTMLCanvasElement | null = null;
+  private gust = 0;
   private flakes: Flake[] = [];
   private leaves: Leaf[] = [];
   private birds: Bird[] = [];
   private stars: [number, number, number, number][] = [];
   private trees: Tree[];
   private flash = 0;
-  private bolt: Pt[] | null = null;
+  private bolt: Pt[][] | null = null;
   private nextStrike = 3;
   private wind = 0;
   private time = 0;
@@ -74,16 +102,43 @@ export class Weather {
     this.r = rng(4242);
     this.trees = campus.trees.filter((t) => t.kind !== 'palm');
     const r = this.r;
-    for (let k = 0; k < 520; k++) this.drops.push({ x: r(), y: r(), v: between(r, 0.9, 1.3), l: between(r, 0.6, 1.2) });
+    this.wet = campus.wet;
+    const layer = (n: number, len: number, speed: number, width: number, alpha: number, lean: number): RainLayer => ({
+      drops: Array.from({ length: n }, () => ({ x: r(), y: r(), v: between(r, 0.85, 1.15), l: between(r, 0.7, 1.3), b: Math.floor(r() * 4) })),
+      len,
+      speed,
+      width,
+      alpha,
+      lean,
+    });
+    this.rain = [layer(1100, 10, 0.55, 0.7, 0.26, 0.7), layer(480, 22, 0.95, 1, 0.4, 0.85), layer(110, 64, 1.7, 1.6, 0.5, 1)];
     for (let k = 0; k < 360; k++) this.flakes.push({ x: r(), y: r(), v: between(r, 0.5, 1.2), s: between(r, 0.6, 1.8), p: r() * 6.28 });
     for (let k = 0; k < 220; k++) this.stars.push([r(), r(), between(r, 0.4, 1.4), r() * 6.28]);
     for (let k = 0; k < 7; k++) this.birds.push({ x: between(r, -400, 1600), y: between(r, 170, 300), v: between(r, 50, 80), p: r() * 6.28, s: between(r, 0.8, 1.3) });
   }
 
-  update(dt: number, w: { leaves: number; petals: number; birds: number; lightning: number }) {
+  update(dt: number, w: { leaves: number; petals: number; birds: number; lightning: number; rain: number }) {
     const r = this.r;
     this.time += dt;
     this.wind = Math.sin(this.time * 0.23) * 0.6 + Math.sin(this.time * 0.61) * 0.3;
+    // Gusts: the rain leans harder for a few seconds, then eases.
+    this.gust = 0.1 + 0.08 * Math.sin(this.time * 0.37) + 0.1 * Math.max(0, Math.sin(this.time * 0.13)) ** 3;
+
+    // Splashes on the hard surfaces, and rings spreading on the wet road.
+    const rate = w.rain * 140;
+    let n = rate * dt + r();
+    while (n >= 1) {
+      n -= 1;
+      const [x0, y0, x1, y1] = pick(r, this.wet);
+      const x = between(r, x0, x1);
+      const y = between(r, y0, y1);
+      const [sx, sy] = proj(x, y);
+      if (sx < 40 || sx > 1560 || sy > 990) continue;
+      const ripple = r() < 0.35;
+      this.splashes.push({ x: sx, y: sy, r: scaleAt(x, y) * (ripple ? between(r, 0.9, 1.6) : between(r, 0.4, 0.7)), t: 0, life: ripple ? between(r, 0.6, 0.9) : between(r, 0.18, 0.3), ripple });
+    }
+    for (const sp of this.splashes) sp.t += dt;
+    this.splashes = this.splashes.filter((sp) => sp.t < sp.life);
 
     // Leaves and petals: born in a crown, fall to the ground under it, lie a moment, fade.
     const want = Math.round(w.leaves * 46 + w.petals * 40);
@@ -142,17 +197,25 @@ export class Weather {
     if (this.flash <= 0) this.bolt = null;
   }
 
-  private makeBolt(): Pt[] {
+  private makeBolt(): Pt[][] {
     const r = this.r;
-    let x = between(r, 300, 1400);
-    let y = 60;
-    const pts: Pt[] = [[x, y]];
-    while (y < 380) {
-      x += between(r, -26, 26);
-      y += between(r, 18, 34);
-      pts.push([x, y]);
+    const fork = (x: number, y: number, to: number, spread: number): Pt[] => {
+      const pts: Pt[] = [[x, y]];
+      while (y < to) {
+        x += between(r, -spread, spread);
+        y += between(r, 10, 24);
+        pts.push([x, y]);
+      }
+      return pts;
+    };
+    const main = fork(between(r, 200, 1400), 40, 290, 18);
+    const out = [main];
+    // A few branches off the main stroke, shorter and fainter.
+    for (let k = 0; k < 3; k++) {
+      const from = main[Math.floor(between(r, 2, main.length - 3))];
+      out.push(fork(from[0], from[1], from[1] + between(r, 40, 90), 22));
     }
-    return pts;
+    return out;
   }
 
   /** Behind the land: birds, in the world. */
@@ -239,25 +302,124 @@ export class Weather {
     ctx.globalAlpha = 1;
   }
 
-  /** Rain, in screen space. */
+  /**
+   * Rain, in screen space: three depths of streaks under one wind.
+   *
+   * Real rain on camera is not a uniform hatch. The far drops are fine and
+   * short and there are a great many of them; the near ones are few, long
+   * and fast, blurred into streaks brighter at the head than the tail. Rain
+   * comes in shafts — bands where it falls harder — that drift across with
+   * the wind, and gusts lean all of it together.
+   */
   drawRain(ctx: CanvasRenderingContext2D, w: number, h: number, amount: number, dpr: number) {
     if (amount < 0.02) return;
-    const n = Math.floor(this.drops.length * amount * Math.min(1, (w * h) / (1600 * 900 * dpr * dpr) + 0.3));
-    const fall = this.time * 1.4;
-    const slant = 0.18 + this.wind * 0.06;
-    ctx.strokeStyle = `rgba(214,222,240,${0.55 * amount})`;
-    ctx.lineWidth = 1 * dpr;
+    const area = Math.min(1.4, (w * h) / (1500 * 900 * dpr * dpr) + 0.25);
     ctx.lineCap = 'round';
-    ctx.beginPath();
-    const len = 22 * dpr;
-    for (let i = 0; i < n; i++) {
-      const d = this.drops[i];
-      const y = ((d.y + fall * d.v) % 1) * (h + len) - len;
-      const x = ((d.x + (y / h) * slant) % 1) * w;
-      ctx.moveTo(x, y);
-      ctx.lineTo(x - slant * len * d.l * 1.2, y + len * d.l);
+    for (const L of this.rain) {
+      const lean = this.gust * L.lean;
+      const len = L.len * dpr;
+      const count = Math.min(L.drops.length, Math.floor(L.drops.length * amount * area));
+      for (let bucket = 0; bucket < 4; bucket++) {
+        ctx.beginPath();
+        let any = false;
+        for (let i = 0; i < count; i++) {
+          const d = L.drops[i];
+          if (d.b !== bucket) continue;
+          const y = ((d.y + this.time * L.speed * d.v) % 1) * (h + len * 2) - len;
+          const x0 = d.x * w + y * lean;
+          const x = ((x0 % w) + w) % w;
+          // The shafts: density rises and falls across the screen, drifting.
+          const shaft = 0.55 + 0.45 * Math.sin(x / w * 5.2 - this.time * 0.35 + Math.sin(this.time * 0.11) * 2);
+          if (shaft < (bucket + 0.5) / 5) continue;
+          const l = len * d.l;
+          ctx.moveTo(x, y);
+          ctx.lineTo(x - lean * l, y - l);
+          any = true;
+        }
+        if (!any) continue;
+        ctx.strokeStyle = `rgba(218,226,240,${(L.alpha * (0.55 + bucket * 0.18) * amount).toFixed(3)})`;
+        ctx.lineWidth = L.width * dpr;
+        ctx.stroke();
+      }
     }
-    ctx.stroke();
+  }
+
+  /** The veil over the distance while it rains, and shafts of rain falling in it. */
+  drawMist(ctx: CanvasRenderingContext2D, w: number, h: number, horizon: number, amount: number, dpr: number) {
+    if (amount < 0.02) return;
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    const hz = Math.max(0.05, Math.min(0.9, horizon / h));
+    g.addColorStop(0, `rgba(196,202,214,${0.28 * amount})`);
+    g.addColorStop(hz, `rgba(196,202,214,${0.34 * amount})`);
+    g.addColorStop(Math.min(1, hz + 0.3), `rgba(196,202,214,${0.08 * amount})`);
+    g.addColorStop(1, 'rgba(196,202,214,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    // Shafts in the far distance: fine vertical streaks, falling, fading in and out across the sky.
+    if (!this.shafts) this.shafts = shaftTexture();
+    const tile = this.shafts;
+    const scroll = (this.time * 260 * dpr) % (tile.height * dpr);
+    ctx.save();
+    ctx.globalAlpha = 0.5 * amount;
+    ctx.beginPath();
+    ctx.rect(0, 0, w, horizon + 40 * dpr);
+    ctx.clip();
+    const tw = tile.width * dpr;
+    const th = tile.height * dpr;
+    for (let x = -tw; x < w + tw; x += tw) {
+      for (let y = -th + scroll; y < horizon + th; y += th) ctx.drawImage(tile, x + this.gust * y * 0.3, y, tw, th);
+    }
+    ctx.restore();
+  }
+
+  /** In the world: drops bursting on the pavements and rings spreading on the road. */
+  drawSplashes(ctx: CanvasRenderingContext2D, amount: number) {
+    if (amount < 0.02 && this.splashes.length === 0) return;
+    ctx.lineWidth = 0.5;
+    for (const sp of this.splashes) {
+      const u = sp.t / sp.life;
+      const a = (1 - u) * 0.6;
+      ctx.strokeStyle = `rgba(226,232,244,${a.toFixed(3)})`;
+      ctx.beginPath();
+      if (sp.ripple) {
+        ctx.ellipse(sp.x, sp.y, sp.r * u, sp.r * u * GROUND_SQUASH, 0, 0, Math.PI * 2);
+        if (u > 0.3) ctx.ellipse(sp.x, sp.y, sp.r * (u - 0.3), sp.r * (u - 0.3) * GROUND_SQUASH, 0, 0, Math.PI * 2);
+      } else {
+        // A crown of spray: two droplets thrown up and out, and the splash's rim.
+        const up = Math.sin(u * Math.PI) * sp.r * 1.4;
+        ctx.ellipse(sp.x, sp.y, sp.r * (0.4 + u), sp.r * (0.4 + u) * GROUND_SQUASH, 0, Math.PI, 0);
+        ctx.moveTo(sp.x - sp.r * u * 1.2 + 0.6, sp.y - up);
+        ctx.arc(sp.x - sp.r * u * 1.2, sp.y - up, 0.6, 0, Math.PI * 2);
+        ctx.moveTo(sp.x + sp.r * u * 1.2 + 0.6, sp.y - up * 0.8);
+        ctx.arc(sp.x + sp.r * u * 1.2, sp.y - up * 0.8, 0.6, 0, Math.PI * 2);
+      }
+      ctx.stroke();
+    }
+  }
+
+  /** Lights doubled in the wet street: a streak straight down from each, broken by the rain. */
+  drawReflections(ctx: CanvasRenderingContext2D, lights: { at: Pt; colour: string; alpha: number; len: number }[], amount: number) {
+    if (amount < 0.05) return;
+    ctx.lineCap = 'round';
+    for (const l of lights) {
+      const a = l.alpha * amount;
+      if (a < 0.02) continue;
+      const g = ctx.createLinearGradient(l.at[0], l.at[1], l.at[0], l.at[1] + l.len);
+      g.addColorStop(0, `rgba(${l.colour},${(0.55 * a).toFixed(3)})`);
+      g.addColorStop(1, `rgba(${l.colour},0)`);
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      // Broken into dashes that shimmer as the surface is struck.
+      const n = 5;
+      for (let k = 0; k < n; k++) {
+        const y0 = l.at[1] + (k / n) * l.len;
+        const y1 = y0 + (l.len / n) * (0.5 + 0.4 * Math.sin(this.time * 17 + k * 2.1 + l.at[0]));
+        ctx.moveTo(l.at[0] + Math.sin(this.time * 9 + k) * 0.6, y0);
+        ctx.lineTo(l.at[0], y1);
+      }
+      ctx.stroke();
+    }
   }
 
   /** Snow, in screen space. */
@@ -285,9 +447,12 @@ export class Weather {
     ctx.lineJoin = 'round';
     ctx.shadowColor = 'rgba(210,220,255,0.9)';
     ctx.shadowBlur = 18;
-    ctx.beginPath();
-    this.bolt.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
-    ctx.stroke();
+    this.bolt.forEach((stroke, k) => {
+      ctx.lineWidth = k === 0 ? 2.2 : 1;
+      ctx.beginPath();
+      stroke.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      ctx.stroke();
+    });
     ctx.shadowBlur = 0;
   }
 
@@ -296,4 +461,28 @@ export class Weather {
     const f = this.flash;
     return f * (f > 0.7 ? 1 : f > 0.5 ? 0.3 : 0.8);
   }
+}
+
+/** A tile of fine vertical streaks: distant rain, too far to see as drops. */
+function shaftTexture(): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = 220;
+  c.height = 260;
+  const ctx = c.getContext('2d')!;
+  const r = rng(808);
+  ctx.lineCap = 'round';
+  for (let k = 0; k < 170; k++) {
+    const x = r() * c.width;
+    const y = r() * c.height;
+    const l = between(r, 8, 22);
+    ctx.strokeStyle = `rgba(236,240,248,${between(r, 0.15, 0.5).toFixed(2)})`;
+    ctx.lineWidth = between(r, 0.4, 0.8);
+    for (const dy of [0, -c.height, c.height]) {
+      ctx.beginPath();
+      ctx.moveTo(x, y + dy);
+      ctx.lineTo(x - l * 0.08, y + dy + l);
+      ctx.stroke();
+    }
+  }
+  return c;
 }

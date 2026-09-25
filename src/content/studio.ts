@@ -92,7 +92,7 @@ export type Chapter = {
   title: string;
   note: string;
   href: string;
-  /** Which small drawing sits beside it — see `components/sections/Contents.tsx`. */
+  /** Which small drawing marks it. */
   doodle: 'head' | 'notebook' | 'tangent';
 };
 

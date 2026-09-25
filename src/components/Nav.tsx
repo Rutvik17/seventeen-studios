@@ -68,7 +68,7 @@ export function Nav() {
 
   return (
     <header className="nav" ref={ref}>
-      <TransitionLink href="/" className="nav__mark" aria-label="Seventeen Studios — contents" data-cursor="Contents">
+      <TransitionLink href="/" className="nav__mark" aria-label="Seventeen Studios — home" data-cursor="Home">
         <svg viewBox={LOGO_VIEWBOX} className="nav__logo" aria-hidden="true" overflow="visible">
           {[LOGO_ONE, LOGO_SEVEN].map((d) => (
             <path key={d} d={d} className="nav__stroke" strokeWidth={MARK_STROKE} />
