@@ -67,6 +67,10 @@ export function earth(cx: number, cy: number, R: number, lon0 = -28, lat0 = 18, 
   ink.push(pencil([...circle(R, 72), circle(R, 72)[0]], r, { width: 1.2, tone: 0.85, overshoot: 4 }));
   ink.push(pencil([...circle(R + 1.5, 72), circle(R + 1.5, 72)[0]], r, { width: 0.7, tone: 0.35, overshoot: 8 }));
 
+  // A loose wash of sky behind it first, running out into the paper — the
+  // vignette a sketchbook painting sits in.
+  washes.push(new Wash(blob(cx + R * 0.1, cy + R * 0.05, R * 1.45, R * 1.3, r, 11), { color: '#c3d3e3', layers: 10, alpha: 0.045, spread: 0.45, edge: 0.15, grain: 18 }, r));
+
   // The sea: one wash, then the rim darkened, then light caught top-left.
   washes.push(new Wash(circle(R * 0.99), { color: PIGMENT.sea, layers: 16, alpha: 0.075, spread: 0.04, edge: 0.7, grain: 12 }, r));
   washes.push(new Wash([...circle(R * 0.99, 40), ...circle(R * 0.8, 40).reverse()], { color: PIGMENT.deep, layers: 10, alpha: 0.06, spread: 0.05, edge: 0.2 }, r));
