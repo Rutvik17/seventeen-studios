@@ -1,7 +1,6 @@
 /**
  * The sketchbook's brush: acrylic paint, laid on in strokes. Shared by the
- * cover's title, the skies behind the cities, the globe and the notebook's
- * drawings, so everything painted on the site is painted by one hand — as
+ * cover's title, the skies behind the cities and the founder's sketchbook, so everything painted on the site is painted by one hand — as
  * everything drawn is drawn by one pencil (`pencil.ts`).
  *
  * HOW A STROKE IS MADE TO LOOK PAINTED

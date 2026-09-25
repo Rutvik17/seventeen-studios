@@ -1,6 +1,6 @@
 /**
  * Headless Chrome, for the scripts that need a real browser: `build-og.mjs`
- * renders the share cards in one, and `make-globe-data.mjs` decodes a
+ * renders the share cards in one, and other scripts decode a
  * satellite picture with one (Node has no JPEG decoder; a browser does).
  *
  *   const page = await openPage({ width: 1200, height: 630 });

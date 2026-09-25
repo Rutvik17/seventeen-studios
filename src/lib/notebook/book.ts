@@ -38,10 +38,9 @@
 
 import { clamp, easeInOut, rng, smooth } from '@/lib/film/random';
 import { Wash, blob, type Pt } from '@/lib/film/wash';
-import { pencil, drawStroke } from '@/lib/film/pencil';
+import { pencil, drawStroke, type Stroke } from '@/lib/film/pencil';
 import { Progressive } from '@/lib/film/progressive';
 import { drawBrush, drawPencil } from '@/lib/film/film';
-import { earth, type Drawing } from './globe';
 
 export interface BookEntry {
   slug: string;
@@ -59,9 +58,15 @@ export interface BookCopy {
 }
 
 /** The painting for each entry, in a page of the given size. */
-const DRAWINGS: Record<string, (w: number, h: number) => Drawing> = {
-  'earth-we-live-on': (w, h) => earth(w, h),
-};
+const DRAWINGS: Record<string, (w: number, h: number) => Drawing> = {};
+
+/** A page's painting: its pencil, its washes, and what keeps moving once it is made. */
+export interface Drawing {
+  ink: Stroke[];
+  washes: Wash[];
+  /** Drawn over the finished painting each frame; `a` fades it in. */
+  live?: (ctx: CanvasRenderingContext2D, t: number, a: number) => void;
+}
 
 const PAPER = '#fbfaf6';
 /** Burnt-sienna book cloth: the colour of the leaf on the mark, turned. */
@@ -152,6 +157,8 @@ export class Book {
     leaves.push([this.coverFace(), this.insideCoverFace()]);
     const kept = (i: number) => was[1 + Math.floor(i / 2)]?.[i % 2]?.paint?.progressive.progress ?? 0;
     for (let i = 0; i < n; i += 2) leaves.push([this.drawingFace(i, kept(i)), i + 1 < n ? this.drawingFace(i + 1, kept(i + 1)) : this.plainFace()]);
+    // The pages still to be drawn on: an open book always has paper on its right.
+    if (n % 2 === 0) leaves.push([this.plainFace(), this.plainFace()]);
     this.faces = leaves;
   }
 

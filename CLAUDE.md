@@ -82,10 +82,10 @@ it rather than as a web page:
   made in front of the reader as the film makes the campus — the pencil
   drawing, then the brush laying the washes, both visible at work — and
   then stays alive (`Drawing.live`).
-  (`DRAWINGS`, keyed by slug; Earth's is `lib/notebook/globe.ts`: the planet in a painted night sky,
-  real coastlines and land cover, sunlit on one side and on the other a night
-  side where real cities glow; clouds drift, stars twinkle). On a tall screen one page fills the
-  width and the camera follows the turn.
+  A drawing is a function in `DRAWINGS` (`book.ts`), keyed by the entry's
+  slug, returning its pencil strokes and washes in the film's two hands. With
+  no entries the book opens onto blank paper. On a tall screen one page fills
+  the width and the camera follows the turn.
 - **One name per thing.** The section is the *notebook* — never "lessons" or
   "lab". Grasp lives on this site; it is not an app.
 
