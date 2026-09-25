@@ -68,6 +68,37 @@ it rather than as a web page:
 - **One name per thing.** The section is the *notebook* — never "lessons" or
   "lab". Grasp lives on this site; it is not an app.
 
+### The film — the one place that is watercolour
+
+The landing opens on a film: Nvidia's campus in Santa Clara (Voyager and
+Endeavor) drawn in pencil, laid in with watercolour washes, and then turned
+through a year of shots — seasons, times of day, weather — with people
+walking, pods on the street, drones and an air taxi overhead. It is the
+deliberate exception to "acrylic, a few paints at a time": a painting of a
+place carries that place's colours.
+
+- **The engine is `src/lib/film`, framework-free canvas 2D.** `wash.ts` is
+  the watercolour (glazes of a deformed polygon, a darkened drying edge),
+  `pencil.ts` the hand-drawn line, `campus.ts` the geometry — described once,
+  sorted into ink, the `build` layer and the four seasons' layers — and
+  `film.ts` the director: acts, shots, camera, compositing. Keep new drawing in
+  those two hands rather than inventing a third.
+- **Shots are content.** Each is one object in `src/content/film.ts`: season,
+  sky, glaze, how dark, how busy, what is falling, where the camera rests.
+  Adding a shot must not need an engine change.
+- **Paint once, composite every frame.** Anything that does not move is baked
+  into a layer; the frame is a stack of `drawImage`s plus what moves. The
+  night is a `multiply` glaze over everything, and the lights go on top in
+  `screen` — never darken the layers themselves.
+- **A change of season bleeds, it does not cross-fade.** The new season's layer
+  spreads in through a mask of growing blots while the old one is lifted out
+  through the same mask.
+- **The canvas is transparent** over the film's own sheet; the film fades into
+  the page at its foot.
+- **Reduced motion:** no pencil, brush or timelapse — the finished painting,
+  still, with every shot a button. Nothing in the engine is started without
+  checking.
+
 ---
 
 ## Non-negotiables
