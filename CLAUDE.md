@@ -164,6 +164,10 @@ while the next one's pencil starts underneath. No scrolling, no footer.
 - **`src/lib/founder/director.ts` is the director**: making, alive, wash-out;
   the camera fits each scene's `focus` into the room the captions leave.
   Reduced motion gets each scene finished and still, turned by the strip.
+- **What moves comes in with the paint.** A scene's `live` layer is drawn on
+  its own sheet and faded up as the washes go down, so nothing (a GPU's lit
+  cores, a lamp) pops onto a half-made page. Each story loops on its own
+  clock inside the scene's hold, with its beats timed from `st.alive`.
 - The captions obey the teaching rule: words, then symbols, then numbers.
 
 ---

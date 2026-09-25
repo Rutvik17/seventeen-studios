@@ -15,7 +15,7 @@
 
 import { asset } from '@/lib/asset';
 import { resumeExperience } from './resume';
-import { byteOf, CANDIDATES, CONTEXT, descent, encodeAdd, halfAdder, LETTER, matmul, neuron, RATE, softmax, TARGET, WARP } from '@/lib/founder/facts';
+import { agentRun, byteOf, CANDIDATES, CONTEXT, CPU_CORES, descent, encodeAdd, halfAdder, LETTER, matmul, modrmFields, neuron, race, RATE, runProgram, SMS, softmax, TARGET, TASK, typed, WARP } from '@/lib/founder/facts';
 
 export const founder = {
   name: 'Rutvik Patel',
@@ -70,6 +70,11 @@ const mm = matmul();
 const n = neuron();
 const gd = descent();
 const probs = softmax();
+const firstKey = typed().find((c) => c.ch !== ' ')!;
+const prog = runProgram();
+const fields = modrmFields();
+const rc = race();
+const job = agentRun();
 
 export const scenes: Scene[] = [
   {
@@ -83,8 +88,11 @@ export const scenes: Scene[] = [
     id: 'binary',
     strip: '0 and 1',
     title: 'It is all 0s and 1s.',
-    lines: ['Every line of code I write, every word on this page, every image —', 'underneath, a computer only ever holds two things: 0 and 1.'],
-    hold: 8,
+    lines: [
+      'Every line of code I write, every word on this page, every image — underneath, a computer only ever holds two things: 0 and 1.',
+      `Each character typed is stored as a number, and the number as eight 0s and 1s: '${firstKey.ch}' is ${firstKey.code}, ${firstKey.bits.join('')}.`,
+    ],
+    hold: 14,
   },
   {
     id: 'switch',
@@ -92,9 +100,9 @@ export const scenes: Scene[] = [
     title: 'A bit is a switch.',
     lines: [
       'A transistor is a switch with no moving parts. Put a voltage on its gate and a thin channel opens in the silicon beneath it, so current can flow from source to drain; take the voltage away and the channel closes.',
-      'On is read as 1, off as 0. That one yes-or-no is a bit — and a chip is billions of these switches.',
+      'Wire it into a circuit with a lamp: gate on, channel open, current flows, the lamp lights — read as 1. Gate off: no current, 0. That one yes-or-no is a bit.',
     ],
-    hold: 8,
+    hold: 12,
   },
   {
     id: 'byte',
@@ -105,7 +113,7 @@ export const scenes: Scene[] = [
       `Add up the ones that are on: ${byte.on.join(' + ')} = ${byte.sum}.`,
       `In ASCII, the standard code for text, ${byte.code} means the letter ${LETTER} — so these eight switches, ${byte.bits.join('')}, are an ${LETTER}.`,
     ],
-    hold: 9,
+    hold: 14,
   },
   {
     id: 'logic',
@@ -113,10 +121,10 @@ export const scenes: Scene[] = [
     title: 'Switches that add.',
     lines: [
       'Wire switches together and they make gates. An XOR gate outputs 1 when exactly one input is 1; an AND gate when both are.',
-      `Feed both a 1 and a 1: XOR gives ${add.sum}, AND gives ${add.carry}. Read together, that is ${add.binary} — two, written in binary.`,
+      `Try all four ways in. With a 1 and a 1, XOR gives ${add.sum} and AND gives ${add.carry}: read together, ${add.binary} — two, written in binary. Together they are a half adder.`,
       'Every sum a computer does is built from gates like these.',
     ],
-    hold: 9,
+    hold: 13,
   },
   {
     id: 'cpu',
@@ -124,9 +132,10 @@ export const scenes: Scene[] = [
     title: 'The processor: fetch, decode, execute.',
     lines: [
       'A CPU is billions of these switches, arranged into a few cores. Each core works through a program: it fetches an instruction from memory, decodes what it asks for, and executes it — then the next.',
-      'A clock keeps every step in time, ticking billions of times a second. A few big, clever cores, each quick at one thing after another.',
+      `Here, a program adds a = ${prog.a} and b = ${prog.b}: load a into register R1, load b into R2, add them, store R1 back as sum — ${prog.a} + ${prog.b} = ${prog.a + prog.b}. A register is one of a few slots inside the core that hold a number.`,
+      'A clock keeps every step in time, ticking billions of times a second.',
     ],
-    hold: 8,
+    hold: 14,
   },
   {
     id: 'metal',
@@ -134,10 +143,10 @@ export const scenes: Scene[] = [
     title: 'From C++ to the metal.',
     lines: [
       `I write a line of C++: ${code.source}`,
-      `A compiler — a program that translates code — turns it into instructions the CPU knows. The addition becomes ${code.assembly}: add the number in register ebx to the one in eax (a register is one of a few slots inside the CPU that hold a number).`,
-      `An assembler encodes that as two bytes, written in hexadecimal as ${code.hex.join(' ')} — and those bytes are switches: ${code.bits.join(' ')}.`,
+      `A compiler — a program that translates code — turns it into instructions the CPU knows: load a, load b, add, store. The addition is ${code.assembly}: add register ebx into eax.`,
+      `An assembler encodes it as two bytes, in hexadecimal ${code.hex.join(' ')}. ${code.hex[0]} is the opcode for ADD; ${code.hex[1]} is ${fields.mod} ${fields.reg} ${fields.rm} — mode ${fields.mod} (two registers), ${fields.reg} for ebx, ${fields.rm} for eax. Sixteen switches.`,
     ],
-    hold: 9,
+    hold: 16,
   },
   {
     id: 'gpu',
@@ -145,10 +154,10 @@ export const scenes: Scene[] = [
     title: 'The GPU: thousands of small cores.',
     lines: [
       'A graphics processor trades a few clever cores for thousands of simple ones, grouped into blocks NVIDIA calls streaming multiprocessors.',
-      `A thread is one small task. They run in teams of ${WARP} called a warp: one instruction, carried out on ${WARP} different pieces of data at once.`,
-      'Its own fast memory sits right beside it to keep them fed. It was built to colour millions of pixels at once; the same sums turned out to be what AI needs.',
+      `A kernel is one function, written in CUDA C++, run by every thread at once; each thread works out its own index i and adds one pair. Threads run in teams of ${WARP} called a warp: one instruction, ${WARP} pieces of data.`,
+      `In this sketch, ${SMS} × ${WARP} = ${rc.elements} additions happen in ${rc.gpuSteps} step; ${CPU_CORES} CPU cores, four at a time, need ${rc.cpuSteps}. Built to colour millions of pixels at once, the same sums turned out to be what AI needs.`,
     ],
-    hold: 10,
+    hold: 15,
   },
   {
     id: 'matmul',
@@ -159,7 +168,7 @@ export const scenes: Scene[] = [
       `In symbols, for a row a₁ a₂ and a column b₁ b₂: c = a₁b₁ + a₂b₂. With numbers, the top-left answer: ${mm.working[0][0]}.`,
       'Every answer is independent, so a GPU gives each one its own thread — and does them all at once.',
     ],
-    hold: 10,
+    hold: 15,
   },
   {
     id: 'neuron',
@@ -170,7 +179,7 @@ export const scenes: Scene[] = [
       `In symbols, z = x₁w₁ + x₂w₂ + x₃w₃ + b. With numbers: ${n.working}.`,
       `The sigmoid curve does the squashing: 1 ÷ (1 + e⁻ᶻ), where e ≈ 2.718. For z = ${n.z} that is ${n.y}. A network is layers of these, and a whole layer's sums at once are one matrix multiplication.`,
     ],
-    hold: 10,
+    hold: 12,
   },
   {
     id: 'learning',
@@ -181,7 +190,7 @@ export const scenes: Scene[] = [
       `Each step moves the weight a little against the slope: new w = w − rate × slope. With rate ${RATE}, starting at 0: ${gd.first}.`,
       `Step after step — ${gd.steps.map((s) => s.w).join(', ')} — w settles toward ${TARGET}. A real network does this for millions of weights at once.`,
     ],
-    hold: 10,
+    hold: 14,
   },
   {
     id: 'language',
@@ -192,7 +201,7 @@ export const scenes: Scene[] = [
       'The model then gives every word it knows a score. The softmax turns scores into probabilities: e to the power of each score, divided by the sum of them all.',
       `Say four candidates score ${CANDIDATES.map((c) => `${c.word} ${c.score}`).join(', ')}. Between them: ${probs.map((p) => `${p.word} ${p.percent}%`).join(', ')}. It picks a word — here “${probs[0].word}” — adds it, and does it all again.`,
     ],
-    hold: 10,
+    hold: 13,
   },
   {
     id: 'agent',
@@ -200,9 +209,10 @@ export const scenes: Scene[] = [
     title: 'An agent: a model in a loop.',
     lines: [
       'Give a model tools — search, code, a database — and a goal, and let it loop: plan, act, look at what happened, try again.',
+      `Asked “${job.question}”, it decides to use the calculator, calls ${job.call}, reads back ${job.result}, and answers.`,
       `That is what I build now at ${founder.employer}: agentic AI platforms, used by global enterprises for risk analysis, reporting and decision support.`,
     ],
-    hold: 10,
+    hold: 12.5,
   },
   {
     id: 'return',
@@ -235,6 +245,7 @@ export interface FounderPhoto {
 type Box = { u: number; v: number; w: number; h: number };
 
 const photos: FounderPhoto[] = [
+  { id: 'temple', src: asset('/founder/rutvik-temple.jpg'), aspect: 1080 / 1440, alt: 'at a temple at night, lotus lamps on the water behind him', face: { u: 0.38, v: 0.35, w: 0.25, h: 0.24 }, hands: { u: 0.39, v: 0.72, w: 0.15, h: 0.21 }, lights: true },
   { id: 'wall-street', src: asset('/founder/rutvik-wall-street.jpg'), aspect: 1080 / 1440, alt: 'beside the Charging Bull on Wall Street, in winter', face: { u: 0.31, v: 0.32, w: 0.11, h: 0.1 }, crop: { u: 0, v: 0.2, w: 1, h: 0.8 } },
   { id: 'piccadilly', src: asset('/founder/rutvik-piccadilly.jpg'), aspect: 1080 / 1440, alt: 'at Piccadilly Circus, a red double-decker bus passing', face: { u: 0.49, v: 0.41, w: 0.13, h: 0.13 } },
   { id: 'backyard', src: asset('/founder/rutvik-backyard.jpg'), aspect: 1080 / 1440, alt: 'in a garden under a summer sky, in a striped shirt', face: { u: 0.36, v: 0.385, w: 0.12, h: 0.1 }, crop: { u: 0.05, v: 0.25, w: 0.8, h: 0.75 } },

@@ -144,3 +144,74 @@ export function attention() {
 
 /** Threads in a warp: the group of threads an NVIDIA streaming multiprocessor runs in lockstep. */
 export const WARP = 32;
+
+/* ---------------- typing: letters become bytes ---------------- */
+
+/** The line typed on the laptop, and each of its characters as the number and the bits it is stored as (ASCII). */
+export const TYPED = 'int sum = a + b;';
+export function typed(line = TYPED) {
+  return line.split('').map((ch) => byteOf(ch));
+}
+
+/** Counting up to a number in binary, as the lamps do: the value and its eight bits at each count. */
+export function countTo(n: number) {
+  return Array.from({ length: n + 1 }, (_, v) => ({ v, bits: v.toString(2).padStart(8, '0').split('').map(Number) }));
+}
+
+/* ---------------- a half adder, every way in ---------------- */
+
+export function truthTable() {
+  return ([0, 1] as const).flatMap((a) => ([0, 1] as const).map((b) => halfAdder(a, b)));
+}
+
+/* ---------------- a processor running a program ---------------- */
+
+/** a and b in memory, and the four instructions that add them — with what each leaves in the registers and memory. */
+export const PROGRAM_DATA = { a: 2, b: 3 };
+export function runProgram({ a, b } = PROGRAM_DATA) {
+  const steps = [
+    { text: 'LOAD R1, a', does: `copy a from memory into register R1`, R1: a as number | null, R2: null as number | null, sum: null as number | null },
+    { text: 'LOAD R2, b', does: `copy b into register R2`, R1: a, R2: b, sum: null },
+    { text: 'ADD R1, R2', does: `add R2 into R1`, R1: a + b, R2: b, sum: null },
+    { text: 'STORE R1, sum', does: `copy R1 into memory as sum`, R1: a + b, R2: b, sum: a + b },
+  ];
+  return { a, b, steps };
+}
+
+/* ---------------- the x86 instruction, field by field ---------------- */
+
+export function modrmFields() {
+  const { bytes } = encodeAdd();
+  const m = bytes[1];
+  return {
+    opcode: bytes[0].toString(2).padStart(8, '0'),
+    mod: ((m >> 6) & 0b11).toString(2).padStart(2, '0'),
+    reg: ((m >> 3) & 0b111).toString(2).padStart(3, '0'),
+    rm: (m & 0b111).toString(2).padStart(3, '0'),
+  };
+}
+
+/** What the compiler might make of `int sum = a + b;` — load both, add, store. */
+export const ASSEMBLY = ['mov eax, [a]', 'mov ebx, [b]', 'add eax, ebx', 'mov [sum], eax'];
+
+/* ---------------- the sketch's GPU against a CPU ---------------- */
+
+/** The GPU drawn: 24 streaming multiprocessors, each running one warp. */
+export const SMS = 24;
+export const CPU_CORES = 4;
+export function race(elements = SMS * WARP) {
+  return {
+    elements,
+    gpuSteps: Math.ceil(elements / (SMS * WARP)),
+    cpuSteps: Math.ceil(elements / CPU_CORES),
+  };
+}
+/** The global index a CUDA thread computes: blockIdx.x × blockDim.x + threadIdx.x. */
+export const threadIndex = (block: number, thread: number, blockDim = WARP) => block * blockDim + thread;
+
+/* ---------------- an agent's loop, with a tool ---------------- */
+
+export const TASK = { x: 17, y: 23 };
+export function agentRun({ x, y } = TASK) {
+  return { question: `What is ${x} × ${y}?`, call: `calculator(${x} × ${y})`, result: x * y };
+}
