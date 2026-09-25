@@ -229,15 +229,21 @@ export interface FounderPhoto {
   hands?: Box;
   /** Whether the lights in the picture twinkle once it is painted. */
   lights?: boolean;
+  /** The part of the photograph to paint, when he is small in it. */
+  crop?: Box;
 }
 type Box = { u: number; v: number; w: number; h: number };
 
 const photos: FounderPhoto[] = [
-  { id: 'temple', src: asset('/founder/rutvik-temple.jpg'), aspect: 1080 / 1440, alt: 'at a temple at night, lotus lamps on the water behind him', face: { u: 0.38, v: 0.35, w: 0.25, h: 0.24 }, hands: { u: 0.39, v: 0.72, w: 0.15, h: 0.21 }, lights: true },
-  { id: 'wall-street', src: asset('/founder/rutvik-wall-street.jpg'), aspect: 1080 / 1440, alt: 'beside the Charging Bull on Wall Street, in winter', face: { u: 0.31, v: 0.32, w: 0.11, h: 0.1 } },
+  { id: 'wall-street', src: asset('/founder/rutvik-wall-street.jpg'), aspect: 1080 / 1440, alt: 'beside the Charging Bull on Wall Street, in winter', face: { u: 0.31, v: 0.32, w: 0.11, h: 0.1 }, crop: { u: 0, v: 0.2, w: 1, h: 0.8 } },
   { id: 'piccadilly', src: asset('/founder/rutvik-piccadilly.jpg'), aspect: 1080 / 1440, alt: 'at Piccadilly Circus, a red double-decker bus passing', face: { u: 0.49, v: 0.41, w: 0.13, h: 0.13 } },
-  { id: 'backyard', src: asset('/founder/rutvik-backyard.jpg'), aspect: 1080 / 1440, alt: 'in a garden under a summer sky, in a striped shirt', face: { u: 0.36, v: 0.385, w: 0.12, h: 0.1 } },
+  { id: 'backyard', src: asset('/founder/rutvik-backyard.jpg'), aspect: 1080 / 1440, alt: 'in a garden under a summer sky, in a striped shirt', face: { u: 0.36, v: 0.385, w: 0.12, h: 0.1 }, crop: { u: 0.05, v: 0.25, w: 0.8, h: 0.75 } },
   { id: 'evening', src: asset('/founder/rutvik-evening.jpg'), aspect: 1080 / 1440, alt: 'smiling, in a pink shirt, at night', face: { u: 0.4, v: 0.2, w: 0.22, h: 0.19 } },
+  { id: 'fireworks', src: asset('/founder/rutvik-fireworks.jpg'), aspect: 1080 / 1440, alt: 'at a temple festival at night, fireworks bursting overhead', face: { u: 0.51, v: 0.635, w: 0.175, h: 0.165 }, lights: true },
+  { id: 'banff', src: asset('/founder/rutvik-banff.jpg'), aspect: 1440 / 1080, alt: 'arms wide on a lookout above Banff, the Rockies behind him', face: { u: 0.445, v: 0.265, w: 0.055, h: 0.095 }, crop: { u: 0.15, v: 0.05, w: 0.7, h: 0.95 } },
+  { id: 'brooklyn', src: asset('/founder/rutvik-brooklyn.jpg'), aspect: 1080 / 1440, alt: 'in a tuxedo on the Brooklyn Bridge, Lower Manhattan lit up behind him', face: { u: 0.475, v: 0.622, w: 0.055, h: 0.052 }, lights: true, crop: { u: 0.15, v: 0.38, w: 0.7, h: 0.62 } },
+  { id: 'las-vegas', src: asset('/founder/rutvik-las-vegas.jpg'), aspect: 1080 / 1440, alt: 'beside a lit Christmas tree in Las Vegas, the Eiffel Tower replica behind him', face: { u: 0.465, v: 0.567, w: 0.062, h: 0.055 }, lights: true, crop: { u: 0.2, v: 0.35, w: 0.7, h: 0.65 } },
+  { id: 'lake-louise', src: asset('/founder/rutvik-lake-louise.jpg'), aspect: 1080 / 1440, alt: 'on frozen Lake Louise, a snowy mountain behind him', face: { u: 0.525, v: 0.392, w: 0.07, h: 0.063 }, crop: { u: 0.15, v: 0.1, w: 0.8, h: 0.85 } },
   { id: 'suit', src: asset('/founder/rutvik-suit.jpg'), aspect: 1080 / 1920, alt: 'in a navy suit, a mirror portrait', face: { u: 0.355, v: 0.32, w: 0.205, h: 0.14 }, hands: { u: 0.43, v: 0.55, w: 0.21, h: 0.15 } },
 ];
 

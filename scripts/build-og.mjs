@@ -384,7 +384,7 @@ function cards() {
     {
       file: 'founder',
       // The painting itself: the founder film's portrait, finished, with its caption.
-      film: '/founder/?photo=temple',
+      film: '/founder/?photo=evening',
     },
     {
       file: 'notebook',
