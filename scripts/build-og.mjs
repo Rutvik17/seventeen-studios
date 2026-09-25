@@ -4,6 +4,9 @@
  *   npm run og            — all of them
  *   npm run og -- grasp   — only the cards whose file name contains "grasp"
  *
+ * The founder card is a photograph of the built founder page's own painting,
+ * so `npm run build` (without a base path) has to have run first.
+ *
  * Writes `public/og/<name>.png`, one per route, committed to the repo. Wired
  * into metadata by `src/lib/og.ts`, which is the file that decides which route
  * gets which image.
@@ -24,7 +27,7 @@
  *
  * Every plate below is produced by the same code the page it advertises uses —
  * `CURVES[0]` draws the parabola, the landing's card lists the landing's own
- * chapters.
+ * chapters, and the founder card is the founder film's own painting.
  * Nothing is traced by eye.
  *
  * That is not craft for its own sake. A share image is the one asset nobody
@@ -33,7 +36,8 @@
  * the picture is wrong only if the page is wrong.
  */
 
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, statSync } from 'node:fs';
+import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -379,12 +383,8 @@ function cards() {
     },
     {
       file: 'founder',
-      label: 'Founder',
-      title: founder.name,
-      standfirst: `${founder.title} at ${founder.employer}: from a switch to an agent, sketched and painted — and the résumé to download.`,
-      plate: 'blank',
-      titleSize: 64,
-      footRight: 'PDF · DOCX',
+      // The painting itself: the founder film's portrait, finished, with its caption.
+      film: '/founder/',
     },
     {
       file: 'notebook',
@@ -419,6 +419,81 @@ function cards() {
 }
 
 /* ------------------------------------------------------------------ *
+ * Film cards — the page's own painting
+ * ------------------------------------------------------------------ */
+
+/*
+  A film page's card is not drawn here at all: it is the page. The built
+  export is served, the page opened at the card's size with reduced motion
+  (so the painting is there finished, at once), everything that is interface
+  rather than painting hidden, and the result photographed. The card is the
+  artwork because it is made by the artwork's own code.
+*/
+const FILM_CSS = `
+  .nav, .preloader, .curtain, .cursor-marks, .endpaper,
+  [class*="FounderFilm_controls"], [class*="FounderFilm_downloads"],
+  p[class*="FounderFilm_line"] ~ p { display: none !important; }
+  /* A taller canvas, so the portrait fills the card's height. */
+  canvas[role="img"] { top: -81px !important; height: 824px !important; bottom: auto !important; }
+  [class*="FounderFilm_plate"] { left: 70px !important; bottom: auto !important; top: 50% !important; transform: translateY(-50%); width: 500px !important; }
+  [class*="FounderFilm_title"] { font-size: 86px !important; margin-bottom: 18px !important; }
+  [class*="FounderFilm_line"] { font-size: 32px !important; color: var(--fg) !important; opacity: 0.75; }
+`;
+
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.txt': 'text/plain' };
+
+function serve(root) {
+  const server = http.createServer((req, res) => {
+    let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+    if (p.endsWith('/')) p += 'index.html';
+    const file = path.join(root, p);
+    if (!file.startsWith(root) || !existsSync(file)) {
+      res.writeHead(404).end();
+      return;
+    }
+    res.writeHead(200, { 'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream' });
+    res.end(readFileSync(file));
+  });
+  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
+}
+
+async function shootFilm(card) {
+  const site = path.join(root, 'out');
+  if (!existsSync(path.join(site, card.film.replace(/^\//, ''), 'index.html'))) {
+    throw new Error(`${card.file}: no ${card.film} in out/ — run \`npm run build\` (without a base path) first.`);
+  }
+  const server = await serve(site);
+  const page = await openPage({ width: W, height: H, reducedMotion: true });
+  try {
+    await page.navigate(`http://127.0.0.1:${server.address().port}${card.film}`);
+    await page.evaluate(`(() => { const s = document.createElement('style'); s.textContent = ${JSON.stringify(FILM_CSS)}; document.head.append(s); })()`);
+    // Wait until the canvas has paint on it, then a frame more.
+    await page.evaluate(`new Promise((resolve, reject) => {
+      const start = performance.now();
+      const check = () => {
+        const c = document.querySelector('canvas[role=img]');
+        if (c && c.width > 1) {
+          const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+          let n = 0;
+          for (let i = 3; i < d.length; i += 4 * 97) if (d[i] > 0) n++;
+          if (n > 200) return document.fonts.ready.then(() => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        }
+        if (performance.now() - start > 20000) return reject(new Error('the film never painted'));
+        setTimeout(check, 200);
+      };
+      check();
+    })`);
+    if (page.errors.length) throw new Error(page.errors.join('\n'));
+    const dest = path.join(outDir, `${card.file}.png`);
+    writeFileSync(dest, await page.screenshot());
+    console.log(`  ${card.file}.png`.padEnd(46) + `${(statSync(dest).size / 1024).toFixed(0)} KB`);
+  } finally {
+    await page.close();
+    server.close();
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * Rendering
  * ------------------------------------------------------------------ */
 
@@ -439,6 +514,10 @@ async function main() {
   let failures = 0;
   try {
     for (const card of wanted) {
+      if (card.film) {
+        await shootFilm(card);
+        continue;
+      }
       const file = path.join(tmp, `${card.file}.html`);
       writeFileSync(file, html(card), 'utf8');
       await page.navigate(fileUrl(file));

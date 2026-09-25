@@ -155,7 +155,8 @@ To change the résumé, edit the .docx and export the PDF from it.
 
 Every route names its own share card (`public/og/<name>.png`, drawn by
 `scripts/build-og.mjs`), and `scripts/verify-og.mjs` fails the build if one is
-missing. The address on the cards and in the sitemap comes from `lib/url.ts`.
+missing. The founder card is the founder film's finished portrait, photographed
+from the built page, so run `npm run build` before `npm run og`. The address on the cards and in the sitemap comes from `lib/url.ts`.
 
 ---
 
