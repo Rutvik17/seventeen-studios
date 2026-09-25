@@ -483,7 +483,7 @@ function shopware(): Drawing {
  * Now — this sketchbook
  * ------------------------------------------------------------------ */
 
-/** The 17 mark from `Logo.tsx`, as straight-line outlines, in its 36 x 26 units. */
+/** The handwritten 17, as straight-line outlines, in its 36 x 26 units. */
 const ONE: [number, number][] = [
   [13, 0], [13, 26], [6.5, 26], [6.5, 6.5], [1.5, 9.5], [1.5, 3], [7.5, 0], [13, 0],
 ];
