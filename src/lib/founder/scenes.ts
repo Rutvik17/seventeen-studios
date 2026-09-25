@@ -375,8 +375,8 @@ function gpuScene(r: Rng): SceneArt {
       ctx.fillStyle = 'rgba(143,179,217,0.8)';
       ctx.fillRect(520, 672, 780 * cpu, 22);
       if (t > go) {
-        text(ctx, st, `${Math.min(rc.cpuSteps, Math.floor(cpu * rc.cpuSteps))} of ${rc.cpuSteps} steps`, 1310, 690, 24, { colour: PAINT.grey });
-        text(ctx, st, `${rc.gpuSteps} step: all ${rc.elements} at once`, 1310, 750, 24, { weight: 700, colour: PAINT.green, alpha: gpu });
+        text(ctx, st, `${Math.min(rc.cpuSteps, Math.floor(cpu * rc.cpuSteps))} of ${rc.cpuSteps} steps`, 522, 662, 24, { colour: PAINT.grey });
+        text(ctx, st, `${rc.gpuSteps} step: all ${rc.elements} at once`, 1300, 782, 24, { align: 'right', weight: 700, colour: PAINT.green, alpha: gpu });
       }
     },
   };
