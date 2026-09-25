@@ -4,6 +4,7 @@ from typing import *
 import collections, heapq, math, bisect, itertools, functools, json, sys, string, random
 from collections import *
 from heapq import *
+from bisect import *
 from functools import lru_cache, cache, reduce
 
 

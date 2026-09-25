@@ -17,6 +17,7 @@ const loaders: Record<string, () => Promise<{ traces: Record<string, Tracer> }>>
   backtracking: () => import('./backtracking'),
   graphs: () => import('./graphs'),
   'advanced-graphs': () => import('./advanced-graphs'),
+  '1d-dp': () => import('./dp-1d'),
 };
 
 export async function loadTracer(category: string, slug: string): Promise<Tracer | null> {

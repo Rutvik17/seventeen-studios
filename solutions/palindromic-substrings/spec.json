@@ -1,0 +1,44 @@
+{
+  "method": "countSubstrings",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        "abc"
+      ],
+      "out": 3,
+      "example": true
+    },
+    {
+      "in": [
+        "aaa"
+      ],
+      "out": 6,
+      "example": true
+    },
+    {
+      "in": [
+        "abba"
+      ],
+      "out": 6
+    },
+    {
+      "in": [
+        "racecar"
+      ],
+      "out": 10
+    },
+    {
+      "in": [
+        "x"
+      ],
+      "out": 1
+    }
+  ]
+}

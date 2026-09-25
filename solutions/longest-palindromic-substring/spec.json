@@ -1,0 +1,51 @@
+{
+  "method": "longestPalindrome",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    }
+  ],
+  "returns": "string",
+  "compare": "palindrome",
+  "cases": [
+    {
+      "in": [
+        "babad"
+      ],
+      "out": "bab",
+      "example": true
+    },
+    {
+      "in": [
+        "cbbd"
+      ],
+      "out": "bb",
+      "example": true
+    },
+    {
+      "in": [
+        "a"
+      ],
+      "out": "a"
+    },
+    {
+      "in": [
+        "forgeeksskeegfor"
+      ],
+      "out": "geeksskeeg"
+    },
+    {
+      "in": [
+        "abacdfgdcaba"
+      ],
+      "out": "aba"
+    },
+    {
+      "in": [
+        "aaaa"
+      ],
+      "out": "aaaa"
+    }
+  ]
+}

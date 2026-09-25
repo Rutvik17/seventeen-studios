@@ -381,6 +381,11 @@ function validators(mode, got, want, input) {
     const at = new Map(got.map((c, i) => [c, i]));
     return pre.every(([a, b]) => at.get(b) < at.get(a));
   }
+  if (mode === 'palindrome') {
+    // Longest Palindromic Substring: any palindrome in s of the longest length.
+    const [s] = input;
+    return typeof got === 'string' && got.length === want.length && s.includes(got) && [...got].reverse().join('') === got;
+  }
   if (mode === 'alien') {
     // Alien Dictionary: any ordering of every letter consistent with the sorted words, or "" when none exists.
     const [words] = input;

@@ -1,0 +1,62 @@
+{
+  "method": "minCostClimbingStairs",
+  "params": [
+    {
+      "name": "cost",
+      "type": "int[]"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        [
+          10,
+          15,
+          20
+        ]
+      ],
+      "out": 15,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          1,
+          100,
+          1,
+          1,
+          1,
+          100,
+          1,
+          1,
+          100,
+          1
+        ]
+      ],
+      "out": 6,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          0,
+          0
+        ]
+      ],
+      "out": 0
+    },
+    {
+      "in": [
+        [
+          5,
+          1,
+          4,
+          9,
+          2
+        ]
+      ],
+      "out": 7
+    }
+  ]
+}

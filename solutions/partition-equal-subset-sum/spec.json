@@ -1,0 +1,76 @@
+{
+  "method": "canPartition",
+  "params": [
+    {
+      "name": "nums",
+      "type": "int[]"
+    }
+  ],
+  "returns": "bool",
+  "cases": [
+    {
+      "in": [
+        [
+          1,
+          5,
+          11,
+          5
+        ]
+      ],
+      "out": true,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          1,
+          2,
+          3,
+          5
+        ]
+      ],
+      "out": false,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          1,
+          1
+        ]
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        [
+          2,
+          2,
+          3,
+          5
+        ]
+      ],
+      "out": false
+    },
+    {
+      "in": [
+        [
+          3,
+          3,
+          3,
+          4,
+          5
+        ]
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        [
+          100
+        ]
+      ],
+      "out": false
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "method": "wordBreak",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    },
+    {
+      "name": "wordDict",
+      "type": "list<string>"
+    }
+  ],
+  "returns": "bool",
+  "cases": [
+    {
+      "in": [
+        "leetcode",
+        [
+          "leet",
+          "code"
+        ]
+      ],
+      "out": true,
+      "example": true
+    },
+    {
+      "in": [
+        "applepenapple",
+        [
+          "apple",
+          "pen"
+        ]
+      ],
+      "out": true,
+      "example": true
+    },
+    {
+      "in": [
+        "catsandog",
+        [
+          "cats",
+          "dog",
+          "sand",
+          "and",
+          "cat"
+        ]
+      ],
+      "out": false,
+      "example": true
+    },
+    {
+      "in": [
+        "aaaaaaa",
+        [
+          "aaaa",
+          "aaa"
+        ]
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        "cars",
+        [
+          "car",
+          "ca",
+          "rs"
+        ]
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        "a",
+        [
+          "b"
+        ]
+      ],
+      "out": false
+    }
+  ]
+}

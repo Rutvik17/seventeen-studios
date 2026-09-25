@@ -1,0 +1,63 @@
+{
+  "method": "numDecodings",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        "12"
+      ],
+      "out": 2,
+      "example": true
+    },
+    {
+      "in": [
+        "226"
+      ],
+      "out": 3,
+      "example": true
+    },
+    {
+      "in": [
+        "06"
+      ],
+      "out": 0,
+      "example": true
+    },
+    {
+      "in": [
+        "10"
+      ],
+      "out": 1
+    },
+    {
+      "in": [
+        "2101"
+      ],
+      "out": 1
+    },
+    {
+      "in": [
+        "11106"
+      ],
+      "out": 2
+    },
+    {
+      "in": [
+        "27"
+      ],
+      "out": 1
+    },
+    {
+      "in": [
+        "1111111111"
+      ],
+      "out": 89
+    }
+  ]
+}
