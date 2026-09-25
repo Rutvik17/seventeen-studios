@@ -1,0 +1,66 @@
+{
+  "method": "missingNumber",
+  "params": [
+    {
+      "name": "nums",
+      "type": "int[]"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        [
+          3,
+          0,
+          1
+        ]
+      ],
+      "out": 2,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          0,
+          1
+        ]
+      ],
+      "out": 2,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          9,
+          6,
+          4,
+          2,
+          3,
+          5,
+          7,
+          0,
+          1
+        ]
+      ],
+      "out": 8,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          0
+        ]
+      ],
+      "out": 1
+    },
+    {
+      "in": [
+        [
+          1
+        ]
+      ],
+      "out": 0
+    }
+  ]
+}

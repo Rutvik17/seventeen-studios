@@ -1,0 +1,65 @@
+{
+  "method": "singleNumber",
+  "params": [
+    {
+      "name": "nums",
+      "type": "int[]"
+    }
+  ],
+  "returns": "int",
+  "cases": [
+    {
+      "in": [
+        [
+          2,
+          2,
+          1
+        ]
+      ],
+      "out": 1,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          4,
+          1,
+          2,
+          1,
+          2
+        ]
+      ],
+      "out": 4,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          1
+        ]
+      ],
+      "out": 1,
+      "example": true
+    },
+    {
+      "in": [
+        [
+          -3,
+          7,
+          -3
+        ]
+      ],
+      "out": 7
+    },
+    {
+      "in": [
+        [
+          30000,
+          -30000,
+          30000
+        ]
+      ],
+      "out": -30000
+    }
+  ]
+}
