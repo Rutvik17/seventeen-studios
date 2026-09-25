@@ -2,8 +2,8 @@ import type { ReactNode, Ref } from 'react';
 import { TransitionLink } from '@/components/Transition';
 
 /**
- * A list of pages to turn to — the contents on the landing, the notebook's
- * entries — every one the same way: each row in its own paint, its number
+ * A list of pages to turn to — the contents on the landing — every row the
+ * same way: each row in its own paint, its number
  * outlined in pencil and painted in a little off register, its title painted in
  * that colour over a wash of it, and the row washed with it when you point at
  * it. The paints take turns down the list (`--paint-1` … `-5`), unless an item

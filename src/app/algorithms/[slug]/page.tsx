@@ -70,7 +70,7 @@ export default function ProblemPage({ params }: { params: { slug: string } }) {
       </article>
 
       <aside className={styles.vizCol} aria-label="Visualisation">
-        <Visualizer slug={p.slug} category={p.category} examples={ex.map((e) => ({ label: e.input.replace(/\n/g, '  '), input: e.raw }))} />
+        <Visualizer slug={p.slug} category={p.category} examples={ex.map((e) => ({ label: e.calls ?? e.input.replace(/\n/g, '  '), input: e.raw }))} />
       </aside>
 
       <article className={styles.solution}>

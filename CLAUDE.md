@@ -70,22 +70,38 @@ it rather than as a web page:
   written in the film's caption hand (Caveat 600, the current tab 700 with a
   straight pen underline).
   Neither should grow into a site map.
-- **The notebook is a landscape watercolour sketchbook**
-  (`lib/notebook/book.ts`), lying horizontally and bound down its left side:
-  burnt-sienna cloth boards, a paper label, an elastic band, white
-  cold-pressed pages with a tooth and no ruling. It holds drawings only — no
-  contents, no title pages: each entry is one page, its painting with its
-  title written under it, and the cover opens straight onto the first.
-  Scrolling turns the pages (a track and a sticky stage). Each painting is
-  made in front of the reader as the film makes the campus — the pencil
-  drawing, then the brush laying the washes, both visible at work — and
-  then stays alive (`Drawing.live`).
-  A drawing is a function in `DRAWINGS` (`book.ts`), keyed by the entry's
-  slug, returning its pencil strokes and washes in the film's two hands. With
-  no entries the book opens onto blank paper. On a tall screen one page fills
-  the width and the camera follows the turn.
-- **One name per thing.** The section is the *notebook* — never "lessons" or
-  "lab". Grasp lives on this site; it is not an app.
+- **One name per thing.** The section is *Algorithms* — it was the notebook,
+  and `/notebook` no longer exists. Grasp lives on this site; it is not an app.
+
+### Algorithms — the NeetCode 150, drawn
+
+`/algorithms` is a full-viewport app, not a sheet: every problem down the left
+(grouped by NeetCode's categories, in NeetCode's order, searchable, a drawer on
+a phone), the open problem on the right — the statement in our own words,
+worked examples, constraints, the idea, its complexity, the solution in six
+languages (Python, JavaScript, Java, C++, C#, Rust) and, beside it, the
+algorithm drawn step by step. The endpaper is hidden there (`data-app`), and
+code is set in JetBrains Mono, the one face beside Caveat.
+
+- **A problem is data in two places.** Its words are one object in its
+  category's file in `src/content/algorithms/`; its solutions and test cases
+  are the folder `solutions/<slug>/` (`spec.json` plus one file per language).
+  The list, the pages, the sitemap and the examples all follow from those.
+- **Every solution is run.** `npm run test:algorithms [slugs…]` compiles and
+  runs every language against the spec's cases (`scripts/algorithms/test.mjs`;
+  the node types and printers are in `scripts/algorithms/runtime/`). Answers
+  that may come in any order, or have several right forms, are compared by the
+  spec's `compare` mode. Expected answers are computed independently —
+  brute force where it is feasible — never copied from a solution.
+- **Every drawing is the algorithm running.** A tracer
+  (`src/lib/algorithms/traces/<category>.ts`) is the solution, instrumented: it
+  records panels (`src/lib/algorithms/trace.ts`) as it goes, and
+  `npm run test:traces` runs every tracer on every case and checks it reaches
+  the expected answer. A trace that draws a wrong answer is a failing test.
+  `Rec.add` snapshots its panels, so a tracer may keep changing its working
+  arrays after drawing them.
+- **Statements are paraphrased**, never LeetCode's text, and the constraints
+  are LeetCode's facts. Each idea obeys the teaching rule below.
 
 ### The film — the one place that is watercolour
 
@@ -182,9 +198,9 @@ while the next one's pencil starts underneath. No scrolling, no footer.
    downloads were dead in production while every stylesheet loaded. Route paths
    do not need it; `TransitionLink` wraps `next/link`.
 3. **Content is data, not markup.** All copy lives in `src/content/*.ts`, typed
-   where it is declared. Pages compose; they do not author. When the notebook
-   fills up again, an entry should be one object in one file, with the index and
-   the sitemap following automatically.
+   where it is declared. Pages compose; they do not author. An algorithms
+   problem is one object in one file (plus its solutions folder), with the
+   list, the pages and the sitemap following automatically.
 4. **Never let an animation be able to hide content permanently.** Hidden states
    are applied by JavaScript, never by CSS, so content is visible if the bundle
    fails or never runs.
@@ -200,6 +216,8 @@ while the next one's pencil starts underneath. No scrolling, no footer.
    the site's whole differentiator and it is not negotiable:
    - Grasp's demo shows the numeric derivative beside the exact one, with the
      error (`src/lib/calculus.ts`).
+   - Every algorithm drawing is the algorithm running on the example, and
+     every solution is executed in all six languages before it ships.
 
    A figure that cannot be checked by a reader who knows the subject is worth
    less than no figure at all. Never hard-code a result that a formula in the
@@ -232,7 +250,7 @@ Borrowed wholesale from Grasp, whose §15 gate this is:
 > what you wrote as someone who knows nothing, and find the first word you would
 > have had to look up.
 
-Concretely, in the notebook and in any explanatory copy:
+Concretely, in the algorithms pages and in any explanatory copy:
 
 - **Every symbol is introduced before it is used.** `σ` is never written without
   first saying it is the standard deviation and what a standard deviation is.
@@ -244,8 +262,8 @@ Concretely, in the notebook and in any explanatory copy:
 - **No filler.** The failure mode of technical blogging is padding — a thousand
   words of preamble before the first useful sentence. Get to the thing.
 
-A notebook entry is not done if a reader who has never seen a variance or a
-derivative cannot follow it end to end.
+An algorithm's page is not done if a reader who has never seen a hash map or a
+recursion cannot follow its idea end to end.
 
 ---
 
@@ -396,7 +414,9 @@ rather than pushing onto merged history.
 
 ```bash
 npm run typecheck
-npm run build          # must produce out/
+npm run test:algorithms   # when solutions change: every language, every case
+npm run test:traces       # when tracers change: every drawing reaches the answer
+npm run build             # must produce out/
 ```
 
 Then look at it in a browser at 1512px and 390px, with and without

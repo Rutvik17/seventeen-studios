@@ -78,7 +78,8 @@
   z-index: 1;
   margin: 0;
   padding: 12px 8px 4px;
-  background: linear-gradient(#f8f3ea 80%, rgba(248, 243, 234, 0));
+  background: #f8f3ea;
+  box-shadow: 0 6px 6px -6px rgba(29, 29, 33, 0.18);
   font-size: 20px;
   font-weight: 700;
   color: var(--accent);

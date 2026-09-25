@@ -9,7 +9,7 @@
   A SKETCHBOOK.
 
   The whole site is one sketchbook — the landing and the founder page are its
-  films, the notebook is the book itself, the loader is the mark being painted
+  films, the algorithms its worked problems, the loader is the mark being painted
   and a change of page is a page turning. So the ground is warm paper, the ink is
   charcoal, the pen is a deep ink blue, and one crimson is kept for the moments
   that matter: the thing to do next.
@@ -981,7 +981,7 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
 }
 
 /* ==================================================================
-   LISTS — every list of pages to turn to (the contents, the notebook)
+   LISTS — every list of pages to turn to (the contents)
    ================================================================== */
 
 /* Each row in its own paint (--c, set per row): its number outlined in pencil

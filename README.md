@@ -8,7 +8,8 @@ Rutvik Patel's portfolio, made as one sketchbook. A statically exported Next.js
 - **The founder** — a film too: Rutvik sketched and painted from his
   photograph, then a line of code stored as 0s and 1s and a GPU running
   thousands of threads at once — every number on screen computed. The résumé is always to hand.
-- **The notebook** — where Rutvik documents what he learns, day by day.
+- **Algorithms** — the NeetCode 150: every problem restated, solved in Python,
+  JavaScript, Java, C++, C# and Rust, and drawn step by step as it runs.
 - **Grasp** — a calculus course you learn by dragging, on this site.
 
 Every page lies on watercolour paper, with pencil and paint on top. Everything
@@ -85,13 +86,13 @@ src/
   app/                     routes (App Router, all statically exported)
     page.tsx               the landing: one full-screen film — Nvidia's campus from the air, in watercolour, through a year
     founder/               the founder film, and the résumé's file sizes read at build time
-    notebook/              the notebook — a watercolour sketchbook turned by scrolling — and a folder per entry
+    algorithms/            the problem list beside the open problem; a page per problem
     grasp/                 Grasp: the chalkboard, the live derivative, the lessons
     globals.css            tokens, the chrome, and the shared page styles
   components/
     Nav.tsx                the top edge: the mark and three index tabs
     Footer.tsx             the back endpaper
-    Sheet.tsx              the shell of every simple page, with a way back for notebook entries
+    Sheet.tsx              the shell of every simple page
     Cursor.tsx             the pencil and its hover marks
     Preloader.tsx          every full load: a brush paints the mark until the page is ready
     Transition.tsx         page-turn transitions + TransitionLink
@@ -100,9 +101,9 @@ src/
     founder/FounderFilm.tsx the founder film: the canvas, each scene's caption, the scenes to jump between, a pause, the résumé
     grasp/                 the chalkboard
     instruments/           the derivative Grasp demonstrates
-    notebook/              the notebook's book (NotebookBook)
+    algorithms/            the list, the player, the drawing panels (Viz), the code tabs
     film/Film.tsx          the landing's film: the canvas, its caption, the shots to jump between, a pause
-    IndexList.tsx          every list of pages to turn to — the contents, the notebook
+    IndexList.tsx          every list of pages to turn to
     DrawIn.tsx             a little drawing — an underline, an arrow — that draws itself in
   content/                 all copy, as typed data
   lib/
@@ -112,21 +113,28 @@ src/
     ready.ts               holds the loader until every self-painting part has painted
     url.ts                 where the site lives — the one place it is written
     calculus.ts            Grasp's numeric and exact derivatives
-    notebook/              the sketchbook — its leaves, turns, scroll and the drawings on its pages (book.ts)
+    algorithms/            trace.ts (steps and panels), traces/ (a tracer per category), solutions.ts, highlight.ts
 scripts/
   build-og.mjs             share cards, drawn from the site's own data
   verify-og.mjs            postbuild: every page names a share card that exists
   verify-assets.mjs        postbuild: every file a page references is in out/
   chrome.mjs               headless Chrome, for the scripts that draw
+  algorithms/              test.mjs (runs every solution in six languages), traces.mjs (checks every drawing)
+solutions/                 a folder per problem: spec.json and a solution per language
 ```
 
-### Notebook entries
+### Algorithms
 
-An entry is one object in `src/content/notebook.ts` — title, summary, the date
-it was written — and a folder at `app/notebook/<slug>/` for its page, which
-passes `notebookBack` to its `Sheet` for the way back. The notebook page lists
-it, the sitemap includes it and `npm run og` draws its share card, all from
-that object.
+A problem is one object in its category's file in `src/content/algorithms/`
+(the words) and a folder `solutions/<slug>/` (a `spec.json` with the signature
+and test cases, and one solution per language). Its tracer — the algorithm,
+recording what to draw — is in `src/lib/algorithms/traces/<category>.ts`.
+
+```bash
+npm run test:algorithms            # every solution, every language (Python, Node, JDK, g++, .NET 8, rustc)
+npm run test:algorithms two-sum    # just some
+npm run test:traces                # every drawing arrives at the expected answer
+```
 
 ### Content
 

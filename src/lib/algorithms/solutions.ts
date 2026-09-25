@@ -79,5 +79,7 @@ export function examples(spec: Spec) {
     input: formatInput(spec, c),
     output: formatOutput(c),
     raw: c.ops ? { ops: c.ops, args: c.args } : c.in,
+    // A design problem's example is a run of calls: name it as those calls.
+    calls: c.ops ? c.ops.map((op, i) => `${op}(${(c.args?.[i] ?? []).map((a) => JSON.stringify(a).replace(/,/g, ', ')).join(', ')})`).join(', ') : null,
   }));
 }

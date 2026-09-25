@@ -110,7 +110,7 @@ for (const file of pages) {
 
     /*
       Decode before touching the filesystem. Next emits dynamic-route chunks
-      with the segment percent-encoded — `app/notebook/%5Bslug%5D/page-*.js` —
+      with the segment percent-encoded — `app/algorithms/%5Bslug%5D/page-*.js` —
       while the file on disk is literally `[slug]`. Comparing the encoded form
       reports three files missing that are all present.
     */
