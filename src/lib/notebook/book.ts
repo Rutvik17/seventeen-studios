@@ -23,15 +23,17 @@
  * it comes — so the page appears to lift toward the reader and bend — with
  * shade laid over it as it rises.
  *
- * The leaves, in order:
+ * LEAVES. The book holds drawings and nothing else — no contents, no title
+ * pages. Each entry is one page: its painting, with its title written under
+ * it. The cover opens onto the first painting; after that each leaf carries a
+ * painting on both faces, so every spread is two paintings side by side:
  *
- *     0  front: the cover             back: the inside cover
- *     1  front: the contents          back: entry 1's title page
- *     2  front: entry 1's painting    back: entry 2's title page
+ *     0   front: the cover         back: the inside of the cover
+ *     1   front: painting 1        back: painting 2
+ *     2   front: painting 3        back: painting 4
  *     …
- *     n+1 front: entry n's painting   (back never seen)
  *
- * so there are n + 1 turns, and the book ends open on the last entry.
+ * A leaf turns only if there is something behind it to see.
  */
 
 import { clamp, easeInOut, rng, smooth } from '@/lib/film/random';
@@ -75,7 +77,7 @@ interface Face {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   /** For a painted face: its layers, and the painting in progress. */
-  paint?: { ink: HTMLCanvasElement; wash: HTMLCanvasElement; progressive: Progressive; started: number; base: HTMLCanvasElement };
+  paint?: { entry: number; ink: HTMLCanvasElement; wash: HTMLCanvasElement; progressive: Progressive; started: number; base: HTMLCanvasElement };
 }
 
 export class Book {
@@ -105,7 +107,7 @@ export class Book {
     this.ctx = canvas.getContext('2d')!;
     this.hand = fonts.hand;
     this.write = fonts.write;
-    this.turns = entries.length + 1;
+    this.turns = 1 + Math.floor(entries.length / 2);
     this.turnP = Array.from({ length: this.turns }, () => 0);
     this.resize();
   }
@@ -144,8 +146,8 @@ export class Book {
     const n = this.entries.length;
     const leaves: Face[][] = [];
     leaves.push([this.coverFace(), this.insideCoverFace()]);
-    leaves.push([this.contentsFace(), this.titleFace(0)]);
-    for (let i = 0; i < n; i++) leaves.push([this.drawingFace(i, was[i + 2]?.[0]?.paint?.progressive.progress ?? 0), i + 1 < n ? this.titleFace(i + 1) : this.plainFace()]);
+    const kept = (i: number) => was[1 + Math.floor(i / 2)]?.[i % 2]?.paint?.progressive.progress ?? 0;
+    for (let i = 0; i < n; i += 2) leaves.push([this.drawingFace(i, kept(i)), i + 1 < n ? this.drawingFace(i + 1, kept(i + 1)) : this.plainFace()]);
     this.faces = leaves;
   }
 
@@ -273,37 +275,9 @@ export class Book {
     ctx.rect(m, m, w - m * 2, h - m * 2);
     ctx.clip();
     this.washOn(f, (paint) => {
-      for (let k = 0; k < 16; k++) paint(blob(m + r() * (w - 2 * m), m + r() * (h - 2 * m), w * 0.2, h * 0.06, r), k % 2 ? '#e3b07a' : '#f0d9a8', 0.025, 12, 0.45);
+      for (let k = 0; k < 7; k++) paint(blob(m + r() * (w - 2 * m), m + r() * (h - 2 * m), w * 0.3, h * 0.1, r), k % 2 ? '#e3b07a' : '#f0d9a8', 0.012, 10, 0.5);
     }, 22);
     ctx.restore();
-    this.text(f, this.copy.inside, 0.5, 0.52, 0.06, { weight: 700, align: 'center' });
-    this.text(f, this.copy.owner, 0.5, 0.58, 0.032, { weight: 600, align: 'center', colour: 'rgba(29,29,33,0.6)' });
-    return f;
-  }
-
-  private contentsFace(): Face {
-    const f = this.face();
-    this.paper(f, 31);
-    this.text(f, this.copy.contents, 0.1, 0.16, 0.07, { weight: 700, underline: true });
-    this.entries.forEach((e, i) => {
-      const y = 0.29 + i * 0.11;
-      this.text(f, `${i + 1}`, 0.1, y, 0.045, { weight: 700, colour: '#1d1d21' });
-      this.text(f, e.title, 0.17, y, 0.045, { weight: 600 });
-      this.text(f, e.date, 0.9, y, 0.03, { weight: 600, align: 'right', colour: 'rgba(29,29,33,0.55)' });
-    });
-    this.folio(f, 1, true);
-    return f;
-  }
-
-  private titleFace(i: number): Face {
-    const e = this.entries[i];
-    const f = this.face();
-    this.paper(f, 41 + i);
-    this.text(f, e.date, 0.1, 0.22, 0.05, { weight: 600, colour: 'rgba(29,29,33,0.55)' });
-    this.text(f, e.title, 0.1, 0.38, 0.13, { weight: 700 });
-    this.wrap(f, e.summary, 0.1, 0.52, 0.8, 0.06, 0.08);
-    this.text(f, this.copy.read, 0.1, 0.74, 0.065, { weight: 700, colour: '#1f3a8a', underline: true });
-    this.folio(f, 2 + i * 2, false);
     return f;
   }
 
@@ -324,7 +298,7 @@ export class Book {
     const drawing = make ? make(this.pw, this.ph) : { ink: [], washes: [] };
     const progressive = new Progressive(drawing, ink.getContext('2d')!, wash.getContext('2d')!, { inkEnd: 0.4, paintStart: 0.3 });
     if (progress > 0) progressive.set(progress);
-    f.paint = { ink, wash, progressive, started: progress >= 1 ? -1 : 0, base };
+    f.paint = { ink, wash, progressive, started: progress >= 1 ? -1 : 0, base, entry: i };
     this.composeDrawing(f, i);
     return f;
   }
@@ -335,8 +309,7 @@ export class Book {
     ctx.drawImage(p.base, 0, 0);
     ctx.drawImage(p.wash, 0, 0);
     ctx.drawImage(p.ink, 0, 0);
-    this.text(f, this.entries[i].title, 0.5, 0.9, 0.034, { weight: 600, align: 'center', colour: 'rgba(29,29,33,0.6)' });
-    this.folio(f, 3 + i * 2, true);
+    this.text(f, this.entries[i].title, 0.5, 0.9, 0.05, { weight: 700, align: 'center', colour: 'rgba(29,29,33,0.8)' });
   }
 
   private plainFace(): Face {
@@ -388,7 +361,23 @@ export class Book {
     return this.portrait;
   }
 
-  /** The spread fully open, or -1 mid-turn. 0 is the closed book; entry i is spread i + 2. */
+  /** The paintings lying open, each with its page's rectangle in CSS pixels; empty mid-turn. */
+  get openPages(): { entry: number; x: number; y: number; w: number; h: number }[] {
+    const s = this.spread;
+    if (s <= 0) return [];
+    const spine = this.spineX();
+    const top = (this.H - this.ph) / 2 + this.H * 0.03;
+    const out: { entry: number; x: number; y: number; w: number; h: number }[] = [];
+    const page = (entry: number, left: boolean) => {
+      if (entry < 0 || entry >= this.entries.length) return;
+      out.push({ entry, x: (left ? spine - this.pw : spine) / this.dpr, y: top / this.dpr, w: this.pw / this.dpr, h: this.ph / this.dpr });
+    };
+    page(2 * s - 3, true);
+    page(2 * s - 2, false);
+    return out;
+  }
+
+  /** The spread fully open, or -1 mid-turn. 0 is the closed book; spread s shows paintings 2s−3 and 2s−2. */
   get spread(): number {
     const turned = this.turnP.filter((t) => t >= 1).length;
     return this.turnP.some((t) => t > 0 && t < 1) ? -1 : turned;
@@ -418,17 +407,20 @@ export class Book {
     const spine = this.spineX();
     const top = (H - ph) / 2 + H * 0.03;
 
-    // Paint each entry's drawing as its spread comes into view.
+    // Paint each drawing as its page comes into view: a front when the leaf
+    // before it opens, a back when its own leaf turns.
     this.faces.forEach((leaf, k) => {
-      const p = leaf[0].paint;
-      if (!p || p.started < 0) return;
-      const revealing = this.turnP[k - 1] ?? 0;
-      if (revealing > 0.35 && p.started === 0) p.started = now;
-      if (p.started > 0) {
-        p.progressive.set((now - p.started) / 2600);
-        this.composeDrawing(leaf[0], k - 2);
-        if (p.progressive.progress >= 1) p.started = -1;
-      }
+      leaf.forEach((face, side) => {
+        const p = face.paint;
+        if (!p || p.started < 0) return;
+        const revealing = side === 0 ? this.turnP[k - 1] ?? 0 : this.turnP[k] ?? 0;
+        if (revealing > 0.35 && p.started === 0) p.started = now;
+        if (p.started > 0) {
+          p.progressive.set((now - p.started) / 2600);
+          this.composeDrawing(face, p.entry);
+          if (p.progressive.progress >= 1) p.started = -1;
+        }
+      });
     });
 
     const intro = this.coverIntro;
