@@ -1,0 +1,13 @@
+{
+  "method": "isAnagram",
+  "params": [{ "name": "s", "type": "string" }, { "name": "t", "type": "string" }],
+  "returns": "bool",
+  "cases": [
+    { "in": ["anagram", "nagaram"], "out": true, "example": true },
+    { "in": ["rat", "car"], "out": false, "example": true },
+    { "in": ["a", "ab"], "out": false },
+    { "in": ["aacc", "ccac"], "out": false },
+    { "in": ["listen", "silent"], "out": true },
+    { "in": ["z", "z"], "out": true }
+  ]
+}

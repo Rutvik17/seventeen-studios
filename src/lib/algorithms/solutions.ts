@@ -44,7 +44,12 @@ export function readCode(slug: string) {
   });
 }
 
-const j = (v: unknown) => JSON.stringify(v).replace(/,/g, ', ');
+const j = (v: unknown): string => {
+  // A grid of more than a few rows is written a row to a line, as it would be drawn.
+  if (Array.isArray(v) && v.length > 3 && v.every((r) => Array.isArray(r) && r.every((x) => !Array.isArray(x))) && JSON.stringify(v).length > 60)
+    return `[\n${v.map((r) => '  ' + JSON.stringify(r).replace(/,/g, ', ')).join(',\n')}\n]`;
+  return JSON.stringify(v).replace(/,/g, ', ');
+};
 
 /** An example's input as LeetCode writes it: `nums = [2, 7, 11, 15], target = 9`. */
 export function formatInput(spec: Spec, c: Spec['cases'][number]): string {

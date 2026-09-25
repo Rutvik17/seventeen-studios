@@ -1,0 +1,13 @@
+{
+  "method": "longestConsecutive",
+  "params": [{ "name": "nums", "type": "int[]" }],
+  "returns": "int",
+  "cases": [
+    { "in": [[100, 4, 200, 1, 3, 2]], "out": 4, "example": true },
+    { "in": [[0, 3, 7, 2, 5, 8, 4, 6, 0, 1]], "out": 9, "example": true },
+    { "in": [[]], "out": 0 },
+    { "in": [[1, 0, 1, 2]], "out": 3 },
+    { "in": [[9, 1, -3, 2, 4, 8, 3, -1, 6, -2, -4, 7]], "out": 4 },
+    { "in": [[5]], "out": 1 }
+  ]
+}
