@@ -40,6 +40,7 @@ import { clamp, easeInOut, rng, smooth } from '@/lib/film/random';
 import { Wash, blob, type Pt } from '@/lib/film/wash';
 import { pencil, drawStroke } from '@/lib/film/pencil';
 import { Progressive } from '@/lib/film/progressive';
+import { drawBrush, drawPencil } from '@/lib/film/film';
 import { earth, type Drawing } from './globe';
 
 export interface BookEntry {
@@ -59,13 +60,16 @@ export interface BookCopy {
 
 /** The painting for each entry, in a page of the given size. */
 const DRAWINGS: Record<string, (w: number, h: number) => Drawing> = {
-  'earth-we-live-on': (w, h) => earth(w / 2, h * 0.46, Math.min(w, h) * 0.36),
+  'earth-we-live-on': (w, h) => earth(w, h),
 };
 
 const PAPER = '#fbfaf6';
 /** Burnt-sienna book cloth: the colour of the leaf on the mark, turned. */
 const BOARD = '#8f4326';
 const INK = '#1d1d21';
+
+/** How long a page takes to sketch and paint, as the landing's film takes. */
+const PAINT_MS = 11000;
 
 /** Page proportions, width over height. */
 /** A landscape sketchbook: each page wider than it is tall. */
@@ -77,7 +81,7 @@ interface Face {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   /** For a painted face: its layers, and the painting in progress. */
-  paint?: { entry: number; ink: HTMLCanvasElement; wash: HTMLCanvasElement; progressive: Progressive; started: number; base: HTMLCanvasElement };
+  paint?: { entry: number; live?: Drawing['live']; drawing: Drawing; ink: HTMLCanvasElement; wash: HTMLCanvasElement; progressive: Progressive; started: number; base: HTMLCanvasElement };
 }
 
 export class Book {
@@ -298,7 +302,7 @@ export class Book {
     const drawing = make ? make(this.pw, this.ph) : { ink: [], washes: [] };
     const progressive = new Progressive(drawing, ink.getContext('2d')!, wash.getContext('2d')!, { inkEnd: 0.4, paintStart: 0.3 });
     if (progress > 0) progressive.set(progress);
-    f.paint = { ink, wash, progressive, started: progress >= 1 ? -1 : 0, base, entry: i };
+    f.paint = { ink, wash, progressive, started: progress >= 1 ? -1 : 0, base, entry: i, live: drawing.live, drawing };
     this.composeDrawing(f, i);
     return f;
   }
@@ -319,6 +323,19 @@ export class Book {
   }
 
   /* ---------------- the story ---------------- */
+
+  /** Reduced motion: every painting finished and nothing moving in them. */
+  private stillLife = false;
+  finish() {
+    this.stillLife = true;
+    for (const leaf of this.faces)
+      for (const face of leaf)
+        if (face.paint) {
+          face.paint.progressive.set(1);
+          face.paint.started = -1;
+          this.composeDrawing(face, face.paint.entry);
+        }
+  }
 
   /** The cover being sketched and painted, 0–1, on entry. */
   setIntro(p: number) {
@@ -416,7 +433,7 @@ export class Book {
         const revealing = side === 0 ? this.turnP[k - 1] ?? 0 : this.turnP[k] ?? 0;
         if (revealing > 0.35 && p.started === 0) p.started = now;
         if (p.started > 0) {
-          p.progressive.set((now - p.started) / 2600);
+          p.progressive.set((now - p.started) / PAINT_MS);
           this.composeDrawing(face, p.entry);
           if (p.progressive.progress >= 1) p.started = -1;
         }
@@ -452,10 +469,16 @@ export class Book {
     const moving = this.turnP.findIndex((t) => t > 0 && t < 1);
     const leftLeaf = turned - 1;
     const rightLeaf = Math.min(this.faces.length - 1, moving >= 0 ? moving + 1 : turned);
-    if (leftLeaf >= 0) ctx.drawImage(this.faces[leftLeaf][1].canvas, spine - pw, top, pw, ph);
+    if (leftLeaf >= 0) {
+      ctx.drawImage(this.faces[leftLeaf][1].canvas, spine - pw, top, pw, ph);
+      this.alive(this.faces[leftLeaf][1], spine - pw, top, now, moving < 0);
+    }
     if (rightLeaf >= 0) {
       if (rightLeaf === 0) this.drawCover(spine, top, intro);
-      else ctx.drawImage(this.faces[rightLeaf][0].canvas, spine, top, pw, ph);
+      else {
+        ctx.drawImage(this.faces[rightLeaf][0].canvas, spine, top, pw, ph);
+        this.alive(this.faces[rightLeaf][0], spine, top, now, true);
+      }
     }
 
     // The gutter: shade into the spine on both sides.
@@ -502,6 +525,38 @@ export class Book {
       ctx.drawImage(face, spine, top, pw, ph);
       ctx.restore();
     }
+  }
+
+  /**
+   * A painting lying open: while it is being made, the pencil and the brush
+   * at work on it; once it is made, whatever in it keeps moving.
+   */
+  private alive(face: Face, x: number, y: number, now: number, still: boolean) {
+    const p = face.paint;
+    if (!p) return;
+    const { ctx } = this;
+    const k = this.pw / face.canvas.width;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(k, k);
+    const done = p.progressive.progress;
+    if (p.live && done > 0.85 && still && !this.stillLife) {
+      ctx.beginPath();
+      ctx.rect(0, 0, face.canvas.width, face.canvas.height);
+      ctx.clip();
+      p.live(ctx, now / 1000, Math.min(1, (done - 0.85) / 0.15));
+    }
+    const s = this.dpr * Math.max(0.6, this.pw / 700);
+    if (p.progressive.pencilAt) {
+      ctx.translate(p.progressive.pencilAt[0], p.progressive.pencilAt[1]);
+      ctx.scale(s, s);
+      drawPencil(ctx, 0, 0);
+    } else if (p.progressive.brushAt) {
+      ctx.translate(p.progressive.brushAt[0], p.progressive.brushAt[1]);
+      ctx.scale(s, s);
+      drawBrush(ctx, 0, 0, now / 1000);
+    }
+    ctx.restore();
   }
 
   private turning(k: number, theta: number, spine: number, top: number) {

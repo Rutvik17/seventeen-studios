@@ -78,9 +78,13 @@ it rather than as a web page:
   cold-pressed pages with a tooth and no ruling. It holds drawings only — no
   contents, no title pages: each entry is one page, its painting with its
   title written under it, and the cover opens straight onto the first.
-  Scrolling turns the pages (a track and a sticky stage) (`DRAWINGS`, keyed
-  by slug; Earth's is `lib/notebook/globe.ts`, from the real coastlines and
-  land cover, lit from the upper left). On a tall screen one page fills the
+  Scrolling turns the pages (a track and a sticky stage). Each painting is
+  made in front of the reader as the film makes the campus — the pencil
+  drawing, then the brush laying the washes, both visible at work — and
+  then stays alive (`Drawing.live`). No footer on the notebook page.
+  (`DRAWINGS`, keyed by slug; Earth's is `lib/notebook/globe.ts`: the planet in a painted night sky,
+  real coastlines and land cover, sunlit on one side and on the other a night
+  side where real cities glow; clouds drift, stars twinkle). On a tall screen one page fills the
   width and the camera follows the turn.
 - **One name per thing.** The section is the *notebook* — never "lessons" or
   "lab". Grasp lives on this site; it is not an app.
