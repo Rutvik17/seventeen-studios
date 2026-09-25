@@ -1,15 +1,16 @@
 /**
- * THE STUDIO — Seventeen's own house, in autumn.
+ * THE STUDIO — Seventeen's headquarters, in autumn.
  *
  * A small watercolour, drawn and painted the way the landing's film paints
- * Nvidia's campus: with the same pencil and the same wash. A gabled atelier
- * with a north-lit sawtooth wing (a row of triangles on its roof — the
- * campus's motif, at the scale of a house), a green door under a 17, a lamp
- * by the path, two maples turned orange and red, and their leaves coming
- * down.
+ * Nvidia's campus: with the same pencil and the same wash. A piece of modern
+ * architecture, not a house: a long glass pavilion on the ground, and above
+ * it a white box that cantilevers far out past the glass, faced in slim
+ * timber fins, resting at its free end on a single V-shaped column. A row of
+ * triangular north lights rides the roof — the campus's motif again. A
+ * reflecting pool runs along the front; two maples, orange and red, drop
+ * their leaves around it.
  *
- * It is the loader — sketched and painted while the page gets ready — and,
- * finished and small, the mark in the header.
+ * It is the loader — sketched and painted while the page gets ready.
  *
  * The drawing is described once, in its own world of 600 × 400, as `ink`
  * (in the order the hand draws it) and `washes` (in the order a painter lays
@@ -21,12 +22,14 @@ import { blob, Wash, type Pt, type WashStyle } from './wash';
 import { curve, drawStroke, pencil, pointAt, ruled, type Stroke } from './pencil';
 
 export const STUDIO = { w: 600, h: 400 };
-/** The part of the drawing the header's mark shows: the house and its nearer tree. */
+/** A tight framing of the building and its maples. */
 export const MARK_CROP = { x: 22, y: 84, w: 560, h: 256 };
 /** The loader's framing: the painting, with a little paper round it. */
-export const LOADER_CROP = { x: 20, y: 60, w: 560, h: 310 };
+export const LOADER_CROP = { x: 20, y: 70, w: 560, h: 300 };
 
 const AUTUMN = ['#e08a2b', '#d4602a', '#eba42c', '#b8392c', '#c9772e'];
+/** Where the number is written on the building, and how big, in the drawing's units. */
+const SIGN = { x: 202, y: 206, size: 24 };
 
 interface Drawing {
   ink: Stroke[];
@@ -48,93 +51,68 @@ function draw(seed = 1717): Drawing {
   const paint = (pts: Pt[], style: WashStyle) => washes.push(new Wash(pts, style, r));
 
   const G = 300;
+  // The building is seen a little from the right: fronts are true, the right
+  // end recedes up and to the right.
+  const DX = 34;
+  const DY = -12;
 
-  /* ---- the ground, first as a wash, so everything stands on it ---- */
-  paint([[40, 292], [560, 290], [575, 318], [520, 340], [300, 350], [80, 338], [30, 316]], { color: '#c7ae72', layers: 12, alpha: 0.07, spread: 0.22, edge: 0.3, grain: 20 });
-  paint([[70, 300], [540, 298], [520, 326], [320, 334], [90, 326]], { color: '#9aa65a', layers: 10, alpha: 0.06, spread: 0.25, edge: 0.3 });
+  /* ---- the ground and the pool ---- */
+  paint([[40, 292], [560, 290], [575, 320], [520, 344], [300, 352], [80, 340], [30, 318]], { color: '#c7ae72', layers: 12, alpha: 0.07, spread: 0.22, edge: 0.3, grain: 20 });
+  paint([[70, 300], [540, 298], [520, 330], [320, 338], [90, 330]], { color: '#9aa65a', layers: 10, alpha: 0.06, spread: 0.25, edge: 0.3 });
+  const pool: Pt[] = [[150, 308], [470, 308], [478, 324], [142, 324]];
+  paint(pool, { color: '#6f9bb8', layers: 12, alpha: 0.09, spread: 0.06, edge: 0.6, grain: 14 });
+  poly(pool, { width: 0.8, tone: 0.6 });
 
-  /* ---- the house: a gabled atelier, a little turned so its side shows ---- */
-  const front: Pt[] = [[220, G], [390, G], [390, 180], [305, 104], [220, 180]];
-  const side: Pt[] = [[390, G], [452, G - 12], [452, 168], [390, 180]];
-  const roofR: Pt[] = [[305, 104], [367, 92], [452, 168], [390, 180]];
-  const eave = (a: Pt, b: Pt) => line(a, b, { width: 1.3, tone: 0.9 }, 0.5);
-  eave([214, 184], [305, 100]);
-  eave([305, 100], [396, 184]);
-  eave([305, 100], [367, 88]);
-  eave([367, 88], [458, 166]);
-  eave([396, 184], [458, 166]);
-  poly(front, { width: 1.1 });
-  line([452, G - 12], [452, 168], { width: 1.1 }, 0);
-  line([390, G], [452, G - 12], { width: 1.1 }, 0.3);
-  // The chimney, brick, on the far slope.
-  const chim: Pt[] = [[398, 128], [412, 125], [412, 104], [398, 107]];
-  poly(chim, { width: 0.9 });
-  // Roof courses, faint.
-  for (let k = 1; k < 6; k++) {
-    const t = k / 6;
-    line([305 + (390 - 305) * t, 104 + (180 - 104) * t], [367 + (452 - 367) * t, 92 + (168 - 92) * t], { width: 0.5, tone: 0.3, overshoot: 0 }, 0);
+  /* ---- the glass pavilion on the ground ---- */
+  const gl: Pt[] = [[236, G], [450, G], [450, 224], [236, 224]];
+  poly(gl, { width: 1.1 });
+  line([450, G], [450 + DX, G + DY], { width: 1 }, 0);
+  line([450 + DX, G + DY], [450 + DX, 224 + DY], { width: 1 }, 0);
+  for (let x = 236 + 26; x < 450; x += 26) line([x, 224], [x, G], { width: 0.5, tone: 0.45, overshoot: 0 }, 0);
+  line([236, 262], [450, 262], { width: 0.45, tone: 0.3, overshoot: 0 }, 0);
+  // The door, a taller pane with a pull.
+  poly([[340, 236], [366, 236], [366, G], [340, G]], { width: 0.9 });
+  line([361, 262], [361, 276], { width: 1.2 }, 0);
+
+  /* ---- the cantilevered box above, faced in timber fins ---- */
+  const box: Pt[] = [[132, 222], [476, 222], [476, 164], [132, 164]];
+  poly(box, { width: 1.3, tone: 0.9 });
+  line([476, 222], [476 + DX, 222 + DY], { width: 1.2 }, 0.3);
+  line([476, 164], [476 + DX, 164 + DY], { width: 1.2 }, 0.3);
+  line([476 + DX, 164 + DY], [476 + DX, 222 + DY], { width: 1.2 }, 0);
+  line([132, 164], [132 + DX, 164 + DY], { width: 1, tone: 0.7 }, 0);
+  line([132 + DX, 164 + DY], [476 + DX, 164 + DY], { width: 1, tone: 0.7 }, 0);
+  for (let x = 250; x < 470; x += 9) line([x, 170], [x, 216], { width: 0.45, tone: 0.4, overshoot: 0, wobble: 0.2 }, 0);
+  // A long ribbon window across the cantilever.
+  poly([[146, 182], [194, 182], [194, 204], [146, 204]], { width: 0.8 });
+  // The V column under the free end.
+  path([[170, G], [150, 222]], { width: 1, overshoot: 0 });
+  path([[170, G], [190, 222]], { width: 1, overshoot: 0 });
+
+  /* ---- north lights on the roof: a row of triangles ---- */
+  const lights: Pt[][] = [];
+  for (let k = 0; k < 6; k++) {
+    const x0 = 262 + k * 34;
+    const tri: Pt[] = [[x0, 164 + DY * 0.4], [x0 + 16, 140 + DY * 0.4], [x0 + 30, 164 + DY * 0.4]];
+    lights.push(tri);
+    path([...tri], { width: 0.9, overshoot: 0.5 });
   }
-  // Windows: the big studio window, the door under its 17, a window beside it.
-  const win = (x0: number, y0: number, x1: number, y1: number, cols: number, rows: number) => {
-    poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], { width: 0.9 });
-    for (let c = 1; c < cols; c++) line([x0 + ((x1 - x0) * c) / cols, y0], [x0 + ((x1 - x0) * c) / cols, y1], { width: 0.5, tone: 0.5, overshoot: 0 }, 0);
-    for (let q = 1; q < rows; q++) line([x0, y0 + ((y1 - y0) * q) / rows], [x1, y0 + ((y1 - y0) * q) / rows], { width: 0.5, tone: 0.5, overshoot: 0 }, 0);
-    // The sill.
-    line([x0 - 3, y1 + 2], [x1 + 3, y1 + 2], { width: 0.9 }, 0);
-  };
-  win(232, 206, 284, 278, 3, 3);
-  win(340, 206, 376, 256, 2, 2);
-  // A round window up in the gable.
-  path(curve(Array.from({ length: 13 }, (_, k) => [305 + Math.cos((k / 12) * Math.PI * 2) * 13, 146 + Math.sin((k / 12) * Math.PI * 2) * 13] as Pt), 3), { width: 0.9, overshoot: 0 });
-  line([292, 146], [318, 146], { width: 0.5, tone: 0.5, overshoot: 0 }, 0);
-  line([305, 133], [305, 159], { width: 0.5, tone: 0.5, overshoot: 0 }, 0);
-  // The door, and the number over it.
-  poly([[296, 226], [322, 226], [322, G], [296, G]], { width: 1 });
-  line([318, 262], [318, 266], { width: 1.2 }, 0);
-  // Windows down the side, foreshortened.
-  poly([[404, 214], [424, 210], [424, 252], [404, 256]], { width: 0.8 });
-  poly([[430, 208], [444, 205], [444, 244], [430, 247]], { width: 0.8 });
 
-  /* ---- the studio wing: glass below, a sawtooth of north lights above ---- */
-  poly([[120, G], [220, G], [220, 226], [120, 226]], { width: 1 });
-  const teeth: Pt[] = [[116, 226], [136, 198], [152, 226], [172, 198], [188, 226], [208, 198], [224, 226]];
-  path(teeth, { width: 1.1, overshoot: 1 });
-  for (let x = 136; x < 212; x += 36) line([x, 198], [x, 226], { width: 0.6, tone: 0.5, overshoot: 0 }, 0);
-  for (let x = 128; x < 216; x += 18) line([x, 236], [x, 292], { width: 0.5, tone: 0.5, overshoot: 0 }, 0);
-  line([124, 236], [216, 236], { width: 0.7 }, 0);
-  line([124, 292], [216, 292], { width: 0.7 }, 0);
-
-  /* ---- the path, the steps, the lamp ---- */
-  path([[296, G], [274, 352]], { width: 0.8, tone: 0.6 });
-  path([[322, G], [350, 352]], { width: 0.8, tone: 0.6 });
-  for (let k = 1; k < 5; k++) {
-    const t = k / 5;
-    line([296 - 22 * t, G + 52 * t], [322 + 28 * t, G + 52 * t], { width: 0.5, tone: 0.35, overshoot: 0 }, 0);
-  }
-  path([[258, G + 6], [258, 238]], { width: 1, tone: 0.8, overshoot: 0 });
-  poly([[252, 238], [264, 238], [262, 226], [254, 226]], { width: 0.8 });
-  line([250, 226], [266, 226], { width: 0.8 }, 0);
-
-  /* ---- washes: the house ---- */
-  paint(front, { color: '#efdcbc', layers: 14, alpha: 0.085, spread: 0.08, edge: 0.5, grain: 12 });
-  paint(side, { color: '#d9c19b', layers: 14, alpha: 0.09, spread: 0.08, edge: 0.5, grain: 12 });
-  paint([[214, 184], [305, 100], [396, 184], [390, 180], [305, 110], [220, 180]], { color: '#4f5466', layers: 10, alpha: 0.1, spread: 0.06, edge: 0.4 });
-  paint(roofR, { color: '#5d6172', layers: 14, alpha: 0.09, spread: 0.07, edge: 0.5, grain: 12 });
-  paint(chim, { color: '#a8583f', layers: 8, alpha: 0.12, spread: 0.08 });
-  paint([[232, 206], [284, 206], [284, 278], [232, 278]], { color: '#7f9db5', layers: 10, alpha: 0.1, spread: 0.08, edge: 0.4 });
-  paint([[340, 206], [376, 206], [376, 256], [340, 256]], { color: '#7f9db5', layers: 10, alpha: 0.1, spread: 0.08, edge: 0.4 });
-  paint(Array.from({ length: 10 }, (_, k) => [305 + Math.cos((k / 10) * Math.PI * 2) * 12, 146 + Math.sin((k / 10) * Math.PI * 2) * 12] as Pt), { color: '#6f8fa8', layers: 8, alpha: 0.12, spread: 0.08 });
-  paint([[296, 226], [322, 226], [322, G], [296, G]], { color: '#2f5d50', layers: 12, alpha: 0.12, spread: 0.06, edge: 0.5 });
-  paint([[404, 214], [424, 210], [424, 252], [404, 256]], { color: '#6f8fa8', layers: 8, alpha: 0.1, spread: 0.08 });
-  paint([[430, 208], [444, 205], [444, 244], [430, 247]], { color: '#6f8fa8', layers: 8, alpha: 0.1, spread: 0.08 });
-  paint([[120, G], [220, G], [220, 226], [120, 226]], { color: '#d6cbb8', layers: 12, alpha: 0.08, spread: 0.08, edge: 0.4 });
-  paint([[124, 236], [216, 236], [216, 292], [124, 292]], { color: '#7392ac', layers: 10, alpha: 0.1, spread: 0.08, edge: 0.4 });
-  for (let k = 0; k < 3; k++) paint([[116 + k * 36, 226], [136 + k * 36, 198], [136 + k * 36, 226]], { color: '#8aa8c0', layers: 6, alpha: 0.12, spread: 0.06 });
-  for (let k = 0; k < 3; k++) paint([[136 + k * 36, 198], [152 + k * 36, 226], [136 + k * 36, 226]], { color: '#5d6172', layers: 6, alpha: 0.12, spread: 0.06 });
-  paint([[296, G], [322, G], [350, 352], [274, 352]], { color: '#cfc6b6', layers: 10, alpha: 0.09, spread: 0.1, edge: 0.3 });
-  paint([[252, 238], [264, 238], [262, 226], [254, 226]], { color: '#f2c46b', layers: 6, alpha: 0.16, spread: 0.1 });
-  // Shade under the eaves and down the far side.
-  paint([[220, 180], [305, 110], [390, 180], [390, 192], [305, 124], [220, 192]], { color: '#8a7a66', layers: 6, alpha: 0.07, spread: 0.1, edge: 0 });
+  /* ---- washes: the building ---- */
+  paint(box, { color: '#ece6da', layers: 12, alpha: 0.1, spread: 0.06, edge: 0.4, grain: 12 });
+  paint([[250, 170], [470, 170], [470, 216], [250, 216]], { color: '#b88455', layers: 12, alpha: 0.08, spread: 0.06, edge: 0.4 });
+  paint([[476, 222], [476 + DX, 222 + DY], [476 + DX, 164 + DY], [476, 164]], { color: '#c9bfae', layers: 10, alpha: 0.1, spread: 0.06, edge: 0.4 });
+  paint([[132, 164], [476, 164], [476 + DX, 164 + DY], [132 + DX, 164 + DY]], { color: '#d8d1c3', layers: 8, alpha: 0.1, spread: 0.06 });
+  paint([[146, 182], [194, 182], [194, 204], [146, 204]], { color: '#5f7d98', layers: 10, alpha: 0.12, spread: 0.06 });
+  paint(gl, { color: '#46607a', layers: 14, alpha: 0.09, spread: 0.06, edge: 0.5, grain: 12 });
+  paint([[450, G], [450 + DX, G + DY], [450 + DX, 224 + DY], [450, 224]], { color: '#39506a', layers: 10, alpha: 0.1, spread: 0.06 });
+  // Warm light inside, and the sky in the glass.
+  paint([[270, 244], [330, 244], [330, 290], [270, 290]], { color: '#f0c173', layers: 8, alpha: 0.1, spread: 0.2, edge: 0 });
+  paint([[380, 232], [412, 232], [396, 296], [364, 296]], { color: '#c7d8e6', layers: 5, alpha: 0.12, spread: 0.1, edge: 0 });
+  for (const tri of lights) paint(tri, { color: '#8aa8c0', layers: 6, alpha: 0.14, spread: 0.06 });
+  // The shadow the cantilever throws on the ground and the glass.
+  paint([[140, 292], [236, 290], [236, 304], [150, 306]], { color: '#6d6a72', layers: 6, alpha: 0.05, spread: 0.2, edge: 0 });
+  paint([[236, 224], [450, 224], [450, 232], [236, 232]], { color: '#2f3d4e', layers: 6, alpha: 0.1, spread: 0.08 });
 
   /* ---- the maples ---- */
   const maple = (x: number, h: number, rad: number, lean: number) => {
@@ -166,26 +144,23 @@ function draw(seed = 1717): Drawing {
       paint(blob(top[0] + Math.cos(a) * d, cy + Math.sin(a) * d * 0.85, s, s, r, 6), { color: pick(r, AUTUMN), layers: 3, alpha: 0.3, spread: 0.2, edge: 0 });
     }
   };
-  maple(92, 196, 72, 6);
-  maple(508, 172, 62, -4);
-  // Leaves already down, in drifts under the trees and along the path.
-  for (let k = 0; k < 40; k++) {
-    const x = k < 20 ? between(r, 40, 170) : between(r, 440, 570);
-    const y = between(r, 298, 330);
-    const s = between(r, 1.5, 3);
-    paint(blob(x, y, s * 1.4, s * 0.7, r, 6), { color: pick(r, AUTUMN), layers: 3, alpha: 0.3, spread: 0.2, edge: 0 });
+  maple(84, 196, 70, 6);
+  maple(532, 170, 60, -4);
+  // Leaves already down, in drifts under the trees and floating on the pool.
+  for (let k = 0; k < 44; k++) {
+    const x = k < 18 ? between(r, 40, 150) : k < 36 ? between(r, 470, 575) : between(r, 160, 460);
+    const y = k < 36 ? between(r, 298, 334) : between(r, 311, 321);
+    const sz = between(r, 1.5, 3);
+    paint(blob(x, y, sz * 1.4, sz * 0.7, r, 6), { color: pick(r, AUTUMN), layers: 3, alpha: 0.3, spread: 0.2, edge: 0 });
   }
-
-  // Grass tufts, a few.
-  for (let k = 0; k < 16; k++) {
-    const x = between(r, 60, 560);
-    if (x > 260 && x < 360) continue;
-    const y = between(r, 304, 332);
-    path([[x - 2, y], [x - 1, y - 5]], { width: 0.5, tone: 0.35, overshoot: 0 });
-    path([[x + 1, y], [x + 2, y - 6]], { width: 0.5, tone: 0.35, overshoot: 0 });
+  // Grasses in a planted strip along the glass.
+  for (let k = 0; k < 22; k++) {
+    const x = between(r, 60, 580);
+    if (x > 140 && x < 480) continue;
+    const y = between(r, 304, 336);
+    path([[x - 2, y], [x - 1, y - 6]], { width: 0.5, tone: 0.35, overshoot: 0 });
+    path([[x + 1, y], [x + 3, y - 7]], { width: 0.5, tone: 0.35, overshoot: 0 });
   }
-
-  // The number over the door is written last, in ink blue.
   return { ink, washes, crowns };
 }
 
@@ -304,14 +279,14 @@ export class StudioPainting {
     const ox = (canvas.width - this.crop.w * this.scale) / 2 - this.crop.x * this.scale;
     const oy = (canvas.height - this.crop.h * this.scale) / 2 - this.crop.y * this.scale;
     ctx.setTransform(this.scale, 0, 0, this.scale, ox, oy);
-    // The 17 over the door, in the captions' hand, once the paint has reached it.
+    // The number on the cantilever, in the captions' hand, once the paint has reached it.
     const numberA = smooth(0.8, 0.95, this.progress);
     if (numberA > 0) {
       ctx.globalAlpha = numberA;
-      ctx.fillStyle = '#2b3f9e';
-      ctx.font = `700 19px ${this.numberFont}`;
-      ctx.textAlign = 'center';
-      ctx.fillText('17', 309, 221);
+      ctx.fillStyle = '#1d1d21';
+      ctx.font = `700 ${SIGN.size}px ${this.numberFont}`;
+      ctx.textAlign = 'left';
+      ctx.fillText('17', SIGN.x, SIGN.y);
       ctx.globalAlpha = 1;
     }
     if (leaves) this.fall(dt);

@@ -10,7 +10,7 @@ export default function NotFound() {
     >
       <div className="sheet__actions">
         <TransitionLink href="/" className="sheet__primary">
-          Back to the contents
+          Back to the start
         </TransitionLink>
       </div>
     </Sheet>

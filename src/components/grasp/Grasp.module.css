@@ -27,13 +27,8 @@
   background: var(--slate);
   color: var(--chalk);
 
-  /* The board keeps the faces it was designed with; the rest of the site is
-     handwritten (see the tokens in globals.css). */
-  --font-display: var(--font-syne);
-  --font-body: var(--font-dm-sans);
-  --font-mono: var(--font-jetbrains);
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-variation-settings: normal;
+  /* The board is written in the site's one hand, like everything else. */
+  font-family: var(--font-hand), cursive;
 }
 
 /* ---------- the only chrome on the page --------------------------- */
@@ -61,9 +56,7 @@
 
 .back {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-size: 16px;
   color: var(--chalk-dim);
   transition: color 0.3s var(--ease-out);
   margin-bottom: clamp(20px, 4vh, 44px);
@@ -410,9 +403,7 @@
 
 .lessonState {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-size: 16px;
   color: var(--chalk-dim);
 }
 
@@ -423,7 +414,7 @@
 .syllabusNote {
   margin-top: clamp(28px, 4vh, 52px);
   max-width: 54ch;
-  font-size: clamp(14px, 1.05vw, 17px);
+  font-size: clamp(19px, 1.05vw, 23px);
   line-height: 1.6;
   color: var(--chalk-dim);
 }

@@ -3,8 +3,8 @@
 /**
  * The top edge of the sketchbook.
  *
- * On the left, the mark — Seventeen's studio in autumn, the painting the
- * loader makes, finished and small — which goes back to the film. On the right, three
+ * On the left, the mark — an autumn maple leaf, sketched and painted — which
+ * goes back to the film. On the right, three
  * index tabs, written in the same hand as the film's captions: Caveat, heavy,
  * in the ink of the page. The current tab is underlined with the same straight
  * pen line the captions carry; the others write theirs in when pointed at.
@@ -19,7 +19,7 @@ import { usePathname } from 'next/navigation';
 import { gsap, prefersReducedMotion } from '@/lib/gsap';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import { nav } from '@/content/studio';
-import { StudioCanvas } from '@/components/loader/StudioCanvas';
+import { LeafMark } from '@/components/LeafMark';
 import { useUi } from '@/lib/store';
 import { TransitionLink } from './Transition';
 
@@ -66,7 +66,7 @@ export function Nav() {
   return (
     <header className="nav" ref={ref}>
       <TransitionLink href="/" className="nav__mark" aria-label="Seventeen Studios — home" data-cursor="Home">
-        <StudioCanvas mark className="nav__logo" />
+        <LeafMark className="nav__logo" />
       </TransitionLink>
 
       <nav className="nav__tabs" aria-label="Sections">

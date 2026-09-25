@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Syne, DM_Sans, JetBrains_Mono, Caveat, Shantell_Sans } from 'next/font/google';
+import { Caveat } from 'next/font/google';
 import { Providers } from '@/components/Providers';
 import { TransitionProvider } from '@/components/Transition';
 import { Preloader } from '@/components/Preloader';
@@ -15,66 +15,19 @@ import { SITE_URL } from '@/lib/url';
 import { LOADING_CLASS, LOADING_FAILSAFE_MS } from '@/lib/ready';
 import './globals.css';
 
-/**
- * Root layout.
- *
- * The site is a sketchbook, so everything in it is handwritten, in two hands:
- * Caveat, a quick natural hand, for titles and notes (`--font-hand`, and
- * `--font-display` after it), and Shantell Sans for everything meant to be
- * read at length and the small print (`--font-write`, behind `--font-body` and
- * `--font-mono`) — a marker hand drawn to stay legible small, whose informal
- * axes are turned up in the stylesheet so its letters bounce like a person's.
- *
- * Grasp's board keeps the faces it was designed with — DM Sans, JetBrains Mono
- * and Caveat as chalk — and puts them back on its own root. Syne survives only
- * as the outlined numbers down the site's lists.
- *
- * All are self-hosted by `next/font` at build time, so the static export makes
- * no third-party font requests.
- */
-
-const syne = Syne({
-  subsets: ['latin'],
-  weight: ['800'],
-  variable: '--font-syne',
-  display: 'swap',
-});
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500'],
-  style: ['normal', 'italic'],
-  variable: '--font-dm-sans',
-  display: 'swap',
-});
-
-const mono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500'],
-  variable: '--font-jetbrains',
-  display: 'swap',
-});
-
 /*
-  The quick hand: titles, notes, and the chalk on Grasp's board.
+  ONE HAND FOR THE WHOLE SITE: Caveat — the hand the film's captions are
+  written in. Titles, tabs, notes, reading text, labels, numbers and the chalk
+  on Grasp's board are all in it; `globals.css` points every font token at it.
 
   Caveat rather than one of the scratchier handwriting faces: a lesson has to be
-  READ, and the rougher hands lose legibility at the size algebra needs. The
-  texture on the board comes from the drawing (a wide faint pass under every
-  stroke) rather than from the letterforms, so the face can afford to be clear.
+  READ, and the rougher hands lose legibility at the size algebra needs. It is
+  self-hosted by `next/font`, so the export makes no third-party font request.
 */
 const hand = Caveat({
   subsets: ['latin'],
   weight: ['500', '600', '700'],
   variable: '--font-hand',
-  display: 'swap',
-});
-
-/* The reading hand. Variable, with its bounce and informality axes. */
-const write = Shantell_Sans({
-  subsets: ['latin'],
-  axes: ['BNCE', 'INFM'],
-  variable: '--font-write',
   display: 'swap',
 });
 
@@ -180,7 +133,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${syne.variable} ${dmSans.variable} ${mono.variable} ${hand.variable} ${write.variable}`}
+      className={hand.variable}
       suppressHydrationWarning
     >
       <head>

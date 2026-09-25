@@ -75,8 +75,14 @@
     gets a hand. Grasp's board restores its own faces on its root.
   */
   --font-display: var(--font-hand);
-  --font-body: var(--font-write);
-  --font-mono: var(--font-write);
+  --font-body: var(--font-hand);
+  --font-mono: var(--font-hand);
+  /* The faces that used to be loaded beside it, kept as names so nothing that
+     asks for them falls back to a system font: they are all the one hand now. */
+  --font-write: var(--font-hand);
+  --font-syne: var(--font-hand);
+  --font-dm-sans: var(--font-hand);
+  --font-jetbrains: var(--font-hand);
 
   /* The paint box: acrylics — ultramarine, cadmium yellow, sap green, cadmium
      red, dioxazine violet. Lists take turns with them; ultramarine is the mark's. */
@@ -98,41 +104,28 @@
   --radius: 3px;
   --radius-lg: 8px;
 
-  --step-label: 11px;
+  --step-label: 18px;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
 }
 
-/* ---------- Paint ------------------------------------------------ */
+/* ---------- Titles: the captions' style --------------------------- */
 
 /*
-  Painted titles: the letters in paint (the bristles' streaks, the canvas's
-  tooth), over a wash — one loose stroke of a wide brush in `--wash`, inside the
-  title's own box, because the texture masks the whole box and anything
-  outside it would be cut away.
+  Every title on the site is written the way the film writes its captions:
+  Caveat, bold, in the page's ink, with one straight pen line under it. The
+  painted titles (a bristle mask over a brushed wash) went when the landing
+  became a watercolour; one hand, one line, everywhere.
 */
-.contents__head,
 .sheet__title,
 .index__title,
 .book-cover__motto {
   position: relative;
-  isolation: isolate;
-  -webkit-mask: var(--paint-bristle) 0 0 / 260px 260px;
-  mask: var(--paint-bristle) 0 0 / 260px 260px;
-}
-.contents__head::before,
-.sheet__title::before,
-.index__title::before,
-.book-cover__motto::before {
-  content: '';
-  position: absolute;
-  inset: var(--wash-inset, 16% 0 2%);
-  z-index: -1;
-  background-color: var(--wash, var(--paint-2));
-  opacity: var(--wash-alpha, 0.42);
-  -webkit-mask: var(--paint-swash) center / 100% 100% no-repeat;
-  mask: var(--paint-swash) center / 100% 100% no-repeat;
+  text-decoration: underline;
+  text-decoration-thickness: max(1.5px, 0.03em);
+  text-underline-offset: 0.14em;
+  text-decoration-skip-ink: none;
 }
 
 /* ---------- Reset ------------------------------------------------ */
@@ -164,14 +157,9 @@ body {
   background-color: var(--bg);
   color: var(--fg);
   font-family: var(--font-body), system-ui, sans-serif;
-  font-size: clamp(15px, 0.42vw + 13.4px, 17px);
-  font-weight: 300;
-  /* Shantell Sans's own axes: informal letterforms, bouncing off the line. */
-  font-variation-settings:
-    'INFM' 60,
-    'BNCE' 30;
+  font-size: clamp(20px, 0.5vw + 17px, 23px);
+  font-weight: 500;
   line-height: 1.62;
-  letter-spacing: 0.004em;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -182,13 +170,9 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: var(--bg) url('../assets/ground/wide.webp') center / cover no-repeat;
+  /* The landing's watercolour paper, under every page. */
+  background: var(--paper);
   pointer-events: none;
-}
-@media (max-aspect-ratio: 1/1) {
-  body::before {
-    background-image: url('../assets/ground/tall.webp');
-  }
 }
 /* Grasp is a green board, always: no painted ground behind it, anywhere. */
 body:has([data-slate])::before {
@@ -265,7 +249,7 @@ ol {
   background: var(--accent);
   color: #05050a;
   font-family: var(--font-mono), monospace;
-  font-size: 12px;
+  font-size: 17px;
   border-radius: 100px;
   transform: translateY(-160%);
   transition: transform 0.3s var(--ease-out);
@@ -281,8 +265,6 @@ ol {
   font-family: var(--font-mono), monospace;
   font-size: var(--step-label);
   font-weight: 400;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
   color: var(--muted);
   line-height: 1.4;
 }
@@ -535,8 +517,8 @@ html:not(.is-loading) .preloader {
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(244, 239, 227, 0.9) 0%,
-    rgba(244, 239, 227, 0.6) 55%,
+    rgba(245, 240, 230, 0.92) 0%,
+    rgba(245, 240, 230, 0.6) 55%,
     transparent 100%
   );
   opacity: 0;
@@ -553,15 +535,15 @@ html:not(.is-loading) .preloader {
   align-items: center;
   color: var(--fg);
 }
-/* The mark: the studio painting, small. */
+/* The mark: a maple leaf, painted. */
 .nav__logo {
   display: block;
-  width: clamp(76px, 6.2vw, 96px);
-  aspect-ratio: 560 / 256;
-  transition: transform 0.4s var(--ease-out);
+  width: clamp(40px, 3.4vw, 54px);
+  aspect-ratio: 1;
+  transition: transform 0.5s var(--ease-out);
 }
 .nav__mark:hover .nav__logo {
-  transform: rotate(-2deg) scale(1.05);
+  transform: rotate(-14deg) translateY(2px);
 }
 
 /*
@@ -714,7 +696,7 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 13px;
+  font-size: 18px;
   /* Stated, not inherited — an unselected tab is the control, not a label. */
   color: var(--fg-dim);
   transition:
@@ -768,7 +750,7 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
 
 .deriv__tick {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 9px;
+  font-size: 16px;
   fill: var(--muted);
 }
 
@@ -791,7 +773,7 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
 
 .deriv__tri-label {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10.5px;
+  font-size: 16px;
   fill: var(--accent-2);
 }
 
@@ -866,7 +848,7 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
 
 .deriv__line {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: clamp(13px, 1.05vw, 15.5px);
+  font-size: clamp(18px, 1.05vw, 21px);
   margin-top: 7px;
   /* Tabular figures: the numbers change under a drag and proportional digits
      make the whole line shuffle sideways as they do. */
@@ -874,7 +856,7 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
 }
 
 .deriv__line--key {
-  font-size: clamp(15px, 1.35vw, 19px);
+  font-size: clamp(20px, 1.35vw, 26px);
   color: var(--fg);
   padding: 8px 0;
   margin-top: 10px;
@@ -903,14 +885,14 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
 
 .deriv__note {
   margin-top: 12px;
-  font-size: 14px;
+  font-size: 20px;
   color: var(--fg-dim);
   max-width: 70ch;
 }
 
 .deriv__caveat {
   margin-top: calc(var(--grid-unit) * 1.1);
-  font-size: 13.5px;
+  font-size: 19px;
   color: var(--fg-dim);
   max-width: 76ch;
   border-left: 2px solid var(--accent-2);
@@ -1024,7 +1006,7 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
 
 /* The margin rule, in ink, as on a real page. */
 .book-cover::before {
-  content: '';
+  content: none;
   position: absolute;
   top: 0;
   bottom: 0;
@@ -1252,8 +1234,9 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   padding: clamp(14px, 2.2vh, 22px) clamp(8px, 1.2vw, 16px);
   border-bottom: 2px dashed color-mix(in srgb, var(--c) 40%, transparent);
 }
-/* The wash: one stroke of the row's paint across it, brushed in from the left. */
+/* The rows carry no wash now: the title's pen line is the mark of a link. */
 .index__row::before {
+  display: none;
   content: '';
   position: absolute;
   inset: 2px -1%;
@@ -1274,12 +1257,11 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   position: relative;
   isolation: isolate;
   justify-self: start;
-  font-family: var(--font-syne), sans-serif;
-  font-weight: 800;
+  font-family: var(--font-hand), cursive;
+  font-weight: 700;
   font-size: clamp(50px, 5vw, 78px);
   line-height: 0.9;
-  color: transparent;
-  -webkit-text-stroke: 1.5px var(--fg);
+  color: var(--fg);
   transform: rotate(var(--tilt, -4deg));
   transition: transform 0.45s var(--ease-out);
 }
@@ -1287,6 +1269,7 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   --tilt: 3deg;
 }
 .index__ink {
+  display: none;
   position: absolute;
   inset: 0;
   z-index: -1;
@@ -1313,23 +1296,17 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
 .index__label {
   font-family: var(--font-mono), monospace;
   font-size: var(--step-label);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
   color: var(--muted);
 }
 /* The title painted in the row's colour, deep enough to read, over a wash of
    it. Pointed at, it leans in. */
 .index__title {
-  --wash: var(--c);
-  --wash-alpha: 0.26;
   justify-self: start;
-  margin-left: -0.3em;
-  padding: 0.04em 0.4em 0.1em 0.3em;
   font-family: var(--font-display), cursive;
   font-weight: 700;
   font-size: clamp(38px, 4.6vw, 76px);
   line-height: 0.95;
-  color: color-mix(in srgb, var(--c) 80%, var(--fg));
+  color: var(--fg);
   transform-origin: left center;
   transition: transform 0.4s var(--ease-out);
 }
@@ -1395,12 +1372,9 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
 .endpaper {
   position: relative;
   padding: clamp(70px, 12vh, 130px) var(--gutter) 26px;
-  background-color: var(--bg-sunk);
-  /* Marbled endpaper, suggested rather than drawn: two soft washes of ink. */
-  background-image:
-    radial-gradient(ellipse at 18% 30%, rgba(31, 58, 138, 0.07), transparent 55%),
-    radial-gradient(ellipse at 82% 70%, rgba(200, 35, 63, 0.06), transparent 55%);
-  border-top: 1px solid var(--line-strong);
+  /* The same watercolour paper as the pages, with one soft wash of blue. */
+  background-color: var(--paper);
+  background-image: radial-gradient(ellipse at 50% 100%, rgba(95, 125, 160, 0.08), transparent 60%);
 }
 
 /* The bookplate: a ruled label, slightly askew, the way it gets stuck in. */
@@ -1448,13 +1422,13 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   font-size: 23px;
 }
 .endpaper__reach a {
-  color: var(--accent);
+  color: var(--fg);
 }
 .endpaper__write {
   color: var(--fg) !important;
   text-decoration: underline;
-  text-decoration-color: var(--accent-2);
-  text-decoration-thickness: 2px;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 1.5px;
   text-underline-offset: 5px;
 }
 
@@ -1477,7 +1451,7 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   padding: clamp(120px, 18vh, 190px) var(--gutter) clamp(60px, 10vh, 110px);
 }
 .sheet::before {
-  content: '';
+  content: none;
   position: absolute;
   top: 0;
   bottom: 0;
@@ -1524,13 +1498,13 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
 }
 .sheet__kicker {
   font-family: var(--font-hand), cursive;
+  font-weight: 600;
   font-size: clamp(24px, 2vw, 32px);
-  color: var(--accent);
+  color: var(--fg);
+  opacity: 0.75;
 }
 .sheet__title {
   justify-self: start;
-  margin-left: -0.25em;
-  padding: 0.04em 0.35em 0.12em 0.25em;
   font-family: var(--font-display), cursive;
   font-weight: 700;
   font-size: clamp(56px, calc(7vw + 26px), 156px);
@@ -1548,8 +1522,8 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   font-family: var(--font-hand), cursive;
   font-size: clamp(27px, 2.6vw, 40px);
   line-height: 1.12;
-  color: var(--accent);
-  transform: rotate(-1.6deg);
+  color: var(--fg);
+  opacity: 0.75;
   transform-origin: left center;
 }
 .sheet__lead > div {
@@ -1559,6 +1533,7 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   margin: 0;
 }
 .sheet__arrow {
+  display: none;
   flex: none;
   width: clamp(46px, 4.6vw, 70px);
   height: clamp(40px, 4vw, 60px);
@@ -1583,7 +1558,7 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   font-size: 26px;
 }
 .sheet__actions a {
-  color: var(--accent);
+  color: var(--fg);
 }
 .sheet__primary {
   font-family: var(--font-display), sans-serif;
@@ -1591,8 +1566,8 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   font-size: clamp(24px, 2vw, 32px);
   color: var(--fg) !important;
   text-decoration: underline;
-  text-decoration-color: var(--accent-2);
-  text-decoration-thickness: 3px;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 1.5px;
   text-underline-offset: 7px;
 }
 

@@ -44,14 +44,13 @@ it rather than as a web page:
   graph paper made every page a worksheet, and a canvas weave read as sacking.
 - **Pages are sheets.** Simple pages use `components/Sheet.tsx` — a crimson
   margin rule, a handwritten note above a title painted over a wash.
-- **Everything is handwritten.** Caveat (`--font-hand`, and `--font-display`
-  after it) for titles, notes, kickers and tabs; Shantell Sans (`--font-write`,
-  behind `--font-body` and `--font-mono`) for anything read at length and the
-  small print, with its informality and bounce axes turned up. Titles are
-  *painted* — the `--paint-bristle` mask over the text, over a `--paint-swash`
-  wash — and on the cover a canvas brushes each letter in (`brush.ts`). Syne is kept only for the
-  outlined numbers down a list. Grasp's board is the exception: it restores DM
-  Sans and JetBrains Mono on its own root and keeps Caveat as chalk.
+- **One hand, one style, everywhere.** Caveat is the only font on the site —
+  titles, tabs, notes, reading text, labels, numbers, Grasp's board — and
+  every font token points at it. It is the hand the film's captions are
+  written in, and every title is written the way a caption is: bold, in the
+  page's ink, with one straight pen underline. No painted titles, no
+  uppercase tracked labels, no crimson squiggles. Caveat reads small, so
+  nothing is set below 16px.
 - **Colour comes from the paint box, a few at a time.** One paint for the
   cover's title and the mark (ultramarine), one per row down a list, three
   pencils a city. Never a whole spectrum in one place — a title with every
@@ -61,9 +60,13 @@ it rather than as a web page:
   raised edge); everything drawn by `pencil.ts`. A new drawing uses both
   rather than inventing a third hand.
 - **The pencil is the cursor; the page turn is the transition; the loader is
-  Seventeen's studio in autumn, sketched and painted as the page gets ready**
-  (`lib/film/studio.ts`, the film's pencil and wash), and the header's mark is
-  that painting, finished and small. The tab icon keeps the handwritten 17. New motion should feel like drawing or turning
+  Seventeen's headquarters in autumn** — a modern cantilevered pavilion with
+  triangular north lights, between two maples, sketched and painted as the
+  page gets ready (`lib/film/studio.ts`). **The mark is a maple leaf**,
+  sketched and painted in autumn (`lib/film/leaf.ts`); the tab icon is the
+  same outline, flat, on a paper tile.
+- **Every page lies on the watercolour paper** (`--paper`), the landing's
+  sheet; the acrylic ground is no longer used. New motion should feel like drawing or turning
   paper, not like an interface animating.
 - **The footer is the back endpaper**, and the nav is the book's three tabs —
   written in the film's caption hand (Caveat 600, the current tab 700 with a
