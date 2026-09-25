@@ -1,0 +1,50 @@
+{
+  "method": "isHappy",
+  "params": [
+    {
+      "name": "n",
+      "type": "int"
+    }
+  ],
+  "returns": "bool",
+  "cases": [
+    {
+      "in": [
+        19
+      ],
+      "out": true,
+      "example": true
+    },
+    {
+      "in": [
+        2
+      ],
+      "out": false,
+      "example": true
+    },
+    {
+      "in": [
+        1
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        7
+      ],
+      "out": true
+    },
+    {
+      "in": [
+        4
+      ],
+      "out": false
+    },
+    {
+      "in": [
+        2147483647
+      ],
+      "out": false
+    }
+  ]
+}

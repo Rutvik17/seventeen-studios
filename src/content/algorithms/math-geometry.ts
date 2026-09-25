@@ -1,0 +1,116 @@
+import type { Category } from './types';
+
+export const mathGeometry: Category = {
+  slug: 'math-geometry',
+  title: 'Math & Geometry',
+  blurb: 'A little arithmetic or a picture of the grid turns a fiddly simulation into a few lines: rotations as flips, powers by squaring, digits by place value.',
+  problems: [
+    {
+      slug: 'rotate-image',
+      number: 48,
+      title: 'Rotate Image',
+      difficulty: 'Medium',
+      statement: ['Rotate an `n × n` matrix a quarter turn clockwise, changing it in place — without building a second matrix.'],
+      constraints: ['1 ≤ n ≤ 20', '−1000 ≤ matrix[i][j] ≤ 1000'],
+      idea: [
+        'A quarter turn clockwise sends the cell in row `r`, column `c` to row `c`, column `n − 1 − r`. That move is two simpler ones in a row.',
+        'First flip the matrix across its main diagonal (top-left to bottom-right) — swap `[r][c]` with `[c][r]`, which sends (r, c) to (c, r). Then reverse every row, which sends column `r` to column `n − 1 − r`. Together: (r, c) → (c, n − 1 − r). Both steps are swaps, so nothing extra is stored.',
+      ],
+      complexity: { time: 'O(n²)', space: 'O(1)' },
+    },
+    {
+      slug: 'spiral-matrix',
+      number: 54,
+      title: 'Spiral Matrix',
+      difficulty: 'Medium',
+      statement: ['Return every element of an `m × n` matrix in spiral order: along the top row, down the right side, back along the bottom, up the left, and inwards ring by ring.'],
+      constraints: ['1 ≤ m, n ≤ 10', '−100 ≤ matrix[i][j] ≤ 100'],
+      idea: [
+        'Keep four walls — `top`, `bottom`, `left`, `right` — around the part not yet read. Read the ring they enclose: the top row left to right, the right column downwards, the bottom row right to left, the left column upwards. Then move every wall one step in.',
+        'The one trap is a last ring only one row or one column thick: reading its bottom and left too would read it twice. So read those two sides only when the ring is more than one thick.',
+      ],
+      complexity: { time: 'O(m · n)', space: 'O(1) besides the answer' },
+    },
+    {
+      slug: 'set-matrix-zeroes',
+      number: 73,
+      title: 'Set Matrix Zeroes',
+      difficulty: 'Medium',
+      statement: ['For every 0 in an `m × n` matrix, set its whole row and whole column to 0. Change the matrix in place, using only a constant amount of extra memory.'],
+      constraints: ['1 ≤ m, n ≤ 200', '−2³¹ ≤ matrix[i][j] ≤ 2³¹ − 1'],
+      idea: [
+        'Zeroing as you go spreads: the new zeros would wipe out rows and columns they have no right to. So first note which rows and columns to clear, then clear them. Two lists of flags would cost m + n memory.',
+        'Store the flags in the matrix itself: a 0 at `[r][c]` is noted by writing 0 into `[r][0]` and `[0][c]`. The first row and column are overwritten by those notes, so check first — with two plain booleans — whether they held a 0 of their own. Clear the inner cells by the notes, then the first row and column last.',
+      ],
+      complexity: { time: 'O(m · n)', space: 'O(1)' },
+    },
+    {
+      slug: 'happy-number',
+      number: 202,
+      title: 'Happy Number',
+      difficulty: 'Easy',
+      statement: ['Replace a number by the sum of the squares of its digits, again and again. It is happy if this eventually reaches 1. Return whether `n` is happy.'],
+      constraints: ['1 ≤ n ≤ 2³¹ − 1'],
+      idea: [
+        '19 is happy: 1² + 9² = 82, then 64 + 4 = 68, then 36 + 64 = 100, then 1. A number that is not happy loops forever instead — and it must loop: any number with 4 or more digits drops to something smaller, so the sequence is soon trapped below 1000, where only finitely many values exist.',
+        'Detecting that loop is Linked List Cycle again: Floyd’s tortoise and hare. One walker takes one step at a time and the other two; if there is a loop they meet, and if the sequence reaches 1 the fast one gets there first. No set of seen numbers is needed.',
+      ],
+      complexity: { time: 'O(log n) per step, and a bounded number of steps', space: 'O(1)' },
+    },
+    {
+      slug: 'plus-one',
+      number: 66,
+      title: 'Plus One',
+      difficulty: 'Easy',
+      statement: ['A large number is stored as an array of its digits, most significant first. Add one to it and return the new digits.'],
+      constraints: ['1 ≤ digits.length ≤ 100', '0 ≤ digits[i] ≤ 9', 'No leading zeros.'],
+      idea: [
+        'Add as on paper, from the last digit. A digit below 9 just goes up by one, and the job is done. A 9 becomes 0 and carries 1 to the digit on its left.',
+        'If every digit was 9 — like 999 — every one becomes 0 and the carry falls off the front: the answer is 1 followed by all those zeros, 1000.',
+      ],
+      complexity: { time: 'O(n)', space: 'O(1), or O(n) when the number grows a digit' },
+    },
+    {
+      slug: 'powx-n',
+      number: 50,
+      title: 'Pow(x, n)',
+      difficulty: 'Medium',
+      statement: ['Compute `x` raised to the power `n` — x multiplied by itself n times — for a real `x` and a whole number `n` that may be negative.'],
+      constraints: ['−100.0 < x < 100.0', '−2³¹ ≤ n ≤ 2³¹ − 1', 'x is not 0 when n ≤ 0.', '−10⁴ ≤ xⁿ ≤ 10⁴'],
+      idea: [
+        'Multiplying n times is too slow for n near two billion. Instead, write n in binary: 13 is 8 + 4 + 1, so x¹³ = x⁸ · x⁴ · x¹. And x, x², x⁴, x⁸ each come from squaring the one before.',
+        'So walk through n’s bits from the lowest: whenever a bit is 1, multiply the current power of x into the result; then square x and move to the next bit. That takes about log₂ n steps — 31 at most. A negative n means x⁻ⁿ = (1 ÷ x)ⁿ; turning −2³¹ positive needs a 64-bit integer, since 2³¹ does not fit in 32 bits.',
+      ],
+      complexity: { time: 'O(log n)', space: 'O(1)' },
+    },
+    {
+      slug: 'multiply-strings',
+      number: 43,
+      title: 'Multiply Strings',
+      difficulty: 'Medium',
+      statement: ['Given two non-negative integers as strings of digits, return their product, also as a string — without converting them to numbers, which could be too large.'],
+      constraints: ['1 ≤ num1.length, num2.length ≤ 200', 'Digits only, no leading zeros except the number 0 itself.'],
+      idea: [
+        'Long multiplication, as on paper. The product of an m-digit and an n-digit number has at most m + n digits, so make that many places. Counting from the left, digit i of num1 times digit j of num2 contributes to place i + j + 1.',
+        'Go from the right. Add each digit product into its place, keep the last digit there, and push the carry one place left. At the end, drop leading zeros. For 123 × 456 this gives 56088.',
+      ],
+      complexity: { time: 'O(m · n)', space: 'O(m + n)' },
+    },
+    {
+      slug: 'detect-squares',
+      number: 2013,
+      title: 'Detect Squares',
+      difficulty: 'Medium',
+      statement: [
+        'Points are added one at a time, and the same point may be added more than once. Design `add(point)` and `count(point)`.',
+        '`count` returns how many ways to choose three added points that, with the query point, form a square with positive area and sides parallel to the axes. Repeated points count as different choices.',
+      ],
+      constraints: ['0 ≤ x, y ≤ 1000', 'At most 3000 calls in total.'],
+      idea: [
+        'Store how many times each point was added, grouped by x. A square containing the query (x, y) has exactly one corner straight above or below it, at (x, y₂); that corner fixes the side length d = y₂ − y.',
+        'The square then lies to the right or to the left: its last two corners are (x + d, y) and (x + d, y₂), or (x − d, y) and (x − d, y₂). Multiply the three corners’ counts — every combination of copies is a different choice — and add them up. Only the points in the query’s own column are tried.',
+      ],
+      complexity: { time: 'O(1) to add; O(points in the query’s column) to count', space: 'O(points added)' },
+    },
+  ],
+};

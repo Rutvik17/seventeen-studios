@@ -21,6 +21,7 @@ const loaders: Record<string, () => Promise<{ traces: Record<string, Tracer> }>>
   '2d-dp': () => import('./dp-2d'),
   greedy: () => import('./greedy'),
   intervals: () => import('./intervals'),
+  'math-geometry': () => import('./math-geometry'),
 };
 
 export async function loadTracer(category: string, slug: string): Promise<Tracer | null> {
