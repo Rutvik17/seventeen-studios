@@ -8,15 +8,11 @@
 /*
   A SKETCHBOOK.
 
-  The whole site is one sketchbook — the landing is its contents page, the
-  founder page is the book itself, the loader is a pencil drawing the mark and
-  a change of page is a page turning. So the ground is warm paper, the ink is
+  The whole site is one sketchbook — the landing and the founder page are its
+  films, the notebook is the book itself, the loader is the mark being painted
+  and a change of page is a page turning. So the ground is warm paper, the ink is
   charcoal, the pen is a deep ink blue, and one crimson is kept for the moments
-  that matter: the breakthrough in the founder's story, the thing to do next.
-
-  It replaced a cool paper grey with a bright plotter blue, which was a good
-  scheme for an instrument panel and read as a different site from the
-  sketchbook the founder page had become.
+  that matter: the thing to do next.
 
   Elevation is carried by `--shadow`, not by brightness. In dark themes a raised
   surface is lighter than its ground; in light themes it is whiter and CASTS,
@@ -46,20 +42,6 @@
   --accent-2: #c8233f;
   --accent-2-soft: rgba(200, 35, 63, 0.1);
 
-  /*
-    ACRYLIC.
-
-    Every page is laid on a painted ground: the cream brushed over with soft,
-    pale strokes in these tints — `scripts/make-ground.mjs` paints it, once,
-    from these values. Paint goes on top of it — washes of colour behind the
-    titles and the drawings, and the titles themselves — and the drawing goes
-    on top of the paint, in pencil.
-  */
-  --ground-1: #f8f0e0;
-  --ground-2: #eedcbd;
-  --ground-3: #f2dcc8;
-  --ground-4: #efe3cc;
-  --ground-5: #f2e3c0;
 
   /* Brushed paint, as a mask for text painted in it: the bristles' streaks
      along the stroke, and the canvas's tooth where the paint skipped. */
@@ -119,8 +101,7 @@
   became a watercolour; one hand, one line, everywhere.
 */
 .sheet__title,
-.index__title,
-.book-cover__motto {
+.index__title {
   position: relative;
   text-decoration: underline;
   text-decoration-thickness: max(1.5px, 0.03em);
@@ -150,9 +131,9 @@ html.is-locked body {
 
 body {
   /*
-    The painted ground is laid behind everything (`body::before`), still while
-    the page moves over it. It replaced graph paper — a grid made every page
-    read as a worksheet — and then a woven canvas texture, which read as sacking.
+    The watercolour paper is laid behind everything (`body::before`), still
+    while the page moves over it. It replaced graph paper — a grid made every
+    page read as a worksheet — and then a painted acrylic ground.
   */
   background-color: var(--bg);
   color: var(--fg);
@@ -174,7 +155,7 @@ body::before {
   background: var(--paper);
   pointer-events: none;
 }
-/* Grasp is a green board, always: no painted ground behind it, anywhere. */
+/* Grasp is a green board, always: no paper behind it, anywhere. */
 body:has([data-slate])::before {
   display: none;
 }
@@ -993,222 +974,6 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
 
   
 }
-
-/* ==================================================================
-   THE LANDING — the sketchbook's contents page
-   ================================================================== */
-
-.book-cover {
-  position: relative;
-  min-height: 100svh;
-  padding: clamp(92px, 13vh, 132px) var(--gutter) clamp(56px, 10vh, 110px);
-}
-
-/* The margin rule, in ink, as on a real page. */
-.book-cover::before {
-  content: none;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(var(--gutter) * 0.55);
-  width: 1px;
-  background: var(--accent-2);
-  opacity: 0.25;
-}
-
-.book-cover__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px 24px;
-  margin-bottom: clamp(26px, 4.5vh, 50px);
-  font-family: var(--font-hand), cursive;
-  color: var(--fg-dim);
-}
-/* The label on the cover: a slip of paper, taped on a little crooked — what
-   the book is, and whose, written on it. */
-.book-cover__shelfmark {
-  position: relative;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.1em;
-  margin-left: 0.5em;
-  padding: 0.16em 0.9em 0.42em;
-  font-size: clamp(22px, 1.9vw, 30px);
-  line-height: 1.1;
-  color: var(--fg);
-  background: var(--bg-raise);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-md);
-  transform: rotate(-2deg);
-}
-.book-cover__shelfmark strong {
-  font-weight: 700;
-  font-size: 1.4em;
-  color: var(--accent);
-}
-/* Two strips of tape across its corners, torn at the ends, the paper's
-   colour showing through their weave. */
-.book-cover__shelfmark::before,
-.book-cover__shelfmark::after {
-  content: '';
-  position: absolute;
-  top: -0.14em;
-  width: 2.2em;
-  height: 0.64em;
-  opacity: 0.62;
-  background-image: repeating-linear-gradient(90deg, transparent 0 5px, rgba(255, 255, 255, 0.28) 5px 7px);
-  clip-path: polygon(0 0, 5% 25%, 0 50%, 5% 75%, 0 100%, 100% 100%, 95% 75%, 100% 50%, 95% 25%, 100% 0);
-}
-.book-cover__shelfmark::before {
-  left: -0.78em;
-  background-color: var(--paint-2);
-  transform: rotate(-34deg);
-}
-.book-cover__shelfmark::after {
-  right: -0.78em;
-  background-color: var(--paint-1);
-  transform: rotate(30deg);
-}
-.book-cover__owner {
-  position: relative;
-  font-size: 0.66em;
-  color: var(--fg-dim);
-}
-/* Underlined once, quickly, in red. */
-.book-cover__underline {
-  position: absolute;
-  left: -2px;
-  right: -4px;
-  bottom: -9px;
-  width: calc(100% + 6px);
-  height: 10px;
-  overflow: visible;
-}
-.book-cover__underline path {
-  fill: none;
-  stroke: var(--paint-4);
-  stroke-width: 2.6;
-  stroke-linecap: round;
-  opacity: 0.85;
-  vector-effect: non-scaling-stroke;
-}
-
-.book-cover__title {
-  position: relative;
-}
-.book-cover__wordmark {
-  display: flex;
-  flex-direction: column;
-  font-family: var(--font-display), cursive;
-  font-weight: 700;
-  font-size: min(24vw, 230px);
-  line-height: 0.84;
-  color: var(--paint-1);
-}
-.book-cover__wordmark span:last-child {
-  margin-left: min(34vw, 330px);
-}
-/* Once the pencil has the title, the set one steps aside — still read aloud. */
-.book-cover__wordmark[data-drawn] {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-.book-cover__canvas {
-  display: block;
-  width: 100%;
-  height: 0;
-  visibility: hidden;
-}
-
-/* The line under the title, as a note in ink, its second half picked out
-   with a wash of yellow paint. */
-.book-cover__line {
-  max-width: 30ch;
-  margin: clamp(18px, 3.5vh, 40px) 0 clamp(48px, 9vh, 96px);
-  font-family: var(--font-hand), cursive;
-  font-size: clamp(27px, 2.6vw, 42px);
-  line-height: 1.2;
-  color: var(--accent);
-  transform: rotate(-1.4deg);
-  transform-origin: left center;
-}
-/* The cities, in the room the title leaves beside it. */
-.book-cover__skyline {
-  position: absolute;
-  top: 0;
-  pointer-events: none;
-}
-.book-cover__motto {
-  --wash-inset: 42% -0.1em -2%;
-  --wash-alpha: 0.55;
-  display: inline-block;
-  padding: 0 0.16em;
-}
-
-/* ---- contents ---- */
-
-.contents {
-  max-width: 1180px;
-}
-/* Painted like a page's title, smaller: charcoal over a wash of yellow. */
-.contents__head {
-  justify-self: start;
-  margin: 0 0 clamp(6px, 1.4vh, 16px) -0.3em;
-  padding: 0.04em 0.45em 0.1em 0.3em;
-  font-family: var(--font-display), cursive;
-  font-weight: 700;
-  font-size: clamp(46px, 4.8vw, 78px);
-  line-height: 1;
-  color: var(--fg);
-}
-/* The doodles. Hidden starting state is armed by script only. */
-.doodle {
-  width: 100%;
-  height: auto;
-  overflow: visible;
-}
-.doodle path {
-  fill: none;
-  stroke: var(--fg);
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-  vector-effect: non-scaling-stroke;
-}
-.doodle path:nth-child(n + 2) {
-  stroke: var(--c, var(--accent));
-  stroke-width: 1.6;
-}
-.index[data-armed] .doodle path {
-  stroke-dashoffset: 1;
-}
-.index[data-armed].is-drawn .doodle path {
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1.1s var(--ease-in-out) calc(var(--i) * 0.28s + 0.2s);
-}
-.index__row:hover .doodle path {
-  animation: redraw 0.9s var(--ease-in-out) both;
-  animation-delay: calc(var(--i) * 0.16s);
-}
-@keyframes redraw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-
 
 /* ==================================================================
    LISTS — every list of pages to turn to (the contents, the notebook)

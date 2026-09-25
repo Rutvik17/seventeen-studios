@@ -24,7 +24,7 @@
  *
  * Every plate below is produced by the same code the page it advertises uses —
  * `CURVES[0]` draws the parabola, the landing's card lists the landing's own
- * chapters, and the founder card's bridge is the sketchbook's own geometry.
+ * chapters.
  * Nothing is traced by eye.
  *
  * That is not craft for its own sake. A share image is the one asset nobody
@@ -38,13 +38,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { careerStart, founder } from '../src/content/founder.ts';
+import { founder } from '../src/content/founder.ts';
 import { site, chapters } from '../src/content/studio.ts';
 import { graspInfo, graspModule } from '../src/content/grasp.ts';
 import { notebook } from '../src/content/notebook.ts';
 import { formatDate, spell } from '../src/lib/time.ts';
 import { CURVES } from '../src/lib/calculus.ts';
-import { bridge, cableY, PAGE, SUN } from '../src/lib/sketchbook/geometry.ts';
 import { SITE_HOST } from '../src/lib/url.ts';
 import { fileUrl, openPage } from './chrome.mjs';
 
@@ -123,48 +122,6 @@ function plateContents(w, h, ink, accent) {
     <text x="0" y="52" fill="${ink}" font-family="Caveat, cursive" font-size="54">Contents</text>
     <line x1="0" y1="78" x2="${w}" y2="78" stroke="${ink}" stroke-opacity="0.5" stroke-width="2"/>
     ${rows}`;
-}
-
-/* ------------------------------------------------------------------ *
- * The sketchbook
- * ------------------------------------------------------------------ */
-
-const SKETCH = { paper: '#f3ead5', ink: '#1f3a8a', graphite: '#34343a', accent: '#c8233f' };
-
-/**
- * The founder card: the bridge the sketchbook ends on, from the same geometry,
- * with the same crimson wash on its cables and the sun behind the tower.
- */
-function stageSketch() {
-  const s = 0.54;
-  const ox = W - PAGE.w * s + 30;
-  const oy = (H - PAGE.h * s) / 2 - 10;
-  const parts = bridge();
-  const lines = parts
-    .map((p) => {
-      const faint = p.id.startsWith('water') || p.id.startsWith('dim');
-      return `<polyline points="${p.pts.map((q) => `${n(q.x)},${n(q.y)}`).join(' ')}" fill="none" stroke="${faint ? SKETCH.graphite : SKETCH.ink}" stroke-width="${n(1.5 * p.weight)}" stroke-linecap="round" stroke-linejoin="round" opacity="${faint ? 0.5 : 0.95}"/>`;
-    })
-    .join('');
-  const wash = parts
-    .filter((p) => p.id.startsWith('cable'))
-    .map((p) => `<polyline points="${p.pts.map((q) => `${n(q.x)},${n(q.y - 3)}`).join(' ')}" fill="none" stroke="${SKETCH.accent}" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.14"/>`)
-    .join('');
-  const gridLines = [];
-  for (let x = 0; x <= W; x += 28) gridLines.push(`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="${SKETCH.graphite}" stroke-opacity="${x % 140 === 0 ? 0.09 : 0.045}"/>`);
-  for (let y = 0; y <= H; y += 28) gridLines.push(`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="${SKETCH.graphite}" stroke-opacity="${y % 140 === 0 ? 0.09 : 0.045}"/>`);
-  // Asserting the geometry the card relies on, so a change to the bridge cannot
-  // quietly leave the sun hanging somewhere other than behind the tower.
-  if (!(cableY(600) > SUN.y)) throw new Error('bridge geometry changed: cable no longer sags below the sun');
-  return `
-    <rect width="${W}" height="${H}" fill="${SKETCH.paper}"/>
-    ${gridLines.join('')}
-    <line x1="72.5" y1="0" x2="72.5" y2="${H}" stroke="${SKETCH.ink}" stroke-opacity="0.2"/>
-    <g transform="translate(${n(ox)}, ${n(oy)}) scale(${s})">
-      <circle cx="${SUN.x}" cy="${SUN.y}" r="${SUN.r}" fill="${SKETCH.accent}" opacity="0.14" stroke="${SKETCH.accent}" stroke-opacity="0.2" stroke-width="3"/>
-      ${wash}
-      ${lines}
-    </g>`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -424,10 +381,8 @@ function cards() {
       file: 'founder',
       label: 'Founder',
       title: founder.name,
-      standfirst: `${founder.title} at ${founder.employer}. Every role since ${careerStart}, and the résumé to download.`,
-      stage: stageSketch,
-      ground: SKETCH.paper,
-      ink: '#1d1d21',
+      standfirst: `${founder.title} at ${founder.employer}: from a switch to an agent, sketched and painted — and the résumé to download.`,
+      plate: 'blank',
       titleSize: 64,
       footRight: 'PDF · DOCX',
     },

@@ -29,7 +29,6 @@
  */
 
 
-import type { CityId } from '@/lib/sketch/skylines';
 import { founder } from './founder';
 
 export const site = {
@@ -73,20 +72,6 @@ export const cover = {
   contents: 'Contents',
   cursor: 'Turn to it',
 } as const;
-
-/**
- * The cities drawn beside the cover's title, in the order they are drawn —
- * home first. Their drawings are in `lib/sketch/skylines.ts`.
- */
-export const skylines: { id: CityId; name: string }[] = [
-  { id: 'toronto', name: 'Toronto' },
-  { id: 'new-york', name: 'New York' },
-  { id: 'london', name: 'London' },
-  { id: 'paris', name: 'Paris' },
-  { id: 'dubai', name: 'Dubai' },
-  { id: 'tokyo', name: 'Tokyo' },
-  { id: 'sydney', name: 'Sydney' },
-];
 
 export type Chapter = {
   title: string;

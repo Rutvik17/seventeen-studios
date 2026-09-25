@@ -36,12 +36,10 @@ say hello. All of it is deleted, and none of it should come back:
 The whole site is one sketchbook, and every new piece should read as a leaf of
 it rather than as a web page:
 
-- **Everything is acrylic and pencil on a painted ground.** Every page lies on
-  one ground, a canvas brushed over in soft pale acrylic (`--ground-*`, baked
-  once by `scripts/make-ground.mjs` into `src/assets/ground/`). Paint goes on
-  it — washes of colour behind titles and drawings, painted titles — and the
-  drawing goes on the paint, in pencil. There is no grid and no woven texture:
-  graph paper made every page a worksheet, and a canvas weave read as sacking.
+- **Everything is watercolour and pencil on paper.** Every page lies on the
+  watercolour paper (`--paper`). The drawing goes on it in pencil and the
+  washes over the drawing. There is no grid and no texture: graph paper made
+  every page a worksheet, and a painted acrylic ground has gone too.
 - **Pages are sheets.** Simple pages use `components/Sheet.tsx` — a crimson
   margin rule, a handwritten note above a title painted over a wash.
 - **One hand, one style, everywhere.** Caveat is the only font on the site —
@@ -56,18 +54,18 @@ it rather than as a web page:
   pencils a city. Never a whole spectrum in one place — a title with every
   letter a different colour read as a rainbow flag, not a sketchbook.
 - **One brush and one pencil.** Everything painted is painted by
-  `src/lib/sketchbook/brush.ts` (a body, bristle streaks, ragged dry ends, a
-  raised edge); everything drawn by `pencil.ts`. A new drawing uses both
-  rather than inventing a third hand.
+  `src/lib/film/wash.ts` (glazes of a wandering shape, a darker drying edge);
+  everything drawn by `src/lib/film/pencil.ts`. The pencil and the brush seen
+  at work are `src/lib/film/tools.ts`. A new drawing uses them rather than
+  inventing a third hand.
 - **The pencil is the cursor; the page turn is the transition; the loader is
   the mark being made** — the maple leaf sketched in pencil and painted as
   the page gets ready, swaying a little (`loader/LeafCanvas.tsx`). **The mark
   is a maple leaf**,
   sketched and painted in autumn (`lib/film/leaf.ts`); the tab icon is the
   same outline, flat, on a paper tile.
-- **Every page lies on the watercolour paper** (`--paper`), the landing's
-  sheet; the acrylic ground is no longer used. New motion should feel like drawing or turning
-  paper, not like an interface animating.
+- New motion should feel like drawing or turning paper, not like an
+  interface animating.
 - **The footer is the back endpaper**, and the nav is the book's three tabs —
   written in the film's caption hand (Caveat 600, the current tab 700 with a
   straight pen underline).
@@ -133,6 +131,34 @@ place carries that place's colours.
 - **Reduced motion:** no pencil, brush or timelapse — the finished painting,
   still, with every shot a button. Nothing in the engine is started without
   checking.
+
+### The founder film — the story, from a switch to an agent
+
+The founder page is a film too, made the way the landing's is and in the same
+two hands: one scene at a time filling the viewport, each sketched in pencil,
+painted, alive for a while, then sponged off the page through growing blots
+while the next one's pencil starts underneath. No scrolling, no footer.
+
+- **The script is `src/content/founder.ts`** (`scenes`: a title, the lines
+  written under it, how long it holds). It runs Rutvik's portrait → 0s and 1s
+  → a transistor → a byte → logic gates → the CPU → C++ to machine code → the
+  GPU → matrix multiplication → a neuron → learning → a language model → an
+  agent → back to him. Adding or reordering a scene is an edit there and a
+  builder in `scenes.ts`.
+- **Every number on screen is computed** in `src/lib/founder/facts.ts` — the
+  byte from the letter, the sum from the gates, the machine code from the x86
+  encoding, the product from the matrices, the neuron from its weights, the
+  descent from its slope, the probabilities from the scores. The captions and
+  the drawings both read them there.
+- **The portrait is drawn from the photograph** (`public/founder/rutvik-patel.jpg`)
+  by `src/lib/founder/portrait.ts`: pencil along the picture's edges from the
+  face outward, then glazes of the photograph itself — toned into a
+  watercolour's palette, its black night lifted into indigo, frayed at the
+  edges — laid big, then smaller, then fine over the face and hands.
+- **`src/lib/founder/director.ts` is the director**: making, alive, wash-out;
+  the camera fits each scene's `focus` into the room the captions leave.
+  Reduced motion gets each scene finished and still, turned by the strip.
+- The captions obey the teaching rule: words, then symbols, then numbers.
 
 ---
 
@@ -242,12 +268,7 @@ read it once at runtime with `getComputedStyle(document.documentElement)
 | `--accent` | `#1f3a8a` | deep ink blue — the pen |
 | `--accent-2` | `#c8233f` | crimson — the one thing to do next, or a drawing's second reading |
 | `--paint-1` … `-5` | `#2b3f9e` `#eba42c` `#3f7d3a` `#cf3f2c` `#5a3a8e` | the paint box, acrylic: ultramarine (the mark and the title), cadmium yellow, sap green, cadmium red, dioxazine violet |
-| `--ground-1` … `-5` | `#f8f0e0` … | the tints the painted ground is brushed in — change them and run `scripts/make-ground.mjs` |
-
-`--sketch-*` are the founder sketchbook's own colours (paper, graphite, charcoal,
-ink, one crimson). They are declared on the story in
-`components/founder/Founder.module.css`, read back by the renderer with
-`getComputedStyle`, and must not leak into the interface.
+| `--paper` | `#f5f0e6` | the watercolour paper every page lies on |
 
 Light theme: elevation is carried by `--shadow`, not by brightness. In a dark
 theme a raised surface is *lighter* than its ground; in a light one it is whiter

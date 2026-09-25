@@ -40,7 +40,7 @@ import { clamp, easeInOut, rng, smooth } from '@/lib/film/random';
 import { Wash, blob, type Pt } from '@/lib/film/wash';
 import { pencil, drawStroke, type Stroke } from '@/lib/film/pencil';
 import { Progressive } from '@/lib/film/progressive';
-import { drawBrush, drawPencil } from '@/lib/film/film';
+import { drawBrush, drawPencil } from '@/lib/film/tools';
 
 export interface BookEntry {
   slug: string;

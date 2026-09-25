@@ -10,7 +10,7 @@
 
 import { clamp, smooth } from './random';
 import { drawStroke, pointAt, type Stroke } from './pencil';
-import type { Pt, Wash } from './wash';
+import type { Glazed, Pt } from './wash';
 
 export class Progressive {
   private inkDrawn = 0;
@@ -24,7 +24,7 @@ export class Progressive {
   brushAt: Pt | null = null;
 
   constructor(
-    private drawing: { ink: Stroke[]; washes: Wash[] },
+    private drawing: { ink: Stroke[]; washes: Glazed[] },
     private inkCtx: CanvasRenderingContext2D,
     private paintCtx: CanvasRenderingContext2D,
     /** Share of the progress the pencil has before the brush starts, and when it stops. */
