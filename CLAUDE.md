@@ -75,9 +75,10 @@ it rather than as a web page:
 - **The notebook is a landscape watercolour sketchbook**
   (`lib/notebook/book.ts`), lying horizontally and bound down its left side:
   burnt-sienna cloth boards, a paper label, an elastic band, white
-  cold-pressed pages with a tooth and no ruling. Scrolling turns its pages
-  (a track and a sticky stage): cover, contents, then a spread per entry —
-  its title page on the left, its painting on the right (`DRAWINGS`, keyed
+  cold-pressed pages with a tooth and no ruling. It holds drawings only — no
+  contents, no title pages: each entry is one page, its painting with its
+  title written under it, and the cover opens straight onto the first.
+  Scrolling turns the pages (a track and a sticky stage) (`DRAWINGS`, keyed
   by slug; Earth's is `lib/notebook/globe.ts`, from the real coastlines and
   land cover, lit from the upper left). On a tall screen one page fills the
   width and the camera follows the turn.

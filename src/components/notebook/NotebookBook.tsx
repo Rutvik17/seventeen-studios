@@ -28,13 +28,13 @@ import styles from './NotebookBook.module.css';
 export function NotebookBook({ entries, copy }: { entries: BookEntry[]; copy: BookCopy & { label: string } }) {
   const track = useRef<HTMLElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const link = useRef<HTMLDivElement>(null);
+  
   const book = useRef<Book | null>(null);
   const entered = useUi((s) => s.entered);
   const [still, setStill] = useState(false);
   const [armed, setArmed] = useState(false);
-  const [spread, setSpread] = useState(2);
-  const [open, setOpen] = useState(-1);
+  const [spread, setSpread] = useState(1);
+  const [open, setOpen] = useState<{ entry: number; x: number; y: number; w: number; h: number }[]>([]);
   const introStart = useRef(0);
 
   useEffect(() => {
@@ -49,18 +49,11 @@ export function NotebookBook({ entries, copy }: { entries: BookEntry[]; copy: Bo
     let visible = true;
     let alive = true;
 
+    // Links lie over the paintings that are open, so a click on one reads it.
     const place = () => {
-      const a = link.current;
-      if (!a || !b) return;
-      const s = b.spread;
-      const i = s - 2;
-      if (i >= 0 && i < entries.length) {
-        const r = b.spreadRect;
-        a.style.transform = `translate(${r.x}px, ${r.y}px)`;
-        a.style.width = `${r.w}px`;
-        a.style.height = `${r.h}px`;
-      }
-      setOpen((was) => (was === i && i >= 0 ? was : i >= 0 && i < entries.length ? i : -1));
+      if (!b) return;
+      const next = b.openPages.map((o) => ({ ...o, x: Math.round(o.x), y: Math.round(o.y), w: Math.round(o.w), h: Math.round(o.h) }));
+      setOpen((was) => (JSON.stringify(was) === JSON.stringify(next) ? was : next));
     };
 
     const progress = () => {
@@ -95,7 +88,7 @@ export function NotebookBook({ entries, copy }: { entries: BookEntry[]; copy: Bo
       book.current = b;
       if (reduced) {
         b.setIntro(1);
-        b.setSpread(2);
+        b.setSpread(1);
       }
       b.render(performance.now());
       place();
@@ -144,36 +137,37 @@ export function NotebookBook({ entries, copy }: { entries: BookEntry[]; copy: Bo
     setSpread(next);
     b.setSpread(next);
     b.render(performance.now());
-    setOpen(next - 2 >= 0 && next - 2 < entries.length ? next - 2 : -1);
+    setOpen(b.openPages);
   };
-
-  const entry = open >= 0 ? entries[open] : null;
 
   return (
     <section
       ref={track}
       className={styles.track}
       data-still={still ? '' : undefined}
-      style={still ? undefined : { height: `${(entries.length + 2) * 120 + 60}svh` }}
+      style={still ? undefined : { height: `${(Math.floor(entries.length / 2) + 2) * 120 + 60}svh` }}
       aria-label={copy.label}
     >
       <div className={styles.stage}>
         <canvas ref={canvas} className={styles.canvas} aria-hidden="true" />
-        {entry && (
-          <div ref={link} className={styles.open}>
-            <TransitionLink href={`/notebook/${entry.slug}/`} className={styles.hit} data-cursor="Read">
-              <span className={styles.sr}>
-                {entry.title} — {copy.read}
-              </span>
-            </TransitionLink>
-          </div>
-        )}
+        {open.map((o) => {
+          const entry = entries[o.entry];
+          return (
+            <div key={entry.slug} className={styles.open} style={{ transform: `translate(${o.x}px, ${o.y}px)`, width: o.w, height: o.h }}>
+              <TransitionLink href={`/notebook/${entry.slug}/`} className={styles.hit} data-cursor="Read">
+                <span className={styles.sr}>
+                  {entry.title} — {copy.read}
+                </span>
+              </TransitionLink>
+            </div>
+          );
+        })}
         {still && armed && (
           <div className={styles.turns}>
             <button type="button" onClick={() => turnTo(spread - 1)} disabled={spread <= 0}>
               previous page
             </button>
-            <button type="button" onClick={() => turnTo(spread + 1)} disabled={spread >= entries.length + 1}>
+            <button type="button" onClick={() => turnTo(spread + 1)} disabled={spread >= Math.floor(entries.length / 2) + 1}>
               next page
             </button>
           </div>
