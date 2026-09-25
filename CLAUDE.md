@@ -63,7 +63,9 @@ it rather than as a web page:
 - **The pencil is the cursor; the page turn is the transition; a brush
   painting the 17 is the loader.** New motion should feel like drawing or turning
   paper, not like an interface animating.
-- **The footer is the back endpaper**, and the nav is the book's three tabs.
+- **The footer is the back endpaper**, and the nav is the book's three tabs —
+  written in the film's caption hand (Caveat 600, the current tab 700 with a
+  straight pen underline).
   Neither should grow into a site map.
 - **One name per thing.** The section is the *notebook* — never "lessons" or
   "lab". Grasp lives on this site; it is not an app.
