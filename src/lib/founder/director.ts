@@ -23,16 +23,14 @@
  * finished painting, still, drawn once when it is chosen.
  */
 
-import { scenes, type SceneId } from '@/content/founder';
+import { scenes, type FounderPhoto, type SceneId } from '@/content/founder';
 import { clamp, rng, smooth } from '@/lib/film/random';
 import { drawBrush, drawPencil } from '@/lib/film/tools';
 import { Progressive } from '@/lib/film/progressive';
 import { buildScene, glow, type LiveState, type SceneArt } from './scenes';
-import { portrait as paintPortrait, type Portrait } from './portrait';
+import { portrait as paintPortrait, regionFor, type Portrait } from './portrait';
 
 const WORLD = { w: 1600, h: 1000 };
-/** Where the photograph is drawn, in world units: 1080 × 1440, scaled to 640 wide. */
-const PORTRAIT = { x: 480, y: 60, w: 640, h: 853 };
 /** Seconds to sketch and paint a scene; the portrait takes longer, as a portrait does. */
 const MAKE = 7.5;
 const MAKE_PORTRAIT = 17;
@@ -68,20 +66,22 @@ interface Running {
 
 export function createFounderFilm(
   canvas: HTMLCanvasElement,
-  opts: { photo: HTMLImageElement; reduced: boolean; hand: string; hooks: FounderHooks },
+  opts: { image: HTMLImageElement; photo: FounderPhoto; reduced: boolean; hand: string; hooks: FounderHooks },
 ): FounderFilm {
   const { reduced, hand, hooks } = opts;
   const ctx = canvas.getContext('2d')!;
   const outgoing = document.createElement('canvas');
   const octx = outgoing.getContext('2d')!;
 
-  const photo: Portrait = paintPortrait(opts.photo, PORTRAIT);
+  // Where the photograph is painted, in world units.
+  const PORTRAIT = regionFor(opts.photo.aspect);
+  const photo: Portrait = paintPortrait(opts.image, opts.photo, PORTRAIT);
   const portraitArt = (withMotes: boolean): SceneArt => ({
     ink: photo.ink,
     washes: photo.washes,
     focus: PORTRAIT,
-    // The pencil sinks under the paint, as it does under a real wash.
-    inkAfter: 0.35,
+    // Line and wash: the pencil stays, a little softened by the paint over it.
+    inkAfter: 0.7,
     live(c, st) {
       // The lamps on the water in the photograph flicker as flames do.
       const on = smooth(-1, 1.5, st.alive);

@@ -150,11 +150,16 @@ while the next one's pencil starts underneath. No scrolling, no footer.
   encoding, the product from the matrices, the neuron from its weights, the
   descent from its slope, the probabilities from the scores. The captions and
   the drawings both read them there.
-- **The portrait is drawn from the photograph** (`public/founder/rutvik-patel.jpg`)
-  by `src/lib/founder/portrait.ts`: pencil along the picture's edges from the
-  face outward, then glazes of the photograph itself — toned into a
-  watercolour's palette, its black night lifted into indigo, frayed at the
-  edges — laid big, then smaller, then fine over the face and hands.
+- **The portrait is drawn from a photograph**, a different one of Rutvik on
+  each visit (`founderFilm.photos` in `content/founder.ts`, the files in
+  `public/founder`; `?photo=<id>` asks for one). `src/lib/founder/portrait.ts`
+  paints it as line and wash, never as a filtered photograph: the picture is
+  squinted down to a few paints (k-means), the pencil follows where those
+  shapes meet and the fine tones of the face, and each shape is laid in its
+  own paint — lights left as paper, darker rims where paints meet, the grain
+  of the paper, frayed edges and a little spatter. The face and hands (boxes
+  given per photo) keep more of the photograph's tones, feathered in. If a
+  portrait starts to look like a photo again, it has lost its shapes.
 - **`src/lib/founder/director.ts` is the director**: making, alive, wash-out;
   the camera fits each scene's `focus` into the room the captions leave.
   Reduced motion gets each scene finished and still, turned by the strip.

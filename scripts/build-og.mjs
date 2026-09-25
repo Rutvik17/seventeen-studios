@@ -384,7 +384,7 @@ function cards() {
     {
       file: 'founder',
       // The painting itself: the founder film's portrait, finished, with its caption.
-      film: '/founder/',
+      film: '/founder/?photo=temple',
     },
     {
       file: 'notebook',
@@ -459,7 +459,7 @@ function serve(root) {
 
 async function shootFilm(card) {
   const site = path.join(root, 'out');
-  if (!existsSync(path.join(site, card.film.replace(/^\//, ''), 'index.html'))) {
+  if (!existsSync(path.join(site, card.film.split('?')[0].replace(/^\//, ''), 'index.html'))) {
     throw new Error(`${card.file}: no ${card.film} in out/ — run \`npm run build\` (without a base path) first.`);
   }
   const server = await serve(site);
