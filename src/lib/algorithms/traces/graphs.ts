@@ -1,4 +1,4 @@
-import { Rec, arr, grid, graph, map, queue, stack, vars, results, ring, type Tracer, type Role, type Val, type GNode, type GEdge } from '../trace';
+import { Rec, arr, grid, graph, map, queue, vars, results, ring, type Tracer, type Role, type Val, type GNode, type GEdge } from '../trace';
 
 type Cell = [number, number];
 const key = ([r, c]: Cell) => `${r},${c}`;

@@ -80,7 +80,7 @@ const EXACT_AT_3 = SQUARE.exact(CHECK_X);
 const NUMERIC_AT_3 = derivativeAt(f, CHECK_X);
 const GAP = Math.abs(NUMERIC_AT_3 - EXACT_AT_3);
 
-export const LESSON = {
+const LESSON = {
   f1: F1,
   f2: F2,
   f3: F3,

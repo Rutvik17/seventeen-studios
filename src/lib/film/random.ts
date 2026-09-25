@@ -44,8 +44,3 @@ export function rgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-export function mix(a: string, b: string, t: number): string {
-  const x = rgb(a);
-  const y = rgb(b);
-  return `rgb(${Math.round(lerp(x[0], y[0], t))},${Math.round(lerp(x[1], y[1], t))},${Math.round(lerp(x[2], y[2], t))})`;
-}

@@ -138,7 +138,7 @@ export class Weather {
       const [sx, sy] = proj(x, y);
       if (sx < 40 || sx > 1560 || sy > 990) continue;
       const ripple = r() < 0.35;
-      this.splashes.push({ x: sx, y: sy, r: scaleAt(x, y) * (ripple ? between(r, 0.9, 1.6) : between(r, 0.4, 0.7)), t: 0, life: ripple ? between(r, 0.6, 0.9) : between(r, 0.18, 0.3), ripple });
+      this.splashes.push({ x: sx, y: sy, r: scaleAt(y) * (ripple ? between(r, 0.9, 1.6) : between(r, 0.4, 0.7)), t: 0, life: ripple ? between(r, 0.6, 0.9) : between(r, 0.18, 0.3), ripple });
     }
     for (const sp of this.splashes) sp.t += dt;
     this.splashes = this.splashes.filter((sp) => sp.t < sp.life);

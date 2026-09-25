@@ -33,7 +33,7 @@
  */
 
 /** The size every card is rendered at, and the size crawlers are told. */
-export const OG_SIZE = { width: 1200, height: 630 } as const;
+const OG_SIZE = { width: 1200, height: 630 } as const;
 
 type OgImage = {
   url: string;

@@ -12,10 +12,10 @@
  *   - `./types` — an extensionless relative import. Node's ESM resolver
  *     requires the extension; the bundler's does not.
  *
- * `src/content/resume.ts` sidesteps both by importing `'../lib/time.ts'` with
- * the extension spelled out, but writing content modules around the limits of a
- * build script is the wrong way round — the alias is the house style and most
- * files use it. This hook teaches Node the two rules instead.
+ * A content module could sidestep both by spelling out `'../lib/time.ts'`, but
+ * writing content modules around the limits of a build script is the wrong way
+ * round — the alias is the house style. This hook teaches Node the two rules
+ * instead.
  *
  * Registered by `alias-register.mjs`, which is what the scripts actually pass
  * to `--import`.

@@ -17,7 +17,7 @@ import { blob, Wash, type Pt } from './wash';
 
 /** Bigger than any screen shape can reveal, so the edge of the sky is never seen. */
 export const SKY_BOUNDS = { x: -900, y: -1100, w: 3400, h: 2050 };
-export const SKY_SCALE = 0.3;
+const SKY_SCALE = 0.3;
 
 function band(y0: number, y1: number, r: () => number): Pt[] {
   const pts: Pt[] = [];

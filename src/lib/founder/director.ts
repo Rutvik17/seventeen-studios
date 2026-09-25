@@ -10,7 +10,7 @@
  *    paint; the frame is those two layers drawn through the camera.
  * 2. **Alive.** Once finished it stays on the page, and what moves in it is
  *    drawn over it every frame: lights in the photograph flicker as flames do,
- *    and 0s and 1s rise off the page.
+ *    and 0s and 1s rise off the page in a loop that never ends.
  *
  * The camera fits the portrait into the part of the screen the words beside
  * it leave free, and pushes in a little while it is made.
@@ -28,11 +28,8 @@ import { framed, portrait as paintPortrait, regionFor } from './portrait';
 const WORLD = { w: 1600, h: 1000 };
 /** Seconds to sketch and paint the portrait. */
 const MAKE = 17;
-
-export interface FounderHooks {
-  /** Called once the first frame is painted — the loader can go. */
-  onReady?(): void;
-}
+/** How many 0s and 1s are rising at once. */
+const DIGITS = 70;
 
 export interface FounderFilm {
   begin(): void;
@@ -53,9 +50,9 @@ function glow(ctx: CanvasRenderingContext2D, x: number, y: number, rad: number, 
 
 export function createFounderFilm(
   canvas: HTMLCanvasElement,
-  opts: { image: HTMLImageElement; photo: FounderPhoto; reduced: boolean; hand: string; hooks: FounderHooks },
+  opts: { image: HTMLImageElement; photo: FounderPhoto; reduced: boolean; hand: string },
 ): FounderFilm {
-  const { reduced, hand, hooks } = opts;
+  const { reduced, hand } = opts;
   const ctx = canvas.getContext('2d')!;
   // What moves is drawn on its own sheet first, so it can come in as one: it
   // fades up while the paint goes down, never pops on over a blank page.
@@ -80,20 +77,29 @@ export function createFounderFilm(
       c.globalCompositeOperation = 'source-over';
     }
     if (alive < 0) return;
-    // 0s and 1s — what everything he builds is made of — rising off the page.
+    // 0s and 1s — what everything he builds is made of — rising off the page
+    // once it is painted, and on for as long as it is open: each one enters at
+    // the foot, fades out near the top and starts again from the foot, a new
+    // bit each time round. They start staggered, so the stream fills in from
+    // below rather than appearing all at once.
     c.save();
     c.font = `600 26px ${hand}`;
     c.textAlign = 'center';
     const r = rng(17);
-    for (let i = 0; i < 70; i++) {
+    const rise = FOCUS.h + 120;
+    for (let i = 0; i < DIGITS; i++) {
       const x = FOCUS.x - 180 + r() * (FOCUS.w + 360);
-      const speed = 18 + r() * 30;
-      const life = (alive * speed + r() * 900) % 900;
-      const y = FOCUS.y + FOCUS.h - life;
-      const a = Math.sin((life / 900) * Math.PI) * clamp(alive / 2);
-      c.globalAlpha = a * 0.55;
+      const speed = 55 + r() * 45;
+      const travelled = alive * speed - r() * rise;
+      const seed = r();
+      if (travelled < 0) continue;
+      const lap = Math.floor(travelled / rise);
+      const life = travelled - lap * rise;
+      const y = FOCUS.y + FOCUS.h + 60 - life;
+      c.globalAlpha = Math.sin((life / rise) * Math.PI) * 0.55;
       c.fillStyle = i % 3 === 0 ? '#2b3f9e' : i % 3 === 1 ? '#76a83a' : '#1d1d21';
-      c.fillText(r() > 0.5 ? '1' : '0', x + Math.sin(alive * 0.6 + i) * 10, y);
+      const bit = Math.sin((seed * 1000 + lap) * 12.9898) * 43758.5453;
+      c.fillText(bit - Math.floor(bit) > 0.5 ? '1' : '0', x + Math.sin(alive * 0.6 + i) * 10, y);
     }
     c.restore();
   }
@@ -223,7 +229,6 @@ export function createFounderFilm(
 
   measure();
   if (reduced) draw();
-  hooks.onReady?.();
 
   return {
     begin() {

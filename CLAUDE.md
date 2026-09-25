@@ -223,9 +223,9 @@ portrait.
 8. **Nothing invented.** No clients, no testimonials, no metrics that were not
    measured, and no role described bigger than it was — presenting an intention
    as shipped, or "worked on" as "led", is the fastest way to lose a technical
-   reader. The career's titles and dates live in
-   `src/content/resume.ts`; the résumé itself is the Word document in
-   `public/founder` (PDF and .docx), kept by hand. Everything in both is real.
+   reader. The résumé is the Word document in
+   `public/founder` (PDF and .docx), kept by hand, and the founder page's
+   title and employer (`content/founder.ts`) are its. Everything in both is real.
 9. **Never type a calendar-dependent value into the copy.** Durations, "now"
    years and counts of things in a collection all come from `src/lib/time.ts`
    or are derived from the data itself. Dates of events that
@@ -298,16 +298,11 @@ theme a raised surface is *lighter* than its ground; in a light one it is whiter
 and **casts**. Swapping colours without swapping that rule produces flat,
 illegible cards — it has happened here once.
 
-Type: **Caveat** (titles and notes, 500–700) and **Shantell Sans** (reading and
-small print, variable, with its `BNCE` and `INFM` axes). **Syne** 800 only for
-list numbers; **DM Sans** and **JetBrains Mono** only on Grasp. All loaded via
-`next/font`, so the export makes no third-party font requests. Canvas text
-cannot set a variable font's axes, so anything a canvas writes gets its
-irregularity from the drawing (the cover turns, raises and sizes each letter
-itself), not from the face.
+Type: **Caveat** everywhere, and **JetBrains Mono** for the algorithms'
+code (`--font-code`, loaded in `app/algorithms/layout.tsx`). Both via
+`next/font`, so the export makes no third-party font requests.
 
-Layout: `--gutter` for page padding, `--max` (1680px) for content width. Small
-labels are 11px / 0.16em / uppercase.
+Layout: `--gutter` for page padding, `--max` (1680px) for content width.
 
 ---
 
@@ -411,7 +406,8 @@ rather than pushing onto merged history.
 ## Checks before committing
 
 ```bash
-npm run typecheck
+npm run typecheck         # also fails on an unused variable, import or parameter
+npm run deadcode          # knip: no unused file, export or dependency
 npm run test:algorithms   # when solutions change: every language, every case
 npm run test:traces       # when tracers change: every drawing reaches the answer
 npm run build             # must produce out/

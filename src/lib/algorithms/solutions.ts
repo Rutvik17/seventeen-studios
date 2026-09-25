@@ -7,7 +7,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { highlight, type Lang } from './highlight';
 
-export const LANGS: { id: Lang; label: string; file: string }[] = [
+const LANGS: { id: Lang; label: string; file: string }[] = [
   { id: 'py', label: 'Python', file: 'solution.py' },
   { id: 'js', label: 'JavaScript', file: 'solution.js' },
   { id: 'java', label: 'Java', file: 'Solution.java' },
@@ -52,7 +52,7 @@ const j = (v: unknown): string => {
 };
 
 /** An example's input as LeetCode writes it: `nums = [2, 7, 11, 15], target = 9`. */
-export function formatInput(spec: Spec, c: Spec['cases'][number]): string {
+function formatInput(spec: Spec, c: Spec['cases'][number]): string {
   if (spec.design || c.ops) return `${j(c.ops)}\n${j(c.args)}`;
   if (spec.roundtrip) return `${spec.roundtrip.param ?? 'root'} = ${j(c.in?.[0])}`;
   return (spec.params ?? [])
@@ -67,7 +67,7 @@ export function formatInput(spec: Spec, c: Spec['cases'][number]): string {
     .join(', ');
 }
 
-export function formatOutput(c: Spec['cases'][number]): string {
+function formatOutput(c: Spec['cases'][number]): string {
   return j(c.out);
 }
 

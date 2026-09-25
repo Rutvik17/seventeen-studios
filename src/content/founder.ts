@@ -8,8 +8,7 @@
  * `lib/founder/director.ts`.
  *
  * Facts about Rutvik — title, employer, what he works on — are the résumé's
- * own (`resume.ts`, and the documents in `public/founder`). Nothing here is
- * invented.
+ * own (the documents in `public/founder`). Nothing here is invented.
  */
 
 import { asset } from '@/lib/asset';

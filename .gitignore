@@ -32,6 +32,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts.bak
 
-# Generated every 15 minutes onto the data branch, never committed to main.
-quote.json
 .algo-build/

@@ -74,6 +74,11 @@ jobs:
 
       - run: npm ci
 
+      # No unused file, export or dependency ships (knip). Unused variables and
+      # parameters are caught by the typecheck inside `next build`.
+      - name: Check for dead code
+        run: npm run deadcode
+
       - name: Build static site
         env:
           NEXT_PUBLIC_BASE_PATH: ${{ steps.paths.outputs.base_path }}

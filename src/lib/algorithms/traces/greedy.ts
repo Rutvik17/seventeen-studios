@@ -119,7 +119,7 @@ export const traces: Record<string, Tracer> = {
     const R = new Rec();
     const got = [false, false, false];
     const status: string[] = ts.map(() => '');
-    const view = (note: string, i: number) => {
+    const view = (note: string) => {
       const m: Record<string, Role> = {};
       ts.forEach((t, r) =>
         t.forEach((v, c) => {
@@ -129,17 +129,17 @@ export const traces: Record<string, Tracer> = {
       );
       R.add(note, grid(ts, { label: 'triplets', marks: m, rows: ts.map((_, r) => (status[r] === 'skip' ? '✗' : status[r] === 'use' ? '✓' : String(r))) }), arr(target, { label: 'target', marks: marks([[0, 1, 2].filter((k) => got[k]), 'found']) }));
     };
-    view('Merging only raises values, so a triplet above the target anywhere is useless. Every other one is safe to merge.', -1);
+    view('Merging only raises values, so a triplet above the target anywhere is useless. Every other one is safe to merge.');
     ts.forEach((t, i) => {
       if (t.some((v, k) => v > target[k])) {
         status[i] = 'skip';
-        view(`[${t.join(', ')}] goes above the target — merging it would overshoot. Skip.`, i);
+        view(`[${t.join(', ')}] goes above the target — merging it would overshoot. Skip.`);
         return;
       }
       status[i] = 'use';
       const hits = [0, 1, 2].filter((k) => t[k] === target[k]);
       hits.forEach((k) => (got[k] = true));
-      view(`[${t.join(', ')}] is safe.${hits.length ? ` It supplies position${hits.length === 1 ? '' : 's'} ${hits.join(', ')}.` : ' It matches no position, but does no harm.'}`, i);
+      view(`[${t.join(', ')}] is safe.${hits.length ? ` It supplies position${hits.length === 1 ? '' : 's'} ${hits.join(', ')}.` : ' It matches no position, but does no harm.'}`);
     });
     const ok = got.every(Boolean);
     R.add(ok ? 'All three positions are supplied: the target can be made.' : `Position${got.filter((x) => !x).length === 1 ? '' : 's'} ${[0, 1, 2].filter((k) => !got[k]).join(', ')} never reached: no.`, vars({ answer: [ok, ok ? 'found' : 'bad'] }));
