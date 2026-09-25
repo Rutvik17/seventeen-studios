@@ -28,7 +28,7 @@ import { clamp, rng, smooth } from '@/lib/film/random';
 import { drawBrush, drawPencil } from '@/lib/film/tools';
 import { Progressive } from '@/lib/film/progressive';
 import { buildScene, glow, type LiveState, type SceneArt } from './scenes';
-import { portrait as paintPortrait, regionFor, type Portrait } from './portrait';
+import { framed, portrait as paintPortrait, regionFor, type Portrait } from './portrait';
 
 const WORLD = { w: 1600, h: 1000 };
 /** Seconds to sketch and paint a scene; the portrait takes longer, as a portrait does. */
@@ -74,8 +74,9 @@ export function createFounderFilm(
   const octx = outgoing.getContext('2d')!;
 
   // Where the photograph is painted, in world units.
-  const PORTRAIT = regionFor(opts.photo.aspect);
-  const photo: Portrait = paintPortrait(opts.image, opts.photo, PORTRAIT);
+  const frame0 = framed(opts.image, opts.photo);
+  const PORTRAIT = regionFor(frame0.photo.aspect);
+  const photo: Portrait = paintPortrait(frame0.image, frame0.photo, PORTRAIT);
   const portraitArt = (withMotes: boolean): SceneArt => ({
     ink: photo.ink,
     washes: photo.washes,

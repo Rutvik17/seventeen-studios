@@ -57,6 +57,24 @@ export function loadPhoto(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/**
+ * The part of the photograph that is painted: its `crop`, if it has one, cut
+ * out — so a picture taken from far off is painted close enough to see him —
+ * with the face and hands moved into the crop's frame.
+ */
+export function framed(img: HTMLImageElement, photo: FounderPhoto): { image: CanvasImageSource; photo: FounderPhoto } {
+  const c = photo.crop;
+  if (!c) return { image: img, photo };
+  const W = img.naturalWidth;
+  const H = img.naturalHeight;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(c.w * W);
+  canvas.height = Math.round(c.h * H);
+  canvas.getContext('2d')!.drawImage(img, c.u * W, c.v * H, c.w * W, c.h * H, 0, 0, canvas.width, canvas.height);
+  const move = (b: FounderPhoto['face']) => ({ u: (b.u - c.u) / c.w, v: (b.v - c.v) / c.h, w: b.w / c.w, h: b.h / c.h });
+  return { image: canvas, photo: { ...photo, aspect: canvas.width / canvas.height, face: move(photo.face), hands: photo.hands && move(photo.hands), crop: undefined } };
+}
+
 /** The world area a photograph is painted in: 860 high, centred on the world's 1600 × 1000. */
 export function regionFor(aspect: number): Region {
   const h = 860;
@@ -80,7 +98,7 @@ interface Squint {
   rgb: Uint8ClampedArray;
 }
 
-function read(img: HTMLImageElement, W: number, H: number): Uint8ClampedArray {
+function read(img: CanvasImageSource, W: number, H: number): Uint8ClampedArray {
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
@@ -90,7 +108,7 @@ function read(img: HTMLImageElement, W: number, H: number): Uint8ClampedArray {
   return x.getImageData(0, 0, W, H).data;
 }
 
-function squint(img: HTMLImageElement, W: number, H: number): Squint {
+function squint(img: CanvasImageSource, W: number, H: number): Squint {
   const px = read(img, W, H);
   const n = W * H;
   const lum = new Float32Array(n);
@@ -169,14 +187,14 @@ function near(u: number, v: number, b?: { u: number; v: number; w: number; h: nu
 function stepped(R: number, G: number, B: number): number[] {
   const m = Math.max(1, (R + G + B) / 3);
   const q = (Math.round((m / 255) * 8) / 8) * 255 + 10;
-  return pigment([(R * q) / m, (G * q) / m, (B * q) / m], 1.05);
+  return pigment([(R * q) / m, (G * q) / m, (B * q) / m], 0.8);
 }
 
 /* ------------------------------------------------------------------ *
  * The painting                                                       *
  * ------------------------------------------------------------------ */
 
-export function portrait(img: HTMLImageElement, photo: FounderPhoto, region: Region, seed = 1702): Portrait {
+export function portrait(img: CanvasImageSource, photo: FounderPhoto, region: Region, seed = 1702): Portrait {
   const r = rng(seed);
   const SW = 240;
   const SH = Math.round(SW / photo.aspect);
@@ -252,7 +270,7 @@ export function portrait(img: HTMLImageElement, photo: FounderPhoto, region: Reg
       }
   };
   // The face first, finely; then the big shapes; the edges of the picture are left to fray.
-  trace(tones, 0.13, fine, 0.9, 1.1, 20);
+  trace(tones, 0.16, fine, 0.62, 0.9, 20);
   trace(shapes, 0.3, (u, v) => !fine(u, v) && u > 0.06 && u < 0.94 && v > 0.05 && v < 0.95, 0.7, 1, 40);
   strokes.sort((a, b) => a.d - b.d);
   const ink = strokes.map((s) => pencil(s.pts, r, { width: s.width, tone: s.tone, wobble: 0.5, overshoot: s.pts.length > 3 ? 2.5 : 1 }));
@@ -323,7 +341,7 @@ export function portrait(img: HTMLImageElement, photo: FounderPhoto, region: Reg
 }
 
 /** The first wash: the picture shrunk to a few dozen patches of colour, thinned. */
-function looseWash(img: HTMLImageElement, aspect: number): HTMLCanvasElement {
+function looseWash(img: CanvasImageSource, aspect: number): HTMLCanvasElement {
   const sw = 12;
   const sh = Math.round(sw / aspect);
   const px = read(img, sw, sh);
@@ -393,7 +411,7 @@ function paintShapes(sq: Squint, paints: number[][], photo: FounderPhoto, r: Rng
         const yy = y + dy;
         if (xx >= 0 && yy >= 0 && xx < W && yy < H) {
           const o = label[yy * W + xx];
-          if (o !== l && Math.abs(shade[o] - shade[l]) > 0.14) rim = true;
+          if (o !== l && Math.abs(shade[o] - shade[l]) > 0.14 && f < 0.3) rim = true;
         }
       }
       const dark = rim ? 0.88 : 1;

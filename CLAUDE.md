@@ -158,7 +158,8 @@ while the next one's pencil starts underneath. No scrolling, no footer.
   shapes meet and the fine tones of the face, and each shape is laid in its
   own paint — lights left as paper, darker rims where paints meet, the grain
   of the paper, frayed edges and a little spatter. The face and hands (boxes
-  given per photo) keep more of the photograph's tones, feathered in. If a
+  given per photo) keep more of the photograph's tones, feathered in; a photo
+  where he is small gets a `crop`, so the painting frames him, not the view. If a
   portrait starts to look like a photo again, it has lost its shapes.
 - **`src/lib/founder/director.ts` is the director**: making, alive, wash-out;
   the camera fits each scene's `focus` into the room the captions leave.
