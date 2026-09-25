@@ -1,0 +1,13 @@
+{
+  "method": "isPalindrome",
+  "params": [{ "name": "s", "type": "string" }],
+  "returns": "bool",
+  "cases": [
+    { "in": ["A man, a plan, a canal: Panama"], "out": true, "example": true },
+    { "in": ["race a car"], "out": false, "example": true },
+    { "in": [" "], "out": true },
+    { "in": ["0P"], "out": false },
+    { "in": ["ab_a"], "out": true },
+    { "in": ["No 'x' in Nixon"], "out": true }
+  ]
+}

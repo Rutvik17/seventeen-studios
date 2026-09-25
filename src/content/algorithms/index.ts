@@ -1,11 +1,12 @@
 import type { Category, Problem } from './types';
 import { arraysHashing } from './arrays-hashing';
+import { twoPointers } from './two-pointers';
 import { stack } from './stack';
 
 export type { Category, Problem, Difficulty } from './types';
 
 /** Every category, in NeetCode's order. */
-export const categories: Category[] = [arraysHashing, stack];
+export const categories: Category[] = [arraysHashing, twoPointers, stack];
 
 export interface Listed extends Problem {
   category: string;

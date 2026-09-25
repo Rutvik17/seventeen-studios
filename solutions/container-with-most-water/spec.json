@@ -1,0 +1,12 @@
+{
+  "method": "maxArea",
+  "params": [{ "name": "height", "type": "int[]" }],
+  "returns": "int",
+  "cases": [
+    { "in": [[1, 8, 6, 2, 5, 4, 8, 3, 7]], "out": 49, "example": true },
+    { "in": [[1, 1]], "out": 1, "example": true },
+    { "in": [[4, 3, 2, 1, 4]], "out": 16 },
+    { "in": [[1, 2, 1]], "out": 2 },
+    { "in": [[2, 3, 4, 5, 18, 17, 6]], "out": 17 }
+  ]
+}
