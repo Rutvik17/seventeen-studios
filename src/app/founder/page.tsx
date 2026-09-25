@@ -7,14 +7,14 @@ import { FounderFilm } from '@/components/founder/FounderFilm';
 
 /**
  * The founder page: a film, painted as the landing's is — Rutvik sketched
- * from his photograph, then how a computer works from a single switch up to
- * the AI he builds, and back to him.
+ * from his photograph, then the 0s and 1s underneath everything and the GPU
+ * that AI runs on, and back to him.
  *
  * The route is also the `url` on the Person node every notebook lesson names
  * as its author, and the address printed on the résumé itself.
  */
 
-const DESCRIPTION = `${founder.name}, ${founder.title} at ${founder.employer}, ${founder.focus} — and how it all works, from a switch to an agent, sketched and painted.`;
+const DESCRIPTION = `${founder.name}, ${founder.title} at ${founder.employer}, ${founder.focus} — and what his work runs on, from 0s and 1s to a GPU, sketched and painted.`;
 
 export const metadata: Metadata = {
   /*

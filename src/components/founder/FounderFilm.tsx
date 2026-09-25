@@ -4,9 +4,8 @@
  * THE FOUNDER PAGE'S FILM.
  *
  * Rutvik, sketched from his photograph and painted, and then the story of what
- * he builds, from the bottom: a switch, a byte, gates, a processor, C++ down
- * to machine code, a GPU, a matrix product, a neuron, learning, a language
- * model, an agent — and back to him. The engine is `lib/founder/director.ts`;
+ * he builds, from the bottom: a line of code stored as 0s and 1s, and a GPU
+ * running it on thousands of threads at once — and back to him. The engine is `lib/founder/director.ts`;
  * the script is `content/founder.ts`. This is the frame round it: each
  * scene's title and lines written in the corner, the scenes along the bottom
  * to jump between, a pause, and the résumé.
