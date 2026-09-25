@@ -20,6 +20,8 @@ export class Progressive {
   progress = 0;
   /** Where the pencil's point is while it is drawing, or null. */
   pencilAt: Pt | null = null;
+  /** Where the brush is while it is laying a wash, or null. */
+  brushAt: Pt | null = null;
 
   constructor(
     private drawing: { ink: Stroke[]; washes: Wash[] },
@@ -39,12 +41,17 @@ export class Progressive {
     this.ink(this.total * smooth(0, this.split.inkEnd, q));
     const paint = clamp((q - this.split.paintStart) / (1 - this.split.paintStart));
     const n = this.drawing.washes.length;
+    this.brushAt = null;
     this.drawing.washes.forEach((w, k) => {
       const start = (k / n) * 0.85;
       const due = Math.floor(clamp((paint - start) / 0.15) * w.layers);
       while (this.done[k] < due) w.pass(this.paintCtx, this.done[k]++);
+      if (this.done[k] > 0 && this.done[k] < w.layers && Number.isFinite(w.cx)) this.brushAt = [w.cx, w.cy];
     });
-    if (q >= 1) this.pencilAt = null;
+    if (q >= 1) {
+      this.pencilAt = null;
+      this.brushAt = null;
+    }
   }
 
   private ink(target: number) {

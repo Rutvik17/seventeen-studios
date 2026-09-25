@@ -799,7 +799,7 @@ export function createFilm(canvas: HTMLCanvasElement, opts: { reduced: boolean; 
 
 /* ---------------- the hand's tools ---------------- */
 
-function drawPencil(ctx: CanvasRenderingContext2D, x: number, y: number) {
+export function drawPencil(ctx: CanvasRenderingContext2D, x: number, y: number) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(-0.7);
@@ -828,7 +828,7 @@ function drawPencil(ctx: CanvasRenderingContext2D, x: number, y: number) {
   ctx.restore();
 }
 
-function drawBrush(ctx: CanvasRenderingContext2D, x: number, y: number, t: number) {
+export function drawBrush(ctx: CanvasRenderingContext2D, x: number, y: number, t: number) {
   ctx.save();
   // The brush dabs: a small circle of movement while the wash goes down.
   ctx.translate(x + Math.sin(t * 9) * 3, y + Math.cos(t * 7) * 2);

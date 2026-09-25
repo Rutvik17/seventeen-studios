@@ -89,6 +89,7 @@ export function NotebookBook({ entries, copy }: { entries: BookEntry[]; copy: Bo
       if (reduced) {
         b.setIntro(1);
         b.setSpread(1);
+        b.finish();
       }
       b.render(performance.now());
       place();
@@ -144,6 +145,7 @@ export function NotebookBook({ entries, copy }: { entries: BookEntry[]; copy: Bo
     <section
       ref={track}
       className={styles.track}
+      data-notebook
       data-still={still ? '' : undefined}
       style={still ? undefined : { height: `${(Math.floor(entries.length / 2) + 2) * 120 + 60}svh` }}
       aria-label={copy.label}
