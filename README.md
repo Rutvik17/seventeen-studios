@@ -158,11 +158,15 @@ To change the résumé, edit the .docx and export the PDF from it.
 
 ### Link previews
 
-Every route names its own share card (`public/og/<name>.png`, drawn by
+Every route names its own share card (`public/og/<name>.jpg`, drawn by
 `scripts/build-og.mjs`), and `scripts/verify-og.mjs` fails the build if one is
 missing. The landing, founder and algorithms cards are those pages,
 photographed from the built export, and Grasp's is drawn in the site's own
-font files, so run `npm run build` before `npm run og`. The address on the cards and in the sitemap comes from `lib/url.ts`.
+font files, so run `npm run build` before `npm run og`. Every page sets its
+preview through `share()` in `lib/og.ts` — the Open Graph and X tags together —
+and each card's URL ends in `?v=` and a hash of the file, so a redrawn card is a
+new URL that no app has cached. The cards are JPEG so they stay well under the
+size messaging apps accept. The address on the cards and in the sitemap comes from `lib/url.ts`.
 
 ---
 

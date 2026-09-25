@@ -1,19 +1,18 @@
 import { statSync } from 'node:fs';
 import path from 'node:path';
 import type { Metadata } from 'next';
-import { ogImage } from '@/lib/og';
+import { share } from '@/lib/og';
 import { founder, founderFilm } from '@/content/founder';
 import { FounderFilm } from '@/components/founder/FounderFilm';
 
 /**
- * The founder page: a film, painted as the landing's is — Rutvik sketched
- * from his photograph, then the 0s and 1s underneath everything and the GPU
- * that AI runs on, and back to him.
+ * The founder page: Rutvik, sketched from a photograph of him and painted as
+ * the landing's film is, with his name and what he does beside him.
  *
  * The route is also the address printed on the résumé itself.
  */
 
-const DESCRIPTION = `${founder.name}, ${founder.title} at ${founder.employer}, ${founder.focus} — and what his work runs on, from 0s and 1s to a GPU, sketched and painted.`;
+const DESCRIPTION = `${founder.name}, ${founder.title} at ${founder.employer}, ${founder.focus}. Sketched in pencil and painted in watercolour from a photograph of him.`;
 
 export const metadata: Metadata = {
   /*
@@ -22,12 +21,14 @@ export const metadata: Metadata = {
   */
   title: 'Founder',
   description: DESCRIPTION,
-  openGraph: {
+  ...share({
     title: `${founder.name} — ${founder.title}, ${founder.employer}`,
     description: DESCRIPTION,
+    path: '/founder/',
     type: 'profile',
-    images: ogImage('founder', `${founder.name}, painted in watercolour from a photograph, with his name and what he does beside him`),
-  },
+    image: 'founder',
+    alt: `${founder.name}, painted in watercolour from a photograph, with his name and what he does beside him`,
+  }),
 };
 
 /*

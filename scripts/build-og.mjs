@@ -8,7 +8,7 @@
  * is written in the site's own font files, so `npm run build` (without a base
  * path) has to have run first.
  *
- * Writes `public/og/<name>.png`, one per route, committed to the repo. Wired
+ * Writes `public/og/<name>.jpg`, one per route, committed to the repo. Wired
  * into metadata by `src/lib/og.ts`, which is the file that decides which route
  * gets which image.
  *
@@ -67,6 +67,14 @@ const outDir = path.join(root, 'public', 'og');
 */
 const W = 1200;
 const H = 630;
+
+/*
+  JPEG, not PNG. A watercolour is all soft gradients, which PNG stores
+  losslessly and badly: the landing's card was a megabyte, and WhatsApp and
+  others drop a preview image much over 300 KB and show no picture at all. At
+  this quality the paper and washes are indistinguishable at a fifth of the size.
+*/
+const JPEG = { format: 'jpeg', quality: 86 };
 
 const PAPER = '#f2e7d2';
 const GRAPHITE = '#1d1d21';
@@ -323,8 +331,10 @@ const FILM_CSS = `
 /* The landing's card: the painting, less the header and the list of shots, with his name over the sky. */
 const LANDING_CSS = `
   .nav, .preloader, .curtain, .cursor-marks, [class*="Film_controls"] { display: none !important; }
-  .og-name { position: fixed; left: 24px; top: 8px; z-index: 10; padding: 40px 110px 60px 40px; font-family: var(--font-hand), cursive; color: var(--fg);
-    background: radial-gradient(closest-side, rgba(245,240,230,0.9), rgba(245,240,230,0.72) 60%, rgba(245,240,230,0)); }
+  /* A mist of paper lifting off the top left corner, so the name sits on paper, not on the fields. */
+  body::after { content: ''; position: fixed; inset: 0; z-index: 9; pointer-events: none;
+    background: linear-gradient(162deg, rgba(245,240,230,0.94) 0%, rgba(245,240,230,0.82) 22%, rgba(245,240,230,0.35) 38%, rgba(245,240,230,0) 52%); }
+  .og-name { position: fixed; left: 64px; top: 44px; z-index: 10; font-family: var(--font-hand), cursive; color: var(--fg); }
   .og-name b { display: inline-block; font-size: 84px; line-height: 1; padding-bottom: 4px; border-bottom: 3px solid currentColor; }
   .og-name span { display: block; margin-top: 12px; font-size: 36px; font-weight: 600; opacity: 0.8; }
 `;
@@ -419,9 +429,9 @@ async function shootFilm(card) {
       await new Promise((r) => setTimeout(r, 3000));
     }
     if (page.errors.length) throw new Error(page.errors.join('\n'));
-    const dest = path.join(outDir, `${card.file}.png`);
-    writeFileSync(dest, await page.screenshot());
-    console.log(`  ${card.file}.png`.padEnd(46) + `${(statSync(dest).size / 1024).toFixed(0)} KB`);
+    const dest = path.join(outDir, `${card.file}.jpg`);
+    writeFileSync(dest, await page.screenshot(undefined, JPEG));
+    console.log(`  ${card.file}.jpg`.padEnd(46) + `${(statSync(dest).size / 1024).toFixed(0)} KB`);
   } finally {
     await page.close();
     server.close();
@@ -465,10 +475,10 @@ async function main() {
       */
       await page.evaluate('document.fonts.ready.then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))))');
 
-      const dest = path.join(outDir, `${card.file}.png`);
-      writeFileSync(dest, await page.screenshot());
+      const dest = path.join(outDir, `${card.file}.jpg`);
+      writeFileSync(dest, await page.screenshot(undefined, JPEG));
       const kb = (statSync(dest).size / 1024).toFixed(0);
-      console.log(`  ${card.file}.png`.padEnd(46) + `${kb} KB`);
+      console.log(`  ${card.file}.jpg`.padEnd(46) + `${kb} KB`);
     }
   } catch (error) {
     failures++;

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { algorithmsPage, categories, problems } from '@/content/algorithms';
-import { ogImage } from '@/lib/og';
+import { share } from '@/lib/og';
 import styles from '@/components/algorithms/Algorithms.module.css';
 
 const DESCRIPTION = `${algorithmsPage.lead} ${algorithmsPage.languages}.`;
@@ -9,7 +9,13 @@ const DESCRIPTION = `${algorithmsPage.lead} ${algorithmsPage.languages}.`;
 export const metadata: Metadata = {
   title: algorithmsPage.title,
   description: DESCRIPTION,
-  openGraph: { title: algorithmsPage.title, description: DESCRIPTION, images: ogImage('algorithms', 'The NeetCode 150: every problem listed down the left, and its categories as cards') },
+  ...share({
+    title: `${algorithmsPage.title} — the NeetCode 150, drawn step by step`,
+    description: DESCRIPTION,
+    path: '/algorithms/',
+    image: 'algorithms',
+    alt: 'The NeetCode 150: every problem listed down the left, and its categories as cards',
+  }),
 };
 
 /** The section's first page: the patterns, each a way into its problems. */

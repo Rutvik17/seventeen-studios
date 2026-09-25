@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ogImage } from '@/lib/og';
+import { share } from '@/lib/og';
 import { graspInfo, graspModule, onTheWeb } from '@/content/grasp';
 import { spell } from '@/lib/time';
 import { Chalkboard } from '@/components/grasp/Chalkboard';
@@ -12,11 +12,13 @@ const TITLE = `${graspInfo.name} — ${graspInfo.tagline}`;
 export const metadata: Metadata = {
   title: TITLE,
   description: graspInfo.summary,
-  openGraph: {
+  ...share({
     title: TITLE,
     description: graspInfo.summary,
-    images: ogImage('grasp', 'Grasp, on a chalkboard: the parabola f(x) = x squared and its tangent, labelled slope = 2x'),
-  },
+    path: '/grasp/',
+    image: 'grasp',
+    alt: 'Grasp, on a chalkboard: the parabola f(x) = x squared and its tangent, labelled slope = 2x',
+  }),
 };
 
 /**
