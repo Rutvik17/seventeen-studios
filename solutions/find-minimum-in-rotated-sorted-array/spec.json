@@ -1,0 +1,13 @@
+{
+  "method": "findMin",
+  "params": [{ "name": "nums", "type": "int[]" }],
+  "returns": "int",
+  "cases": [
+    { "in": [[3, 4, 5, 1, 2]], "out": 1, "example": true },
+    { "in": [[4, 5, 6, 7, 0, 1, 2]], "out": 0, "example": true },
+    { "in": [[11, 13, 15, 17]], "out": 11, "example": true },
+    { "in": [[2, 1]], "out": 1 },
+    { "in": [[1]], "out": 1 },
+    { "in": [[5, 1, 2, 3, 4]], "out": 1 }
+  ]
+}

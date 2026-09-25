@@ -9,6 +9,7 @@ const loaders: Record<string, () => Promise<{ traces: Record<string, Tracer> }>>
   'two-pointers': () => import('./two-pointers'),
   'sliding-window': () => import('./sliding-window'),
   stack: () => import('./stack'),
+  'binary-search': () => import('./binary-search'),
 };
 
 export async function loadTracer(category: string, slug: string): Promise<Tracer | null> {
