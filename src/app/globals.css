@@ -998,6 +998,16 @@ body:has([data-film-dark]) .nav:not(.is-scrolled) .nav__tab {
   html {
     overflow-x: clip;
   }
+  /*
+    And the body clips too. With the root clipping, the body's own
+    \`overflow-x: hidden\` no longer passes up to the viewport — it makes the
+    body a scroll container of its own, and every \`position: sticky\` inside
+    sticks to a box that never scrolls. The notebook's book did not stay on
+    screen on a phone for exactly this reason.
+  */
+  body {
+    overflow-x: clip;
+  }
 
   
 }
