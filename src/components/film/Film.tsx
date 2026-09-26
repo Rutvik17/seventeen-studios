@@ -110,10 +110,14 @@ export function Film() {
 
       <div className={styles.plate}>
         <p className={styles.title}>{copy.title}</p>
+        {/* The act being done ("sketching", "painting") while the painting is made; once the year of shots
+            begins, the season is left to the painting to show (and to the strip, which names every shot). */}
         <p className={styles.caption} aria-live="polite">
-          <span key={caption} className={styles.captionText}>
-            {caption}
-          </span>
+          {index === -1 && (
+            <span key={caption} className={styles.captionText}>
+              {caption}
+            </span>
+          )}
         </p>
       </div>
 
