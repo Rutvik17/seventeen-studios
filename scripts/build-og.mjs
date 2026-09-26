@@ -270,7 +270,8 @@ function cards() {
       film: '/',
       css: LANDING_CSS,
       shot: 'autumn',
-      signature: founder.name,
+      // The first name alone, the way a painter signs.
+      signature: founder.name.split(' ')[0],
     },
     {
       file: 'founder',
@@ -446,74 +447,77 @@ async function shootFilm(card) {
 */
 function signature(name) {
   return `(async () => {
+    // Small, as a painter's signature is: tucked into the corner, never over the picture.
+    const SIZE = 40;
+    const k = SIZE / 88;
     const hand = getComputedStyle(document.documentElement).getPropertyValue('--font-hand').trim() || 'cursive';
-    const font = '600 88px ' + hand;
+    const font = '500 ' + SIZE + 'px ' + hand;
     await document.fonts.load(font).catch(() => undefined);
     await document.fonts.ready;
-    const W = 560, H = 190, dpr = 2;
+    const W = 170, H = 76, dpr = 3;
     const c = document.createElement('canvas');
     c.width = W * dpr; c.height = H * dpr;
-    Object.assign(c.style, { position: 'fixed', left: '38px', bottom: '14px', width: W + 'px', height: H + 'px', zIndex: 10, pointerEvents: 'none' });
+    Object.assign(c.style, { position: 'fixed', left: '40px', bottom: '14px', width: W + 'px', height: H + 'px', zIndex: 10, pointerEvents: 'none' });
     document.body.append(c);
     const x = c.getContext('2d');
     x.scale(dpr, dpr);
     let seed = 17;
     const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     const g = () => (r() + r() + r() - 1.5) * 1.2;
-    const PAINT = 'rgb(43,63,158)', DRY = 'rgb(28,40,110)';
+    const PAINT = 'rgb(38,56,148)', DRY = 'rgb(24,34,100)';
     x.font = font;
     x.textBaseline = 'alphabetic';
     const text = ${JSON.stringify(name)};
     const tw = x.measureText(text).width;
-    // Thin glazes, each wandering a little. Some are held to a patch of the
+    // Thin glazes, each wandering a hair. Some are held to a patch of the
     // paper, so the colour pools unevenly, as it does where water collects.
     const glaze = (draw, n) => {
       for (let i = 0; i < n; i++) {
         x.save();
         if (i % 2) {
           x.beginPath();
-          x.ellipse(r() * tw, -40 + r() * 70, 60 + r() * 120, 30 + r() * 50, r() * 3, 0, Math.PI * 2);
+          x.ellipse(r() * tw, -SIZE * 0.4 + r() * SIZE * 0.7, SIZE * (0.6 + r()), SIZE * (0.3 + r() * 0.4), r() * 3, 0, Math.PI * 2);
           x.clip();
         }
-        x.translate(g() * 2.2, g() * 1.6);
-        x.globalAlpha = 0.045 + r() * 0.05;
+        x.translate(g() * 2.2 * k, g() * 1.6 * k);
+        x.globalAlpha = 0.07 + r() * 0.06;
         draw(false);
-        if (i % 3 === 1) { x.globalAlpha = 0.12 + r() * 0.08; draw(true); }
+        if (i % 3 === 1) { x.globalAlpha = 0.18 + r() * 0.1; draw(true); }
         x.restore();
       }
     };
-    x.translate(30, 118);
-    x.rotate(-0.07);
+    x.translate(10, 50);
+    x.rotate(-0.08);
     // The name.
     glaze((edge) => {
-      if (edge) { x.strokeStyle = DRY; x.lineWidth = 1; x.strokeText(text, 0, 0); }
+      if (edge) { x.strokeStyle = DRY; x.lineWidth = 0.55; x.strokeText(text, 0, 0); }
       else { x.fillStyle = PAINT; x.fillText(text, 0, 0); }
     }, 30);
-    // One light sweep of the brush under it, swelling and lifting off.
+    // A fine sweep of the brush under it, swelling a little and lifting off into a hairline.
     glaze((edge) => {
       x.beginPath();
-      const n = 48;
+      const n = 40;
       const top = [], bottom = [];
-      for (let k = 0; k <= n; k++) {
-        const t = k / n;
-        const px = tw * (0.08 + t * 0.8);
-        const py = 22 - Math.sin(t * Math.PI) * 5 + t * 3;
-        const w = Math.pow(Math.sin(Math.PI * t), 1.6) * 2.6 + 0.3;
+      for (let j = 0; j <= n; j++) {
+        const t = j / n;
+        const px = tw * (0.15 + t * 0.95);
+        const py = 9 - Math.sin(t * Math.PI) * 2.5 + t * 1.5;
+        const w = Math.pow(Math.sin(Math.PI * Math.pow(t, 0.7)), 2) * 1.1 + 0.15;
         top.push([px, py - w]);
         bottom.push([px, py + w]);
       }
-      top.forEach(([a, b], k) => (k ? x.lineTo(a, b) : x.moveTo(a, b)));
+      top.forEach(([a, b], j) => (j ? x.lineTo(a, b) : x.moveTo(a, b)));
       bottom.reverse().forEach(([a, b]) => x.lineTo(a, b));
       x.closePath();
-      if (edge) { x.strokeStyle = DRY; x.lineWidth = 0.8; x.stroke(); }
+      if (edge) { x.strokeStyle = DRY; x.lineWidth = 0.4; x.stroke(); }
       else { x.fillStyle = PAINT; x.fill(); }
     }, 18);
     // The paper's tooth: a little of the paint skipped.
     x.setTransform(1, 0, 0, 1, 0, 0);
     x.globalCompositeOperation = 'destination-out';
-    for (let i = 0; i < 9000; i++) {
-      x.globalAlpha = 0.15 + r() * 0.45;
-      x.fillRect(r() * c.width, r() * c.height, 1 + r() * 1.6, 1 + r() * 1.6);
+    for (let i = 0; i < 2600; i++) {
+      x.globalAlpha = 0.12 + r() * 0.4;
+      x.fillRect(r() * c.width, r() * c.height, 1 + r() * 1.5, 1 + r() * 1.5);
     }
     await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
   })()`;
