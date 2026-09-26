@@ -44,6 +44,8 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { founder } from '../src/content/founder.ts';
+import { site } from '../src/content/studio.ts';
+import { algorithmsPage, problem } from '../src/content/algorithms/index.ts';
 import { graspInfo, graspModule } from '../src/content/grasp.ts';
 import { spell } from '../src/lib/time.ts';
 import { CURVES } from '../src/lib/calculus.ts';
@@ -265,11 +267,11 @@ function cards() {
   const list = [
     {
       file: 'home',
-      // The landing itself: the campus painted in autumn, with his name written over the sky.
+      // The landing itself: the campus painted in autumn, with the studio's name written over the sky.
       film: '/',
       css: LANDING_CSS,
       shot: 'autumn',
-      overlay: { title: founder.name, line: `${founder.title} at ${founder.employer}` },
+      overlay: { title: site.name, line: site.byline },
     },
     {
       file: 'founder',
@@ -284,12 +286,17 @@ function cards() {
       ready: 'main h1',
     },
     {
-      file: 'algorithms-problem',
-      // A problem page: the list of problems beside one being drawn, part-way through.
-      film: '/algorithms/trapping-rain-water/',
-      css: ALGORITHMS_CSS,
-      ready: 'svg',
-      steps: 9,
+      file: 'algorithms-drawn',
+      // Every problem page: not one problem, but what the section does — six
+      // different drawings, each photographed part-way through its own page.
+      collage: [
+        { slug: 'two-sum', steps: 3 },
+        { slug: 'number-of-islands', steps: 6 },
+        { slug: 'invert-binary-tree', steps: 3 },
+        { slug: 'reverse-linked-list', steps: 3 },
+        { slug: 'network-delay-time', steps: 4 },
+        { slug: 'trapping-rain-water', steps: 9 },
+      ],
     },
     {
       file: 'grasp',
@@ -362,6 +369,32 @@ function serve(root) {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
+/** Wait for a problem page's player to draw, then click it along until its counter reads `steps` + 1. */
+async function stepTo(page, ready, steps) {
+  await page.evaluate(`new Promise((resolve, reject) => {
+    const start = performance.now();
+    const check = () => {
+      const next = document.querySelector('[aria-label="Next step"]');
+      if (document.querySelector(${JSON.stringify(ready)}) && (!next || !next.disabled)) return document.fonts.ready.then(resolve);
+      if (performance.now() - start > 20000) return reject(new Error('the page never drew'));
+      setTimeout(check, 200);
+    };
+    check();
+  })`);
+  // The exported HTML already holds the player, so keep clicking until the counter
+  // shows the step wanted: clicks made before React has attached do nothing.
+  if (steps) await page.evaluate(`(async () => {
+    const want = ${steps + 1};
+    const at = () => Number((document.body.innerText.match(/(\\d+) \\/ \\d+/) || [])[1] || 0);
+    const start = performance.now();
+    while (at() < want && performance.now() - start < 20000) {
+      document.querySelector('[aria-label="Next step"]')?.click();
+      await new Promise((r) => setTimeout(r, 120));
+    }
+  })()`);
+  await new Promise((r) => setTimeout(r, 900));
+}
+
 async function shootFilm(card) {
   const site = path.join(root, 'out');
   if (!existsSync(path.join(site, card.film.split('?')[0].replace(/^\//, ''), 'index.html'))) {
@@ -382,33 +415,9 @@ async function shootFilm(card) {
         document.body.append(o);
       })()`);
     }
-    if (card.ready) {
-      // A page drawn in SVG: wait for the drawing and the fonts, then step it along.
-      await page.evaluate(`new Promise((resolve, reject) => {
-        const start = performance.now();
-        const check = () => {
-          const next = document.querySelector('[aria-label="Next step"]');
-          if (document.querySelector(${JSON.stringify(card.ready)}) && (!next || !next.disabled)) return document.fonts.ready.then(resolve);
-          if (performance.now() - start > 20000) return reject(new Error('the page never drew'));
-          setTimeout(check, 200);
-        };
-        check();
-      })`);
-      // The exported HTML already holds the player, so keep clicking until the counter
-      // shows the step wanted: clicks made before React has attached do nothing.
-      if (card.steps) await page.evaluate(`(async () => {
-        const want = ${(card.steps ?? 0) + 1};
-        const at = () => Number((document.body.innerText.match(/(\\d+) \\/ \\d+/) || [])[1] || 0);
-        const start = performance.now();
-        while (at() < want && performance.now() - start < 20000) {
-          document.querySelector('[aria-label="Next step"]')?.click();
-          await new Promise((r) => setTimeout(r, 120));
-        }
-      })()`);
-      await new Promise((r) => setTimeout(r, 900));
-    } else
-    // Wait until the canvas has paint on it, then a frame more.
-    await page.evaluate(`new Promise((resolve, reject) => {
+    if (card.ready) await stepTo(page, card.ready, card.steps ?? 0);
+    // Otherwise a canvas: wait until it has paint on it, then a frame more.
+    else await page.evaluate(`new Promise((resolve, reject) => {
       const start = performance.now();
       const check = () => {
         const c = document.querySelector('canvas[role=img]');
@@ -439,6 +448,131 @@ async function shootFilm(card) {
 }
 
 /* ------------------------------------------------------------------ *
+ * The collage — what the algorithms section does, not one problem
+ * ------------------------------------------------------------------ */
+
+/*
+  Every problem page shares one card, so it cannot be any one problem: a link
+  to Contains Duplicate that previews Trapping Rain Water says the wrong thing.
+  It is the section instead — six different kinds of drawing (an array and a
+  hash map, a grid, a tree, a linked list, a graph, bars and water), each
+  photographed off its own page part-way through, laid out on the paper under
+  the section's name.
+*/
+async function shootCollage(card) {
+  const site = path.join(root, 'out');
+  const server = await serve(site);
+  const page = await openPage({ width: 1512, height: 1000, reducedMotion: true });
+  const tiles = [];
+  try {
+    for (const t of card.collage) {
+      if (!existsSync(path.join(site, 'algorithms', t.slug, 'index.html'))) {
+        throw new Error(`${card.file}: no /algorithms/${t.slug}/ in out/ — run \`npm run build\` (without a base path) first.`);
+      }
+      await page.navigate(`http://127.0.0.1:${server.address().port}/algorithms/${t.slug}/`);
+      await page.evaluate(`(() => { const s = document.createElement('style'); s.textContent = ${JSON.stringify(ALGORITHMS_CSS)}; document.head.append(s); })()`);
+      await stepTo(page, 'svg', t.steps);
+      const box = await page.evaluate(`(() => { const r = document.querySelector('[class*="Visualizer_panels"]').getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; })()`);
+      if (page.errors.length) throw new Error(page.errors.join('\n'));
+      const png = await page.screenshot(box);
+      tiles.push({ title: problem(t.slug).title, src: `data:image/png;base64,${png.toString('base64')}` });
+    }
+  } finally {
+    await page.close();
+    server.close();
+  }
+
+  const tmp = mkdtempSync(path.join(os.tmpdir(), 'og-'));
+  const card2 = await openPage({ width: W, height: H });
+  try {
+    const file = path.join(tmp, `${card.file}.html`);
+    writeFileSync(file, collageHtml(tiles), 'utf8');
+    await card2.navigate(fileUrl(file));
+    await card2.evaluate('document.fonts.ready.then(() => window.trimmed).then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))');
+    const dest = path.join(outDir, `${card.file}.jpg`);
+    writeFileSync(dest, await card2.screenshot(undefined, JPEG));
+    console.log(`  ${card.file}.jpg`.padEnd(46) + `${(statSync(dest).size / 1024).toFixed(0)} KB`);
+  } finally {
+    await card2.close();
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+function collageHtml(tiles) {
+  return `<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  ${siteHand()}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: ${W}px; height: ${H}px; }
+  body {
+    background: #f5f0e6;
+    color: ${GRAPHITE};
+    font-family: 'Caveat', cursive;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 330px 1fr;
+    gap: 32px;
+    padding: 34px 44px 34px 64px;
+  }
+  .text { display: flex; flex-direction: column; padding: 16px 0 12px; }
+  .title { display: inline-block; align-self: flex-start; font-size: 92px; font-weight: 700; line-height: 1; padding-bottom: 6px; border-bottom: 3px solid currentColor; }
+  .lead { margin-top: 24px; font-size: 33px; font-weight: 600; line-height: 1.2; }
+  .langs { margin-top: 18px; text-wrap: balance; font-size: 25px; font-weight: 600; color: ${GRAPHITE}99; }
+  .foot { margin-top: auto; font-size: 24px; font-weight: 600; color: ${GRAPHITE}99; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: 12px; min-height: 0; }
+  figure {
+    display: flex; flex-direction: column; min-height: 0;
+    background: #fffdf8; border-radius: 12px; padding: 6px 10px 2px;
+    box-shadow: 0 12px 26px -20px rgba(29, 29, 33, 0.55);
+  }
+  figure div { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  figcaption { font-size: 19px; font-weight: 600; text-align: center; padding-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style></head>
+<body>
+  <div class="text">
+    <h1 class="title">${esc(algorithmsPage.title)}</h1>
+    <p class="lead">The NeetCode 150, every problem drawn step by step as it runs.</p>
+    <p class="langs">${esc(algorithmsPage.languages)}</p>
+    <p class="foot">${esc(SITE_HOST)}</p>
+  </div>
+  <div class="grid">
+    ${tiles.map((t) => `<figure><div><img src="${t.src}" alt=""></div><figcaption>${esc(t.title)}</figcaption></figure>`).join('\n    ')}
+  </div>
+  <script>
+    // Each photograph is the whole panel strip, mostly empty paper: crop it to what is drawn, so the drawing fills its tile.
+    window.trimmed = Promise.all([...document.images].map(async (img) => {
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const x = c.getContext('2d');
+      x.drawImage(img, 0, 0);
+      const d = x.getImageData(0, 0, c.width, c.height).data;
+      const bg = [d[0], d[1], d[2]];
+      let l = c.width, t = c.height, r = 0, b = 0;
+      for (let y = 0; y < c.height; y++) for (let i = 0; i < c.width; i++) {
+        const k = (y * c.width + i) * 4;
+        if (Math.abs(d[k] - bg[0]) + Math.abs(d[k + 1] - bg[1]) + Math.abs(d[k + 2] - bg[2]) > 24) {
+          if (i < l) l = i; if (i > r) r = i; if (y < t) t = y; if (y > b) b = y;
+        }
+      }
+      if (r <= l || b <= t) return;
+      const pad = 10;
+      l = Math.max(0, l - pad); t = Math.max(0, t - pad); r = Math.min(c.width, r + pad); b = Math.min(c.height, b + pad);
+      const o = document.createElement('canvas');
+      o.width = r - l;
+      o.height = b - t;
+      o.getContext('2d').drawImage(c, l, t, o.width, o.height, 0, 0, o.width, o.height);
+      img.src = o.toDataURL();
+      await img.decode();
+    }));
+  </script>
+</body></html>`;
+}
+
+/* ------------------------------------------------------------------ *
  * Rendering
  * ------------------------------------------------------------------ */
 
@@ -461,6 +595,10 @@ async function main() {
     for (const card of wanted) {
       if (card.film) {
         await shootFilm(card);
+        continue;
+      }
+      if (card.collage) {
+        await shootCollage(card);
         continue;
       }
       const file = path.join(tmp, `${card.file}.html`);

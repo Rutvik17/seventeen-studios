@@ -22,8 +22,8 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
       title: `${p.title} — step by step`,
       description,
       path: `/algorithms/${p.slug}/`,
-      image: 'algorithms-problem',
-      alt: 'A problem from the NeetCode 150 beside the list of all of them, its solution drawn step by step',
+      image: 'algorithms-drawn',
+      alt: 'Algorithms: six drawings from the NeetCode 150 — an array and a hash map, a grid, a tree, a linked list, a weighted graph, and bars holding water — each mid-way through its steps',
     }),
   };
 }

@@ -40,24 +40,18 @@ const siteUrl = SITE_URL;
  * three disagreeing is the ordinary way a share card ends up advertising
  * something the page does not say.
  */
-const LANDING_TITLE = `${founder.name} — ${founder.role}, ${founder.location}`;
+const LANDING_TITLE = site.name;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   /*
-    THE TAB SAYS HIS NAME.
+    The landing is the studio's: its tab and its link preview say
+    "Seventeen Studios", with "Imagined by Rutvik Patel" under it (the
+    description, and the card). Every page inside is his, and its tab says
+    so — "Algorithms — Rutvik Patel" — through the template.
 
-    It used to open with the studio's — "Seventeen Studios — The engineering
-    notebook of Rutvik Patel." — which is the right way round for a company and
-    the wrong way round for this. The people this site is built for are reading
-    it with twenty tabs open, half of them other candidates, and the one string
-    they need in order to know which tab is which is the name of the person
-    whose work it is. The brand still owns the page: it is the mark in the
-    header.
-
-    The keywords went with it. "Engineering studio", "software consultancy" and
-    "creative engineering" were bidding for agency traffic — the exact thing
-    this site stopped being, and the exact reader it does not want.
+    No agency keywords: "engineering studio", "software consultancy" and
+    "creative engineering" bid for the reader this site is not for.
   */
   title: {
     default: LANDING_TITLE,

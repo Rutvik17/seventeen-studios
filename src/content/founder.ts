@@ -15,8 +15,6 @@ import { asset } from '@/lib/asset';
 
 export const founder = {
   name: 'Rutvik Patel',
-  role: 'Software Engineer',
-  location: 'Toronto, Canada',
   /*
     His title where he works. THE EMPLOYER IS "EY", NOT "ERNST & YOUNG": the
     firm rebranded in 2013, and "EY" is its name. The résumé's company header
