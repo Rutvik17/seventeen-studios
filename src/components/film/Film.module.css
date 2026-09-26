@@ -22,7 +22,7 @@
   display: block;
 }
 
-/* The title and caption, written in the corner as under a painting. */
+/* One line, written in the corner as under a painting. */
 .plate {
   position: absolute;
   right: var(--gutter);
@@ -30,27 +30,51 @@
   text-align: right;
   pointer-events: none;
 }
-.title {
-  margin: 0;
-  font-family: var(--font-hand), cursive;
-  font-weight: 600;
-  font-size: clamp(20px, 1.7vw, 26px);
-  line-height: 1;
-  opacity: 0.75;
-}
+/* The line coming in and the one lifting off share one place. */
 .caption {
-  margin: 4px 0 0;
+  display: grid;
+  justify-items: end;
+  margin: 0;
   font-family: var(--font-hand), cursive;
   font-weight: 700;
   font-size: clamp(28px, 2.6vw, 40px);
   line-height: 1.1;
   min-height: 1.1em;
 }
+.line {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+}
 .captionText {
   display: inline-block;
   padding-bottom: 2px;
   background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1.5px no-repeat;
-  animation: write 0.9s var(--ease-out) both;
+  /* Written in just after the last line starts to lift. */
+  animation: write 0.9s var(--ease-out) 0.25s both;
+}
+/* The line going: it lifts off the paper, as a wash does under a damp sponge. */
+.leaving {
+  animation: lift 0.6s ease-out both;
+}
+.leaving .captionText {
+  animation: none;
+}
+@keyframes lift {
+  to {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(-6px);
+  }
+}
+/* The heart, painted beside the place once it has been written. */
+.heart,
+.heartRoom {
+  display: inline-block;
+  flex: none;
+  width: 0.95em;
+  height: 0.95em;
+  margin-left: 0.18em;
 }
 @keyframes write {
   from {
@@ -141,6 +165,9 @@
 @media (prefers-reduced-motion: reduce) {
   .captionText {
     animation: none;
+  }
+  .leaving {
+    display: none;
   }
 }
 

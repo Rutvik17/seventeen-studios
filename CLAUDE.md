@@ -150,6 +150,11 @@ place carries that place's colours.
   through the same mask.
 - **The canvas is transparent** over the film's own sheet; the film fades into
   the page at its foot.
+- **One line in the corner** (`components/film/Film.tsx`): what the hand is
+  doing while the painting is made ("sketching", "painting"), then the place,
+  "Nvidia, Santa Clara", with a heart painted beside it in Nvidia's green
+  (`PaintedHeart.tsx`, `wash.ts`). Each line is written in as the last one
+  lifts off; the season is left to the painting and the strip.
 - **Reduced motion:** no pencil, brush or timelapse — the finished painting,
   still, with every shot a button. Nothing in the engine is started without
   checking.

@@ -336,8 +336,6 @@ const FILM_CSS = `
 /* The landing's card: the painting, less the header and the list of shots, with his name over the sky. */
 const LANDING_CSS = `
   .preloader, .curtain, .cursor-wash, .cursor-brush, .nav__tabs, [class*="Film_controls"] { display: none !important; }
-  /* The place, without the shot's name: "Nvidia, Santa Clara" drops into the corner where "autumn" was. */
-  [class*="Film_caption"] { display: none !important; }
   /* The mark, as the header carries it, only larger: the leaf repaints itself at its new size. */
   .nav__logo { width: 104px !important; }
   .nav__mark:hover .nav__logo { transform: none; }

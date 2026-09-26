@@ -6,15 +6,20 @@
  * A full-screen watercolour of Nvidia's campus in Santa Clara, drawn in
  * pencil, painted, and carried through a year of seasons and weather — the
  * engine is `src/lib/film`, the shots are `src/content/film.ts`. This is the
- * frame round it: the painting's title and caption in the corner, the shots
- * along the bottom to jump between, and a pause.
+ * frame round it: one line written in the corner, the shots along the bottom
+ * to jump between, and a pause.
+ *
+ * The line says what the hand is doing while the painting is made
+ * ("sketching", "painting"), then, once it is done, what it is a painting of —
+ * "Nvidia, Santa Clara", with a heart painted beside it in Nvidia's green.
+ * Each line is written in as the one before it lifts off the paper.
  *
  * ---
  *
  * WITHOUT THE SCRIPT
  *
  * The canvas is empty and the painting's title is still written in the
- * corner; the contents follow underneath. Nothing is hidden by CSS.
+ * corner. Nothing is hidden by CSS.
  *
  * REDUCED MOTION
  *
@@ -34,6 +39,7 @@ import { useUi } from '@/lib/store';
 import { holdLoader } from '@/lib/ready';
 import { film as copy, shots } from '@/content/film';
 import { createFilm, type Film as Engine } from '@/lib/film/film';
+import { PaintedHeart } from './PaintedHeart';
 import styles from './Film.module.css';
 
 export function Film() {
@@ -47,6 +53,13 @@ export function Film() {
   const [dark, setDark] = useState(false);
   const [playing, setPlaying] = useState(true);
   const [still, setStill] = useState(false);
+  // The line in the corner: the act while the painting is made, then the place. Before the film has
+  // said anything (and without the script) it is the place.
+  const line = index === -1 && caption ? caption : copy.title;
+  const [lines, setLines] = useState<{ now: string; was: string | null }>({ now: copy.title, was: null });
+  useEffect(() => {
+    setLines((l) => (l.now === line ? l : { now: line, was: l.now }));
+  }, [line]);
 
   useEffect(() => {
     const el = canvas.current;
@@ -109,15 +122,17 @@ export function Film() {
       <canvas ref={canvas} className={styles.canvas} role="img" aria-label={caption ? `${copy.title} — ${caption}` : copy.title} />
 
       <div className={styles.plate}>
-        <p className={styles.title}>{copy.title}</p>
-        {/* The act being done ("sketching", "painting") while the painting is made; once the year of shots
-            begins, the season is left to the painting to show (and to the strip, which names every shot). */}
         <p className={styles.caption} aria-live="polite">
-          {index === -1 && (
-            <span key={caption} className={styles.captionText}>
-              {caption}
+          {lines.was && (
+            <span key={`was-${lines.was}`} className={`${styles.line} ${styles.leaving}`} aria-hidden="true">
+              <span className={styles.captionText}>{lines.was}</span>
+              {lines.was === copy.title && <span className={styles.heartRoom} />}
             </span>
           )}
+          <span key={lines.now} className={styles.line}>
+            <span className={styles.captionText}>{lines.now}</span>
+            {lines.now === copy.title && <PaintedHeart className={styles.heart} />}
+          </span>
         </p>
       </div>
 
