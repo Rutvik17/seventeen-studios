@@ -79,7 +79,7 @@ export const metadata: Metadata = {
     description: site.description,
     path: '/',
     image: 'home',
-    alt: `${founder.name}, written over a watercolour of Nvidia's Voyager and Endeavor buildings in Santa Clara, in autumn`,
+    alt: `A watercolour of Nvidia's Voyager and Endeavor buildings in Santa Clara in autumn, with the maple leaf mark and ${founder.name}'s name signed in paint in the corner`,
   }),
   robots: { index: true, follow: true },
 };

@@ -44,7 +44,6 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { founder } from '../src/content/founder.ts';
-import { site } from '../src/content/studio.ts';
 import { algorithmsPage, problem } from '../src/content/algorithms/index.ts';
 import { graspInfo, graspModule } from '../src/content/grasp.ts';
 import { spell } from '../src/lib/time.ts';
@@ -267,11 +266,11 @@ function cards() {
   const list = [
     {
       file: 'home',
-      // The landing itself: the campus painted in autumn, with the studio's name written over the sky.
+      // The landing itself: the campus painted in autumn, the leaf mark, and his name signed in the corner in paint.
       film: '/',
       css: LANDING_CSS,
       shot: 'autumn',
-      overlay: { title: site.name, line: site.byline },
+      signature: founder.name,
     },
     {
       file: 'founder',
@@ -337,13 +336,10 @@ const FILM_CSS = `
 
 /* The landing's card: the painting, less the header and the list of shots, with his name over the sky. */
 const LANDING_CSS = `
-  .nav, .preloader, .curtain, .cursor-wash, .cursor-brush, [class*="Film_controls"] { display: none !important; }
-  /* A mist of paper lifting off the top left corner, so the name sits on paper, not on the fields. */
-  body::after { content: ''; position: fixed; inset: 0; z-index: 9; pointer-events: none;
-    background: linear-gradient(162deg, rgba(245,240,230,0.94) 0%, rgba(245,240,230,0.82) 22%, rgba(245,240,230,0.35) 38%, rgba(245,240,230,0) 52%); }
-  .og-name { position: fixed; left: 64px; top: 44px; z-index: 10; font-family: var(--font-hand), cursive; color: var(--fg); }
-  .og-name b { display: inline-block; font-size: 84px; line-height: 1; padding-bottom: 4px; border-bottom: 3px solid currentColor; }
-  .og-name span { display: block; margin-top: 12px; font-size: 36px; font-weight: 600; opacity: 0.8; }
+  .preloader, .curtain, .cursor-wash, .cursor-brush, .nav__tabs, [class*="Film_controls"], [class*="Film_plate"] { display: none !important; }
+  /* The mark, as the header carries it, only larger: the leaf repaints itself at its new size. */
+  .nav__logo { width: 104px !important; }
+  .nav__mark:hover .nav__logo { transform: none; }
 `;
 
 /* The algorithms cards: the page as it is, less the header. */
@@ -405,16 +401,6 @@ async function shootFilm(card) {
   try {
     await page.navigate(`http://127.0.0.1:${server.address().port}${card.film}`);
     await page.evaluate(`(() => { const s = document.createElement('style'); s.textContent = ${JSON.stringify(card.css ?? FILM_CSS)}; document.head.append(s); })()`);
-    if (card.overlay) {
-      await page.evaluate(`(() => {
-        const o = document.createElement('div');
-        o.className = 'og-name';
-        o.innerHTML = '<b></b><span></span>';
-        o.firstChild.textContent = ${JSON.stringify(card.overlay.title)};
-        o.lastChild.textContent = ${JSON.stringify(card.overlay.line)};
-        document.body.append(o);
-      })()`);
-    }
     if (card.ready) await stepTo(page, card.ready, card.steps ?? 0);
     // Otherwise a canvas: wait until it has paint on it, then a frame more.
     else await page.evaluate(`new Promise((resolve, reject) => {
@@ -437,6 +423,7 @@ async function shootFilm(card) {
       await page.evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(card.shot)})?.click()`);
       await new Promise((r) => setTimeout(r, 3000));
     }
+    if (card.signature) await page.evaluate(signature(card.signature));
     if (page.errors.length) throw new Error(page.errors.join('\n'));
     const dest = path.join(outDir, `${card.file}.jpg`);
     writeFileSync(dest, await page.screenshot(undefined, JPEG));
@@ -445,6 +432,91 @@ async function shootFilm(card) {
     await page.close();
     server.close();
   }
+}
+
+/*
+  A painter's signature, in the corner of the painting, in paint.
+
+  The name, in the site's hand, laid the way `lib/film/wash.ts` lays a wash:
+  many thin glazes, each shifted a hair from the last so the edge goes soft
+  where they disagree and the colour builds where they agree, with the
+  darker line of pigment that gathers at a drying edge traced every third
+  glaze — and one sweep of the brush under it, laid the same way. Ultramarine,
+  the mark's paint. Seeded, so the card is the same every time it is made.
+*/
+function signature(name) {
+  return `(async () => {
+    const hand = getComputedStyle(document.documentElement).getPropertyValue('--font-hand').trim() || 'cursive';
+    const font = '600 88px ' + hand;
+    await document.fonts.load(font).catch(() => undefined);
+    await document.fonts.ready;
+    const W = 560, H = 190, dpr = 2;
+    const c = document.createElement('canvas');
+    c.width = W * dpr; c.height = H * dpr;
+    Object.assign(c.style, { position: 'fixed', left: '38px', bottom: '14px', width: W + 'px', height: H + 'px', zIndex: 10, pointerEvents: 'none' });
+    document.body.append(c);
+    const x = c.getContext('2d');
+    x.scale(dpr, dpr);
+    let seed = 17;
+    const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const g = () => (r() + r() + r() - 1.5) * 1.2;
+    const PAINT = 'rgb(43,63,158)', DRY = 'rgb(28,40,110)';
+    x.font = font;
+    x.textBaseline = 'alphabetic';
+    const text = ${JSON.stringify(name)};
+    const tw = x.measureText(text).width;
+    // Thin glazes, each wandering a little. Some are held to a patch of the
+    // paper, so the colour pools unevenly, as it does where water collects.
+    const glaze = (draw, n) => {
+      for (let i = 0; i < n; i++) {
+        x.save();
+        if (i % 2) {
+          x.beginPath();
+          x.ellipse(r() * tw, -40 + r() * 70, 60 + r() * 120, 30 + r() * 50, r() * 3, 0, Math.PI * 2);
+          x.clip();
+        }
+        x.translate(g() * 2.2, g() * 1.6);
+        x.globalAlpha = 0.045 + r() * 0.05;
+        draw(false);
+        if (i % 3 === 1) { x.globalAlpha = 0.12 + r() * 0.08; draw(true); }
+        x.restore();
+      }
+    };
+    x.translate(30, 118);
+    x.rotate(-0.07);
+    // The name.
+    glaze((edge) => {
+      if (edge) { x.strokeStyle = DRY; x.lineWidth = 1; x.strokeText(text, 0, 0); }
+      else { x.fillStyle = PAINT; x.fillText(text, 0, 0); }
+    }, 30);
+    // One light sweep of the brush under it, swelling and lifting off.
+    glaze((edge) => {
+      x.beginPath();
+      const n = 48;
+      const top = [], bottom = [];
+      for (let k = 0; k <= n; k++) {
+        const t = k / n;
+        const px = tw * (0.08 + t * 0.8);
+        const py = 22 - Math.sin(t * Math.PI) * 5 + t * 3;
+        const w = Math.pow(Math.sin(Math.PI * t), 1.6) * 2.6 + 0.3;
+        top.push([px, py - w]);
+        bottom.push([px, py + w]);
+      }
+      top.forEach(([a, b], k) => (k ? x.lineTo(a, b) : x.moveTo(a, b)));
+      bottom.reverse().forEach(([a, b]) => x.lineTo(a, b));
+      x.closePath();
+      if (edge) { x.strokeStyle = DRY; x.lineWidth = 0.8; x.stroke(); }
+      else { x.fillStyle = PAINT; x.fill(); }
+    }, 18);
+    // The paper's tooth: a little of the paint skipped.
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    x.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 9000; i++) {
+      x.globalAlpha = 0.15 + r() * 0.45;
+      x.fillRect(r() * c.width, r() * c.height, 1 + r() * 1.6, 1 + r() * 1.6);
+    }
+    await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
+  })()`;
 }
 
 /* ------------------------------------------------------------------ *

@@ -31,12 +31,11 @@
 
 import { founder } from './founder';
 
+/** Under the name, wherever the site introduces itself: the landing's link preview. */
 const byline = `Imagined by ${founder.name}`;
 
 export const site = {
   name: 'Seventeen Studios',
-  /** Under the name, wherever the site introduces itself: the landing's link preview and its card. */
-  byline,
   description: `${byline}: Nvidia's campus painted in watercolour through a year, the NeetCode 150 drawn step by step, and calculus you can touch.`,
   /*
     There is deliberately no `email` field. It is assembled on the client by
