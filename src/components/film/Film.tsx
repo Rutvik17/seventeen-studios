@@ -124,12 +124,12 @@ export function Film() {
       <div className={styles.plate}>
         <p className={styles.caption} aria-live="polite">
           {lines.was && (
-            <span key={`was-${lines.was}`} className={`${styles.line} ${lines.was === copy.title ? styles.place : ''} ${styles.leaving}`} aria-hidden="true">
+            <span key={`was-${lines.was}`} className={`${styles.line} ${styles.leaving}`} aria-hidden="true">
               <span className={styles.captionText}>{lines.was}</span>
               {lines.was === copy.title && <span className={styles.heartRoom} />}
             </span>
           )}
-          <span key={lines.now} className={`${styles.line} ${lines.now === copy.title ? styles.place : ''}`}>
+          <span key={lines.now} className={styles.line}>
             <span className={styles.captionText}>{lines.now}</span>
             {lines.now === copy.title && <PaintedHeart className={styles.heart} />}
           </span>
