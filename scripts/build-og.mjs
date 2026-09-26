@@ -266,12 +266,10 @@ function cards() {
   const list = [
     {
       file: 'home',
-      // The landing itself: the campus painted in autumn, the leaf mark, and his name signed in the corner in paint.
+      // The landing itself: the campus painted in autumn, and the leaf mark. No words.
       film: '/',
       css: LANDING_CSS,
       shot: 'autumn',
-      // The first name alone, the way a painter signs.
-      signature: founder.name.split(' ')[0],
     },
     {
       file: 'founder',
@@ -424,7 +422,6 @@ async function shootFilm(card) {
       await page.evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(card.shot)})?.click()`);
       await new Promise((r) => setTimeout(r, 3000));
     }
-    if (card.signature) await page.evaluate(signature(card.signature));
     if (page.errors.length) throw new Error(page.errors.join('\n'));
     const dest = path.join(outDir, `${card.file}.jpg`);
     writeFileSync(dest, await page.screenshot(undefined, JPEG));
@@ -435,74 +432,6 @@ async function shootFilm(card) {
   }
 }
 
-/*
-  A painter's signature, in the very corner of the paper, in paint.
-
-  Signed, not written: Herr Von Muellerhoff, a signature's hand — steep,
-  joined up and quick — the one face on any card that is not Caveat, because
-  a signature is the one thing on it that is not the site talking. It is set
-  about as small as 12pt type reads, on the bare paper below the painting.
-
-  Painted as `lib/film/wash.ts` lays a wash: thin ultramarine glazes, each
-  wandering a hair (the strokes are hairlines, so a hair is all they can
-  wander), some held to patches so the colour pools, a darker drying edge
-  every third, and the paper's tooth where the paint skipped. Seeded, so the
-  card is the same every time it is made.
-*/
-const SIGNATURE_FONT = fileURLToPath(import.meta.resolve('@fontsource/herr-von-muellerhoff/files/herr-von-muellerhoff-latin-400-normal.woff2'));
-
-function signature(name) {
-  const face = readFileSync(SIGNATURE_FONT).toString('base64');
-  return `(async () => {
-    const SIZE = 28;
-    const f = new FontFace('Signature', 'url(data:font/woff2;base64,${face})');
-    document.fonts.add(await f.load());
-    const font = SIZE + 'px Signature';
-    const W = 130, H = 44, dpr = 4;
-    const c = document.createElement('canvas');
-    c.width = W * dpr; c.height = H * dpr;
-    Object.assign(c.style, { position: 'fixed', left: '10px', bottom: '2px', width: W + 'px', height: H + 'px', zIndex: 10, pointerEvents: 'none' });
-    document.body.append(c);
-    const x = c.getContext('2d');
-    x.scale(dpr, dpr);
-    let seed = 17;
-    const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const g = () => (r() + r() + r() - 1.5) * 1.2;
-    const PAINT = 'rgb(38,56,148)', DRY = 'rgb(22,32,96)';
-    x.font = font;
-    x.textBaseline = 'alphabetic';
-    const text = ${JSON.stringify(name)};
-    const tw = x.measureText(text).width;
-    x.translate(8, 30);
-    for (let i = 0; i < 26; i++) {
-      x.save();
-      if (i % 2) {
-        x.beginPath();
-        x.ellipse(r() * tw, -SIZE * 0.3 + r() * SIZE * 0.5, SIZE * (0.4 + r() * 0.8), SIZE * (0.25 + r() * 0.35), r() * 3, 0, Math.PI * 2);
-        x.clip();
-      }
-      x.translate(g() * 0.3, g() * 0.25);
-      x.globalAlpha = 0.14 + r() * 0.1;
-      x.fillStyle = PAINT;
-      x.fillText(text, 0, 0);
-      if (i % 3 === 1) {
-        x.globalAlpha = 0.22 + r() * 0.1;
-        x.strokeStyle = DRY;
-        x.lineWidth = 0.25;
-        x.strokeText(text, 0, 0);
-      }
-      x.restore();
-    }
-    // The paper's tooth: a little of the paint skipped.
-    x.setTransform(1, 0, 0, 1, 0, 0);
-    x.globalCompositeOperation = 'destination-out';
-    for (let i = 0; i < 1400; i++) {
-      x.globalAlpha = 0.1 + r() * 0.35;
-      x.fillRect(r() * c.width, r() * c.height, 1 + r() * 1.5, 1 + r() * 1.5);
-    }
-    await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
-  })()`;
-}
 
 /* ------------------------------------------------------------------ *
  * The collage — what the algorithms section does, not one problem

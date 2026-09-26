@@ -303,9 +303,6 @@ illegible cards — it has happened here once.
 Type: **Caveat** everywhere, and **JetBrains Mono** for the algorithms'
 code (`--font-code`, loaded in `app/algorithms/layout.tsx`). Both via
 `next/font`, so the export makes no third-party font requests.
-One exception, off the site: the landing's share card is signed "Rutvik" in
-**Herr Von Muellerhoff** (`@fontsource`, a dev dependency read only by
-`scripts/build-og.mjs`) — a signature, not the site's words.
 
 Layout: `--gutter` for page padding, `--max` (1680px) for content width.
 
