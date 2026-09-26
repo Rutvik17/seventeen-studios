@@ -79,7 +79,7 @@ export const metadata: Metadata = {
     description: site.description,
     path: '/',
     image: 'home',
-    alt: `A watercolour of Nvidia's Voyager and Endeavor buildings in Santa Clara in autumn, with the maple leaf mark`,
+    alt: `A watercolour of Nvidia's Voyager and Endeavor buildings in Santa Clara in autumn, with the maple leaf mark and its caption, “Nvidia, Santa Clara — autumn”`,
   }),
   robots: { index: true, follow: true },
 };
