@@ -34,6 +34,7 @@
 .caption {
   display: grid;
   justify-items: end;
+  align-items: end;
   margin: 0;
   font-family: var(--font-hand), cursive;
   font-weight: 700;
@@ -52,6 +53,16 @@
   background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1.5px no-repeat;
   /* Written in just after the last line starts to lift. */
   animation: write 0.9s var(--ease-out) 0.25s both;
+}
+/* The place is written as a painting's title is under it: smaller, lighter, not underlined — the acts are the ones in bold. */
+.place {
+  font-weight: 600;
+  font-size: clamp(20px, 1.7vw, 26px);
+}
+.place .captionText {
+  padding-bottom: 0;
+  background: none;
+  opacity: 0.75;
 }
 /* The line going: it lifts off the paper, as a wash does under a damp sponge. */
 .leaving {
